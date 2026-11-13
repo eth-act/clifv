@@ -350,11 +350,12 @@ compiler (`cargo fv`'s default mode: regalloc2 checked by `checkAlloc`, dead cle
 `--opt`) compiles every function exactly as without the option. No stock-configured step runs:
 no `StockConfig.configure`, `argLoadsFromSp`, `dropDeadNotrapLoads` or `I128Native`.
 Settings the proved compiler does not implement reject the request (exit 3), as with
-`--stock-config`, or per function the function's output (`StockConfig.admit`): the checks of
-the table above, and a frame exactly where stock sets one up (`frameRequired`/`touchesFrame`).
-The proved compiler always sets up a frame today, so a leaf that stock compiles without one
-under `preserve_frame_pointers=false` is rejected; such a function stays compiled, because its
-callers' code does not depend on it. The receipt's `functions` gives per function
+`--stock-config`, or per function the function's output (`StockConfig.admit`: the checks of
+the table above); such a function stays compiled, because its callers' code does not depend on
+it. `preserve_frame_pointers` is compiler input: without it, a leaf that needs no frame is
+compiled without one (`Backend.frameless`, stock's decision `Backend.frameRequired`,
+`isa/aarch64/abi.rs:1265`); no end-to-end theorem covers a frameless leaf yet (#1028), so such a
+function is reported unverified. The receipt's `functions` gives per function
 `setting_rejection`, `unsupported`, or `backend_correct` (with `unverified`/`unvalidated`: why
 not). `--opt`, `--regalloc`, `--personality`, `--pipeline-t` and `--stock-config` are refused.
 

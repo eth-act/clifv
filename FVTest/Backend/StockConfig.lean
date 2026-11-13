@@ -1,4 +1,5 @@
 import FV.Backend
+import FV.Backend.Frameless
 import FV.Backend.RegallocPerEdgeDriver
 import Lean.Data.Json
 
@@ -115,16 +116,6 @@ def parse (j : Json) : Except String Config := do
          signReturnAddress := ← boolean isa "sign_return_address",
          signReturnAddressAll := ← boolean isa "sign_return_address_all" }
 
-def touchesFrame (m : MInst) : Bool :=
-  (m.uses ++ m.defs).any (fun r => r == .x 29 || r == .x 30) ||
-  match m with
-  | .call .. | .tryCall .. | .elfTlsGetAddr .. => true
-  | .load _ _ (.fpOffset _) _ | .store _ _ (.fpOffset _) _ | .loadAddr _ (.fpOffset _)
-  | .load _ _ (.incomingArg _) _ | .store _ _ (.incomingArg _) _
-  | .loadAddr _ (.incomingArg _) | .fpuLoad _ _ (.fpOffset _) _ | .fpuStore _ _ (.fpOffset _) _
-  | .fpuLoad _ _ (.incomingArg _) _ | .fpuStore _ _ (.incomingArg _) _ => true
-  | _ => false
-
 /-- Incoming stack-argument loads from `sp`, as stock addresses them (`AMode::IncomingArg`;
 `mem_finalize` in `isa/aarch64/inst/emit.rs`: `sp` plus the setup, clobber, fixed-frame and
 outgoing areas). The lowering loads an incoming stack argument from `fp + 16 + off`
@@ -139,10 +130,6 @@ def argLoadsFromSp (af : AFunc) : AFunc :=
       | .inst (.load op r m fl) => .inst (.load op r (fromSp m) fl)
       | .inst (.fpuLoad sz r m fl) => .inst (.fpuLoad sz r (fromSp m) fl)
       | a => a) }
-
-def frameRequired (af : AFunc) : Bool :=
-  af.frameSize != 0 || af.slotBase != 0 || af.blocks.any fun (_, code) =>
-    code.any fun | .inst m => touchesFrame m | _ => false
 
 /-- An `atomic_rmw` with an LSE form, or an `atomic_cas`: with `has_lse` stock lowers these to
 LSE instructions, not to the LL/SC loops Lean emits (`isa/aarch64/lower.isle:2328-2388`).
@@ -177,10 +164,8 @@ def checkFunction (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFun
     throw "has_lse=true changes the lowering of this function's atomic_rmw/atomic_cas; Lean does not implement LSE atomics"
   if c.csdb && fs.any usesCsdb then
     throw "use_csdb=true adds csdb to this function's select_spectre_guard/br_table; Lean does not implement it"
-  -- Incoming stack arguments require a frame even when allocation drops their
-  -- unused loads. Consult pre-allocation VCode as well as the allocated body.
-  let required := frameRequired af || vc.blocks.any (fun b => b.insts.any touchesFrame)
-  let frame := c.preserveFramePointers || required
+  -- stock's frame decision (`Backend.frameRequired`, `isa/aarch64/abi.rs:1265`)
+  let frame := c.preserveFramePointers || frameRequired vc af
   -- Stock signs the return address if and only if the function sets up a frame or
   -- `sign_return_address_all` is set (`select_api_key`, `isa/aarch64/abi.rs:1365`). The key
   -- (`sign_return_address_with_bkey`) and `has_pauth` (`is_hint`, `isa/aarch64/abi.rs:736`)
@@ -202,34 +187,42 @@ def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
 /-- The start of the `unsupported` reason of a function that `configure` rejects. -/
 def rejectionPrefix : String := "stock configuration unsupported for this function: "
 
-/-- **Proved settings mode** (`lean-backend --settings`): the per-function admission. The
-function is compiled by the proved compiler unchanged (`af` is returned as allocated: no
-`configure`, no `argLoadsFromSp`, no `dropDeadNotrapLoads`, no native `i128`). Its output is
-claimed for the settings only where the proved compiler implements the settings for it: `checkFunction` passes, and the
-compiled function has a frame exactly when stock sets one up (the proved compiler always sets
-one up today, so a frameless leaf under `preserve_frame_pointers=false` is rejected). -/
+/-- **Proved settings mode** (`lean-backend --settings`): the per-function step. The function is
+compiled by the proved compiler (no `configure`, no `argLoadsFromSp`, no `dropDeadNotrapLoads`,
+no native `i128`), with `preserve_frame_pointers` as its input (`Backend.frameless`: no frame for
+a leaf that needs none, as stock). Its output is claimed for the settings only where the proved
+compiler implements them: `checkFunction` passes, and the frame is stock's (by construction:
+both are `Backend.frameRequired`). -/
 def admit (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
     Except String AFunc := do
   let frame ← checkFunction c fs vc af
+  let af := frameless c.preserveFramePointers vc af
   if frame != af.frame then
     throw (if frame then "stock sets up a frame for this function; the compiled function has none"
-      else "preserve_frame_pointers=false: stock omits this function's frame; the proved compiler sets one up")
+      else "stock omits this function's frame; the compiled function has one")
   pure af
 
-/-- `admit` on each allocation of `run`, which it returns unchanged. Each rejection is recorded
-in `rejected` as (name, reason): the function stays compiled, so that its callers in the file
-are compiled as without the option (their code does not depend on the callee's frame), and its
-own output is not claimed for these settings (the receipt's `setting_rejection`). -/
+/-- `frameless` on each allocation of `run`, then `admit`. Each rejection is recorded in
+`rejected` as (name, reason): the function stays compiled, so that its callers in the file are
+compiled as without the option (their code does not depend on the callee), and its own output is
+not claimed for these settings (the receipt's `setting_rejection`). Each function without a
+frame is recorded in `noFrame`. -/
 def admitWith (c : Config) (clif : String → List Clif.Function)
-    (rejected : IO.Ref (Array (String × String)))
+    (rejected noFrame : IO.Ref (Array (String × String)))
     (run : Array VCode → IO (Array (Except String AFunc))) (vcs : Array VCode) :
     IO (Array (Except String AFunc)) := do
   let results ← run vcs
-  for (vc, result) in vcs.zip results do
-    if let .ok af := result then
+  (vcs.zip results).mapM fun (vc, result) => do
+    match result with
+    | .error e => pure (.error e)
+    | .ok af =>
+      let af' := frameless c.preserveFramePointers vc af
+      if !af'.frame then
+        noFrame.modify (·.push (vc.name,
+          "frameless leaf (preserve_frame_pointers=false): no end-to-end theorem covers it yet (#1028)"))
       if let .error why := admit c (clif vc.name) vc af then
         rejected.modify (·.push (vc.name, why))
-  pure results
+      pure (.ok af')
 
 /-! ## Unused `notrap` loads (#970)
 
