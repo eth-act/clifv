@@ -46,6 +46,9 @@ theorem evalInst_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'
   case float op ty args =>
     simp only [instArgs] at h
     simp only [Clif.evalInst, getMany_congr h]
+  case vector op ty args imm =>
+    simp only [instArgs] at h
+    simp only [Clif.evalInst, getMany_congr h]
   all_goals (simp only [instArgs, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
     forall_eq] at h <;>
     simp only [Clif.evalInst, Clif.Frame.getAs, Clif.Frame.get, h, hf, hs])
@@ -213,6 +216,14 @@ theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
     obtain ⟨_, _, r, hr, rfl, -⟩ := h
     have hty := Clif.evalFloat_ty hr
     cases op <;> simp_all [Clif.Inst.resultTypes, Clif.floatResTy]
+  case vector op ty args imm =>
+    simp only [Clif.evalInst, res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq,
+      Prod.mk.injEq] at h
+    obtain ⟨_, _, r, hr, rfl, -⟩ := h
+    rw [res_ofOption_eq_ok] at hr
+    have hty := Clif.VSem.eval_ty hr
+    simp only [Clif.Inst.resultTypes, hty, Option.map_some, Option.some.injEq] at ht
+    subst ht; rfl
   all_goals (simp only [Clif.evalInst] at h <;>
     simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht)
   all_goals (repeat' (first

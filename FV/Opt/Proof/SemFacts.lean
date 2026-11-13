@@ -34,6 +34,9 @@ theorem evalInst_congr {fr fr' : Frame} {mem : Mem} {i : Inst}
   case float op ty args =>
     simp only [operands] at hr
     simp only [evalInst, getMany_congr hr]
+  case vector op ty args imm =>
+    simp only [operands] at hr
+    simp only [evalInst, getMany_congr hr]
   all_goals simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
     forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff] at hr <;>
     simp only [evalInst, Frame.getAs, Frame.get, Function.extern?, hr, hs, hg, hx]
@@ -83,6 +86,12 @@ theorem evalInst_types {fr : Frame} {mem : Mem} {i : Inst} {vals : List Val} {me
     simp only [evalInst, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
     obtain ⟨_, _, r, hr, rfl, -⟩ := h
     simp [evalFloat_ty hr]
+  case vector op ty args imm =>
+    simp only [evalInst, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
+    obtain ⟨_, _, r, hr, rfl, -⟩ := h
+    rw [Res.ofOption_eq_ok] at hr
+    simp only [Inst.resultTypes, VSem.eval_ty hr, Option.map_some, Option.some.injEq] at ht
+    subst ht; rfl
   all_goals (simp only [Inst.resultTypes, Option.some.injEq, Option.map_eq_some_iff] at ht <;>
     simp only [evalInst, Frame.getAs, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h)
   all_goals (repeat' split at h)
@@ -353,6 +362,9 @@ theorem evalInst_rename {σ : ValueId → ValueId} {fr fr' : Frame} {mem : Mem} 
     (evalInst fr' mem (mapOperands σ i)).norm = (evalInst fr mem i).norm := by
   cases i
   case float op ty args =>
+    simp only [operands] at hr
+    simp only [evalInst, mapOperands, Res.norm_bind, getMany_rename hr]
+  case vector op ty args imm =>
     simp only [operands] at hr
     simp only [evalInst, mapOperands, Res.norm_bind, getMany_rename hr]
   all_goals simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,

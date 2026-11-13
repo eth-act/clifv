@@ -105,13 +105,24 @@ def isNaNBits (ty : Ty) (n : Nat) : Bool :=
     (let (e, t) := FloatLit.fields ty.width
      n / 2 ^ t % 2 ^ e == 2 ^ e - 1 && n % 2 ^ t != 0)
 
+/-- Two bit patterns of type `ty` agree up to NaN payloads: equal, or both NaN of the float type;
+for a vector with float lanes, lane by lane. -/
+def eqUpToNaN (ty : Ty) (m n : Nat) : Bool :=
+  match ty with
+  | .vec s =>
+    s.isFloatLane && (List.range s.lanes).all fun i =>
+      let lm := m / 2 ^ (i * s.laneBits) % 2 ^ s.laneBits
+      let ln := n / 2 ^ (i * s.laneBits) % 2 ^ s.laneBits
+      lm == ln || (isNaNBits s.laneTy lm && isNaNBits s.laneTy ln)
+  | _ => m == n || (isNaNBits ty m && isNaNBits ty n)
+
 /-- Our returned values and the interpreter's agree up to NaN payloads: pairwise equal, or both
-NaN of the same float type. -/
+NaN of the same float type (lane by lane for float vectors). -/
 def agreeUpToNaN (o : Outcome) (a : OracleActual) : Bool :=
   match o, a with
   | .returned vs _, .returned ws =>
     vs.length == ws.length && (vs.zip ws).all fun (v, (tn, n)) =>
-      oracleTyName v.ty == tn && (v.toNat == n || (isNaNBits v.ty v.toNat && isNaNBits v.ty n))
+      oracleTyName v.ty == tn && (v.toNat == n || eqUpToNaN v.ty v.toNat n)
   | _, _ => false
 
 end ClifFiletest

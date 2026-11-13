@@ -95,6 +95,13 @@ theorem evalInst_types {fr : Frame} {m : Mem} {i : Inst} {vals : List Val} {m' :
     obtain ⟨rfl, -⟩ := h
     have hty := evalFloat_ty hr
     cases op <;> simp_all [floatResTy]
+  case vector op ty args imm =>
+    obtain ⟨vs, -, r, hr, h⟩ := h
+    try simp only [Res.pure_eq_ok, pure, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    rw [VSem.eval_ty hr] at ht
+    simp only [Option.map_some, Option.some.injEq] at ht
+    subst ht; rfl
   all_goals
     simp only [Option.some.injEq] at ht; subst ht
     (repeat' split at h) <;>

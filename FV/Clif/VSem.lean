@@ -89,8 +89,9 @@ def byteAt {w : Nat} (x : BitVec w) (j : Nat) : BitVec 8 := Vec.byte x j
 def ofBytes (s : VShape) (f : Nat → BitVec 8) : Val :=
   ⟨.vec s, Vec.ofLanes 8 f 16⟩
 
-/-- **The semantics of `Inst.vector op ty` on the operand values `vs`** (`none`: `stuck`). -/
-def eval (op : VecOp) (ty : Ty) (vs : List Val) (imm : Nat) : Option Val := do
+/-- The value `Inst.vector op ty` computes from the operand values `vs` (`eval` checks its
+type). -/
+def core (op : VecOp) (ty : Ty) (vs : List Val) (imm : Nat) : Option Val := do
   match op with
   | .vhighBits =>
     let [a] := vs | none
@@ -251,5 +252,26 @@ def eval (op : VecOp) (ty : Ty) (vs : List Val) (imm : Nat) : Option Val := do
     let x ← arg s a
     pure ⟨.vec .f64x2, Vec.ofLanes 64 (fun i => FSem.fpromote (Vec.lane 32 x i)) 2⟩
   | _, _ => none
+
+/-- **The semantics of `Inst.vector op ty` on the operand values `vs`** (`none`: `stuck`): the
+value of `core`, which has the instruction's result type (`VecOp.resultTy`, checked). -/
+def eval (op : VecOp) (ty : Ty) (vs : List Val) (imm : Nat) : Option Val := do
+  let v ← core op ty vs imm
+  if op.resultTy ty == some v.ty then pure v else none
+
+/-- **Typing**: a vector operation's value has its result type. -/
+theorem eval_ty {op : VecOp} {ty : Ty} {vs : List Val} {imm : Nat} {r : Val}
+    (h : eval op ty vs imm = some r) : op.resultTy ty = some r.ty := by
+  unfold eval at h
+  cases hc : core op ty vs imm with
+  | none => simp [hc] at h
+  | some v =>
+    simp only [hc, Option.bind_eq_bind, Option.bind_some] at h
+    split at h
+    · rename_i he
+      simp only [Option.pure_def, Option.some.injEq] at h
+      subst h
+      simpa using he
+    · cases h
 
 end Clif.VSem
