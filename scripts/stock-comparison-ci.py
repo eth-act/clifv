@@ -26,7 +26,9 @@ HARNESS = ["scripts/stock-compiler-compare.py", "scripts/stock-comparison-ci.py"
            "scripts/prejit-export-build.sh", "scripts/patches/prejit-export.patch",
            "tools/prejit-export/Cargo.toml", "tools/prejit-export/Cargo.lock", "tools/prejit-export/src/**/*",
            "FVTest/Backend/StockConfig.lean", "FVTest/Backend/Main.lean",
-           ".github/workflows/stock-compiler-comparison.yml"]
+           ".github/workflows/stock-compiler-comparison.yml",
+           # which build of the Lean executables is measured
+           "scripts/stock-comparison-lean-build.py", ".github/scripts/stock-comparison-lean.sh"]
 LISTED = 200  # gained/lost entries kept in the summary; the counts are always complete
 FILE_STATUSES = {"binary_test", "non_binary_test", "no_lean_target", "stock_parser_warning_skip"}
 FUNCTION_STATUSES = {"identical_code_artifact", "different_code_artifact", "unsupported_configuration",

@@ -21,17 +21,31 @@ jobs:
   measure:
     name: Build and compare
     runs-on: ubuntu-24.04
-    # A main push that changes Lean sources misses the build cache. That cold build
-    # took longer than 30 minutes from 2026-10-18 to 2026-10-31, so no main commit
-    # was measured; the first measurement after it took 28 minutes.
-    timeout-minutes: 60
-    # actions: read finds and downloads the main baseline summary.
+    # This job never builds Lean cold (#1018): it takes the Lake outputs of the four comparison
+    # executables from a Full gate build (.github/workflows/full-gate.yml, artifact `lake-full`)
+    # or from its own earlier runs, and builds only the modules that differ, scheduled within
+    # the runner's memory. Until then a Lean source change meant a plain `lake build` of 841
+    # Lake jobs on this runner (16 GB, no swap): since #955 it lost the runner twice at job
+    # 634-635 and ran into the former 60-minute limit once, so no commit was measured.
+    # The two long steps stop themselves and fail with a message (STOCK_LEAN_LIMIT_S,
+    # STOCK_COMPARE_LIMIT_S); the job limit leaves 90 minutes above their sum for the rest
+    # (downloads, swap, caches, uploads: 10 to 15 minutes). A job that reaches its limit is
+    # cancelled, not failed; "Check lost matches" fails in that case too.
+    timeout-minutes: 300
+    # actions: read finds the Full gate build and the main baseline summary.
     permissions:
       actions: read
       contents: read
     env:
       FV_COMPARE_MEMCAP: '0'
+      FV_COMPARE_PREBUILT: '1'
       CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # Whole import cone from nothing on this runner: 1.75 h by scripts/ci-build-plan.py's
+      # estimate (418 modules, critical path 1.19 h recorded: more runners would not shorten it).
+      STOCK_LEAN_LIMIT_S: '9000'
+      # 3.5 minutes with the Rust builds cached (run 43389851748); the Rust tools build cold
+      # after a change to them.
+      STOCK_COMPARE_LIMIT_S: '3600'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,26 +54,52 @@ jobs:
           # Full history: the baseline is the newest measured main commit that is an
           # ancestor of the tested commit.
           fetch-depth: 0
-      - name: Configure Lean path
-        run: echo "LEAN_BIN_DIR=$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin" >> "$GITHUB_ENV"
-      - name: Cache Lean toolchain
-        id: lean-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.tool_cache }}/lean-4.34.1-linux
-          key: lean-4.34.1-linux-47bf4bbd78f70c2e
-      - name: Install pinned Lean
-        if: steps.lean-cache.outputs.cache-hit != 'true'
-        env:
-          LEAN_ARCHIVE: ${{ runner.temp }}/lean.tar.zst
-          LEAN_TOOL_CACHE: ${{ runner.tool_cache }}
+      - name: Test CI reporting
         run: |
-          curl --fail --location --retry 3 \
-            https://github.com/leanprover/lean4/releases/download/v4.34.1/lean-4.34.1-linux.tar.zst \
-            --output "$LEAN_ARCHIVE"
-          echo "47bf4bbd78f70c2e9670598ab7124d92b6efb7330ff33e5fbb4030f6fd72e4e4  $LEAN_ARCHIVE" | sha256sum --check
-          tar --zstd -xf "$LEAN_ARCHIVE" -C "$LEAN_TOOL_CACHE"
-      - name: Cache compiler builds and Rust downloads
+          python3 -m unittest discover -s scripts -p 'test_stock_comparison_*.py' -v
+          node --test .github/scripts/stock-comparison-comment.test.cjs
+          # The nightly digest shares the comment script's measurement checks.
+          node --test .github/scripts/stock-comparison-nightly.test.cjs
+      # This workflow's own Lake outputs (a `lake cache stage` directory): the four executables
+      # of a tree with the same Lean sources, else the newest earlier ones (Lake's cache is keyed
+      # by each module's inputs, so older outputs are restored only where they still apply).
+      - name: Restore own Lean outputs
+        id: lean-stage
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/lake-stages/own
+          key: stock-lean-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'FV/**/*.lean', 'FVTest/**/*.lean') }}
+          restore-keys: |
+            stock-lean-partial-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'FV/**/*.lean', 'FVTest/**/*.lean') }}-
+            stock-lean-
+      - name: Find a Full gate build
+        id: lean-build
+        if: steps.lean-stage.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/stock-comparison-lean-build.py --head "$CI_HEAD_SHA" --out target/ci-lean-build.json --github-output
+      # Pinned Lean, swap, and both sets of Lake outputs unstaged into the Lake cache.
+      - uses: ./.github/actions/fv-lean
+        with:
+          swap-gb: '24'
+          base-run-id: ${{ steps.lean-build.outputs.run }}
+      - name: Lean executables
+        id: lean
+        run: .github/scripts/stock-comparison-lean.sh target/ci-lean "$RUNNER_TEMP/lake-stages/own"
+      - name: Save own Lean outputs
+        if: steps.lean.outputs.stage == 'full' && steps.lean-stage.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/lake-stages/own
+          key: ${{ steps.lean-stage.outputs.cache-primary-key }}
+      # After a build that failed or ran out of time: the modules that did build, for the re-run.
+      - name: Save partial Lean outputs
+        if: always() && steps.lean.outputs.stage == 'partial'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/lake-stages/own
+          key: stock-lean-partial-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'FV/**/*.lean', 'FVTest/**/*.lean') }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Cache Rust builds and downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -67,21 +107,25 @@ jobs:
             ~/.cargo/git
             rust/target
             tools/prejit-export/target
-            .lake/build
-          key: stock-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'FV/**/*.lean', 'FVTest/**/*.lean', 'rust/**/Cargo.*', 'rust/**/*.rs', 'rust/rust-toolchain.toml', 'tools/prejit-export/**/Cargo.*', 'tools/prejit-export/src/**', 'scripts/patches/prejit-export.patch') }}
-          restore-keys: stock-build-${{ runner.os }}-
-      - name: Test CI reporting
-        run: |
-          python3 -m unittest discover -s scripts -p 'test_stock_comparison_*.py' -v
-          node --test .github/scripts/stock-comparison-comment.test.cjs
-          # The nightly digest shares the comment script's measurement checks.
-          node --test .github/scripts/stock-comparison-nightly.test.cjs
+          key: stock-rust-${{ runner.os }}-${{ hashFiles('rust/**/Cargo.*', 'rust/**/*.rs', 'rust/rust-toolchain.toml', 'tools/prejit-export/**/Cargo.*', 'tools/prejit-export/src/**', 'scripts/patches/prejit-export.patch', 'scripts/prejit-export-build.sh') }}
+          restore-keys: stock-rust-${{ runner.os }}-
       - name: Find main baseline
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/stock-comparison-baseline.py --head "$CI_HEAD_SHA" --out target/ci-baseline.json
-      - name: Build, generate artifacts, and compare
-        run: python3 scripts/stock-comparison-ci.py --out target/ci-comparison --jobs 2 --baseline target/ci-baseline.json
+      - name: Generate artifacts and compare
+        run: |
+          # The measurement's conditions stay as they were: fv-lean's LEAN_NUM_THREADS is for
+          # builds.
+          rc=0
+          env -u LEAN_NUM_THREADS timeout --signal=TERM --kill-after=60 "$STOCK_COMPARE_LIMIT_S" \
+            python3 scripts/stock-comparison-ci.py --out target/ci-comparison --jobs 2 --baseline target/ci-baseline.json || rc=$?
+          if (( rc == 124 || rc == 137 )); then
+            echo "::error title=No stock-comparison result::the measurement did not finish within $(( STOCK_COMPARE_LIMIT_S / 60 )) minutes (Rust builds, validation and comparison; logs in the artifact stock-comparison-artifacts). Re-run this job."
+          elif (( rc )); then
+            echo "::error title=No stock-comparison result::the measurement failed (exit $rc): see this step's log and the artifact stock-comparison-artifacts."
+          fi
+          exit "$rc"
       - name: Write job summary
         run: node .github/scripts/stock-comparison-comment.cjs target/ci-comparison.ci-summary.json >> "$GITHUB_STEP_SUMMARY"
       - name: Upload comment data
@@ -97,7 +141,7 @@ jobs:
         if: always()
         run: |
           files=()
-          for path in target/ci-comparison target/ci-comparison.build-logs target/ci-comparison.ci-summary.json; do
+          for path in target/ci-comparison target/ci-comparison.build-logs target/ci-comparison.ci-summary.json target/ci-lean target/ci-lean-build.json; do
             if [[ -e "$path" ]]; then files+=("$path"); fi
           done
           if (( ${#files[@]} )); then
@@ -116,6 +160,13 @@ jobs:
   ratchet:
     name: Check lost matches
     needs: measure
+    # Always: after a measurement that failed, ran out of time, lost its runner or was cancelled
+    # (by hand, at the job's time limit, or because a newer commit of the pull request replaced
+    # the run), this job fails with "no result". It used to be skipped, and a skipped check reads
+    # as "nothing lost" (#1018). `!cancelled()` would still skip it at the job's time limit and
+    # after a cancellation by hand; a replaced run belongs to an older commit, where a failed
+    # check blocks nothing.
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     # pull-requests: read reads the override label when this job runs.
@@ -131,6 +182,7 @@ jobs:
           persist-credentials: false
       # Every attempt's summary: re-running only this job keeps the measurement's attempt.
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: needs.measure.result == 'success'
         with:
           pattern: stock-comparison-summary-*
           path: report
@@ -138,11 +190,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          MEASURE_RESULT: ${{ needs.measure.result }}
         run: python3 scripts/stock-comparison-ratchet.py report
 
   comment:
     name: Publish PR result
     needs: measure
+    # Only with a measurement: this job is skipped after a failed one (the check that fails is
+    # "Check lost matches").
     # Forks cannot obtain a write token here. The trusted workflow_run publisher
     # handles them after these workflows reach the default branch.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
