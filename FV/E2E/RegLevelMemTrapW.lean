@@ -111,7 +111,7 @@ theorem trap_trapIf_lineW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ UdfLine R.fa R.base (iterN R.step n s) ∧
       ∀ i < n, R.GoodXW (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left

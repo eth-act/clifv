@@ -117,7 +117,7 @@ theorem callee_relW {L : Link} {RA : RL} (hRA : RA.Wf) (hcin : CodeIn L RA) {n :
     show spv (enter FB x) - _ = _; rw [spv_enter]; rfl
   obtain ⟨hB1, hB2⟩ := spB_toNat hRB
   have hsb : (L.act FB (enter FB x) KB RA.FK).fr.size ≤ FB.af.slotBase := by
-    have := (lowerRFunc_ok hRB.alloc).1.2.1
+    have := (hRB.alloc.ok).1.2.1
     exact this ▸ Nat.le_refl _
   have hspx : (spv (L.act FB (enter FB x) KB RA.FK).s0).toNat = (spv x).toNat := by
     show (spv (enter FB x)).toNat = _; rw [spv_enter]

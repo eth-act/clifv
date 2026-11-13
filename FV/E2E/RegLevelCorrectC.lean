@@ -125,7 +125,7 @@ theorem realizes_stepC {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     fun n c'' hm hq' ht h0 => fin1 n c'' hm hq' (fun i hi => (ht i hi).1)
       (by rw [h0]; exact countIn_zero_of fun i hi => (ht i hi).2)
   have nil : ∀ i < 0, R.GoodXN (iterN R.step i s) := fun _ h => absurd h (Nat.not_lt_zero _)
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases h with
   | move =>
     obtain ⟨n, hn, ht⟩ := realizes_moveN hR hq (hns _ _ _ _ _ _ rfl)
@@ -318,7 +318,7 @@ theorem regLevelCorrect_world_atC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep hcheck (locVal R.fr (iterN R.step n0 s))

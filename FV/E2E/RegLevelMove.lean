@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelSim
+import FV.E2E.RegLevelAllocAF
 import FV.Backend.Proof.RegallocMoves
 import FV.E2E.RegLevelPush
 
@@ -283,7 +284,10 @@ theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
 /-- What the pipeline and the ABI entry give an activation. -/
 structure RL.Wf (R : RL) : Prop where
   check : AllocChecked R.vc R.rf
-  alloc : lowerRFunc R.vc R.rf = .ok R.af
+  /-- `lowerRFunc`'s output, or (#1028) that output without its frame for a leaf -/
+  alloc : AllocAF R.vc R.rf R.af
+  /-- the function has a frame (the frameless leaves of #1028 are not covered yet) -/
+  framed : R.af.frame = true
   emit : emitFunc R.fa.k R.af = .ok R.fa
   layout : R.fa.layout = .ok R.fb
   lm : labelOffsets R.fa.lines = .ok R.lm
@@ -316,7 +320,7 @@ theorem RL.Wf.gprobe {R : RL} (hR : R.Wf) : ∀ a, R.G a → probeHit R.af (spv 
 theorem RL.frameOkF {R : RL} (hR : R.Wf) :
     FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB
       (frameF R.fr.intBase R.fr.size R.af R.s0) := by
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
@@ -367,7 +371,7 @@ theorem RL.frameOk {R : RL} (hR : R.Wf) :
 
 /-- The allocator's slots lie inside the dropped frame. -/
 theorem RL.size_le_drop {R : RL} (hR : R.Wf) : R.fr.size ≤ frameDrop R.af := by
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   by_cases h0 : R.fr.total = 0
   · simp only [RL.fr] at h0 hle ⊢; omega
@@ -537,9 +541,9 @@ theorem RL.frame_facts {R : RL} (hR : R.Wf) :
       SavesOk R.af.saves ∧ R.fr.size + R.vc.slotBytes ≤ R.fr.total - clobberBytes R.af.saves ∧
       clobberBytes R.af.saves ≤ R.fr.total ∧ R.fr.total % 16 = 0 ∧
       R.fr.total + 16 ≤ (spv R.s0).toNat ∧ frameDrop R.af = R.fr.total + 16 := by
-  obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
-  have hframe := lowerRFunc_frame hR.alloc
-  obtain ⟨hsh, hsv⟩ := lowerRFunc_saves hR.alloc
+  obtain ⟨⟨hfs, -⟩, -⟩ := hR.alloc.ok
+  have hframe := hR.framed
+  obtain ⟨hsh, hsv⟩ := hR.alloc.saves
   have h1 := compute_saveBase R.vc R.rf
   have hst := hR.stack.frame.1
   rw [hfs] at hst
@@ -570,7 +574,7 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
 /-- The code lies outside the frame's slot area. -/
 theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a) :
     ∀ o, o < R.fr.size → a ≠ R.spB + BitVec.ofNat 64 o := by
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
@@ -792,7 +796,7 @@ theorem qs_term {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {it : RItem} {
   obtain ⟨-, hidx⟩ := segX_mem hp hx
   unfold segTermOk at hok
   rw [hidx] at hok
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
   rw [hsplit] at hcF
   obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF

@@ -162,7 +162,7 @@ theorem regLevel_trapStop_coreT {R : RL} (hR : R.Wf) {ra : BitVec 64}
           i', w1, hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg,
           (xrT_some hraise').1⟩
       · have hcpc := callAt_of_q hR hq2 hvb hi tryCall_hcall regs i' rfl hasg
-        have hcl0 : ti.clobberAll = false := trySite_clobberAll hR.alloc ⟨b, vb, k, hvb, hi⟩
+        have hcl0 : ti.clobberAll = false := trySite_clobberAll hR.alloc.1 ⟨b, vb, k, hvb, hi⟩
         obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
         refine ⟨n0 + n1 + n2, ?_, htrace, by rw [hrun]; exact hst.sp, by rw [hrun]; exact hst.prog⟩
         rw [hrun]
@@ -305,7 +305,7 @@ theorem regLevel_trapStop_worldT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, GotV vcp⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨p, hp, rfl⟩,
     he.abi.program, he.gfree⟩
   have hF : R.F = F := he.hF

@@ -296,7 +296,7 @@ theorem regLevel_trapCall_coreT {R : RL} (hR : R.Wf) {ra : BitVec 64}
           rw [← useVals_of_store hstat hm', hU0]
           exact (hgot _ _ _ _).2 ti hsem
         have hcpc := callAt_of_q hR hq2 hvb hi tryCall_hcall regs i' rfl hasg
-        have hcl0 : ti.clobberAll = false := trySite_clobberAll hR.alloc ⟨b, vb, k, hvb, hi⟩
+        have hcl0 : ti.clobberAll = false := trySite_clobberAll hR.alloc.1 ⟨b, vb, k, hvb, hi⟩
         obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
         refine ⟨n0 + n1 + n2, ?_, htrace⟩
         rw [hrun]
@@ -396,7 +396,7 @@ theorem regLevel_trapCall_valueT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, fun _ => False, fun _ _ => False⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, hok⟩, halloc, hemit, hlayout, hlm,
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
     hent.program, fun _ h => h.elim⟩
   have hF : R.F = frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s :=

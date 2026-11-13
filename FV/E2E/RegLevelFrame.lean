@@ -584,9 +584,9 @@ theorem entry_block {R : RL} (hR : R.Wf) :
   obtain ⟨vb, hvb⟩ : ∃ vb, R.vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
   obtain ⟨items, hit⟩ : ∃ items, R.rf.blocks[0]? = some items :=
     ⟨_, Array.getElem?_eq_getElem (by rw [hc.size]; exact h0)⟩
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨code, hcode, haf⟩ := hbl 0 vb items hvb hit
-  have hframe := lowerRFunc_frame hR.alloc
+  have hframe := hR.framed
   obtain ⟨p, hp, hL, hseg⟩ := emit_seg hR.emit
   obtain ⟨i, sg, o, j, ps1, psm, ps2, hs, ho', hidx, hlab, -, hj, hd1, e1, e2, hpre, hj0⟩ :=
     hseg 0 _ _ haf
@@ -857,7 +857,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
     obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
-    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2 hvb' hi').2.2 _ hv).2
+    have hr := ((ctlCheck_args (hR.alloc.ok).2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
@@ -1176,8 +1176,8 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
       ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
         ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
         regVal (iterN R.step n s) p = x := by
-  have hframe := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hframe := hR.framed
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨-, hfs, hsav, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
@@ -1252,7 +1252,7 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
@@ -1529,7 +1529,7 @@ theorem restore_tail {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {r : Reg}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .move (.save r) dst :: its, m, w⟩)) :
     dst = .reg r ∧ ∃ D, TailOk R b (D ++ [r]) its := by
-  obtain ⟨hsh, -⟩ := lowerRFunc_saves hR.alloc
+  obtain ⟨hsh, -⟩ := hR.alloc.saves
   have hqs : Qs R s b (.move (.save r) dst :: its) m w := by
     rcases Q.cases hq with hqs | ⟨_, _, _, _, _, _, _, e, -⟩
     · exact hqs

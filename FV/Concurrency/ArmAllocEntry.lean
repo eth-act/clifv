@@ -190,7 +190,7 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
     obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
-    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2 hvb' hi').2.2 _ hv).2
+    have hr := ((ctlCheck_args (hR.alloc.ok).2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr

@@ -347,7 +347,7 @@ theorem trap_trapIf_udf {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodX (iterN R.step i s)) ∧
       (∃ j t, R.L[j]? = some (.ins (.udf 0xc11f) t) ∧ Arm.r .PC (iterN R.step n s) = R.pcOf j) ∧
       (iterN R.step n s).program = R.fb.program R.base := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left
@@ -516,8 +516,8 @@ theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) {ra : BitVec 64}
           Arm.r f (E2E.runX R.stepU n R.s0) = Arm.r f w) ∧
         (∀ i < n, P (E2E.runX R.stepU i R.s0)) ∧ 0 < n ∧
         UnwExit R.U R.T R.fa (E2E.runX R.stepU (n - 1) R.s0)) := by
-  have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hf : R.af.frame = true := hR.framed
+  have hck := (hR.alloc.ok).2.2
   have hrf : savedCheckRF R.vc R.rf = true := by
     have h := hsaved
     simp only [savedCheck, Bool.and_eq_true] at h
@@ -1045,7 +1045,7 @@ theorem frameOkU_of {R : RLU} (hR : R.Wf) {rows : List (Nat × Cfi)}
     · simp only [Option.some.injEq] at hd; exact .inl ⟨n, rfl, hd.symm⟩
     · simp only [Option.some.injEq] at hd; exact .inr ⟨r, rfl, hd.symm⟩
   have hsp := h.tsp x d obj t ⟨j, tt, hj, hpc⟩ hdx hr
-  have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
+  have hf : R.af.frame = true := hR.framed
   have hdrop : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hf]
   obtain ⟨-, hrow⟩ := UnwindTables.unwindRows_frame hrows hf
   have hret : lineOffset R.L j + 4 ∈ (scanLines R.fa.lines.toList 0 [] []).2 :=

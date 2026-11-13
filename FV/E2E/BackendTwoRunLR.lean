@@ -155,7 +155,7 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF

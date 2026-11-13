@@ -301,7 +301,7 @@ theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} 
   obtain ⟨-, hidx⟩ := segX_mem hp hx
   unfold segTermOk at hok
   rw [hidx] at hok
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
   rw [hsplit] at hcF
   obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF

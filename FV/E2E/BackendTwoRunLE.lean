@@ -80,7 +80,7 @@ theorem RL.jtByte_codeAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
 /-- **The frame record's saved-LR word is in the lock set.** -/
 theorem RL.lrWord_Zc {R : RL} (hR : R.Wf) (c c' : MConf CV Arm.ArmState) {k : Nat} (hk8 : 8 ≤ k)
     (hk : k < 16) : R.Zc c c' (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
-  have hframe := lowerRFunc_frame hR.alloc
+  have hframe := hR.framed
   have hst0 := hR.stack.frame
   have hd : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
   have hlt := (spv R.s0).isLt
@@ -462,7 +462,7 @@ theorem stEqOutX_prologueZ_entry {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra
   by_cases hl : probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true
   · have htw := flagsOf_twin R.s0 t0
     have hent1 := abiCall_of_flagTwin hent' htw
-    have hbe1 := bodyEntryW_of_flagTwin hbe' htw (lowerRFunc_frame hR.alloc) hl
+    have hbe1 := bodyEntryW_of_flagTwin hbe' htw (hR.framed) hl
     have hag1 : EntryAgree (frameDrop R.af + R.K) R.s0 (flagsOf R.s0 t0) :=
       ⟨fun f hm hpc h30 => (hag.1 f hm hpc h30).trans
           (htw.1 f (fun fl e => by subst e; exact hm)).symm,

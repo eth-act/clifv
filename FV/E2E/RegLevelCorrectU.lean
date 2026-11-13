@@ -190,8 +190,8 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
     (∀ c, VTraps R.vc semU (ρsel m₀) w₀ c →
       ∃ n, TrapAt R.fb R.base c (E2E.runX R.stepU n R.s0)) ∧
     RegLevelUnw semU R.XR R.F R.stepU R.vc ra R.s0 (ρsel m₀) w₀ := by
-  have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hf : R.af.frame = true := hR.framed
+  have hck := (hR.alloc.ok).2.2
   have hrf : savedCheckRF R.vc R.rf = true := by
     have h := hsaved
     simp only [savedCheck, Bool.and_eq_true] at h

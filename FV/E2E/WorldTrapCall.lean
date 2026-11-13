@@ -44,7 +44,7 @@ theorem regLevel_trapCall_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, GotV vcp⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨p, hp, rfl⟩,
     he.abi.program, he.gfree⟩
   have hF : R.F = F := he.hF

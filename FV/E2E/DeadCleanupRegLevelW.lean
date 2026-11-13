@@ -62,9 +62,9 @@ theorem regLevelCorrect_world_atX_valueW {vcp : VCode} {rf : RFunc} {af : AFunc}
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
     ⟨p, hp, rfl⟩, hent.program, hG⟩
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initW hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf R.valueSem ckeep hcheck (locVal R.fr (iterN R.step n0 s))

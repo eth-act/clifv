@@ -41,7 +41,7 @@ theorem _root_.Backend.Proof.RL.retFacts_rets {R : RL} (hR : R.Wf) {ra : BitVec 
   obtain ⟨n3, hn3, -, -, herr, hsp, h29, -, -, hmem, -⟩ :=
     ret_machineNA (Y := fun _ => True) hR hent hqa hvb hi
   subst hn3
-  have hframe := lowerRFunc_frame hR.alloc
+  have hframe := hR.framed
   refine ⟨?_, fun a ha => ?_, herr, hsp, h29⟩
   · rw [show Arm.read_mem_bytes 16 (spv R.s0 - 16#64) (iterN R.step R.retLen u) =
         Arm.read_mem_bytes 16 (spv R.s0 - 16#64) u from

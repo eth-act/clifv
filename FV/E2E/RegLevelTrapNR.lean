@@ -86,7 +86,7 @@ theorem trap_trapIfNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Arm
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       ∀ m, Arm.r .ERR (iterN R.step (n + m + 1) s) ≠ .None := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left
@@ -277,7 +277,7 @@ theorem trap_trapIf_lineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ UdfLine R.fa R.base (iterN R.step n s) ∧
       ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left

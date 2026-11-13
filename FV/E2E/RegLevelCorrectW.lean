@@ -38,7 +38,7 @@ theorem realizes_stepW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Ca
         ∀ i < n, R.GoodXW (iterN R.step i s) :=
     fun n c'' hm hq' ht => ⟨n, c'', hm, ⟨hq', aInv_step hR hq hA hm⟩, ht⟩
   have nil : ∀ i < 0, R.GoodXW (iterN R.step i s) := fun _ h => absurd h (Nat.not_lt_zero _)
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases h with
   | move =>
     obtain ⟨n, hn, ht⟩ := realizes_moveW hR hq (hns _ _ _ _ _ _ rfl)

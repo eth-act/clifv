@@ -231,7 +231,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
     obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
-    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2 hvb' hi').2.2 _ hv).2
+    have hr := ((ctlCheck_args (hR.alloc.ok).2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
@@ -351,8 +351,8 @@ theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
       ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
         ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
         regVal (iterN R.step n s) p = x := by
-  have hframe := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hframe := hR.framed
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨-, hfs, hsav, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
@@ -427,7 +427,7 @@ theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF

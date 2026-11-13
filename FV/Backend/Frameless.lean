@@ -40,12 +40,18 @@ def touchesFrame (m : MInst) : Bool :=
   | .fpuLoad _ _ (.incomingArg _) _ | .fpuStore _ _ (.incomingArg _) _ => true
   | _ => false
 
+/-- The allocated function's part of the decision: no frame size, no slot area, no callee saves,
+and no instruction that touches the frame. Only this part matters for the correctness of a
+frameless function (the end-to-end theorems' premise); the rest of `frameRequired` only makes the
+compiler keep more frames, as stock does. -/
+def leafB (af : AFunc) : Bool :=
+  af.frameSize == 0 && af.slotBase == 0 && af.saves.isEmpty &&
+    af.blocks.all (fun (_, code) => code.all fun | .inst m => !touchesFrame m | _ => true)
+
 /-- **Stock's frame decision** (`abi.rs:1265-1278`, see the module doc) without
 `preserve_frame_pointers`: the function needs a frame. -/
 def frameRequired (vc : VCode) (af : AFunc) : Bool :=
-  af.frameSize != 0 || af.slotBase != 0 || !af.saves.isEmpty ||
-    af.blocks.any (fun (_, code) => code.any fun | .inst m => touchesFrame m | _ => false) ||
-    vc.blocks.any (fun b => b.insts.any touchesFrame)
+  !leafB af || vc.blocks.any (fun b => b.insts.any touchesFrame)
 
 /-- **`preserve_frame_pointers`** (`pfp`): with it, or when the function needs a frame, `af`
 unchanged; otherwise `af` without its frame. -/
@@ -56,12 +62,14 @@ def frameless (pfp : Bool) (vc : VCode) (af : AFunc) : AFunc :=
 @[simp] theorem frameless_true (vc : VCode) (af : AFunc) : frameless true vc af = af := by
   simp [frameless]
 
-/-- A function `frameless` leaves without a frame had one only because the compiler always sets one
-up: the setting is off and the function needs none. -/
-theorem frameless_frame_false {pfp : Bool} {vc : VCode} {af : AFunc} (haf : af.frame = true)
-    (h : (frameless pfp vc af).frame = false) :
-    pfp = false ∧ frameRequired vc af = false := by
-  unfold frameless at h
-  cases pfp <;> cases hr : frameRequired vc af <;> simp_all
+/-- `frameless` gives `af` or `af` without its frame, and only a leaf (`leafB`) loses it. -/
+theorem frameless_cases (pfp : Bool) (vc : VCode) (af : AFunc) :
+    frameless pfp vc af = af ∨ (frameless pfp vc af = { af with frame := false } ∧ leafB af = true) := by
+  unfold frameless
+  by_cases h : (pfp || frameRequired vc af) = true
+  · exact .inl (by simp [h])
+  · refine .inr ⟨by simp [h], ?_⟩
+    simp only [Bool.or_eq_true, not_or, Bool.not_eq_true, frameRequired] at h
+    simpa using h.2.1
 
 end Backend
