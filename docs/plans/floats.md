@@ -998,12 +998,28 @@ the pool follows the body, so `spillSizeOkB` also requires `poolReachB` (bound b
 words or no pool load, `VCode.noPoolB`); `emitFunc_near_of` takes the premise
 `fa.size < 2 ^ 20 ∨ af.NoLit` and `emitFunc_spill_near` the size condition. Subset E gets
 `poolReachB` from the two-way coverage (`spillSizeOkB_of_sizeOkB`, `InScopeIn` totality
-unchanged); the typed scopes check it at run time (`lowerOutTB`, `lowersTB`; `fnScopeInTB3`'s
-conjunct `poolReachInB`, which runs `lowerFunction` only above the `2 ^ 17` input bound;
-`spillSizeOkB_of_sizeOkBT`/`emitConds_lowerT`/`emitCondsB_of_T2` take `poolReachB`). A function
+unchanged). The typed scopes have no pool load either (#1002 part 1): their `f64const`s are
+`Compile.f64PoolFree`, so `constant_f64`'s pool rule is never selected. The typed coverage
+analysis `CovT` does not keep that relation, so this is a separate uniform invariant
+(`Isle.Interp.UModel`) over the generated term set `Pool.poolTab` (`FV/Backend/Proof/IselPool`,
+`IselPoolFree`): a value holds a constant-pool entry (`V.poolIn`) only through
+`emit_u64_le_const`, the literal-pool load is built only from `AMode.Const` data holding one,
+`poolTab` (closed under the rules, without `emit_u64_le_const`) covers every closure-root rule
+of `lower` but `f64const`'s (585) and every rule of `lower_branch`, and rule 585 and
+`constant_f64` are followed by hand on a constant without literal pool (first-match selection:
+`Pool.constant_f64_noPool`, `Pool.f64const_rhs_noPool`). Hence `E2E.noPoolB_lowerTF` /
+`noPoolB_lowerT` and the reach `poolReachB_lowerTF` / `poolReachB_lowerT` (also after the
+cleanup), and two-way coverage `Driver.formsCovered2_completeT` / `formsCovered2_completeTF`
+(`FV/E2E/PoolFreeT.lean`). `spillSizeOkB_of_sizeOkBT`/`emitConds_lowerT`/`emitCondsB_of_T2` and
+their cleanup and float-scope forms have their pre-#565 statements again (no `hpool`), and
+`fnScopeInTB3`/`fnScopeInTB3F` no run-time conjunct (`poolReachInB` is gone). A pooled
+`f64const` stays outside the verified scope (#1002 part 2: `f64const_okT` is stated for
+`F64PoolFreeInst`); when it enters, `poolReachB` becomes a size condition there. A function
 over 1 MiB with a pool load falls back to cg_clif's code, where Cranelift emits a constant
 island (#744). Witnesses `FVTest/E2E/PoolLoadWitness.lean` (`%litpool`: covered, `csem`, the
-literal line and the entry's data words, `near_lit`), `E2E.formsCovered2_complete_witness`.
+literal line and the entry's data words, `near_lit`; outside the typed scopes, `fLit_outside`),
+`E2E.formsCovered2_complete_witness`, `EmitCondsTWitness.fW_poolReach` (a typed function with an
+`f64const`).
 
 ## 4. Known hazards
 

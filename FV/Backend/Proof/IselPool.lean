@@ -74,7 +74,6 @@ theorem amode_const_pool {v : V} {c : Nat} (h : v.amode? = some (.const c)) : v.
   all_goals (repeat' (first | (obtain ⟨_, _, h2⟩ := bind_some_ex h2) | split at h2))
   all_goals first
     | (cases h2; done)
-    | (simp only [pure, Option.some.injEq, reduceCtorEq] at h2; done)
     | simp [V.poolIn, opPool]
 
 /-- **`MInst.ofV`** builds a literal-pool load only from data holding a constant-pool entry. -/
@@ -323,7 +322,7 @@ theorem dataP_of_build {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
   intro i info hi
   rcases sp.insts info (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hi)) with
     rfl | ⟨B, hB, s, hs, rfl⟩
-  · simp [V.poolIn, opPool]
+  · rfl
   · obtain ⟨d, hd⟩ := ((sp.blockC B hB).2 s hs).1
     have hdo : (infoOf f s).data = d := by
       show dataOf f s = d

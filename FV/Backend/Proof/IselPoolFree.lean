@@ -115,9 +115,8 @@ def poolModel (ctx : Ctx) (hd : DataP ctx) : UModel program (sem ctx) where
     subst this
     rw [poolIn_data] at hv
     exact poolInL_eq_false.mp hv
-  ext := fun s _ term _ _ _ _ v fs _ _ _ _ hv h => by
-    rw [CovT.sem_extract] at h
-    exact externExtract_pool hd term v s fs h hv
+  ext := fun s _ term _ _ _ _ v fs _ _ _ _ hv h =>
+    externExtract_pool hd term v s fs (h : externExtract ctx term v s = .ok fs) hv
   ctor := fun s _ term _ _ _ vs v s' hT ht _ _ hvs h => by
     have hvs' : poolInL vs = false := poolInL_eq_false.mpr hvs
     refine ⟨?_, trivial, ctor_noPool ctx hvs' h⟩
@@ -262,7 +261,10 @@ theorem constant_f64_noPool (hd : DataP ctx) (hc : cfg.checkOverlap = false) {i 
     have hT := poolRuleOk_of hok
     obtain ⟨hIs1, r1, he1⟩ := (uSoundAt (poolModel ctx hd) hc m).mrule rl [.int i] s tr env s1 tr1
       hT (fun _ _ => trivial)
-      (fun v hv => by simp only [List.mem_singleton] at hv; subst hv; simp [V.poolIn]) trivial hmatch
+      (fun v hv => by
+        simp only [List.mem_singleton] at hv
+        subst hv
+        exact (poolIn_int : (V.int i).poolIn = false)) trivial hmatch
     obtain ⟨-, r2, hv2⟩ := (uSoundAt (poolModel ctx hd) hc n).expr rl.rhs env s1 tr1 r s' tr2
       (ruleTerms_rhs hT) (ruleTys_rhs (C := fun _ _ => True) (fun _ _ => trivial)) he1 hIs1 hrhs
     exact ⟨noPool_trans r1 r2, hv2⟩
@@ -351,9 +353,10 @@ theorem f64const_rhs_noPool {f : Clif.Function} {ctx : Ctx} {cfg : Config} (hctx
     rw [evalArgs.eq_2] at h7'
     cases pure_ok h7'
     cases pure_ok h8
+    have hT172 : (172 : TermId) ∈ poolTab := by simpa using poolTab_outputReg
     obtain ⟨-, hR2, -⟩ := uSound (poolModel ctx hd) hco _ _ _ _ _ _ _ _ _
-      (by simpa using poolTab_outputReg) trivial
-      (fun v hv => by simp only [List.mem_singleton] at hv; subst hv; exact hv1 w rfl) trivial h2
+      hT172 trivial
+      (fun v hv => by simp only [List.mem_singleton] at hv; subst hv; exact hv1 _ rfl) trivial h2
     exact noPool_trans hR1 hR2
 
 /-! ## The driver's runs -/
@@ -384,7 +387,7 @@ theorem stmt_noPool (hsc : InstScopeTF ctx) (hnm : LowerNoMatch ctx) (hd : DataP
     · exact .inr (.inr (hnm ii info inst hi hc rl hrl hcr {}))
     · exact .inr (.inl ⟨hrl, h585⟩)
     · exact .inl ⟨poolRuleOk_of hok, fun _ _ => trivial⟩
-  have hlen := lower_len
+  have hlen : 1002 + (program.rulesOf 686).length ≤ 999999 := lower_len
   exact (uRoot (poolModel ctx hd) rfl (fun _ _ => True)
     (fun rl => rl ∈ program.rulesOf TId.lower ∧ rl.id = 585) data_program.t686 term_686_kind rfl
     hrules
@@ -394,7 +397,10 @@ theorem stmt_noPool (hsc : InstScopeTF ctx) (hnm : LowerNoMatch ctx) (hd : DataP
       subst hr
       exact ⟨trivial, f64const_rhs_noPool hctx hsc hd rfl hi hc (by omega) (by omega) hm he,
         fun _ _ => trivial⟩)
-    (fun v hv => by simp only [List.mem_singleton] at hv; subst hv; simp [V.poolIn])
+    (fun v hv => by
+      simp only [List.mem_singleton] at hv
+      subst hv
+      exact (rfl : (V.inst ii).poolIn = false))
     trivial happ).2.1
 
 omit hctx in
@@ -414,7 +420,9 @@ theorem branch_noPool {ctx : Ctx} (hd : DataP ctx) {ti : Nat} {targets : List La
     (fun _ _ h => h.elim)
     (fun v hv => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-      rcases hv with rfl | rfl <;> simp [V.poolIn])
+      rcases hv with rfl | rfl
+      · exact (rfl : (V.inst ti).poolIn = false)
+      · exact (rfl : (V.labels targets).poolIn = false))
     trivial happ).2.1
 
 omit hctx in
@@ -449,7 +457,10 @@ theorem termCall_noPool {ctx : Ctx} (hd : DataP ctx) {ti : Nat} (hti : ti < ctx.
             fun _ _ => trivial⟩
     exact (uRoot (poolModel _ hd') rfl (fun _ _ => False) (fun _ => False) data_program.t686
       term_686_kind rfl hrules (fun _ _ h => h.elim)
-      (fun v hv => by simp only [List.mem_singleton] at hv; subst hv; simp [V.poolIn])
+      (fun v hv => by
+        simp only [List.mem_singleton] at hv
+        subst hv
+        exact (rfl : (V.inst ti).poolIn = false))
       trivial happ).2.1
   cases t with
   | ret vs => exact hlower rfl h
