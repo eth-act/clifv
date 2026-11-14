@@ -1164,7 +1164,16 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     instead (input `base-run`, a run id), so the modules that run built are not built again; the
     planner then refuses any difference in a file that modules read without Lake tracing it
     (`--explicit-base`: `FVTest/Isle/oracle/`, `corpus/`, the Wasmtime pin, anything outside the
-    workflow, documents, Rust tools, examples and crate proofs). The plan is
+    workflow, documents, Rust tools, examples and crate proofs). Four `FVTest.Isle` modules check
+    themselves against files they read while they elaborate (`FVTest/Isle/oracle/*`,
+    `corpus/clif/*`, the pinned Wasmtime sources); Lake does not trace those files, so a build with
+    a baseline, like any `lake build` with the shared cache, restores the old result of such a
+    check (#1012). The gate line `scripts/elab-inputs.py check` (CI: in the axiom-audit job; also in
+    `scripts/main-gate.sh`) therefore elaborates each of them from its source on every run
+    (`lake lean`), and the planner plans the readers of a changed input with their importers.
+    `READERS` in that script is the list; `scripts/test_elab_inputs.py` (Quick checks) fails when a
+    module that may read a file while it elaborates has no row (a heuristic over the source text:
+    the weekly from-scratch run stays the check for an input nobody listed). The plan is
     split into up to 3 waves of parallel shards (`.github/workflows/full-gate-shard.yml`,
     `.github/scripts/full-gate-shard.sh`: `lake-serial-build.py --only … --retry-failed`, outputs passed
     on as `lake cache stage` directories, 25–65 MB per shard). Lean's output is not always

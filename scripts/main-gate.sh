@@ -25,7 +25,9 @@
 # other commits does not change the running loop (restart the loop to pick up a new version).
 #
 # The list: lake-serial-build.py FV FVTest Corpus, then `lake build` of every library and
-# executable; crate-proofs `lake build`; scripts/axiom-audit.py (scripts/audit/); lean-e2e-check;
+# executable; crate-proofs `lake build`; scripts/axiom-audit.py (scripts/audit/);
+# scripts/elab-inputs.py check (the modules that read files while they elaborate, elaborated
+# again: Lake and its cache do not see those files, #1012); lean-e2e-check;
 # lean-backend-encode-check.sh; lean-backend-filetests.sh; arm-fault-cosim.sh; clif-filetests.sh against
 # scripts/clif-filetests-baseline.txt and opt-difftest.sh (skipped by `loop` when no CLIF path
 # changed since the last green run that ran them); cargo-fv and the Rust tools; examples/compare.sh
@@ -135,6 +137,8 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   r=$?; echo "crate-proofs rc=$r: $(tail -n 1 "$L/crate.log")"; [ $r = 0 ] || fail=1
   mc 12G python3 scripts/axiom-audit.py --log-dir "$L/audit" > "$L/axiom-audit.log" 2>&1; r=$?
   grep -E '^(ok|FAIL)|axiom audit' "$L/axiom-audit.log"; echo "axiom-audit rc=$r"; [ $r = 0 ] || fail=1
+  mc 6G python3 scripts/elab-inputs.py check --log-dir "$L/elab-inputs" > "$L/elab-inputs.log" 2>&1; r=$?
+  echo "elab-inputs rc=$r: $(tail -n 1 "$L/elab-inputs.log")"; [ $r = 0 ] || fail=1
   mc 12G scripts/float-spec.sh > "$L/float-spec.log" 2>&1; r=$?
   grep -E '^(ok|FAIL)|axiom audit|build failed' "$L/float-spec.log"; echo "float-spec rc=$r"; [ $r = 0 ] || fail=1
   mc "$cap" lake exe lean-e2e-check > "$L/e2e.log" 2>&1; r=$?
