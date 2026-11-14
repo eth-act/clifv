@@ -78,7 +78,7 @@ theorem regLevelCorrect_world_atCSY {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initNR (Y := fun _ => True) hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf (csemVIG R.gv R.F R.ctx XI Ok) ckeep hcheck

@@ -302,9 +302,9 @@ theorem regLevel_trapCall_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, fun _ => False, fun _ _ => False⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, hok⟩, halloc, hemit, hlayout, hlm,
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
-    hent.program, fun _ h => h.elim⟩
+    hent.program, fun _ h => h.elim, noLeaf_of_lowerRFunc halloc⟩
   have hF : R.F = frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s :=
     frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
   have hreal := realizes_value_all hR (by rw [hF]; exact (hC s).g _ s _ _)

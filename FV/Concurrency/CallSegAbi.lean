@@ -32,7 +32,7 @@ theorem hr₀_init {RA : RL} (hR : RA.Wf) {ra : BitVec 64} (hent : AbiCall RA.fb
     (hq : Q RA (iterN RA.step (prologueSteps RA.af.saves RA.af.frameSize RA.af.isCaller) RA.s0)
       (MConf.init RA.rf m₀ w₀)) :
     ∀ r ∈ RA.af.saves, ckeep r (m₀ (.reg r)) = ckeep r (regVal RA.s0 r) := by
-  obtain ⟨-, -, -, hsv, -⟩ := RL.frame_facts hR
+  obtain ⟨-, -, hsv, -⟩ := RL.alloc_facts hR
   intro r hr
   have hcs := hsv.1 r hr
   simp only [MConf.init] at hq

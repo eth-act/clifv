@@ -1007,7 +1007,7 @@ theorem q_call_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   have habB : R.af.blocks[sg.idx]? = some (sg.label, codeB) :=
     emitOrder_get (List.mem_of_getElem? hbB)
   -- block `b`'s code: the code before the call item (`P`), the call, the rest (`c2`)
-  obtain ⟨-, -, -, hblk⟩ := (lowerRFunc_ok hR.alloc).1
+  obtain ⟨-, -, -, hblk⟩ := (hR.alloc.ok).1
   obtain ⟨codeAll, hcodeAll, hab⟩ := hblk b vb items hvb hit
   rw [hsplit] at hcodeAll
   obtain ⟨cpre, crest, -, hcrest, rfl⟩ := itemsCode_append hcodeAll

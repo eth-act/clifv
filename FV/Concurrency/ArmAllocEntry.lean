@@ -42,7 +42,7 @@ world `w₀`). (#581: the former first conjunct, `LinesAt` (a straight-line run 
 lines, `prologueLines`' length steps), became false with Cranelift's stack-probe loop, whose
 `b.gt` jumps back; the run is `ProRun`, its steps `prologueSteps`, both as before without the
 loop.) -/
-theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem q_init_lines {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
     ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0
       (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) ∧
@@ -51,12 +51,13 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
         (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)) w₀) ∧
     AInv R (MConf.init R.rf (locVal R.fr
       (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)) w₀) := by
-  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR hframe
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,
     hdrop, hx, hsc⟩ := entry_block hR
+  rw [RL.proLines, if_pos hframe] at hpl0
   subst hpl0
   obtain ⟨s', hsteps, hsp', hfp', ho', hfl', hm', -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
@@ -182,7 +183,7 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
         have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
         rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; simp only [spv] at *; omega),
           BitVec.toNat_ofNat, hm]
-        have : R.fr.total % 16 = 0 := (RL.frame_facts hR).2.2.2.2.2.2.1
+        have : R.fr.total % 16 = 0 := (RL.alloc_facts hR).2.2.2.2.2.1
         simp only [spv, spOf] at *
         omega
       · simp only [RL.topImg, hsP]
@@ -190,7 +191,7 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
     obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
-    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2 hvb' hi').2.2 _ hv).2
+    have hr := ((ctlCheck_args (hR.alloc.ok).2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
@@ -228,7 +229,7 @@ theorem ProbeF.of_small {R : RL} (h : R.af.frameSize + 16 < 4096) : ProbeF R := 
 instruction line `1 + k` of the prologue, with the program and no error. These are the facts the
 straight-line `LinesAt` gave, which Cranelift's stack-probe loop (its `b.gt` jumps back) does not
 make. -/
-theorem prologue_states {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem prologue_states {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {s' : ArmState} (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
     iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0 = s' ∧
     ∀ i < prologueSteps R.af.saves R.af.frameSize R.af.isCaller, ∃ k x,
@@ -239,6 +240,7 @@ theorem prologue_states {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
       Arm.r .PC (iterN R.step i R.s0) = R.pcOf (1 + k) ∧ Arm.r .ERR (iterN R.step i R.s0) = .None := by
   obtain ⟨vb, items, code, ps1, pl, Xe, psm, ps2, xe, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
     entry_block hR
+  rw [RL.proLines, if_pos hframe] at hpl0
   subst hpl0
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
@@ -278,15 +280,16 @@ bytes in `R.F`, is new: without it the statement is false, as Cranelift's stack 
 into CLIF stack slots, which are not in `R.F`. The prologue's run is `ProRun` and its steps
 `prologueSteps`, not a straight-line run (`LinesAt`) of `prologueLines`' length steps, which
 Cranelift's stack-probe loop does not make.) -/
-theorem prologue_evs {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem prologue_evs {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hpf : ProbeF R) {s' : ArmState}
     (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
     ∀ i < prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
       (∀ e ∈ stepEvs (iterN R.step i R.s0), R.F e.addr ∧ e.k = .plainW) ∧
         NoStx (iterN R.step i R.s0) := by
-  obtain ⟨hframe, -, -, hsv, -, -, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hframe, -, -, hsv, -, -, -, -, -⟩ := RL.frame_facts hR hframe
   obtain ⟨vb, items, code, ps1, pl, Xe, psm, ps2, xe, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
     entry_block hR
+  rw [RL.proLines, if_pos hframe] at hpl0
   subst hpl0
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
@@ -383,14 +386,15 @@ theorem refines_privW {K : Type} {MK : K → AKind → Prop} {Priv : Nat → Pro
 /-- **The prologue's run from the ABI entry** (`q_init_lines` without the body world). (#581:
 the former statement, a straight-line run (`LinesAt`) of `prologueLines`' length steps, became
 false with Cranelift's stack-probe loop; the run is `ProRun`, its steps `prologueSteps`.) -/
-theorem prologue_linesAt {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
+theorem prologue_linesAt {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
     ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0
       (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) := by
-  obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hfs, -, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,
     hdrop, hx, hsc⟩ := entry_block hR
+  rw [RL.proLines, if_pos hframe] at hpl0
   subst hpl0
   obtain ⟨s', hsteps, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned

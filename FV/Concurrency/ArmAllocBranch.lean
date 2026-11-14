@@ -557,7 +557,7 @@ theorem qed_short {R : RL} {s : ArmState} {m : Loc → CV} {w : ArmState} :
 theorem lt_segEnd {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RItem}
     (hvb : R.vc.blocks[t]? = some vb) (hit : R.rf.blocks[t]? = some items) {jl : Nat}
     (hjl : R.L[jl]? = some (.label (.block vb.label))) : jl < segEnd R t := by
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨code, -, haf⟩ := hbl t vb items hvb hit
   obtain ⟨p, hp, hL, hseg⟩ := emit_seg hR.emit
   obtain ⟨i, sg, o, -, -, -, -, hs, ho', hidx, hlab, -⟩ := hseg t _ _ haf
@@ -697,7 +697,7 @@ theorem qs_termX {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {it : RItem} {m :
   obtain ⟨-, hidx⟩ := segX_mem hp hx
   unfold segTermOk at hok
   rw [hidx] at hok
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
   rw [hsplit] at hcF
   obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
@@ -754,7 +754,7 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n, Q R (iterN R.step n s) c' ∧ NoEvSteps R n s ∧
       (n = 0 → ∃ r', r' < r ∧ RkC R s c' r') ∧ ∀ i < n, AtNonRet R (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb

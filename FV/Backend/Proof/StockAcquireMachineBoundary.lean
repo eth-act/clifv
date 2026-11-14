@@ -44,9 +44,9 @@ theorem regLevel_acquire_fault_boundary_world_value {vc : VCode} {rf : RFunc} {a
   obtain ⟨plan,planned,-,sameK⟩ := emitFunc_ok emitted
   subst sameK
   let R : RL := ⟨vc,rf,af,fa,fb,labels,base,initial,X,H,plan.ps,K,G,gv⟩
-  have wellFormed : R.Wf := ⟨⟨cc,ins,a0,checked,entryOk⟩,allocated,emitted,layout,labelOffsets,
+  have wellFormed : R.Wf := ⟨⟨cc,ins,a0,checked,entryOk⟩,AllocAF.of_lowerRFunc allocated,emitted,layout,labelOffsets,
     by show 4*fb.words.size ≤ 2^64; have := called.fits; omega,
-    stack,⟨plan,planned,rfl⟩,called.program,globals⟩
+    stack,⟨plan,planned,rfl⟩,called.program,globals, noLeaf_of_lowerRFunc allocated⟩
   obtain ⟨n0,good0,related0,invariant0,other⟩ := q_init wellFormed called bodyEntry
   let values := locVal R.fr (iterN R.step n0 initial)
   refine ⟨values,?_⟩

@@ -52,7 +52,7 @@ theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
       (∀ r ∈ calleeSaved, ckeep r (regVal (iterN R.step n s) r) = ckeep r (r₀ r)) ∧
       ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) → (vuses ops vs.ρ)[j]? = some x →
         regVal (iterN R.step n s) p = x := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
   obtain ⟨b', k', ρ, w''⟩ := vs
   have hm' := hm

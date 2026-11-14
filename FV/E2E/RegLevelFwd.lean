@@ -193,7 +193,7 @@ theorem RL.label_inj {R : RL} (hR : R.Wf) {b1 b2 : Nat} {vb1 vb2 : VBlock}
     {it1 it2 : Array RItem} (hv1 : R.vc.blocks[b1]? = some vb1) (hi1 : R.rf.blocks[b1]? = some it1)
     (hv2 : R.vc.blocks[b2]? = some vb2) (hi2 : R.rf.blocks[b2]? = some it2)
     (he : vb1.label = vb2.label) : b1 = b2 := by
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨c1, -, ha1⟩ := hbl b1 vb1 it1 hv1 hi1
   obtain ⟨c2, -, ha2⟩ := hbl b2 vb2 it2 hv2 hi2
   rw [he] at ha1
@@ -488,7 +488,7 @@ theorem RL.fwd_block {R : RL} (hR : R.Wf) {s x : Label} (h : R.af.fwd? s = some 
       succOf R.vc b 0 = some bx ∧ R.vc.blocks[bx]? = some vbx ∧ vbx.label = x ∧
       R.rf.blocks[bx]? = some itx ∧ bx ≠ 0 := by
   obtain ⟨b, code, hab, hb0, hcode⟩ := fwd?_spec h
-  obtain ⟨⟨-, -, hsz, hbl⟩, -, hck⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, hsz, hbl⟩, -, hck⟩ := hR.alloc.ok
   obtain ⟨cc, ins, _, hcc, -⟩ := hR.check
   have hlt : b < R.af.blocks.size := (Array.getElem?_eq_some_iff.mp hab).1
   rw [hsz, Array.size_zip, hcc.size, Nat.min_self] at hlt
@@ -519,7 +519,7 @@ theorem RL.fwd_block {R : RL} (hR : R.Wf) {s x : Label} (h : R.af.fwd? s = some 
   rw [hit] at hit'
   cases hit'
   have hns : ∀ it ∈ items.toList, it.noSave = true := by
-    have hsh := (saveShapeOk_block (lowerRFunc_saves hR.alloc).1 hvb hit).2 hb0
+    have hsh := (saveShapeOk_block (hR.alloc.saves).1 hvb hit).2 hb0
     have := saveSegsOk_noSave hsh hc (by simp)
     simpa using this
   obtain ⟨allocs, regs, i, hits, hal, hi, hasg, htg, hsz1⟩ := items_jump hna hns hrun hc

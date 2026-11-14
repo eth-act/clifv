@@ -80,7 +80,7 @@ after `retLen` steps in `RetAgreeX (frameDrop + K) (spv s0)`, with the same prog
 memory outside `Zc d d'`. The epilogue's `sp` adjustment and pops read frame bytes but the
 saved-LR word (`ret_machineNA`'s located reads), outside `Zc`; the frame-record reload reads the
 saved fp word, outside `Zc`. -/
-theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem RL.retLock_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hx30 : R.fa.x30Free R.lm = true) {u u' : Arm.ArmState} {e : MConf CV Arm.ArmState}
     (hqa : QA R u e) (hre : R.RetsAt e) {d d' : MConf CV Arm.ArmState}
     (hl : StEqOutX (R.Zc d d') u' u) :
@@ -93,7 +93,7 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
   obtain ⟨n3, hn3, hgx, -⟩ := ret_machineNA (Y := fun _ => True) hR hent hqa hvb hi
   subst hn3
   obtain ⟨mt, hq⟩ := qa_q hqa
-  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR hframe
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -155,7 +155,7 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF

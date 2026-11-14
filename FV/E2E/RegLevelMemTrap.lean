@@ -427,7 +427,7 @@ theorem trap_trapIf_line {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ UdfLine R.fa R.base (iterN R.step n s) ∧
       ∀ i < n, R.GoodX (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left
@@ -590,7 +590,7 @@ theorem loop_ldaxr {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
       | some c0 =>
       simp only [htc, Option.map_some, Option.some.injEq, Prod.mk.injEq] at hlt
       obtain ⟨rfl, rfl⟩ := hlt
-      have hck := (lowerRFunc_ok hR.alloc).2.2
+      have hck := (hR.alloc.ok).2.2
       have hok := ctlCheck_inst hck hvb hi
       simp only [ctlInstOk, Bool.and_eq_true] at hok
       obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok
@@ -658,7 +658,7 @@ theorem loop_ldaxr {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
       | some c0 =>
       simp only [htc, Option.map_some, Option.some.injEq, Prod.mk.injEq] at hlt
       obtain ⟨rfl, rfl⟩ := hlt
-      have hck := (lowerRFunc_ok hR.alloc).2.2
+      have hck := (hR.alloc.ok).2.2
       have hok := ctlCheck_inst hck hvb hi
       simp only [ctlInstOk, Bool.and_eq_true] at hok
       obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok
@@ -771,8 +771,8 @@ theorem regLevel_memtrap_world_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨p, hp, rfl⟩, hent.program, hG⟩
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+    ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_init hR hent hbe
   have hRz0 := realizes_value_all hR hC hCT hTls hcov
   have hmk : ∀ (n1 n23 : Nat), (∀ i < n1 + n23, R.GoodX (iterN R.step i (iterN R.step n0 s))) →
@@ -786,7 +786,7 @@ theorem regLevel_memtrap_world_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
     intro n1 n2 n3; rw [runX_eq]; simp only [iterN_add]; rfl
   refine ⟨locVal R.fr (iterN R.step n0 s), fun c htr => ?_, fun c A hA hmt => ?_⟩
   · -- an explicit trap
-    have hck := (lowerRFunc_ok hR.alloc).2.2
+    have hck := (hR.alloc.ok).2.2
     obtain ⟨Rl, hSim, hinit, -⟩ :=
       checkedAt_sound R.vc R.rf R.valueSem ckeep hcheck (locVal R.fr (iterN R.step n0 s))
         (ρsel (locVal R.fr (iterN R.step n0 s))) w₀ (hsel _)

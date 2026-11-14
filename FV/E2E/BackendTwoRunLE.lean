@@ -78,9 +78,8 @@ theorem RL.jtByte_codeAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
   exact codeAddr_word hp hw hi
 
 /-- **The frame record's saved-LR word is in the lock set.** -/
-theorem RL.lrWord_Zc {R : RL} (hR : R.Wf) (c c' : MConf CV Arm.ArmState) {k : Nat} (hk8 : 8 ≤ k)
+theorem RL.lrWord_Zc {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) (c c' : MConf CV Arm.ArmState) {k : Nat} (hk8 : 8 ≤ k)
     (hk : k < 16) : R.Zc c c' (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
-  have hframe := lowerRFunc_frame hR.alloc
   have hst0 := hR.stack.frame
   have hd : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
   have hlt := (spv R.s0).isLt
@@ -298,18 +297,19 @@ theorem stpAddr_fr (s : Arm.ArmState) : stpAddr 0x7e s = spv s - 16#64 := by
 
 /-- **The prologue keeps a lock at every step** whose set contains the frame record's saved-LR
 word: it reads nothing and names `x30` only in the record store. -/
-theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hx30 : R.fa.x30Free R.lm = true)
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
     ∀ i ≤ (prologueSteps R.af.saves R.af.frameSize R.af.isCaller),
       StEqOutX Z (iterN R.step i t) (iterN R.step i R.s0) := by
-  obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hfs, -, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
   obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
     entry_block hR
+  rw [RL.proLines, if_pos hframe] at hpl0
   subst hpl0
   obtain ⟨s', hsteps, -, -, -, -, -, -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
@@ -414,16 +414,17 @@ theorem bodyEntryW_of_flagTwin {F : BitVec 64 → Prop} {A : Reg → Prop} {af :
 /-- **The prologue's machine run does not depend on the entry flags in the loop form** (#581):
 two ABI entries that differ at most in their flags are in the same state after the prologue's
 `prologueSteps` instructions (`ProRun.flags_irrel` on the machine, `iterN_proRun`). -/
-theorem iterN_prologue_flagTwin {R : RL} (hR : R.Wf) {ra ra' : BitVec 64} {t t' : Arm.ArmState}
+theorem iterN_prologue_flagTwin {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra ra' : BitVec 64} {t t' : Arm.ArmState}
     (hent : AbiCall R.fb R.base ra t) (hent' : AbiCall R.fb R.base ra' t') (htw : FlagTwin t t')
     (hl : probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true) :
     iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t =
       iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t' := by
-  obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hfs, -, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
   obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
     entry_block hR
+  rw [RL.proLines, if_pos hframe] at hpl0
   subst hpl0
   have hpc1 : ∀ {ra : BitVec 64} {u : Arm.ArmState}, AbiCall R.fb R.base ra u →
       Arm.r .PC u = R.pcOf 1 := by
@@ -445,7 +446,7 @@ theorem iterN_prologue_flagTwin {R : RL} (hR : R.Wf) {ra ra' : BitVec 64} {t t' 
 locked and the prologue keeps the lock. With the loop the entries' flags may differ, but the
 second run's state after the prologue is that of its entry with the first entry's flags
 (`iterN_prologue_flagTwin`), which is locked with the first entry. -/
-theorem stEqOutX_prologueZ_entry {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVec 64}
+theorem stEqOutX_prologueZ_entry {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {t0 : Arm.ArmState} {ra ra' : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hent' : AbiCall R.fb R.base ra' t0)
     {A A' : Reg → Prop} {F' D : BitVec 64 → Prop} {w₀ w₀' : Arm.ArmState}
     (hbe : BodyEntryW R.F A R.af R.s0 w₀) (hbe' : BodyEntryW F' A' R.af t0 w₀')
@@ -462,7 +463,7 @@ theorem stEqOutX_prologueZ_entry {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra
   by_cases hl : probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true
   · have htw := flagsOf_twin R.s0 t0
     have hent1 := abiCall_of_flagTwin hent' htw
-    have hbe1 := bodyEntryW_of_flagTwin hbe' htw (lowerRFunc_frame hR.alloc) hl
+    have hbe1 := bodyEntryW_of_flagTwin hbe' htw hframe hl
     have hag1 : EntryAgree (frameDrop R.af + R.K) R.s0 (flagsOf R.s0 t0) :=
       ⟨fun f hm hpc h30 => (hag.1 f hm hpc h30).trans
           (htw.1 f (fun fl e => by subst e; exact hm)).symm,
