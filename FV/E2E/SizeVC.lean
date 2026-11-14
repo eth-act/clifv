@@ -781,7 +781,7 @@ theorem sum_range_getElem! (A : Array VBlock) (f : VBlock → Nat) :
 one retargeted (same `regCount`), or an edge block's `jump`. -/
 theorem maxRC_prepare {vc vcp : VCode} (hp : prepare vc = .ok vcp) : maxRC vcp ≤ maxRC vc := by
   obtain ⟨ss2, ps2, B, E, hc2, rfl, -, hRC⟩ := prepare_w hp
-  obtain ⟨hR, -⟩ := prepOrder_facts _ hc2
+  obtain ⟨hR, -⟩ := prepOrder_facts (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) hc2
   rw [maxRC_le_iff]
   refine ⟨five_le_maxRC vc, fun vb hvb i hi => ?_⟩
   have hvb' : vb ∈ ((prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) ss2).map fun i => (B ++ E)[i]!).toList := hvb
@@ -796,7 +796,7 @@ target of the input. -/
 theorem vcW_prepare {vc vcp : VCode} (hp : prepare vc = .ok vcp) (M : Nat) :
     vcW M vcp ≤ vcW M vc + jumpBW M * vcTg vc := by
   obtain ⟨ss2, ps2, B, E, hc2, rfl, hW, -⟩ := prepare_w hp
-  obtain ⟨hR, hN⟩ := prepOrder_facts _ hc2
+  obtain ⟨hR, hN⟩ := prepOrder_facts (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) hc2
   have e1 : vcW M { vc with blocks := (prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) ss2).map fun i => (B ++ E)[i]! } =
       ((prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) ss2).toList.map fun i => vbW M (B ++ E)[i]!).sum := by
     simp only [vcW, Array.toList_map, List.map_map, Function.comp_def]

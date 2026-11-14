@@ -408,7 +408,8 @@ theorem cls3 {q : Nat} {vb : VBlock} (hq : ((prepOrder (edgeBlock vc.edgeFrom B.
     refine ⟨(prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) ss2)[q] - (V1).size, by rw [hRq]; congr 1; omega, ?_, ?_⟩
     · rw [← Prep.v2_E hS, show (V1).size + ((prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) ss2)[q] - (V1).size) = (prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) ss2)[q] by omega,
         Array.getElem?_eq_getElem hi, hvb]
-    · exact good hv cs0 cs1 cs2 hS (Prep.prepOrder_reach (fun _ h => rpo_reach h)
+    · exact good hv cs0 cs1 cs2 hS (Prep.prepOrder_reach (edge := edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2)
+          (fun _ h => rpo_reach h)
           (by simp))
         (by omega)
 
