@@ -114,9 +114,9 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
 
-  | memorySinkExtend {kind : Stock.Memory.ExtendedRoots.Kind} {ty : Clif.Ty}
+  | memorySinkExtend {src : Stock.Memory.SinkExtend.Source} {kind : Stock.Memory.ExtendedRoots.Kind} {ty : Clif.Ty}
       {cleanup : Bool} {result : Stock.Result} :
-      Stock.Memory.SinkExtend.SinkExtClass kind ty f → result.code = vc → Stock.Memory.effectsOnly vc = true →
+      Stock.Memory.SinkExtend.SourceExtClass src kind ty f → result.code = vc → Stock.Memory.sinkEffectsOnly vc = true →
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
 
@@ -256,8 +256,8 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
     exact .memoryCapturedCopy family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
-  · obtain ⟨kind,ty,result,family,run,equal,effects⟩ := Stock.MemorySinkExt.check_sound memorySinkExtend
-    exact .memorySinkExtend (kind := kind) (ty := ty) family equal effects
+  · obtain ⟨src,kind,ty,result,family,run,equal,effects⟩ := Stock.MemorySinkExt.check_sound memorySinkExtend
+    exact .memorySinkExtend (src := src) (kind := kind) (ty := ty) family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 end CompiledSemanticNI
@@ -464,13 +464,13 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
         (backend_correct_worldX_stock_memory family.domain h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
       exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
 
-  | @memorySinkExtend kind ty cleanup result family equal effects h =>
+  | @memorySinkExtend src kind ty cleanup result family equal effects h =>
     subst vc
     classical
     by_cases tls : XTls F X
     · intro vals cm returned
       obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
-        backend_correct_world_niX_stock_sink_extend family effects h hcov hsym hslot tls hcs hrel hargs
+        backend_correct_world_niX_stock_source_extend family effects h hcov hsym hslot tls hcs hrel hargs
           fuel vals cm returned
       exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
     · intro vals cm returned

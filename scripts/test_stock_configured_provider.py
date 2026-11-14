@@ -250,6 +250,18 @@ class StockConfiguredProviderTests(unittest.TestCase):
                         with self.subTest(op=op, load_ty=load_ty, out=out, cleanup=cleanup):
                             self.check_provider(source, cleanup, stock_selected=True)
 
+    def test_configured_atomic_sink_extend_provider_keeps_original_inputs(self):
+        # rule 810: an atomic load under a zero extension (atomic_load.clif)
+        widths = {"i8": ("i32", "i64"), "i16": ("i32", "i64"), "i32": ("i64",)}
+        for load_ty, outs in widths.items():
+            for out in outs:
+                source = (f"function %atomic_load_{load_ty}_{out}(i64) -> {out} {{\n"
+                          f"block0(v0: i64):\n    v1 = atomic_load.{load_ty} v0\n"
+                          f"    v2 = uextend.{out} v1\n    return v2\n}}\n")
+                for cleanup in (False, True):
+                    with self.subTest(load_ty=load_ty, out=out, cleanup=cleanup):
+                        self.check_provider(source, cleanup, stock_selected=True)
+
     def test_configured_compiler_drops_unused_notrap_loads(self):
         # #970: only the stock-configured driver drops them (`StockConfig.dropDeadNotrapLoads`,
         # unproved); the default mode, like cg_clif 0.136.1 (`cargo fv`), keeps them.

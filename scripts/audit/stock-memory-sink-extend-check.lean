@@ -33,14 +33,10 @@ import FV.Backend.Proof.StockMemorySinkExtCompatibility
 
 #print axioms Backend.Stock.MemorySinkExt.sourcePointer_sound
 
-#print axioms Backend.Stock.MemorySinkExt.sourceOkAny_sound
-
-#print axioms Backend.Stock.MemorySinkExt.checkAny_sound
-
 #print axioms Backend.Stock.MemorySinkExt.Fixture.atomicDominated
 
 #print axioms Backend.Stock.MemorySinkExt.Fixture.checked_atomic_extend_witness
 
-#print axioms Backend.Stock.MemorySinkExt.Fixture.checked_plain_any_witness
+#print axioms Backend.Stock.MemorySinkExt.Fixture.near_misses_atomic
 
-#print axioms Backend.Stock.MemorySinkExt.Fixture.near_misses_any
+#print axioms Backend.Stock.MemorySinkExt.Fixture.atomic_activation_witness
