@@ -132,6 +132,8 @@ import FV.E2E.WorldUnwind
 #print axioms Backend.Proof.Driver.DropSublist.prefix
 #print axioms Backend.Proof.Driver.entry_step2Z
 #print axioms Backend.Proof.Driver.entry_step2
+#print axioms Backend.Proof.Driver.entryLoadsK_true
+#print axioms Backend.Proof.Driver.entry_step2ZK
 #print axioms Backend.Proof.Driver.stmt_memtrap0
 #print axioms Backend.Proof.Driver.stmt_memtrap
 #print axioms Backend.Proof.Driver.skipDel_of_check
@@ -139,6 +141,10 @@ import FV.E2E.WorldUnwind
 #print axioms Backend.Proof.Driver.Deletes.exact
 #print axioms Backend.Proof.Driver.entry_runK
 #print axioms Backend.Proof.Driver.entry_matchK
+#print axioms Backend.Proof.Driver.length_filterMap_map
+#print axioms Backend.Proof.Driver.maskKeep_append
+#print axioms Backend.Proof.Driver.maskKeep_filterMap_map
+#print axioms Backend.Proof.Driver.filterMap_map_getElem?
 #print axioms Backend.Proof.Driver.skippable_of_memTrapInst
 #print axioms Backend.Proof.Driver.stmt_memtrapK
 #print axioms Backend.Proof.Driver.matchT_stepK
@@ -239,6 +245,7 @@ import FV.E2E.WorldUnwind
 #print axioms E2E.vcode_niU_value
 #print axioms E2E.vcode_niU_value_stage
 #print axioms Backend.Proof.Driver.entry_step2PDGZ
+#print axioms Backend.Proof.Driver.entry_step2PDGZK
 #print axioms Backend.Proof.Driver.entry_step2PDG
 #print axioms E2E.LinkCheck.preparedResults_sound
 #print axioms E2E.LinkCheck.semanticPreparedResults_sound

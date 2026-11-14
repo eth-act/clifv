@@ -6,6 +6,7 @@ import FV.Backend.Proof.IselSzTDriver
 import FV.Backend.Proof.LowerLoopT
 import FV.Backend.Proof.LowerShapeOkT
 import FV.Backend.Proof.LowerCompleteT
+import FV.E2E.PoolFreeT
 
 /-!
 # The size of `lowerFunction`'s output from the ISLE runs, on every input (typed V6c)
@@ -15,7 +16,9 @@ import FV.Backend.Proof.LowerCompleteT
 ones): `size_lowerT` gives `size_lower`'s three bounds from `IselSzT f` (the ISLE runs of the
 driver for `f`'s own terminators) on every input, and `spillSizeOkB_of_sizeOkBT` /
 `spillSizeOkB_cleanup_of_sizeOkBT` the size bound `spillSizeOkB` of the prepared VCode (without
-and with the dead-code cleanup `prune`) on the typed scope with `sizeOkB f` (`iselSzT`).
+and with the dead-code cleanup `prune`) on the typed scope with `sizeOkB f` (`iselSzT`; its
+literal loads' reach `poolReachB` holds there since the scope has no literal-pool load,
+`poolReachB_lowerT`, #1002).
 -/
 
 namespace E2E
@@ -370,27 +373,24 @@ theorem spillWordBound_cleanup_le_sizeBoundInT {f : Clif.Function} {vc vcp : VCo
 
 /-- **The size bound from the input on the typed scope**: for `f` in `Dominated` and
 `LowerScopeT` with class-checked float `store`s and `select`s and `sizeOkB f`, the prepared VCode
-meets `spillSizeOkB` when its literal loads reach the pool (`hpool`: new with the literal pool,
-#565; the typed lowering may load an `f64` constant from the pool, and a function over 1 MiB with
-such a load is outside `spillSizeOkB`). -/
+meets `spillSizeOkB`. -/
 theorem spillSizeOkB_of_sizeOkBT {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
-    (hpool : poolReachB vcp = true) : spillSizeOkB vcp = true := by
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : spillSizeOkB vcp = true := by
   have h := spillWordBound_le_sizeBoundInT (iselSzT hdom hs hst hsel) hs.externsE hl hp
-  have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
-  exact spillSizeOkB_of (by omega) hpool
+  have hb : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
+  exact spillSizeOkB_of (by omega) (poolReachB_lowerT hs hl hp)
 
 /-- `spillSizeOkB_of_sizeOkBT` through the dead-code cleanup (`prepare (prune vc)`). -/
 theorem spillSizeOkB_cleanup_of_sizeOkBT {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
-    (hpool : poolReachB vcp = true) : spillSizeOkB vcp = true := by
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
+    spillSizeOkB vcp = true := by
   have h := spillWordBound_cleanup_le_sizeBoundInT (iselSzT hdom hs hst hsel) hs.externsE hl hp
-  have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
-  exact spillSizeOkB_of (by omega) hpool
+  have hb : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
+  exact spillSizeOkB_of (by omega) (poolReachB_cleanup_lowerT hs hl hp)
 
 /-- `poolReachB` from the input bound below `2 ^ 17` words (1 MiB) on the typed scope. -/
 theorem poolReachB_of_sizeT {f : Clif.Function} {vc vcp : VCode}

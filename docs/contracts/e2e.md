@@ -4079,7 +4079,8 @@ VCode and counted by `lean-e2e-check` (1149 of 1149 pass each): `spillSizeOkB` (
 condition, genuinely needed: a big enough function exceeds `b`'s 128 MiB; word bound < 2^24,
 largest corpus bound 279479; since #565 also `poolReachB`: below 2^17 words when the VCode has
 a literal-pool load, whose `ldr (literal)` reaches 1 MiB; subset E never has one,
-`noPoolB_of_formsCovered2`; Cranelift emits a constant island instead, #744), and three facts
+`noPoolB_of_formsCovered2`, nor do the typed scopes, `noPoolB_lowerTF`, #1002; Cranelift emits
+a constant island instead, #744), and three facts
 about instruction selection's output that are not
 yet proven from the ISLE rule data: `immsOkB` (immediates in the encoder's ranges; an indirect
 call target is an int vreg), `noAlwaysB` (no `condBr`/`trapIf` on `al`/`nv`, which relaxation
@@ -4983,6 +4984,48 @@ Statement changes, each because the old statement became false with the loop (na
   `EntryFlags` (`BackendTwoRun{NI,NIU,NIUP,EitherK,V}Witness`) carry it as a hypothesis in the
   same place, and the closed ones (`BackendTwoRunLWWitness`, `…LWLslWitness`: both runs from
   one entry) discharge it with `EntryFlags.refl`.
+
+## Stack probes and Cranelift's settings (#1013)
+
+Cranelift's `gen_prologue` (`machinst/abi.rs:2326-2341`, wasmtime v49.0.1) probes the stack only
+when `enable_probestack` is set (default false; cg_clif sets it with
+`probestack_strategy=inline` and `probestack_size_log2=12`). No other setting takes part: the
+split between the unrolled form and `StackProbeLoop` depends on `total_stacksize / guard` alone
+(`PROBE_MAX_UNROLL = 3` is a constant), and aarch64 has no outline probe (`gen_probestack` is
+`unimplemented!`, reached when `total_stacksize ≥ guard`).
+
+* The third argument of `prologueLines`, `prologueSteps` and `ProRun` is now
+  `Backend.StackProbe` (`off` | `leaf` | `caller`; it was a `Bool`, "the function calls"), and
+  `probeTotal size .off = 0`, so `StackProbe.off` has no probe (`probeLines_zero`).
+  `AFunc.probes : Bool := true` is the setting of one function; `AFunc.isCaller` is `.off`
+  without it (`AFunc.isCaller_of_not_probes`) and otherwise what it was (`.caller` for a function
+  that calls, `AFunc.callsOut`, else `.leaf`: `AFunc.isCaller_of_probes`).
+* The compiler (`lowerRFunc`, `allocate`) builds every function with `probes := true`, so
+  `Compiled`, `backend_correct*` and every theorem above them state what they stated: they are
+  about cg_clif's configuration, and their generated code is unchanged. Only the
+  stock-configured driver (`lean-backend --stock-config`, `StockConfig.probeSetting`; outside
+  `backend_correct`, as before) sets `probes := false`, for `enable_probestack=false` and for a
+  function below the guard size of a setting Lean does not implement.
+* Statements that changed (names kept; the old statement no longer type-checks because the
+  argument's type changed, and the new one says the same for `.leaf`/`.caller` and adds `.off`):
+  every theorem with a `calls` binder (`prologueLines_*`, `prologue_ok`, `prologue_writes`,
+  `prologue_evsIn`, `prologue_exempt`, `prologue_nearOkB`, `noRet_prologue`,
+  `kinds_prologueLines`, `iterN_proRun{,N,NR,W,WP}`, `ProRun.{err,det,stepsOk,flags_irrel}`,
+  `prologueSteps_of_not`, `prologue0`), and the witness `proRun_flags_irrel_witness` (`.leaf`
+  where it had `false`). No proof needed more than the binder's type.
+* Without probes the facts of before the probes hold (new):
+  `prologueLines_off` (the frame setup, the pushes, the `sp` adjustment), `prologueSteps_off`,
+  `Backend.Proof.prologue_ok_off` (a straight-line `StepsOk` run, the flags kept, memory changed
+  only in `[sp - 16 - clobberBytes, sp)`), and for an `AFunc` with `probes = false`:
+  `probeCount_of_not_probes`, `probeBelow_of_not_probes` (`StackAvail` is the former
+  `StackRoom (frameSize + 16 + K)`), `probeMem_of_not_probes` (`BodyEntry.mem` is `s.mem`),
+  `probeFlag_of_not_probes`, `prologueSteps_of_not_probes`. Witness:
+  `Backend.Proof.prologue_ok_off_witness` (the 16 KiB frame of `proRun_flags_irrel_witness`
+  both ways: the probe loop with `.leaf`, a straight-line run keeping the flags with `.off`);
+  bytes against stock for both settings: `FVTest/Backend/ProbeLoopTest.lean`.
+* Not proven: an end-to-end theorem for a function compiled with `probes := false`. It needs
+  the setting as a parameter of `lowerRFunc`/`Compiled` (the prologue lemmas above already cover
+  it).
 
 ## Remaining (precise)
 

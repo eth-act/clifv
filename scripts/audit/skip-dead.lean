@@ -15,3 +15,9 @@ import FV.Backend.Proof.LowerSimSkip
 #print axioms Backend.Proof.Driver.term_step_tryP
 #print axioms Backend.Proof.Driver.entry_stepP
 #print axioms Backend.Proof.Driver.skipDead_eq_impl
+#print axioms Backend.Proof.Driver.preMask_length
+#print axioms Backend.Proof.Driver.skipMask_pre
+#print axioms Backend.Proof.Driver.entry_shapeK
+#print axioms Backend.Proof.Driver.entry_matchK2
+#print axioms Backend.Proof.Driver.entry_matchK
+#print axioms Backend.Proof.Driver.skipHyp_arg_witness -- witness: native_decide

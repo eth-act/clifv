@@ -219,7 +219,8 @@ theorem ProbeF.of_count {R : RL} (h : probeCount (probeTotal R.af.frameSize R.af
 
 /-- A frame below 4 KiB (with its callees' 16-byte setup area) gets no probes: `ProbeF` holds. -/
 theorem ProbeF.of_small {R : RL} (h : R.af.frameSize + 16 < 4096) : ProbeF R := by
-  have ht : probeTotal R.af.frameSize R.af.isCaller < 4096 := by unfold probeTotal; split <;> omega
+  have ht : probeTotal R.af.frameSize R.af.isCaller < 4096 :=
+    Nat.lt_of_le_of_lt (probeTotal_le _ _) h
   exact ProbeF.of_count (by simp [probeCount, Nat.div_eq_of_lt ht])
 
 /-- **The prologue's states** (#581): the prologue's run from the ABI entry (`ProRun`) is its

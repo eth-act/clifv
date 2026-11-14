@@ -612,7 +612,7 @@ theorem probeLines_evs (env : Env) (total : Nat) (s : ArmState) (hal : (spOf s).
 (#581: the former statement, every event in `[sp₀ - 16 - clobberBytes, sp₀)` (`EvsIn`), became
 false with Cranelift's inline stack probes: for a frame of at least 4 KiB their `stur wzr` writes
 4096 bytes and more below fp/lr; `calls` is the new argument of `prologueLines`.) -/
-theorem prologue_evsIn (env : Env) {saves : List Reg} {size : Nat} {calls : Bool}
+theorem prologue_evsIn (env : Env) {saves : List Reg} {size : Nat} {calls : StackProbe}
     (hs : size < 2 ^ 64) (hsv : SavesOk saves) (hcb : clobberBytes saves ≤ size) (s : Arm.ArmState)
     (hal : (spOf s).toNat % 16 = 0) :
     ∀ e ∈ linesEvs env (prologueLines saves size calls) s,

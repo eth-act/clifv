@@ -68,6 +68,12 @@ structure AFunc where
   /-- Per block (as `blocks`): Cranelift's effective coldness (`is_effectively_cold`,
   `VCode.coldOf`); the emitter places the cold blocks after all others (`emitOrder`). -/
   cold : Array Bool := #[]
+  /-- Cranelift's `enable_probestack` setting as its `gen_prologue` reads it for this function
+  (`machinst/abi.rs`): `true`, the inline stack probes of a 4 KiB guard
+  (`probestack_strategy=inline`, `probestack_size_log2=12`: cg_clif's settings, the configuration of
+  the compiler and its theorems); `false`, no probes (Cranelift's default: only the
+  stock-configured driver sets it, `StockConfig.configure`). See `AFunc.isCaller`. -/
+  probes : Bool := true
   deriving Inhabited
 
 /-- An instruction Cranelift counts as a call (aarch64 `Inst::call_type`: `Call`, `CallInd` and
@@ -76,10 +82,43 @@ def MInst.callsOut : MInst → Bool
   | .call _ | .tryCall _ _ | .elfTlsGetAddr .. => true
   | _ => false
 
-/-- The function calls (Cranelift's `FunctionCalls` of its VCode is not `None`): the stack
-probes of its prologue cover its callees' fp/lr area too (`prologueLines`). -/
-def AFunc.isCaller (af : AFunc) : Bool :=
+/-- The function calls (Cranelift's `FunctionCalls` of its VCode is not `None`). -/
+def AFunc.callsOut (af : AFunc) : Bool :=
   af.blocks.any fun (_, code) => code.any fun | .inst m => m.callsOut | _ => false
+
+/-- What Cranelift's `gen_prologue` (`machinst/abi.rs`) does about stack probes for one function,
+the third argument of `prologueLines`:
+* `off`: no probes (`enable_probestack` is false, Cranelift's default);
+* `leaf`: the inline probes of a 4 KiB guard (`probestack_strategy=inline`,
+  `probestack_size_log2=12`) for a function that does not call: its probed stack is its frame;
+* `caller`: the same for a function that calls (`FunctionCalls` is not `None`): the probed stack
+  also covers its callees' 16-byte fp/lr area (`probeTotal`).
+
+Cranelift's other settings are not modelled: a guard of another size, and the outline strategy,
+which aarch64 does not implement (`gen_probestack` is `unimplemented!`; `gen_prologue` reaches it
+when the probed stack is at least the guard size). -/
+inductive StackProbe where
+  | off
+  | leaf
+  | caller
+  deriving DecidableEq, Repr, Inhabited
+
+/-- The stack probes of the function's prologue (`prologueLines`): none without
+`AFunc.probes`; else those of a function that calls (`callsOut`: the probes cover its callees'
+fp/lr area too) or does not. (The name predates the `probes` setting, #1013: before it this was
+`callsOut`.) -/
+def AFunc.isCaller (af : AFunc) : StackProbe :=
+  if af.probes then (if af.callsOut then .caller else .leaf) else .off
+
+/-- A function compiled without stack probes (`enable_probestack=false`) has none. -/
+theorem AFunc.isCaller_of_not_probes {af : AFunc} (h : af.probes = false) : af.isCaller = .off := by
+  simp [AFunc.isCaller, h]
+
+/-- With stack probes (the default: cg_clif's settings) the probes are those of a function that
+calls or of one that does not, as before the `probes` setting (#1013). -/
+theorem AFunc.isCaller_of_probes {af : AFunc} (h : af.probes = true) :
+    af.isCaller = if af.callsOut then .caller else .leaf := by
+  simp [AFunc.isCaller, h]
 
 /-- The int registers of a save list (x19–x28). -/
 def savesInt (saves : List Reg) : List Reg := saves.filter fun | .x _ => true | _ => false

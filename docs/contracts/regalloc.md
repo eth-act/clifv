@@ -263,7 +263,11 @@ hands to regalloc2 (`CraneliftInput.shape`):
   (`ValueUseState::Unused`, `machinst/lower.rs:527`) and `take_args` emits no `args` when none
   is left (`machinst/abi.rs:2186`); `lowerFunction` lists every register-passed parameter and
   emits `args []`. The pairs of parameters without CLIF use (and without use in the VCode) and an
-  empty `args` are left out;
+  empty `args` are left out. The load `lowerFunction` emits for a stack-passed parameter without
+  CLIF use is not handled here: the verified skip stage deletes it before allocation
+  (`skipDead`'s `preMask`, `docs/contracts/dead-cleanup.md`), so regalloc2 sees neither the
+  instruction nor a def of its vreg, as in Cranelift. Where that stage does not run, the load
+  and its effect on the allocation stay (#586);
 * **calls to an `sret` callee** (#587): `gen_call_output` allocates vregs for the CLIF returns
   only and `gen_call_rets` skips the `StructReturn` return (`machinst/abi.rs:1991`), so the
   call has no def and clobbers x0; `lowerFunction`'s x0 def of a fresh, unused vreg is left out;

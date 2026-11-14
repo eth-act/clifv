@@ -168,7 +168,7 @@ theorem ProbeRun.flags_irrel {env : Env} {total : Nat} (hl : probeLoop total = t
 /-- **The prologue's result does not depend on the entry flags in the loop form** (module doc):
 the prologue runs (`ProRun`) of two entries with an aligned `sp` that differ at most in their
 flags end in the same state, when the stack probes are Cranelift's loop. -/
-theorem ProRun.flags_irrel {env : Env} {saves : List Reg} {size : Nat} {calls : Bool}
+theorem ProRun.flags_irrel {env : Env} {saves : List Reg} {size : Nat} {calls : StackProbe}
     (hl : probeLoop (probeTotal size calls) = true) {s t s' t' : Arm.ArmState}
     (hal : (spOf s).toNat % 16 = 0) (htw : FlagTwin s t)
     (h1 : ProRun env saves size calls s s') (h2 : ProRun env saves size calls t t') : s' = t' := by
@@ -217,8 +217,8 @@ def flagWitT : Arm.ArmState := Arm.w (.FLAG .N) 1#1 flagWitS
 `flagWitS` and `flagWitT` are different twins, both prologue runs exist (`prologue_ok`), and they
 end in the same state. -/
 theorem proRun_flags_irrel_witness (env : Env) :
-    probeLoop (probeTotal 16384 false) = true ∧ FlagTwin flagWitS flagWitT ∧ flagWitS ≠ flagWitT ∧
-      ∃ s' t', ProRun env [] 16384 false flagWitS s' ∧ ProRun env [] 16384 false flagWitT t' ∧
+    probeLoop (probeTotal 16384 .leaf) = true ∧ FlagTwin flagWitS flagWitT ∧ flagWitS ≠ flagWitT ∧
+      ∃ s' t', ProRun env [] 16384 .leaf flagWitS s' ∧ ProRun env [] 16384 .leaf flagWitT t' ∧
         s' = t' := by
   have hal : (spOf flagWitS).toNat % 16 = 0 := by
     simp [spOf, flagWitS, Arm.r_of_w_same, Arm.r_of_w_different]
@@ -227,14 +227,32 @@ theorem proRun_flags_irrel_witness (env : Env) :
       by rw [flagWitT, Arm.w_program], by rw [flagWitT, Arm.ArmState.mem_w_eq_mem]⟩
   have hal' : (spOf flagWitT).toNat % 16 = 0 := by
     rw [show spOf flagWitT = spOf flagWitS from (htw.1 _ (by simp)).symm]; exact hal
-  have hl : probeLoop (probeTotal 16384 false) = true := by decide
+  have hl : probeLoop (probeTotal 16384 .leaf) = true := by decide
   have hsv : SavesOk [] := ⟨fun _ h => (by cases h), List.nodup_nil⟩
-  obtain ⟨s', h1, -⟩ := prologue_ok (calls := false) env (size := 16384) (by decide) hsv (by decide)
+  obtain ⟨s', h1, -⟩ := prologue_ok (calls := .leaf) env (size := 16384) (by decide) hsv (by decide)
     flagWitS hal
-  obtain ⟨t', h2, -⟩ := prologue_ok (calls := false) env (size := 16384) (by decide) hsv (by decide)
+  obtain ⟨t', h2, -⟩ := prologue_ok (calls := .leaf) env (size := 16384) (by decide) hsv (by decide)
     flagWitT hal'
   refine ⟨hl, htw, fun e => ?_, s', t', h1, h2, ProRun.flags_irrel hl hal htw h1 h2⟩
   have := congrArg (Arm.r (.FLAG .N)) e
   simp [flagWitS, flagWitT, Arm.r_of_w_same] at this
+
+/-- **The setting matters, and `prologue_ok_off` is not vacuous** (#1013): the 16 KiB frame of
+`proRun_flags_irrel_witness` compiled both ways. With stack probes (`StackProbe.leaf`:
+`enable_probestack`, cg_clif's setting) its prologue has Cranelift's probe loop; without
+(`StackProbe.off`, Cranelift's default) it has no probe, runs its lines once (`prologueSteps_off`)
+straight-line from `flagWitS` and keeps the flags, which the loop does not (`probeFlagT`). -/
+theorem prologue_ok_off_witness (env : Env) :
+    probeLoop (probeTotal 16384 .leaf) = true ∧ probeCount (probeTotal 16384 .off) = 0 ∧
+      prologueSteps [] 16384 .off = (prologueLines [] 16384 .off).length ∧
+      ∃ s', StepsOk env (prologueLines [] 16384 .off) flagWitS s' ∧
+        ∀ fl, Arm.r (.FLAG fl) s' = Arm.r (.FLAG fl) flagWitS := by
+  have hal : (spOf flagWitS).toNat % 16 = 0 := by
+    simp [spOf, flagWitS, Arm.r_of_w_same, Arm.r_of_w_different]
+  have hsv : SavesOk [] := ⟨fun _ h => (by cases h), List.nodup_nil⟩
+  obtain ⟨s', h, -, -, hf, -⟩ := prologue_ok_off env (size := 16384) (by decide) hsv (by decide)
+    flagWitS hal
+  exact ⟨by decide, by decide, prologueSteps_off _ _, s', h,
+    fun fl => hf (.FLAG fl) (by simp) (by simp) (by simp) (by simp) (by simp)⟩
 
 end Backend.Proof

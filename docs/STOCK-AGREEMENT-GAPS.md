@@ -157,7 +157,7 @@ functions that they change: `has_lse`, `use_csdb`, `sign_return_address` and
 | 171 | `is_pic=false` with a far symbol | the non-PIC far-symbol lowering |
 | 114 | `has_lse=true` with `atomic_rmw`/`atomic_cas` | LSE atomics |
 | 11 | `use_bti=true` | BTI landing pads |
-| 8 | `probestack_strategy=inline` (5), `probestack_size_log2` other than 12 (3) | inline stack probes (#581) |
+| 8 | `probestack_strategy=inline` (5), `probestack_size_log2` other than 12 (3) | inline stack probes (#581). Since #1013 the three stack-probe settings are followed per function (`StockConfig.probeSetting`): of these 8, one stays rejected for a setting (`runtests/inline-probestack.clif` `%probe_loop` with a 64 KiB guard; Lean has the 4 KiB guard only) |
 | 6 | `use_csdb=true` with `select_spectre_guard`/`br_table` | `csdb` |
 | 3 | `bb_padding_log2_minus_one` other than 0 | block padding |
 | 2 | `sign_return_address=true` in a function that is signed | pointer authentication |

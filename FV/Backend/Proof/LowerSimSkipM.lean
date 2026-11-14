@@ -194,9 +194,8 @@ theorem driver_memtrap_skip (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hQ : ∀ s c a n, Reach env p cs s → Clif.MemTrapAt env p s c a n → Q a n)
     (fuel : Nat) (c : Clif.TrapCode) (hrun : Clif.runLoop env p fuel cs = .trapped c) :
     VTrapFrom vcK sem ⟨0, 0, ρ₀, w₀⟩ c ∨ VMemTrapFrom vcK sem ⟨0, 0, ρ₀, w₀⟩ c (addrPred Q) := by
-  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_stepP H hds hMem hMR hB0 hcall hfunc hslots hbody hterm
+  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK H hK hds hMem hMR hB0 hcall hfunc hslots hbody hterm
     hregs hty hsig hmr hargs (ρ₀ := ρ₀)
-  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
   obtain ⟨s, hr, hs⟩ := runLoop_trapped_reach fuel cs c hrun
   obtain ⟨vs, hstar', hm'⟩ := reach_matchK (slots := slots) H hK hP hr (.refl _) (.inl hmK)
   rcases trap_matchTK H hK hP hr hm' hs (hQ s c · · hr) with h | h

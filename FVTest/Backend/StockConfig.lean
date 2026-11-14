@@ -26,6 +26,12 @@ structure Config where
   csdb : Bool
   signReturnAddress : Bool
   signReturnAddressAll : Bool
+  /-- `enable_probestack`: stock's `gen_prologue` probes the stack (`machinst/abi.rs:2326`). -/
+  probestack : Bool
+  /-- `probestack_strategy` is `inline` (`false`: `outline`). -/
+  probestackInline : Bool
+  /-- `probestack_size_log2`: the guard is `1 << n` bytes. -/
+  probestackSizeLog2 : Nat
 
 -- At opt_level=none the stock egraph/alias-analysis pass is not run. Spectre policy
 -- settings apply to explicit guard instructions, which the existing lowerer either
@@ -33,17 +39,22 @@ structure Config where
 def fixedFlags : List (String × String) := [
   ("regalloc_algorithm", "backtracking"), ("opt_level", "none"),
   ("tls_model", "none"), ("stack_switch_model", "none"),
-  ("libcall_call_conv", "isa_default"), ("probestack_size_log2", "12"),
-  ("probestack_strategy", "outline"), ("bb_padding_log2_minus_one", "0"),
+  ("libcall_call_conv", "isa_default"), ("bb_padding_log2_minus_one", "0"),
   ("log2_min_function_alignment", "0"), ("regalloc_checker", "false"),
   ("regalloc_verbose_logs", "false"), ("enable_alias_analysis", "true"),
   ("enable_verifier", "true"), ("use_colocated_libcalls", "false"),
   ("enable_nan_canonicalization", "false"), ("enable_pinned_reg", "false"),
-  ("machine_code_cfg_info", "true"), ("enable_probestack", "false"),
+  ("machine_code_cfg_info", "true"),
   ("enable_heap_access_spectre_mitigation", "true"),
   ("enable_table_access_spectre_mitigation", "true"),
   ("enable_incremental_compilation_cache_checks", "false"),
   ("enable_compact_unwind_abi", "false")]
+
+/-- The stack-probe settings (#1013). Only `gen_prologue` reads them (`machinst/abi.rs:2326-2341`;
+`isa/aarch64/inst/emit.rs:3649` asserts `enable_probestack` at a `StackProbeLoop`). They are
+followed per function (`probeSetting`, in `configure`): `enable_probestack=false`, Cranelift's default,
+compiles without stack probes, whatever the other two say. -/
+def probeFlags : List String := ["enable_probestack", "probestack_strategy", "probestack_size_log2"]
 
 /-- Shared settings accepted with either value, because no function Lean compiles can observe
 them:
@@ -97,12 +108,18 @@ def parse (j : Json) : Except String Config := do
   if !(["aarch64", "aarch64-unknown-unknown", "aarch64-unknown-unknown-elf", "aarch64-unknown-linux-gnu"].contains target) then
     throw s!"unsupported target {target} (only AArch64 generic/Linux ABI is audited)"
   let shared ← flagRows j "flags"
-  checkNames shared (fixedFlags.map (·.1) ++ inertFlags ++ boolFlags)
+  checkNames shared (fixedFlags.map (·.1) ++ probeFlags ++ inertFlags ++ boolFlags)
   for (name, expected) in fixedFlags do
     let actual := (shared.lookup name).getD ""
     if actual != expected then throw s!"unsupported setting {name}={actual}; implemented policy is {expected}"
   for name in inertFlags do
     discard <| boolean shared name
+  let probestackInline ← match shared.lookup "probestack_strategy" with
+    | some "inline" => pure true
+    | some "outline" => pure false
+    | _ => throw "invalid probestack_strategy"
+  let some probestackSizeLog2 := (shared.lookup "probestack_size_log2").bind String.toNat?
+    | throw "invalid probestack_size_log2"
   let isa ← flagRows j "isa_flags"
   checkNames isa isaFlags
   for (name, value) in isa do
@@ -113,7 +130,9 @@ def parse (j : Json) : Except String Config := do
          unwind := ← boolean shared "unwind_info", lse := ← boolean isa "has_lse",
          csdb := ← boolean isa "use_csdb",
          signReturnAddress := ← boolean isa "sign_return_address",
-         signReturnAddressAll := ← boolean isa "sign_return_address_all" }
+         signReturnAddressAll := ← boolean isa "sign_return_address_all",
+         probestack := ← boolean shared "enable_probestack",
+         probestackInline, probestackSizeLog2 }
 
 def touchesFrame (m : MInst) : Bool :=
   (m.uses ++ m.defs).any (fun r => r == .x 29 || r == .x 30) ||
@@ -161,6 +180,30 @@ def usesCsdb (f : Clif.Function) : Bool :=
   f.blocks.any fun b =>
     b.body.any (fun s => s.inst matches .selectSpectreGuard ..) || b.term matches .brTable ..
 
+/-- **Stock's stack probes** for a function whose probed stack is `total` bytes (`gen_prologue`'s
+`total_stacksize`, `Backend.probeTotal`; `machinst/abi.rs:2326-2341`, wasmtime v49.0.1), as the
+value of `AFunc.probes` (#1013). None unless `enable_probestack`. With it the guard is
+`1 << probestack_size_log2` bytes (a `u32`) and
+* `probestack_strategy=inline`: `gen_inline_probestack` (`isa/aarch64/abi.rs:751`) makes
+  `total / guard` probes, so none when `total < guard`; up to three (`PROBE_MAX_UNROLL`, a
+  constant) unrolled, more with `StackProbeLoop`. No other setting takes part;
+* `probestack_strategy=outline`: `gen_probestack` when `total ≥ guard`, which is `unimplemented!`
+  on AArch64 (`isa/aarch64/abi.rs:745`): stock compiles no such function, and none is compiled
+  here. Below the guard there is no probe.
+
+Lean implements the inline probes of a 4 KiB guard (`Backend.probeLines`, the configuration of
+cg_clif). A function that another guard size would probe is rejected. -/
+def probeSetting (c : Config) (total : Nat) : Except String Bool :=
+  if !c.probestack then pure false
+  else if c.probestackSizeLog2 ≥ 32 then
+    throw s!"probestack_size_log2={c.probestackSizeLog2} with enable_probestack=true: the guard size does not fit Cranelift's u32"
+  else if c.probestackInline && c.probestackSizeLog2 == 12 then pure true
+  else if total < 2 ^ c.probestackSizeLog2 then pure false
+  else if !c.probestackInline then
+    throw s!"enable_probestack=true with probestack_strategy=outline: stock has no outline stack probe on AArch64 (gen_probestack is unimplemented), and this function's probed stack of {total} bytes reaches the guard size"
+  else
+    throw s!"probestack_size_log2={c.probestackSizeLog2}: this function's probed stack of {total} bytes reaches the guard size, and Lean implements inline stack probes for a 4 KiB guard only"
+
 /-- The per-function part of the settings policy. `fs` is the function's CLIF before and after
 `i128` legalisation. Each error is a setting rejection (`allocate` records it). -/
 def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
@@ -186,7 +229,9 @@ def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
   -- `get_return_address` (`isa/aarch64/inst.isle:4577`).
   if c.signReturnAddress && (frame || c.signReturnAddressAll) then
     throw "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication"
-  pure (if frame then argLoadsFromSp { af with frame } else { af with frame })
+  -- Stock's `total_stacksize` counts the callees' setup area when the function calls.
+  let probes ← probeSetting c (probeTotal af.frameSize (if af.callsOut then .caller else .leaf))
+  pure (if frame then argLoadsFromSp { af with frame, probes } else { af with frame, probes })
 
 /-- The start of the `unsupported` reason of a function that `configure` rejects. -/
 def rejectionPrefix : String := "stock configuration unsupported for this function: "
@@ -199,8 +244,8 @@ Stock does not lower a `load` whose flags are `notrap` when none of its results 
 (`Proof.Driver.skippable` and `DeadCleanup.pureForm` exclude loads). `dropDeadNotrapLoads` drops
 such loads in this stock-configured driver only. It is NOT proved: like `argLoadsFromSp`, it is
 outside `backend_correct`, and every function of this mode is reported unverified. The default
-mode and `cargo fv` do not run it: cg_clif's Cranelift 0.136.1, the reference of `cargo fv`, keeps
-these loads (#970, #588).
+mode and `cargo fv` do not run it: cg_clif's Cranelift, the reference of `cargo fv`, is 0.135.0
+(nightly-2026-09-26), which keeps these loads; stock here is 0.136.1 (#970, #588).
 
 The CLIF justification is `Clif.evalInst_notrap_load` (`FV/Clif/NotrapLoad.lean`): a `notrap` load
 reads without changing the memory, or it is stuck; it never traps. So a source run either continues
@@ -313,7 +358,7 @@ def receipt (request : Json) (error : Option String)
     ("dead_instruction_cleanup", toJson deadCleanup),
     ("configuration_accepted", toJson error.isNone), ("error", toJson error),
     ("proof_scope", toJson "experimental stock-configured driver; not covered by backend_correct"),
-    ("policy", toJson "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization")] ++
+    ("policy", toJson "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); enable_probestack, probestack_strategy and probestack_size_log2 followed per function (no probes when disabled or below the guard size; inline probes of a 4 KiB guard; a function that the outline strategy or another guard size would probe is rejected); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization")] ++
     match functionRejections with
     | some rs => [("function_rejections", Json.mkObj (rs.map fun (n, why) => (n, toJson why)))]
     | none => [])

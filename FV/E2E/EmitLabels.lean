@@ -942,7 +942,7 @@ theorem probeLines_plain (total : Nat) : Plain (probeLines total) := by
       Backend.Proof.loadConst64_form hl) <;>
     simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
 
-theorem prologueLines_plain {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_plain {calls : StackProbe} (saves : List Reg) (size : Nat) :
     Plain (prologueLines saves size calls) := by
   unfold prologueLines
   exact plain_append (plain_append (plain_append (plain_append

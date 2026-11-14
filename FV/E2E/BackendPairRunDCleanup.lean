@@ -203,8 +203,9 @@ theorem vcode_niID_valueL (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp
     SameWorld.mono (zof_sub cm0) hmr.2.2⟩
 
 /-- **`vcode_niID_valueL` for the code after the skip of unused instructions** (`skipStage f vc`,
-which the cleanup stage prunes and prepares): the paired entry in the entry code
-(`entry_step2PDGZ`, kept whole, `entry_runK`), then the counted paired run of the kept code
+which the cleanup stage prunes and prepares): the paired entry in the kept entry code
+(`entry_step2PDGZK` at `entry_shapeK`: without the loads of unused stack-passed parameters, #586),
+then the counted paired run of the kept code
 (`sim_runGK`, the guarded paired value family with its probes, `probeOf_pairD_value`). -/
 theorem vcode_niID_valueL_stage (hsub : InSubset p f)
     (hc : CompiledCleanup f k vc vcp rf af fa fb)
@@ -312,24 +313,35 @@ theorem vcode_niID_valueL_stage (hsub : InSubset p f)
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', -, hm1, hsw1, -, hm2, hsw2, hsP⟩ := entry_step2PDGZ (Hb1 0)
+  obtain ⟨vbK, hvbK, hsegK, hltK, hkidx, hdead⟩ := entry_shapeK (Hb1 0) hK hB0
+  obtain ⟨ρ₁, ρF, w₁, w₁', -, hm1, hsw1, -, hm2, hsw2, hsP, hag⟩ := entry_step2PDGZK (Hb1 0)
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
     (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c)
     (ctx' := ⟨fa.k, af.slotBase⟩) (X := (XI.at 0).noCall) hB0 hce.callers
     hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
+    (irUsedB f) hvbK hsegK hltK
+  rw [← hkidx] at hsP
+  have hagD : ∀ n, ¬ DeadDef vc (skipMask f R bl vc (skipAt f (skipDrops f R bl vc))) n →
+      ρF n = ρ₁ n := by
+    intro n hn
+    refine hag n fun q hq hqn hun off hloc => hn ?_
+    rw [← hqn]
+    exact hdead q hq off hloc (by rw [hqn]; exact hun)
   have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
-  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ := by
+  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs
+      ⟨0, (pre f R 0).length, ρF, (w₁, w₁')⟩ := by
     refine ⟨hm1.1, hm1.2.1, hm1.2.2.1, ⟨hm1.2.2.2.1, hm2.2.2.2.1, ?_⟩, hm1.2.2.2.2⟩
     have h01 : SameWorld (fun b => F b ∨ D b) w₁ w₁' :=
       SameWorld.trans (SameWorld.mono hFD hsw1)
         (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
     exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
   have hPrP := probeOf_pairD_value F ⟨fa.k, af.slotBase⟩ XI
-  have hsK := entry_runK hK hB0 (entry_pos hB0 hbody hm1) hsP
+  have hsK := hsP.star
   have hR := sim_runGK hK
     (fun i h m m' => ncIndep_pairD_value F ⟨fa.k, af.slotBase⟩ XI m m' i h) hPrP hP HbP HsP hseg
-    htc fuel cs 0 0 (kidx (skipMask f R bl vc (skipAt f (skipDrops f R bl vc)) 0) kk) ρ₁
-    (w₁, w₁') .refl ⟨⟨0, kk, ρ₁, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hmP⟩
+    htc fuel cs 0 0
+    (kidx (skipMask f R bl vc (skipAt f (skipDrops f R bl vc)) 0) (pre f R 0).length) ρ₁
+    (w₁, w₁') .refl ⟨⟨0, (pre f R 0).length, ρF, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, hagD⟩, hmP⟩
   rw [hrun] at hR
   obtain ⟨us, outs, w, cm0, -, hret, -, -, -, -, hmr, -⟩ := hR
   exact ⟨us, outs, w, VRetFrom.prefix (vstar_mapW (counted_probe_proj hPrP 0) hsK) hret,
