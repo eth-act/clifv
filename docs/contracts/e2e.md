@@ -106,6 +106,32 @@ Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel 
 (`memRefines_csem`, M6MemRef).
 `MemRelOk` is internal (`memRelOk_holds`).
 
+### Frameless leaves (`preserve_frame_pointers=false`, #1028)
+
+`lowerRFunc` gives every function a frame. Under `preserve_frame_pointers=false` (the filetests'
+default) the backend drops it for a leaf that needs none, as Cranelift does (`Backend.frameless`,
+stock's decision `Backend.frameRequired`, `FV/Backend/Frameless.lean`).
+`E2E.backend_correct_final_cleanup_leaf` (`FV/E2E/DeadCleanupFinal.lean`) is
+`backend_correct_final_cleanup` with `CompiledCleanupL` in place of `CompiledCleanup`:
+
+* **Allocation** `AllocAF vcp rf af` (`FV/E2E/RegLevelAllocAF.lean`): `af` is `lowerRFunc`'s output,
+  or that output without its frame when `leafB af` holds (no frame size, slot area or callee
+  saves, no instruction that touches the frame). `AllocAF.of_frameless`: `frameless`' output is one.
+* **Without a frame** (decided on the compiled objects by `lean-backend --settings`):
+  `FnAsm.leafChk` (`FV/E2E/RegLevelLeafKeep.lean`: no line but `ret` names `x29` or `x30`; calls
+  write `x30`, so the function makes none) and `regArgsB f.sig` (every argument in a register:
+  the lowering reads stack arguments through the frame pointer). The run keeps `x29`/`x30`
+  (`RL.iterN_leafKeep`), which the return needs (`ret_machine_leaf`).
+* **The normal-return form**: a function without calls is unwound through by no exception, so
+  `lean-backend` reports a frameless leaf as covered by this theorem (receipt field `theorem`),
+  not by an `_unwind_any` form.
+
+`RL.Wf` admits frameless activations (`alloc : AllocAF`, `leaf`); the lemmas about the prologue,
+the epilogue's frame pair and the unwinding take `hframe : R.af.frame = true`. The old theorems
+are unchanged and proved through the `L` forms (`CompiledCleanupA.toL`). Witness:
+`DeadCleanupLeafWitness.compiledL_exists` (a compiled function without a frame inhabits
+`CompiledCleanupL`, with `FormsCovered` and `InSubset`).
+
 ### `sret` (struct-return pointer)
 
 The ABI facts are the compiler's (`FV/Backend/Isel.lean`, differentially tested against
