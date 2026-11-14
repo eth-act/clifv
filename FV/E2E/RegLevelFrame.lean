@@ -85,7 +85,7 @@ theorem probeLines_ins (total : Nat) :
   rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl
   all_goals first | exact hlc _ _ hl | exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem prologueLines_ins {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_ins {calls : StackProbe} (saves : List Reg) (size : Nat) :
     ∀ ln ∈ prologueLines saves size calls, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true := by
   intro ln hln
   rw [prologueLines_eq] at hln
@@ -98,7 +98,7 @@ theorem prologueLines_ins {calls : Bool} (saves : List Reg) (size : Nat) :
   · obtain ⟨x, e, h1, h2, -⟩ := pushLines_ins _ _ _ h; exact ⟨x, e, h1, h2⟩
   · exact spAdjLines_ins true _ _ h
 
-theorem prologueLines_noLoads {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_noLoads {calls : StackProbe} (saves : List Reg) (size : Nat) :
     ∀ i t, Line.ins i t ∈ prologueLines saves size calls → i.loads = false := by
   intro i t hln
   rw [prologueLines_eq] at hln
@@ -111,7 +111,7 @@ theorem prologueLines_noLoads {calls : Bool} (saves : List Reg) (size : Nat) :
   · obtain ⟨x, e, -, -, hl, -⟩ := pushLines_ins _ _ _ h; cases e; exact hl
   · exact spAdjLines_noLoads true _ i t h
 
-theorem prologueLines_tail {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_tail {calls : StackProbe} (saves : List Reg) (size : Nat) :
     ∀ i t, Line.ins i t ∈ prologueLines saves size calls → i.tlsTail = false := by
   intro i t hln
   rw [prologueLines_eq] at hln
@@ -382,7 +382,7 @@ state after the first is no return into the code (`RL.Good`) and, from a state s
 `RL.Good`, every state before the last step satisfies `RL.GoodX`; every state before the last
 step is at one of the prologue's lines, the first line only at the start. Without the probe loop
 this is `iterN_steps` of the straight-line `prologueLines`. -/
-theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : Bool}
+theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : StackProbe}
     {T : List Line} {j : Nat} {s s' : Arm.ArmState}
     (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)

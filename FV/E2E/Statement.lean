@@ -411,7 +411,8 @@ theorem StackRoom.mono {m n : Nat} {s : Arm.ArmState} (h : StackRoom m s) (hnm :
 the prologue (`probeLines`) write: the last probe is at `sp_entry - 16 - 4096·probeCount`, which
 lies below the frame when the probed stack (`probeTotal`) includes the 16-byte setup area of the
 callees of a calling function (`calls`): then up to 16 bytes; for the loop form (16 KiB and
-more, `probeCount = ⌈probeTotal / 4096⌉`) up to 4096 + 16 - 1 bytes. -/
+more, `probeCount = ⌈probeTotal / 4096⌉`) up to 4096 + 16 - 1 bytes; 0 for a function compiled
+without probes (`probeBelow_of_not_probes`, #1013). -/
 def probeBelow (af : AFunc) : Nat :=
   if af.frame then 4096 * probeCount (probeTotal af.frameSize af.isCaller) - af.frameSize else 0
 
@@ -421,15 +422,21 @@ def probeLoop (total : Nat) : Bool := decide (3 < probeCount total)
 
 /-- The number of instructions the prologue runs: its lines, the stack-probe loop's four
 (`probeLoopBody`) `probeCount` times. -/
-def prologueSteps (saves : List Reg) (size : Nat) (calls : Bool) : Nat :=
+def prologueSteps (saves : List Reg) (size : Nat) (calls : StackProbe) : Nat :=
   (prologueLines saves size calls).length +
     if probeLoop (probeTotal size calls) then 4 * (probeCount (probeTotal size calls) - 1) else 0
 
 /-- Without the probe loop the prologue runs its lines once. -/
-theorem prologueSteps_of_not {saves : List Reg} {size : Nat} {calls : Bool}
+theorem prologueSteps_of_not {saves : List Reg} {size : Nat} {calls : StackProbe}
     (h : probeLoop (probeTotal size calls) = false) :
     prologueSteps saves size calls = (prologueLines saves size calls).length := by
   simp [prologueSteps, h]
+
+/-- Without stack probes (`StackProbe.off`: `enable_probestack=false`, #1013) the prologue runs
+its lines once. -/
+theorem prologueSteps_off (saves : List Reg) (size : Nat) :
+    prologueSteps saves size .off = (prologueLines saves size .off).length :=
+  prologueSteps_of_not (by rw [probeTotal_off]; decide)
 
 /-- The flags after the probe loop's last `cmn x16, x17` (`x16 = -4096·⌈total / 4096⌉`,
 `x17 = total`): `total - 4096·⌈total / 4096⌉` is zero (`Z`, `C`) when `total` is a multiple of
@@ -485,6 +492,34 @@ theorem probeMem_of_frame {af : AFunc} (h : af.frame = false) (s : Arm.ArmState)
 theorem probeMem_of_count {af : AFunc} (h : probeCount (probeTotal af.frameSize af.isCaller) = 0)
     (s : Arm.ArmState) : probeMem af s = s.mem :=
   funext fun _ => probeMem_of_not (by simp [probeHit, probeHitN, probeHitB, h])
+
+/-- A function compiled without stack probes (`AFunc.probes` false: Cranelift's
+`enable_probestack=false`, #1013) has none: the facts of before the probes (#581) hold for it. -/
+theorem probeCount_of_not_probes {af : AFunc} (h : af.probes = false) :
+    probeCount (probeTotal af.frameSize af.isCaller) = 0 := by
+  rw [AFunc.isCaller_of_not_probes h, probeTotal_off, probeCount_zero]
+
+/-- Without probes nothing is written below the frame. -/
+theorem probeBelow_of_not_probes {af : AFunc} (h : af.probes = false) : probeBelow af = 0 := by
+  simp [probeBelow, probeCount_of_not_probes h]
+
+/-- Without probes the memory after the prologue's probes is the entry memory. -/
+theorem probeMem_of_not_probes {af : AFunc} (h : af.probes = false) (s : Arm.ArmState) :
+    probeMem af s = s.mem :=
+  probeMem_of_count (probeCount_of_not_probes h) s
+
+/-- Without probes the flags after the prologue's probes are the entry's. -/
+theorem probeFlag_of_not_probes {af : AFunc} (h : af.probes = false) (s : Arm.ArmState)
+    (fl : Arm.PFlag) : probeFlag af s fl = Arm.r (.FLAG fl) s := by
+  have hl : probeLoop (probeTotal af.frameSize af.isCaller) = false := by
+    rw [AFunc.isCaller_of_not_probes h, probeTotal_off]; decide
+  simp [probeFlag, probeFlagT, hl]
+
+/-- Without probes the prologue runs its lines once: those of `prologueLines_off`. -/
+theorem prologueSteps_of_not_probes {af : AFunc} (h : af.probes = false) :
+    prologueSteps af.saves af.frameSize af.isCaller =
+      (prologueLines af.saves af.frameSize .off).length := by
+  rw [AFunc.isCaller_of_not_probes h]; exact prologueSteps_off _ _
 
 /-- A byte zeroed by `n` probes, in numbers: the `k`-th byte of probe `i`, when the probes fit
 below `sp`. -/

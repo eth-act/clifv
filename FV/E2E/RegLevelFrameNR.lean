@@ -54,7 +54,7 @@ theorem iterN_stepsNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ls T : List
 /-- `iterN_proRun` with `RL.GoodXNY` (#581): the prologue's lines are unhooked loads-free
 instructions, so no state of its run is a call state or reads memory. -/
 theorem iterN_proRunNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {saves : List Reg} {size : Nat}
-    {calls : Bool} {T : List Line} {j : Nat} {s s' : Arm.ArmState}
+    {calls : StackProbe} {T : List Line} {j : Nat} {s s' : Arm.ArmState}
     (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) (h : ProRun (R.envOf j) saves size calls s s') :

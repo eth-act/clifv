@@ -246,7 +246,7 @@ theorem pushLines_x30 {int : Bool} {rs : List Reg} (hrs : ∀ r ∈ rs, PushReg 
     cases int <;> simp [Insn.x30Exempt, hne]
 
 /-- **The only `x30`-exempt line of the prologue is its first, the frame-record store.** -/
-theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} {calls : Bool}
+theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} {calls : StackProbe}
     {x : Insn} {t : Option Clif.TrapCode}
     (h : (prologueLines saves size calls)[i]? = some (.ins x t)) (hx : x.x30Exempt = true) :
     i = 0 ∧ x = .stp .fp .lr (.spPreIndexed (-16)) := by

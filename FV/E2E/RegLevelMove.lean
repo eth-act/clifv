@@ -216,7 +216,7 @@ theorem spAdjLines_isIns (sub : Bool) (size : Nat) : ∀ ln ∈ spAdjLines sub s
       · simp only [List.mem_singleton] at h; exact ⟨_, _, h⟩
 
 /-- The prologue's lines are instructions. -/
-theorem prologueLines_isIns {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_isIns {calls : StackProbe} (saves : List Reg) (size : Nat) :
     ∀ ln ∈ prologueLines saves size calls, ∃ i t, ln = .ins i t := by
   intro ln h
   rw [prologueLines_eq] at h

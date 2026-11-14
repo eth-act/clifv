@@ -412,7 +412,7 @@ theorem lines_seqOk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
 
 /-! ## Prologue, epilogue, blocks, traps -/
 
-theorem prologueLines_free {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_free {calls : StackProbe} (saves : List Reg) (size : Nat) :
     ∀ ln ∈ prologueLines saves size calls, lnFree ln = true := by
   intro ln hl
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
