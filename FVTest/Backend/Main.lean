@@ -12,6 +12,8 @@ import FV.Backend.Proof.LowerSimUCheckTC
 import FV.Compile.SubsetTC
 import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelUTry
+import FV.E2E.RegLevelLeafKeep
+import FV.E2E.DeadCleanupPipeline
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -337,12 +339,33 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
       pure { fa with
         unverified := fa.funcs.map fun a => (a.name, ((unv128 ++ unvTry).lookup a.name).getD why)
         unvalidated := [] }
-  -- frameless leaves (`--settings`, `preserve_frame_pointers=false`) are outside
-  -- `backend_correct` until #1028's theorems
+  -- Frameless leaves (`--settings`, `preserve_frame_pointers=false`, #1028) are inside
+  -- `E2E.backend_correct_final_cleanup_leaf` when its premises on the compiled function hold:
+  -- the compiled code passes `FnAsm.leafChk` (no line but `ret` names x29/x30, so it makes no
+  -- call: `bl`/`blr` write x30, and so do the TLS descriptor call and `try_call`'s call) and every
+  -- argument is in a register (`E2E.regArgsB`). A function without calls is unwound through by
+  -- no exception, so the theorem's normal-return form covers it. Only with dead cleanup (the
+  -- theorem's pipeline), and not for an `i128`-legalised function (`backend_correct_legal_wide`
+  -- has no frameless form).
   let nf ← noFrame.get
-  let leaves := nf.toList.filter fun p =>
-    fa.funcs.any (·.name == p.1) && !fa.unverified.any (·.1 == p.1) && !fa.unvalidated.any (·.1 == p.1)
-  let fa := { fa with unverified := fa.unverified ++ leaves }
+  let leafMiss? (name : String) : Option String :=
+    if !o.deadCleanup then some "no dead cleanup (backend_correct_final_cleanup_leaf's pipeline)"
+    else if lg.accepted.contains name then some "i128-legalised"
+    else if !(fa.funcs.find? (·.name == name)).any (·.leafChk) then
+      some "FnAsm.leafChk: a line other than ret names x29/x30"
+    else if !((pf.funcs.find? (·.name == name)).bind (·.func.toOption)).any (E2E.regArgsB ·.sig) then
+      some "E2E.regArgsB: an argument on the stack"
+    else none
+  let rs0 ← rejected.get
+  let leaves := nf.toList.filter fun p => fa.funcs.any (·.name == p.1) &&
+    !fa.unverified.any (·.1 == p.1) && !fa.unvalidated.any (·.1 == p.1) && !rs0.any (·.1 == p.1)
+  let outside := leaves.filterMap fun (n, why) => (leafMiss? n).map fun m =>
+    (n, s!"{why} outside backend_correct_final_cleanup_leaf: {m}")
+  let fa := { fa with unverified := fa.unverified ++ outside }
+  let coveredLeaves := (leaves.filter fun p => (leafMiss? p.1).isNone).map (·.1)
+  for n in coveredLeaves do
+    IO.eprintln (s!"lean-backend: {input}: %{n}: frameless leaf, backend_correct_final_cleanup_leaf " ++
+      "(normal-return form: FnAsm.leafChk admits no call, so no exception unwinds through it)")
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
@@ -359,6 +382,10 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson false), ("unverified", Lean.toJson r)]
       else if let some r := why fa.unvalidated then
         Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson false), ("unvalidated", Lean.toJson r)]
+      else if coveredLeaves.contains name then
+        Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson true),
+          ("theorem", Lean.toJson "backend_correct_final_cleanup_leaf"),
+          ("frameless_leaf", Lean.toJson "no call (FnAsm.leafChk): the normal-return form covers it")]
       else if fa.funcs.any (·.name == name) then
         Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson true)]
       else Lean.Json.mkObj [("compiled", Lean.toJson false)]
