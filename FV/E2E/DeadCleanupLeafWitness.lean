@@ -81,3 +81,5 @@ theorem compiledL_exists :
               ⟨hl, hlo, hp, hpr, hc, AllocAF.of_frameless false ha, fun _ => ⟨hlc, hra⟩, he, hb⟩,
               hfr, fun ctx => ?_⟩
             exact formsCovered_cleanup_complete DeadCleanupWitness.compiled_exists.2.1 hl hp ctx
+
+end E2E.DeadCleanupLeafWitness
