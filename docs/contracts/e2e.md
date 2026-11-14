@@ -932,6 +932,34 @@ tail call.
 * **Not covered**: DEFERRED "Tail calls" (`return_call` of another function, `return_call_indirect`,
   the `tail` convention, slots/`try_call`, the source-level and `--opt` variants).
 
+### Constant-phi removal (#990)
+
+Cranelift runs `remove_constant_phis` (after `eliminate_unreachable_code`) at every optimisation
+level; `lean-backend` runs `Opt.ConstPhi.run` after the `i128` legalisation and before the mid-end
+and the backend (the switch is #990 part 5; translation validation: an untrusted solver and rewrite, the proved checker
+`cpOk`; `Opt.ConstPhi.run_simX`/`run_simU`/`run_shape`/`run_pair`, `FV/Opt/Proof/ConstPhi*.lean`).
+
+* **Per function** (`FV/E2E/PassX.lean`): the mid-end wrappers (`OptX`, `OptUnwind`, `LegalOptX`,
+  `LegalOptUnwind`) stated for any pass `T` whose output simulates its input (`Opt.FunSimX`, with
+  the handler edges `Opt.FunSimU`) and keeps its shape (`ShapeFacts`): `pass_entry`, `pass_lift`
+  (every per-activation conclusion closed under `Opt.OutcomeRefines`, e.g. `ArmRefines`,
+  `ArmRefinesT`), `pass_entryX`/`pass_liftU` (with unwinding), `backend_correct_pass{,_cleanup}`,
+  `backend_correct_pass_finalTCF`, `backend_correct_pass{,_cleanup}_unwind_any`,
+  `backend_correct_legal_pass_wide{,_cleanup}`, `backend_correct_legal_pass_unwind_any`.
+  Instances (`FV/E2E/ConstPhiE2E.lean`): `T := Opt.ConstPhi.run`, and with the mid-end
+  `T := Opt.ConstPhi.runOpt cfg` (`runOpt_simX`/`runOpt_simU` for the proven rule sets,
+  `runOpt_shape`). Witnesses (`FV/E2E/ConstPhiE2EWitness.lean`): every theorem applied at
+  `T := Opt.ConstPhi.run` to a function the pass changes, compiled by the shipped pipeline.
+* **Linked compiler** (`FV/Opt/ConstPhiSelect.lean`, `FV/Link/ConstPhiCompile.lean`,
+  `FV/Link/ConstPhiExe.lean`): `Opt.ConstPhi.keeps header f` (the pass changes `f` and its output
+  printed after the file's header parses back to itself) decides for `lean-backend`
+  (`Opt.ConstPhi.select`) and for the linked compiler's input (`FnInput.cp`, `LinkSpec.cp`), so the
+  linked tools compile what `lean-backend` compiled. `LinkSpec.cpRel`/`cpRel_prog`: the programs of
+  `S` and `S.cp` are `OptRel`-related; `cpRun`; **`cp_lift`**: a claim about every run of
+  `S.cp`'s program from an entry (e.g. any route theorem's `ExecRefines` at `S.cp`) holds for every
+  run of `S`'s program from the entry with the same registers, slots and memory; `withSizes_cp`.
+  Witness: `Link.ConstPhiExeWitness.source_returns`.
+
 ### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
 
 **The flaw.** `CalleeOk.os` was `OperandsSound F (callExec H) (csem F ctx X) (.call info)`: from
