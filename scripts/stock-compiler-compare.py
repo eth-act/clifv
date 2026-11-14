@@ -3,6 +3,10 @@
 
 Inventory is the entire pinned official .clif suite. compile and run are separate
 stock stages, not an invented configuration sweep. There is no binary normalization.
+
+Each compilation runs twice: in the stock-configured driver (`--stock-config`, the CI match
+count), and in the proved compiler with the test's settings as input (`--settings`, the honest
+metric: identical outputs that `backend_correct` covers).
 """
 import argparse
 from collections import Counter
@@ -26,6 +30,9 @@ SUITE = (ROOT / "third_party/wasmtime/cranelift/filetests/filetests").resolve()
 FINISHED_WITH_GAPS = 10
 LEAN_BINARY = ROOT / ".lake/build/bin/lean-backend"
 LEAN_COMPILER_ARGS = []
+# The proved compiler of the honest metric (`lean-backend --settings`, `cargo fv`'s default mode),
+# whatever `--lean-compiler` measures.
+PROVED_BINARY = ROOT / ".lake/build/bin/lean-backend"
 
 ELF_RELOC_TYPES = {"Arm64Call":283,"Aarch64AdrPrelPgHi21":275,"Aarch64AddAbsLo12Nc":277,
     "Aarch64AdrGotPage21":311,"Aarch64Ld64GotLo12Nc":312,
@@ -187,6 +194,63 @@ def compare_function(name, artifact, lean_dir, config_verified, repeatable):
     return row
 
 
+def proved_functions(receipt):
+    """The per-function verdicts of the proved settings mode (`lean-backend --settings`)."""
+    functions = receipt.get("functions")
+    if not isinstance(functions, dict) or not all(isinstance(v, dict) for v in functions.values()):
+        return None
+    return functions
+
+
+def compile_proved(request, input_path, dest, env):
+    """The same input and settings through the proved compiler (`lean-backend --settings`): no
+    stock-configured step runs, and the receipt says per function whether `backend_correct`
+    covers it. The honest metric counts its outputs that are identical to stock and covered."""
+    config = dest / "stock-config.json"
+    receipt_path = dest / "settings-receipt.json"
+    proved = dest / "proved"
+    proved.mkdir()
+    run = command([PROVED_BINARY, input_path, proved / "program.o", "--settings", config,
+        "--settings-receipt", receipt_path, "--dump", proved / "dump", "--traps", proved / "traps.json"],
+        dest, "proved", env)
+    receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
+    error = verify_receipt(request, receipt, input_path.read_bytes())
+    if error is None and receipt.get("mode") != "proved":
+        error = "the settings receipt is not from the proved settings mode"
+    functions = proved_functions(receipt)
+    return proved, {"command": run, "contract_error": error, "functions": functions or {},
+                    "contract_verified": error is None and run["exit"] == 0 and functions is not None}
+
+
+def compare_proved(name, artifact, proved, contract, repeatable, variant, stock_code):
+    """The compact row of the proved compiler's output: its status as `compare_function` and
+    `check_signing` decide it, whether `backend_correct` covers the function, and the parts of
+    the comparison. `honest` is the metric: an identical output that `backend_correct` covers."""
+    lean_name = name.removeprefix("%")
+    verdict = contract["functions"].get(lean_name, {})
+    if contract["contract_error"]:
+        row = {"status": "unsupported_configuration", "reason": contract["contract_error"]}
+    elif not contract["contract_verified"]:
+        row = {"status": "lean_compilation_failed", "reason": contract["command"]["exit"]}
+    elif "setting_rejection" in verdict:
+        row = {"status": "unsupported_configuration", "reason": verdict["setting_rejection"]}
+    else:
+        full = check_signing(compare_function(name, artifact, proved, True, repeatable), variant, stock_code)
+        row = {"status": full["status"]}
+        if "exact_code_and_relocations" in full:
+            row.update(bytes_equal=full["bytes"]["equal"], relocations_equal=full["relocations_equal"],
+                       traps_equal=full["traps_equal"], alignment_equal=full["alignment_equal"])
+        if "reason" in full:
+            row["reason"] = full["reason"]
+    covered = verdict.get("backend_correct") is True and row["status"] in (
+        "identical_code_artifact", "different_code_artifact")
+    row["backend_correct"] = covered
+    if not covered and verdict.get("compiled"):
+        row["not_covered"] = verdict.get("unverified") or verdict.get("unvalidated") or "no verdict"
+    row["honest"] = covered and row["status"] == "identical_code_artifact"
+    return row
+
+
 def compile_lean(variant, source, dest, env):
     dest.mkdir(parents=True)
     input_path = dest / "input.clif"
@@ -203,10 +267,12 @@ def compile_lean(variant, source, dest, env):
     receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
     error = verify_receipt(request, receipt, input_path.read_bytes())
     rejections = function_rejections(receipt)
+    proved, proved_contract = compile_proved(request, input_path, dest, env)
     # A finished compilation without the per-function list is a harness failure, not a gap.
     return lean, {"command":run,"request":request,"receipt":receipt,"contract_error":error,
                   "function_rejections":rejections or {},
-                  "contract_verified":error is None and run["exit"] == 0 and rejections is not None}
+                  "contract_verified":error is None and run["exit"] == 0 and rejections is not None,
+                  "proved_dir":proved,"proved":proved_contract}
 
 
 def one(path, out, env, binary, repeat):
@@ -285,7 +351,8 @@ def one(path, out, env, binary, repeat):
             contract["functions"] = names
             contract["function_indices"] = keys
             v["lean_compilations"].append(contract)
-            for k in keys: compiled[k] = (lean, contract)
+            proved_dir = contract.pop("proved_dir")
+            for k in keys: compiled[k] = (lean, contract, proved_dir)
         for k, name in enumerate(functions):
             if k in rejected:
                 r = {"name":name,"status":"expected_stock_rejection_no_binary","lean_rejection_compared":False}
@@ -296,7 +363,7 @@ def one(path, out, env, binary, repeat):
             elif k not in compiled:
                 r = {"name":name,"status":"shared_input_missing"}
             else:
-                lean, contract = compiled[k]
+                lean, contract, proved_dir = compiled[k]
                 if contract["contract_error"]:
                     r = {"name":name,"status":"unsupported_configuration","reason":contract["contract_error"]}
                 elif not contract["contract_verified"]:
@@ -307,6 +374,9 @@ def one(path, out, env, binary, repeat):
                 else:
                     r = compare_function(name, metas[k], lean, True, v["reference_repeat_verified"])
                     r = check_signing(r, variant, metas[k][0].with_suffix(".bin").read_bytes())
+                # The proved compiler on the same input and settings (the honest metric).
+                r["proved"] = compare_proved(name, metas[k], proved_dir, contract["proved"],
+                    v["reference_repeat_verified"], variant, metas[k][0].with_suffix(".bin").read_bytes())
             r["index"] = k
             v["functions_compared"].append(r)
         v["all_test_function_code_artifacts_identical"] = bool(v["functions_compared"]) and all(
@@ -338,6 +408,12 @@ def summarize(report):
         "distinct_test_functions":len({(c["test"],r["index"]) for c in cases for v in c["variants"] for r in v["functions_compared"]}),
         "byte_and_relocation_matches_under_accepted_settings":sum(r.get("exact_code_and_relocations",False) for r in rows),
         "exact_code_artifacts":sum(r.get("exact_code_artifact",False) for r in rows),
+        # The honest metric: outputs of the proved compiler (`lean-backend --settings`, no
+        # stock-configured step) identical to stock, for functions `backend_correct` covers.
+        "proved_exact_code_artifacts":sum(r["proved"]["honest"] for r in rows if "proved" in r),
+        "proved_function_statuses":dict(Counter(r["proved"]["status"] + ("" if r["proved"]["backend_correct"] or
+            r["proved"]["status"] not in ("identical_code_artifact", "different_code_artifact") else "_not_covered")
+            for r in rows if "proved" in r)),
         "full_artifact_equivalence_verified":False,
         "failed_stock_compile_assertions":sum(not a["passed"] for v in variants for a in v.get("stock_compile_assertions",[])),
         "nonrepeatable_reference_stages":sum(not v["reference_repeat_verified"] for v in variants),
@@ -356,7 +432,7 @@ def safe_one(path, out, env, binary):
 
 
 def main():
-    global LEAN_BINARY, LEAN_COMPILER_ARGS
+    global LEAN_BINARY, LEAN_COMPILER_ARGS, PROVED_BINARY
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out",type=Path,default=ROOT / "target/stock-compiler-comparison")
     parser.add_argument("--input",type=Path,action="append")
@@ -365,9 +441,12 @@ def main():
                         help="comparison-compatible compiler; default: lean-backend")
     parser.add_argument("--lean-compiler-arg", action="append", default=[],
                         help="extra compiler argument, recorded in every command and report; use = for --flags")
+    parser.add_argument("--proved-compiler", type=Path, default=PROVED_BINARY,
+                        help="the proved compiler of the honest metric (--settings mode); default: lean-backend")
     args = parser.parse_args()
     LEAN_BINARY = args.lean_compiler.resolve()
     LEAN_COMPILER_ARGS = args.lean_compiler_arg
+    PROVED_BINARY = args.proved_compiler.resolve()
     if args.jobs < 1: parser.error("--jobs must be positive")
     if os.environ.get("BLESS") is not None: parser.error("BLESS must be unset")
     out = args.out.resolve()
@@ -410,7 +489,8 @@ def main():
         "lean_source_tree_sha256":lean_tree.hexdigest(),"lean_compiler":str(LEAN_BINARY),
         "regalloc_oracle":{"path":str(regalloc),"sha256":digest(regalloc.read_bytes())},
         "lean_compiler_args":LEAN_COMPILER_ARGS,"dependency_provenance":dependencies,
-        "binary_hashes":{os.path.relpath(p, ROOT):digest(p.read_bytes()) for p in [binary, LEAN_BINARY,ROOT/"rust/target/release/lean-regalloc"]},
+        "proved_compiler":str(PROVED_BINARY),
+        "binary_hashes":{os.path.relpath(p, ROOT):digest(p.read_bytes()) for p in [binary, LEAN_BINARY,PROVED_BINARY,ROOT/"rust/target/release/lean-regalloc"]},
         "actual_ci_execution":False,"execution_performed":False,"configuration_overrides":[],"binary_normalization":False,
         "progress":"running","tests":[],"full_artifact_equivalence_verified":False}
     write(out / "progress.json", {"completed":0,"total":len(inputs)})
@@ -425,6 +505,9 @@ def main():
         "AArch64 cross-host compilation, not an actual CI execution.\nNo stripping, masking, or machine-byte normalization.\n\n```json\n"
         + json.dumps(report["totals"],indent=2) + "\n```\n\n"
         "Code-artifact equality means identical code bytes, relocations, alignment and traps under an accepted settings contract.\n"
+        "The honest metric (proved_exact_code_artifacts) counts the outputs of the proved compiler (lean-backend --settings: "
+        "the test's settings as compiler input, no stock-configured step) that are identical to stock, for functions "
+        "backend_correct covers.\n"
         "Full artifact equality additionally requires unwind, stack maps and exception metadata; unknown metadata is not a pass.\n"
         "Functions repeat when a stock test declares multiple targets/settings or binary-producing commands.\n"
         "Non-binary tests, foreign architectures, unsupported settings and missing outputs are explicit coverage categories.\n")

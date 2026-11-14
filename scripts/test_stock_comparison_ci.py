@@ -20,12 +20,15 @@ def fixture():
         "inventory": [{"test": "a.clif"}, {"test": "b.clif"}],
         "tests": [
             {"test": "a.clif", "status": "binary_test", "variants": [{"index": 0, "stage": "compile", "functions_compared": [
-                {"name": "%f", "status": "identical_code_artifact"}, {"name": "%g", "status": "lean_unsupported"}]}]},
+                {"name": "%f", "status": "identical_code_artifact",
+                 "proved": {"status": "identical_code_artifact", "backend_correct": True, "honest": True}},
+                {"name": "%g", "status": "lean_unsupported",
+                 "proved": {"status": "lean_unsupported", "backend_correct": False, "honest": False}}]}]},
             {"test": "b.clif", "status": "non_binary_test", "variants": []}],
         "totals": {"official_test_files": 2, "inventoried_test_files": 2,
             "file_statuses": {"binary_test": 1, "non_binary_test": 1},
             "function_statuses": {"identical_code_artifact": 1, "lean_unsupported": 1},
-            "test_function_compilations": 2, "exact_code_artifacts": 1,
+            "test_function_compilations": 2, "exact_code_artifacts": 1, "proved_exact_code_artifacts": 1,
             "failed_stock_compile_assertions": 0, "source_files_modified": 0},
         "execution_performed": False, "actual_ci_execution": False, "binary_normalization": False,
         "configuration_overrides": [], "target": "aarch64-unknown-linux-gnu",
@@ -80,6 +83,18 @@ class CIReportTests(unittest.TestCase):
             report = fixture(); report["tests"][0]["variants"][0]["functions_compared"][0]["status"] = status
             with self.assertRaises(ValueError): CI.validate_report(report)
 
+    def test_proved_results_must_be_complete_and_consistent(self):
+        def row(report):
+            return report["tests"][0]["variants"][0]["functions_compared"][0]
+        changes = (lambda r: r["totals"].update(proved_exact_code_artifacts=0),
+                   lambda r: row(r).pop("proved"),
+                   lambda r: row(r)["proved"].update(status="lean_compilation_failed", honest=False),
+                   lambda r: row(r)["proved"].update(backend_correct=False),
+                   lambda r: row(r)["proved"].update(status="different_code_artifact"))
+        for change in changes:
+            report = fixture(); change(report)
+            with self.assertRaises(ValueError): CI.validate_report(report)
+
     def test_invalid_totals_and_assertions_are_rejected(self):
         for field in ("exact_code_artifacts", "test_function_compilations", "failed_stock_compile_assertions", "source_files_modified"):
             report = fixture(); report["totals"][field] += 1
@@ -95,6 +110,7 @@ class CIReportTests(unittest.TestCase):
             self.assertTrue(summary["measurement_complete"])
             self.assertGreater(summary["peak_runner_memory_used_bytes"], 0)
             self.assertEqual(summary["matched"], [["a.clif", 0, "compile", 0, "%f"]])
+            self.assertEqual(summary["proved_matched"], [["a.clif", 0, "compile", 0, "%f"]])
             self.assertIn("scripts/stock-compiler-compare.py", summary["harness_sha256"])
             self.assertEqual(summary["baseline_comparison"],
                              {"available": False, "failed": False, "reason": "no baseline lookup"})
@@ -109,9 +125,11 @@ class CIReportTests(unittest.TestCase):
                 self.assertFalse((Path(temp) / "result.ci-summary.json").exists())
 
 
-def baseline(matched, harness, schema=2, **found):
+def baseline(matched, harness, schema=2, proved=None, **found):
     summary = {"schema": schema, "run_id": 77, "run_attempt": 1, "head_sha": "b" * 40,
                "matched": matched, "harness_sha256": harness}
+    if proved is not None:
+        summary["proved_matched"] = proved
     return {"available": True, "run_id": 77, "run_attempt": 1, "head_sha": "b" * 40, "summary": summary, **found}
 
 
@@ -126,6 +144,20 @@ class BaselineTests(unittest.TestCase):
         self.assertEqual((result["gained_count"], result["lost_count"], result["baseline_exact_code_artifacts"]), (1, 1, 2))
         self.assertEqual(result["harness_changed"], ["y", "z"])
         self.assertEqual((result["run_id"], result["head_sha"]), (77, "b" * 40))
+
+    def test_honest_outputs_gained_and_lost(self):
+        result = CI.compare_with_baseline([self.A], {}, baseline([self.A], {}, proved=[self.A, self.B]), [self.A, self.C])
+        proved = result["proved"]
+        self.assertTrue(proved["available"])
+        self.assertEqual((proved["gained"], proved["lost"], proved["baseline_proved_exact_code_artifacts"]),
+                         ([self.C], [self.B], 2))
+        self.assertEqual((result["gained_count"], result["lost_count"]), (0, 0))
+
+    def test_baseline_before_the_honest_metric_compares_only_the_exact_outputs(self):
+        result = CI.compare_with_baseline([self.A], {}, baseline([self.B], {}), [self.A])
+        self.assertEqual((result["available"], result["lost"]), (True, [self.B]))
+        self.assertEqual((result["proved"]["available"], result["proved"]["failed"]), (False, False))
+        self.assertIn("predates", result["proved"]["reason"])
 
     def test_same_name_at_another_position_is_another_output(self):
         result = CI.compare_with_baseline([self.B], {}, baseline([self.A], {}))
@@ -146,7 +178,9 @@ class BaselineTests(unittest.TestCase):
         bad_entry = baseline([["a.clif", 0, "compile", [0], "%f"]], {})
         no_hashes = baseline([], {}); del no_hashes["summary"]["harness_sha256"]
         no_schema = baseline([], {}); del no_schema["summary"]["schema"]
+        bad_proved = baseline([], {}, proved=[["a.clif", 0]])
         for found, reason in (({"available": False, "failed": True, "reason": "baseline lookup failed: X"}, "lookup failed"),
+                              (bad_proved, "malformed"),
                               ({"available": False, "reason": "no flag"}, "no flag"),
                               ([], "lookup result is malformed"), (None, "lookup result is malformed"),
                               (baseline([], {}, run_id=78), "does not belong"),

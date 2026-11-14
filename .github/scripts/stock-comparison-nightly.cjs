@@ -420,11 +420,13 @@ function signed(value) {
 // The PR comment's table, with the change since the previous report in each row.
 function table(before, after) {
   const old = before && totalsRows(before);
-  return '| Check | Result | Change |\n| --- | --- | --- |\n' + totalsRows(after).map((row, i) => {
+  return '| Check | Result | Change |\n| --- | --- | --- |\n' + totalsRows(after).map(row => {
     let change = '—';
-    if (old) {
-      change = signed(row.value - old[i].value);
-      if (row.total !== old[i].total) change += ` (of ${signed(row.total - old[i].total)})`;
+    // By label: a report from before a row existed (the honest metric) has no change for it.
+    const previous = old?.find(o => o.label === row.label);
+    if (previous) {
+      change = signed(row.value - previous.value);
+      if (row.total !== previous.total) change += ` (of ${signed(row.total - previous.total)})`;
     }
     return `| ${row.label} | ${row.text} | ${change} |\n`;
   }).join('');
@@ -504,7 +506,11 @@ function render(plan) {
     else if (plan.initial) body += `Main at ${sha(plan.latest.sha)}, as in the previous report.\n\n`;
     else body += `Main at ${sha(plan.latest.sha)}. No earlier measurement to compare with.\n\n`;
     body += table(plan.initial?.totals, plan.latest.totals);
+    const honest = plan.latest.totals.proved_exact_code_artifacts;
+    const honestBefore = plan.initial?.totals.proved_exact_code_artifacts;
     compact += `${plan.latest.exact}/${plan.latest.outputs} exact` + (change === null ? '' : ` (${signed(change)})`) +
+      (honest === undefined ? '' : `, ${honest} honest` +
+        (honestBefore === undefined ? '' : ` (${signed(honest - honestBefore)})`)) +
       ` at ${plan.latest.sha.slice(0, 12)}.`;
   }
   const problems = plan.rows.filter(row => row.problem);
