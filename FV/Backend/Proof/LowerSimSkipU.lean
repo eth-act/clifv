@@ -305,9 +305,8 @@ theorem driver_correctU_skip (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.to
     (hargs : ArgsAtEntry F f.sig args w₀)
     (htr : E2E.TrapsExplicitX env p cs) (fuel : Nat) :
     RunOkU vcK sem XR MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoopX env p fuel cs.toX) := by
-  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_stepP H hds HR.mem HR.mrs hB0 hcall hfunc hslots hbody
+  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK H hK hds HR.mem HR.mrs hB0 hcall hfunc hslots hbody
     hterm hregs hty hsig hmr hargs (ρ₀ := ρ₀)
-  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
   exact RunOkU.prefix hsK (sim_runXK H HU HR hK hfunc htr fuel cs.toX _ (.refl _) hmK)
 
 /-- **The driver lemma with unwinding for `vc` or its kept code.** -/

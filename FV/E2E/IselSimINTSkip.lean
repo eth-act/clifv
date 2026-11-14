@@ -252,17 +252,20 @@ theorem iselSim_relWI_cleanupNT_stage_both {p : Clif.Program} {f : Clif.Function
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
   have hPr := probeOf_valueSem F ⟨fa.k, af.slotBase⟩ XI
-  obtain ⟨k0, ρ₁, w₁, hstar, hm⟩ := entry_stepP (Hb 0)
-    (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
-    (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c) hB0 hce.callers
-    hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs
   rcases hsk with heq | hK
-  · rw [heq]
+  · obtain ⟨k0, ρ₁, w₁, hstar, hm⟩ := entry_stepP (Hb 0)
+      (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
+      (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c) hB0 hce.callers
+      hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs
+    rw [heq]
     exact RunOkAbiNT.prefix
       (vstar_mapW (counted_probe_proj hPr 0) hstar.star)
       (sim_runGNT (noncallIndep_valueSem F ⟨fa.k, af.slotBase⟩ XI) hPr hP Hb Hs hseg htc fuel cs
         0 0 k0 ρ₁ w₁ .refl hm)
-  obtain ⟨⟨b1, k1, ρ1, w1⟩, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
+  obtain ⟨⟨b1, k1, ρ1, w1⟩, hsK, hmK⟩ := entry_matchK (Hb 0) hK
+    (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
+    (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c) hB0 hce.callers
+    hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs
   exact RunOkAbiNT.prefix
     (vstar_mapW (counted_probe_proj hPr 0) hsK)
     (sim_runGNTK hK (noncallIndep_valueSem F ⟨fa.k, af.slotBase⟩ XI) hPr hP Hb Hs hseg htc fuel

@@ -144,6 +144,24 @@ theorem flattenRep_getElem? {α : Type} (len : Nat → Nat) (x : Nat → α) :
         Nat.add_sub_cancel_left]
       simp [ht]
 
+theorem length_filterMap_map {α β γ : Type} (g : α → Option β) (k : α → γ) (l : List α) :
+    (l.filterMap fun q => (g q).map fun _ => k q).length = (l.filterMap g).length := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    simp only [List.filterMap_cons]
+    cases g a <;> simp [ih]
+
+/-- The entry code's mask has the entry code's length. -/
+theorem preMask_length (f : Clif.Function) (R : Reg → Reg) (b : Nat) :
+    (preMask f R b).length = (pre f R b).length := by
+  cases b with
+  | zero =>
+    cases hB : f.blocks[0]? with
+    | none => simp [preMask, pre, hB]
+    | some B => simp [preMask, pre, hB, entryLoads, length_filterMap_map]
+  | succ n => simp [preMask, pre]
+
 /-- The mask of an original block at a statement's segment: `!drop b j`. -/
 theorem skipMask_seg {drop : Nat → Nat → Bool} {b j t : Nat} {B : Clif.Block}
     (hB : f.blocks[b]? = some B) (hj : j < B.body.length) (ht : t < (seg f R bl b j).length) :
@@ -156,8 +174,8 @@ theorem skipMask_seg {drop : Nat → Nat → Bool} {b j t : Nat} {B : Clif.Block
   have hle := sum_range_le (fun j => (seg f R bl b j).length) (show j + 1 ≤ B.body.length by omega)
   rw [List.range_succ, List.map_append, List.sum_append] at hle
   simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil] at hle
-  rw [List.append_assoc, List.getElem?_append_right (by simp only [List.length_replicate]; omega),
-    List.length_replicate,
+  rw [List.append_assoc, List.getElem?_append_right (by rw [preMask_length]; omega),
+    preMask_length,
     show (pre f R b).length + ((List.range j).map fun j' => (seg f R bl b j').length).sum + t -
       (pre f R b).length = ((List.range j).map fun j' => (seg f R bl b j').length).sum + t by omega,
     List.getElem?_append_left (by rw [hF]; omega)]
@@ -172,19 +190,20 @@ theorem skipMask_tseg {drop : Nat → Nat → Bool} {b t : Nat} {B : Clif.Block}
   simp only
   have hF := flattenRep_length (fun j => (seg f R bl b j).length) (fun j => !drop b j)
     B.body.length
-  rw [List.getElem?_append_right (by simp only [List.length_append, List.length_replicate]; omega),
-    List.length_append, List.length_replicate, hF]
+  rw [List.getElem?_append_right (by simp only [List.length_append, preMask_length]; omega),
+    List.length_append, preMask_length, hF]
   simp [ht]
 
-/-- The mask of an original block at its entry code: kept. -/
+/-- The mask of an original block at its entry code: the entry code's mask `preMask` (the
+statement was `some true` until #586, when the entry code was kept whole: now the load of a
+stack-passed parameter without a CLIF use is deleted). -/
 theorem skipMask_pre {drop : Nat → Nat → Bool} {b t : Nat} {B : Clif.Block}
     (hB : f.blocks[b]? = some B) (ht : t < (pre f R b).length) :
-    (skipMask f R bl vc drop b)[t]? = some true := by
+    (skipMask f R bl vc drop b)[t]? = (preMask f R b)[t]? := by
   unfold skipMask
   rw [hB]
   simp only
-  rw [List.append_assoc, List.getElem?_append_left (by simpa using ht)]
-  simp [ht]
+  rw [List.append_assoc, List.getElem?_append_left (by rw [preMask_length]; exact ht)]
 
 end
 
@@ -565,10 +584,13 @@ theorem Deletes.exact {G : Nat → Prop} {mask : Nat → List Bool} (hD : Delete
     Deletes vc vcK mask (fun _ => False) :=
   ⟨hD.blk, hD.len, hD.last, hD.cfg, fun _ _ _ _ _ _ _ _ _ h => h, fun _ _ _ _ _ _ _ h => h⟩
 
-/-- **The entry code runs unchanged in the kept code** (it is kept whole): a run of `vc` through
-the entry code is a run of `vcK` to the kept index, with the same vreg file and world. -/
+/-- **The entry code runs unchanged in the kept code where it is kept whole** (`hpre`: no entry
+load is deleted): a run of `vc` through the entry code is a run of `vcK` to the kept index, with
+the same vreg file and world. (Until #586 the entry code was always kept whole and the statement
+had no `hpre`; `entry_matchK`, `entry_matchK2` are the entry of the kept code in general.) -/
 theorem entry_runK {W : Type} {sw : ISem CV W} (hK : SkipHyp f vc R bl drop vcK)
     {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0) {k : Nat} (hk : k = (pre f R 0).length)
+    (hpre : ∀ t < (pre f R 0).length, (preMask f R 0)[t]? = some true)
     {ρ₀ ρ₁ : Nat → CV} {w₀ w₁ : W}
     (hstar : StarP (VStep vc sw) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩)) :
     Star (VStep vcK sw) (.run ⟨0, 0, ρ₀, w₀⟩)
@@ -577,7 +599,9 @@ theorem entry_runK {W : Type} {sw : ISem CV W} (hK : SkipHyp f vc R bl drop vcK)
       obtain ⟨t, ht, ρ', w', he⟩ := hz
       simp only [VConf.run.injEq, VState.mk.injEq] at he
       obtain ⟨rfl, rfl, -, -⟩ := he
-      exact skipMask_pre hB0 (by rw [← hk]; simpa using ht))
+      have ht' : 0 + t < (pre f R 0).length := by rw [← hk]; simpa using ht
+      rw [skipMask_pre hB0 ht']
+      exact hpre _ ht')
     hstar (.run ⟨0, 0, ρ₀, w₀⟩) ⟨rfl, by simp, rfl, fun _ _ => rfl⟩
   cases cK with
   | run vsK =>
@@ -591,19 +615,187 @@ theorem entry_runK {W : Type} {sw : ISem CV W} (hK : SkipHyp f vc R bl drop vcK)
   | ret _ _ => exact absurd hCK id
   | halt _ => exact absurd hCK id
 
-/-- **The entry of the kept code**: from the entry run of `vc` (`entry_stepP`), the kept code's
-run to a state related by `MatchK`. -/
-theorem entry_matchK {W : Type} {sw : ISem CV W} {MRW : MemRelTW W}
-    (hK : SkipHyp f vc R bl drop vcK) {cs : Clif.State} {B0 : Clif.Block}
-    (hB0 : f.blocks[0]? = some B0) (hbody : cs.frame.body = B0.body) {k : Nat}
-    {ρ₀ ρ₁ : Nat → CV} {w₀ w₁ : W}
-    (hstar : StarP (VStep vc sw) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩))
-    (hm : Match f ctx R gn bl A MRW slots cs ⟨0, k, ρ₁, w₁⟩) :
-    ∃ vsK, Star (VStep vcK sw) (.run ⟨0, 0, ρ₀, w₀⟩) (.run vsK) ∧
-      MatchK f ctx R gn bl A MRW slots (skipMask f R bl vc drop)
-        (DeadDef vc (skipMask f R bl vc drop)) cs vsK :=
-  ⟨_, entry_runK hK hB0 (entry_pos hB0 hbody hm) hstar, ⟨0, k, ρ₁, w₁⟩,
-    ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hm⟩
+theorem maskKeep_append {m1 m2 : List Bool} {l1 l2 : List MInst} (h : m1.length = l1.length) :
+    maskKeep (m1 ++ m2) (l1 ++ l2) = maskKeep m1 l1 ++ maskKeep m2 l2 := by
+  induction l1 generalizing m1 with
+  | nil => cases m1 with
+    | nil => rfl
+    | cons _ _ => simp at h
+  | cons a l1 ih => cases m1 with
+    | nil => simp at h
+    | cons x m1 =>
+      rw [List.cons_append, List.cons_append, maskKeep_cons, maskKeep_cons,
+        ih (by simpa using h), List.append_assoc]
+
+/-- Masking a `filterMap` by a predicate of the elements it keeps is filtering first. -/
+theorem maskKeep_filterMap_map {α : Type} (g : α → Option MInst) (k : α → Bool) (l : List α) :
+    maskKeep (l.filterMap fun q => (g q).map fun _ => k q) (l.filterMap g) =
+      (l.filter k).filterMap g := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    cases hg : g a with
+    | none => cases hk : k a <;> simp [List.filterMap_cons, List.filter_cons, hg, hk, ih]
+    | some m =>
+      cases hk : k a <;>
+        simp [List.filterMap_cons, List.filter_cons, hg, hk, maskKeep_cons, ih]
+
+theorem filterMap_map_getElem? {α β γ : Type} (g : α → Option β) (k : α → γ) :
+    ∀ (l : List α) {a : α} {m : β}, a ∈ l → g a = some m →
+      ∃ t : Nat, (l.filterMap g)[t]? = some m ∧
+        (l.filterMap fun q => (g q).map fun _ => k q)[t]? = some (k a)
+  | [], _, _, h, _ => by simp at h
+  | b :: l, a, m, h, hg => by
+    rcases List.mem_cons.mp h with rfl | h
+    · exact ⟨0, by simp [List.filterMap_cons, hg], by simp [List.filterMap_cons, hg]⟩
+    · obtain ⟨t, h1, h2⟩ := filterMap_map_getElem? g k l h hg
+      cases hb : g b with
+      | none =>
+        exact ⟨t, by simp [List.filterMap_cons, hb, h1], by simp [List.filterMap_cons, hb, h2]⟩
+      | some m' =>
+        exact ⟨t + 1, by simp [List.filterMap_cons, hb, h1],
+          by simp [List.filterMap_cons, hb, h2]⟩
+
+/-- **The kept entry code** (#586): block 0 of the kept code begins with `Args` and the loads of
+the stack-passed parameters with a CLIF use (`entryLoadsK` of `irUsedB f`), and more code follows;
+the kept index of the entry code's end is the length of that kept entry code; the vreg of a
+deleted load is a `DeadDef`. -/
+theorem entry_shapeK {W : Type} {sw : ISem CV W} {MRW : MemRelTW W}
+    (H : DriverHyp f vc ctx st0 R gn bl A sw MRW env p) (hK : SkipHyp f vc R bl drop vcK)
+    {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0) :
+    ∃ vbK, vcK.blocks[0]? = some vbK ∧
+      SegAt vbK 0 (.args (entryRegs f R B0) :: entryLoadsK f R (irUsedB f) B0) ∧
+      1 + (entryLoadsK f R (irUsedB f) B0).length < vbK.insts.size ∧
+      kidx (skipMask f R bl vc drop 0) (pre f R 0).length =
+        1 + (entryLoadsK f R (irUsedB f) B0).length ∧
+      ∀ q ∈ entryParams f B0, ∀ off, q.1.2 = .stack off → irUsedB f q.1.1.1 = false →
+        DeadDef vc (skipMask f R bl vc drop) q.1.1.1 := by
+  obtain ⟨L, hL⟩ := H.blow hB0
+  obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
+  have hD := hK.deletes
+  obtain ⟨vbK, hvbK, hinsK, -, -⟩ := hD.blk 0 vb hvb
+  have hpre : pre f R 0 = .args (entryRegs f R B0) :: entryLoads f R B0 := by simp [pre, hB0]
+  have hpm : preMask f R 0 = true :: (entryParams f B0).filterMap fun q =>
+      (entryLoadOf R q).map fun _ => irUsedB f q.1.1.1 := by simp [preMask, hB0]
+  obtain ⟨M2, hM2, hM2c⟩ : ∃ M2, skipMask f R bl vc drop 0 = preMask f R 0 ++ M2 ∧
+      0 < M2.count true := by
+    refine ⟨_, by unfold skipMask; rw [hB0]; simp only; rw [List.append_assoc], ?_⟩
+    rw [List.count_append, List.count_replicate_self]
+    have := List.length_pos_iff.mpr htne
+    omega
+  have hkeepPre : maskKeep (preMask f R 0) (pre f R 0) =
+      .args (entryRegs f R B0) :: entryLoadsK f R (irUsedB f) B0 := by
+    rw [hpm, hpre, maskKeep_cons, entryLoads, maskKeep_filterMap_map]
+    rfl
+  have hcodeK : vbK.insts.toList =
+      (.args (entryRegs f R B0) :: entryLoadsK f R (irUsedB f) B0) ++
+        maskKeep M2 (((List.range B0.body.length).map (seg f R bl 0)).flatten ++ tseg R bl 0) := by
+    rw [hinsK, hM2, hcode, List.append_assoc, maskKeep_append (preMask_length f R 0), hkeepPre]
+  have hcnt : (preMask f R 0).count true = 1 + (entryLoadsK f R (irUsedB f) B0).length := by
+    rw [← length_maskKeep (preMask_length f R 0), hkeepPre, List.length_cons, Nat.add_comm]
+  have hloadsLt : ∀ {t : Nat} {m : MInst}, (entryLoads f R B0)[t]? = some m →
+      1 + t < (pre f R 0).length := by
+    intro t m ht
+    have := (List.getElem?_eq_some_iff.mp ht).1
+    rw [hpre, List.length_cons]; omega
+  refine ⟨vbK, hvbK, ?_, ?_, ?_, ?_⟩
+  · intro k hk
+    rw [Nat.zero_add, ← Array.getElem?_toList, hcodeK, List.getElem?_append_left hk,
+      List.getElem?_eq_getElem hk]
+  · have h1 : vbK.insts.size = (skipMask f R bl vc drop 0).count true := by
+      rw [← Array.length_toList, hinsK, length_maskKeep (by rw [hD.len 0 vb hvb]; simp)]
+    rw [h1, hM2, List.count_append, hcnt]; omega
+  · unfold kidx
+    rw [hM2, ← preMask_length f R 0, List.take_left' rfl, hcnt]
+  · intro q hq off hloc hun
+    have hq1 : q.1.1 ∈ B0.params := by
+      unfold entryParams at hq
+      exact (List.of_mem_zip (List.of_mem_zip hq).1).1
+    have hRq : R (.vreg q.1.1.1 .int) = .vreg q.1.1.1 .int := by
+      simp [H.shape.ren.vreg, H.shape.params B0 (List.mem_of_getElem? hB0) q.1.1 hq1]
+    have hload : entryLoadOf R q = some (.load (loadOpOfBytes q.2) (.vreg q.1.1.1 .int)
+        (.fpOffset (16 + (off : Int))) trustedFlags) := by
+      simp only [entryLoadOf, hloc, hRq]
+    obtain ⟨t, ht1, ht2⟩ := filterMap_map_getElem? (entryLoadOf R)
+      (fun q => irUsedB f q.1.1.1) (entryParams f B0) hq hload
+    have hlt := hloadsLt ht1
+    have hi : vb.insts[1 + t]? = some (.load (loadOpOfBytes q.2) (.vreg q.1.1.1 .int)
+        (.fpOffset (16 + (off : Int))) trustedFlags) := by
+      rw [← Array.getElem?_toList, hcode, List.append_assoc, List.getElem?_append_left hlt, hpre,
+        Nat.add_comm, List.getElem?_cons_succ]
+      exact ht1
+    have hm : (skipMask f R bl vc drop 0)[1 + t]? = some false := by
+      rw [hM2, List.getElem?_append_left (by rw [preMask_length]; exact hlt), hpm, Nat.add_comm,
+        List.getElem?_cons_succ, ht2, hun]
+    have hops : (MInst.load (loadOpOfBytes q.2) (.vreg q.1.1.1 .int)
+        (.fpOffset (16 + (off : Int))) trustedFlags).operands =
+        .ok #[⟨q.1.1.1, .int, .def, .late, .reg⟩] := rfl
+    exact deadDef_of hvb hi hm (by simp [vdefs, hops, Operand.isDef])
+
+/-- **The entry of the kept code on two worlds** (`entry_step2Z` for the kept code, whose entry
+code has no load of a stack-passed parameter without a CLIF use, #586): from two body-entry
+worlds as in `entry_step2Z`, the kept code reaches the kept index of the entry code's end in
+both with the same vreg file `ρK`; `Match` holds of the vreg file `ρF`, which agrees with `ρK`
+outside the vregs the deleted instructions write (`CorrC`'s condition). -/
+theorem entry_matchK2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    (hK : SkipHyp f vc R bl drop vcK) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ w₀' : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hmr' : MR slots cs.mem w₀') (hargs : ArgsAtEntry F f.sig args w₀)
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
+    ∃ ρK ρF w₁ w₁',
+      Star (VStep vcK sem) (.run ⟨0, 0, ρ₀, w₀⟩)
+        (.run ⟨0, kidx (skipMask f R bl vc drop 0) (pre f R 0).length, ρK, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, (pre f R 0).length, ρF, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
+      Star (VStep vcK sem) (.run ⟨0, 0, ρ₀, w₀'⟩)
+        (.run ⟨0, kidx (skipMask f R bl vc drop 0) (pre f R 0).length, ρK, w₁'⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, (pre f R 0).length, ρF, w₁'⟩ ∧ SameWorld F w₁' w₀' ∧
+      ∀ n, ¬ DeadDef vc (skipMask f R bl vc drop) n → ρF n = ρK n := by
+  obtain ⟨vbK, hvbK, hsegK, hltK, hkidx, hdead⟩ := entry_shapeK H hK hB0
+  obtain ⟨ρK, ρF, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2, hag⟩ := entry_step2ZK H hds hMem hMR
+    hB0 hcall hfunc hslots hbody hterm hregs hty hsig (ρ₀ := ρ₀) hmr hmr' hargs hreg h29 hstk
+    (irUsedB f) hvbK hsegK hltK
+  rw [← hkidx] at hs1 hs2
+  refine ⟨ρK, ρF, w₁, w₁', hs1.star, hm1, hsw1, hs2.star, hm2, hsw2, fun n hn => ?_⟩
+  refine hag n fun q hq hqn hun off hloc => hn ?_
+  rw [← hqn]
+  exact hdead q hq off hloc (by rw [hqn]; exact hun)
+
+/-- **The entry of the kept code**: the kept code's entry run to a state related by `MatchK`.
+(Until #586 the statement took the entry run of `vc` and its `Match` for any semantics, and moved
+the run to the kept code, where the entry code was kept whole. Now the kept entry code has no
+load of a stack-passed parameter without a CLIF use, so it is run here, under `entry_stepP`'s
+premises; `Match` is of the vreg file that also has the values those loads would have read.) -/
+theorem entry_matchK (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    (hK : SkipHyp f vc R bl drop vcK) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) :
+    ∃ vsK, Star (VStep vcK sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run vsK) ∧
+      MatchK f ctx R gn bl A MR slots (skipMask f R bl vc drop)
+        (DeadDef vc (skipMask f R bl vc drop)) cs vsK := by
+  obtain ⟨ρK, ρF, w₁, -, hs1, hm1, -, -, -, -, hag⟩ := entry_matchK2 H hK hds hMem hMR hB0 hcall
+    hfunc hslots hbody hterm hregs hty hsig (ρ₀ := ρ₀) hmr hmr hargs (fun _ _ _ => rfl) rfl
+    (fun _ _ _ _ _ => rfl)
+  exact ⟨_, hs1, ⟨0, (pre f R 0).length, ρF, w₁⟩, ⟨rfl, rfl, rfl, hag⟩, hm1⟩
 
 /-- **The driver lemma for the kept code, with the ABI return values** (`driver_correct_abi` for
 `vcK`, the VCode without the unused statements). -/
@@ -622,9 +814,8 @@ theorem driver_correct_abi_skip (H : DriverHyp f vc ctx st0 R gn bl A sem MR env
     (hP : RunPrem env p f cs) {Q : List Clif.Val → Prop}
     (hQ : ∀ s sv, Reach env p cs s → s.frame.getMany (sretRet f) = .ok sv → Q sv) (fuel : Nat) :
     RunOkAbi vcK sem MR slots Q ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
-  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_stepP H hds hMem hMR hB0 hcall hfunc hslots hbody hterm
+  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK H hK hds hMem hMR hB0 hcall hfunc hslots hbody hterm
     hregs hty hsig hmr hargs (ρ₀ := ρ₀)
-  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
   exact RunOkAbi.prefix hsK (sim_run_abiK hK H hP hQ fuel cs vsK (.refl _) hmK)
 
 /-- **The driver lemma for the kept code** (`driver_correct` for `vcK`). -/
@@ -761,5 +952,65 @@ theorem skipHyp_witness : ∃ vc R bl drop vcK, lowerFunction skipWitness = .ok 
     rcases hsk with he | hK
     · rw [he] at hne; exact absurd rfl hne
     · exact ⟨vc, R, bl, _, _, rfl, hc, hK, fun he => hne (by rw [he])⟩
+
+/-- The witness's source for the entry code (#586): `v8` and `v9` are passed on the stack, `v8`
+has no CLIF use and `v9` has one. Cranelift's `gen_arg_setup` emits the load of `v9` only. -/
+def skipArgWitnessSrc : String :=
+  "function %w(i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64, v9: i64):
+    v10 = iadd v0, v9
+    return v10
+}"
+
+/-- The witness function for the entry code. -/
+def skipArgWitness : Clif.Function :=
+  match (Clif.parseFile skipArgWitnessSrc).funcs[0]? with
+  | some p => match p.func with
+    | .ok f => f
+    | .error _ => default
+  | none => default
+
+/-- The witness lowers, the validator accepts it, the second instruction of its entry block
+writes `v8`'s vreg (the load of the unused stack-passed parameter), and `skipDead` deletes
+exactly that instruction (the instructions are compared by the vregs they write). -/
+theorem skipArgWitness_checks :
+    (match lowerFunction skipArgWitness with
+      | .ok vc => lowerCheck skipArgWitness vc &&
+          ((vc.blocks.toList.map fun b => (b.insts.toList.map defNums)[1]?) == [some [8]]) &&
+          (((skipDead skipArgWitness vc).blocks.toList.map fun b => b.insts.toList.map defNums) ==
+            vc.blocks.toList.map fun b => (b.insts.toList.map defNums).eraseIdx 1)
+      | .error _ => false) = true := by
+  native_decide
+
+/-- **Non-vacuity of the entry of the kept code** (`entry_shapeK`, `entry_matchK2`, `entry_matchK`
+with a deleted entry load, #586): on `skipArgWitness` the validator accepts the lowering and
+`SkipHyp` holds with the VCode that lacks the load of the unused stack-passed parameter `v8`. -/
+theorem skipHyp_arg_witness : ∃ vc R bl drop vcK, lowerFunction skipArgWitness = .ok vc ∧
+    lowerCheck skipArgWitness vc = true ∧ SkipHyp skipArgWitness vc R bl drop vcK ∧
+    (vc.blocks.toList.map fun b => (b.insts.toList.map defNums)[1]?) = [some [8]] ∧
+    (vcK.blocks.toList.map fun b => b.insts.toList.map defNums) =
+      vc.blocks.toList.map fun b => (b.insts.toList.map defNums).eraseIdx 1 := by
+  have h := skipArgWitness_checks
+  cases hl : lowerFunction skipArgWitness with
+  | error e => rw [hl] at h; cases h
+  | ok vc =>
+    rw [hl] at h
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨hc, hd⟩, hk⟩ := h
+    obtain ⟨-, -, R, -, bl, -, -, -, -, hsk⟩ := skipDead_spec hc
+    rcases hsk with he | hK
+    · exfalso
+      rw [he] at hk
+      cases hb : vc.blocks.toList with
+      | nil => rw [hb] at hd; cases hd
+      | cons b bs =>
+        rw [hb] at hk hd
+        simp only [List.map_cons, List.cons.injEq] at hk hd
+        have hlen := congrArg List.length hk.1
+        have hlt : 1 < (b.insts.toList.map defNums).length :=
+          (List.getElem?_eq_some_iff.mp hd.1).1
+        rw [List.length_eraseIdx, if_pos hlt] at hlen
+        omega
+    · exact ⟨vc, R, bl, _, _, rfl, hc, hK, hd, hk⟩
 
 end Backend.Proof.Driver

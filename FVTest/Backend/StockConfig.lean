@@ -244,8 +244,8 @@ Stock does not lower a `load` whose flags are `notrap` when none of its results 
 (`Proof.Driver.skippable` and `DeadCleanup.pureForm` exclude loads). `dropDeadNotrapLoads` drops
 such loads in this stock-configured driver only. It is NOT proved: like `argLoadsFromSp`, it is
 outside `backend_correct`, and every function of this mode is reported unverified. The default
-mode and `cargo fv` do not run it: cg_clif's Cranelift 0.136.1, the reference of `cargo fv`, keeps
-these loads (#970, #588).
+mode and `cargo fv` do not run it: cg_clif's Cranelift, the reference of `cargo fv`, is 0.135.0
+(nightly-2026-09-26), which keeps these loads; stock here is 0.136.1 (#970, #588).
 
 The CLIF justification is `Clif.evalInst_notrap_load` (`FV/Clif/NotrapLoad.lean`): a `notrap` load
 reads without changing the memory, or it is stuck; it never traps. So a source run either continues
