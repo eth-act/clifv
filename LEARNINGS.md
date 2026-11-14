@@ -120,6 +120,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Effect** (standalone `lean`, same session, peak RSS before → heaviest part): `RuleBitops7` 19.3 → 6.1 GB, `RuleArith` 15.2 → 4.5 GB, `RuleRestEmbed` 15.8 → 8.6 GB, `RuleBitops2` 12.7 → 5.2 GB, `RuleBitops5` 11.0 → 6.3 GB, `RuleShifts2` 9.5 → 6.1 GB. `RuleShifts3` did not improve (the part with `shifts_41` alone is ~10 GB): splitting helps when the peak is several declarations together, not one big one. Statements unchanged (all 7,998 `FV.Opt` constants hash-identical). (BuildDiet, `FV/Opt/Proof/Rule*P<n>.lean`.)
 - Don't over-split: evm.fast-dev found larger checkpoint groups built faster warm (see below).
 
+### A fact the generated ISLE tables lose: a separate invariant over a term set, not new tables
+- **Problem:** the typed coverage analysis (`CovT`) cannot show that the typed scopes never emit a literal-pool load: its abstract domain does not keep `Compile.f64PoolFree`. Refining the analysis changes `covTabT`, and the size, emission and shape tables are generated from it: 575 `Isel{CovT,SzT,EmitT,ShpT}Tab*` modules, 38,050 s of recorded module time, the heaviest 10.8 GB.
+- **Trick:** prove the one fact as its own uniform invariant (`Isle.Interp.UModel`, `KillGen`) over a generated term set (`Pool.poolTab`, 698 terms, closed under the rules and without `emit_u64_le_const`), and follow the one rule the set must leave out (`f64const`, 585, and `constant_f64`'s first-match selection) by hand (`IselPool`, `IselPoolFree`, #1002).
+- **Effect:** no table regenerated; two new proof modules, `IselPoolFree` about 150 s under a 7 GB cap (`LEAN_NUM_THREADS=1`, peak not recorded), `IselPool` 15 s; the reverse cone of the changed statements is 12 modules.
+
 ### Don't depend on private library internals
 - A proof that reached into the private internals of `Array.qsort` would break on a toolchain update. Sorting `cfg.loops.attach` instead carries the membership fact through the sort, with the same output (#318).
 

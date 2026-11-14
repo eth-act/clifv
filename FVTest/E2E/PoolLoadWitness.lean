@@ -2,6 +2,7 @@ import FVTest.Backend.FloatDriverT
 import FV.Backend.Proof.RegallocCover
 import FV.Backend.SpillAlloc
 import FV.E2E.EmitNear
+import FV.Compile.SubsetTFIn
 
 /-!
 Non-vacuity of the literal-pool load (S11e6, #565): `%litpool` of
@@ -96,6 +97,13 @@ theorem poolVal_lit : poolVal .size64 bits = (0x3ff7b8bac710cb29#64).setWidth 12
 /-- The prepared code meets the size condition, by its size: it has a pool load (`noPoolB` is
 false), so `poolReachB` holds by the `2 ^ 17` bound. -/
 theorem spillSizeOk_lit : E2E.spillSizeOkB (vcpOf fLit) = true ∧ (vcpOf fLit).noPoolB = false := by
+  native_decide
+
+/-- `%litpool` is outside the typed scopes (`Compile.functionET`, `Compile.functionETF`: its
+`f64const` is not `Compile.f64PoolFree`). On those scopes the prepared VCode has no literal-pool
+load (`E2E.noPoolB_lowerTF`, #1002); here it has one (`spillSizeOk_lit`), so that theorem's scope
+premise is needed. -/
+theorem fLit_outside : Compile.functionET fLit = false ∧ Compile.functionETF fLit = false := by
   native_decide
 
 /-- **Witness of `emitFunc_spill_near` with a literal load** (`emitFunc_near_of`'s size

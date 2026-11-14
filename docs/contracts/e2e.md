@@ -4079,7 +4079,8 @@ VCode and counted by `lean-e2e-check` (1149 of 1149 pass each): `spillSizeOkB` (
 condition, genuinely needed: a big enough function exceeds `b`'s 128 MiB; word bound < 2^24,
 largest corpus bound 279479; since #565 also `poolReachB`: below 2^17 words when the VCode has
 a literal-pool load, whose `ldr (literal)` reaches 1 MiB; subset E never has one,
-`noPoolB_of_formsCovered2`; Cranelift emits a constant island instead, #744), and three facts
+`noPoolB_of_formsCovered2`, nor do the typed scopes, `noPoolB_lowerTF`, #1002; Cranelift emits
+a constant island instead, #744), and three facts
 about instruction selection's output that are not
 yet proven from the ISLE rule data: `immsOkB` (immediates in the encoder's ranges; an indirect
 call target is an int vreg), `noAlwaysB` (no `condBr`/`trapIf` on `al`/`nv`, which relaxation
