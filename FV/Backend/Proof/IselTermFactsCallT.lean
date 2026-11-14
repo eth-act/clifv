@@ -39,9 +39,10 @@ theorem outRegsC_single (st : LState) (cs : List RegClass) :
     (fun r => [r]) by simp [outRegsC, Function.comp_def]]
   exact mapM_single_map _
 
-/-- `CallOutOk` over float-capable contexts. -/
+/-- `CallOutOk` over float-capable contexts whose `call` arguments are integers (S11g:
+`CallArgsInt`, which `CtxInvT` gave until `intArgs` dropped a `call`'s arguments). -/
 def CallOutOkT (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxInvT f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInvT f ctx → CallArgsInt ctx →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
     info.clif = some inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
@@ -54,7 +55,7 @@ def CallOutOkT (p : Program) (r : Rule) : Prop :=
 set_option maxHeartbeats 5000000 in
 /-- **`call`, colocated callee** (`rule_lower_2508`), float-capable context. -/
 theorem call_bl_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2508 := by
-  intro f ctx hctx ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hmatch heval
+  intro f ctx hctx hca ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_impl_ok hp (ctx := ctx) hc (n := n) (i := i)
@@ -69,7 +70,7 @@ theorem call_bl_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2508 
   cases hinfo
   rw [← ‹V.data 152 6 _ = info.data›] at hd
   obtain ⟨fn, args, ext, rfl, hext, hfs⟩ := instData_call_inv hd
-  have hai : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.intOps ii info _ hi hcl x (by simpa [intArgs])
+  have hai : ∀ x ∈ args, IntPos ctx x := fun x hx => hca ii info _ _ hi hcl x hx
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
@@ -120,7 +121,7 @@ theorem call_bl_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2508 
 set_option maxHeartbeats 5000000 in
 /-- **`call` through the GOT** (`rule_lower_2518`), float-capable context. -/
 theorem call_got_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2518 := by
-  intro f ctx hctx ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hmatch heval
+  intro f ctx hctx hca ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_ind_impl_ok hp (ctx := ctx) hc (n := n) (i := i)
@@ -137,7 +138,7 @@ theorem call_got_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2518
   cases hinfo
   rw [← ‹V.data 152 6 _ = info.data›] at hd
   obtain ⟨fn, args, ext, rfl, hext, hfs⟩ := instData_call_inv hd
-  have hai : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.intOps ii info _ hi hcl x (by simpa [intArgs])
+  have hai : ∀ x ∈ args, IntPos ctx x := fun x hx => hca ii info _ _ hi hcl x hx
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
@@ -188,9 +189,11 @@ theorem call_got_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2518
   simp [LState.emit, LState.fresh, stackBytes, hl]
   omega
 
-/-- **`lower` on a `call` of an extern** (float-capable context) raises the outgoing area to the
-callee's stack arguments. -/
-theorem callOut_runTermT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ii : Nat}
+/-- **`lower` on a `call` of an extern** (float-capable context with integer `call` arguments;
+S11g: `hca`, which `CtxInvT` gave until `intArgs` dropped a `call`'s arguments) raises the
+outgoing area to the callee's stack arguments. -/
+theorem callOut_runTermT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hca : CallArgsInt ctx) {ii : Nat}
     {info : IInfo} {fn : Clif.FnRef} {args : List Clif.ValueId} {e : Clif.ExtFunc}
     (hi : ctx.insts[ii]? = some info) (hc : info.clif = some (.call fn args))
     (he : f.extern? fn = some e) {s : LState} {out : V} {s' : LState} {tr : List RuleId}
@@ -215,10 +218,10 @@ theorem callOut_runTermT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) 
     rcases hid with ((((h | h) | h) | h) | h)
     · exact absurd h53 h
     · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2508 (by rw [h]; rfl)] at hmatch heval
-      exact call_bl_outT data_program f ctx hctx ii info _ hi hc {} rfl m n s #[] env' s1 out s' tr2
+      exact call_bl_outT data_program f ctx hctx hca ii info _ hi hc {} rfl m n s #[] env' s1 out s' tr2
         hm hn hmatch heval fn args e rfl he
     · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2518 (by rw [h]; rfl)] at hmatch heval
-      exact call_got_outT data_program f ctx hctx ii info _ hi hc {} rfl m n s #[] env' s1 out s'
+      exact call_got_outT data_program f ctx hctx hca ii info _ hi hc {} rfl m n s #[] env' s1 out s'
         tr2 hm hn hmatch heval fn args e rfl he
     · exact absurd hmatch (returnCall_unmatch hi hdat
         (.inl (eq_of_mem_of_id lower_ids_nodup hr mem_lower_2580 (by rw [h]; rfl))))

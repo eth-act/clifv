@@ -278,7 +278,7 @@ theorem call_bl_ruleOkT {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   have hres := call_results_lengthT hctx hi hcl hext
   have hrc := hctxT.call_retClasses hi hcl hE hext
-  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.intOps ii info _ hi hcl x hx
+  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hctxT.callArgs ii info fn args hi hcl x hx
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
@@ -362,7 +362,7 @@ theorem call_got_ruleOkT {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
   clear hnot
   have hres := call_results_lengthT hctx hi hcl hext
   have hrc := hctxT.call_retClasses hi hcl hE hext
-  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.intOps ii info _ hi hcl x hx
+  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hctxT.callArgs ii info fn args hi hcl x hx
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *

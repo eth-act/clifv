@@ -14,10 +14,14 @@ namespace Backend.Proof
 
 open Backend Isle Isle.Interp Isle.Aarch64
 
-/-- **The result types of a subset-E instruction of a typed context are E's.** -/
-theorem CtxT.resTysE {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) {ii : Nat} {info : IInfo}
+/-- **The result types of a subset-E instruction of a typed context are E's**, when the
+instruction's callee (if a `call`) has an integer signature (S11g: the `CtxTW` form; `CtxTW` does
+not record the `call` callees). -/
+theorem CtxTW.resTysE {f : Clif.Function} {ctx : Ctx} (h : CtxTW f ctx) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    (hE : Compile.instE inst = true) : ∀ t ∈ info.resTys, t ∈ eCTys := by
+    (hE : Compile.instE inst = true)
+    (hcx : ∀ fn args, inst = .call fn args → ∀ e, f.extern? fn = some e → Compile.sigE e.sig = true) :
+    ∀ t ∈ info.resTys, t ∈ eCTys := by
   intro t ht
   have hm := h.inv.resTysM ii info hi t ht
   obtain ⟨tys, htys, hres, -⟩ := h.inv.resTys ii info inst hi hc
@@ -25,7 +29,7 @@ theorem CtxT.resTysE {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) {ii : Nat}
   obtain ⟨ty, hty, rfl⟩ := List.mem_map.mp ht
   have hnf : ty.isFloat = false := by
     cases hci : Compile.isCallIndirect inst
-    · exact resTy_not_float_calls (h.calls.at hi hc) hE hci ty (by rw [htys]; exact hty)
+    · exact resTy_not_float_calls hcx hE hci ty (by rw [htys]; exact hty)
     · cases inst with
       | callIndirect sig cl args =>
         cases hl : f.sigDecls.lookup sig with
@@ -40,6 +44,12 @@ theorem CtxT.resTysE {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) {ii : Nat}
       | _ => simp [Compile.isCallIndirect] at hci
   revert hm hnf
   cases ty <;> simp [mCTys, eCTys, CTy.ofClif, Clif.Ty.isFloat]
+
+/-- **The result types of a subset-E instruction of a typed context are E's.** -/
+theorem CtxT.resTysE {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) {ii : Nat} {info : IInfo}
+    {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    (hE : Compile.instE inst = true) : ∀ t ∈ info.resTys, t ∈ eCTys :=
+  h.toW.resTysE hi hc hE (h.calls.at hi hc)
 
 /-- The operands of a subset-E `store` are both in integer positions. -/
 theorem intArgs_store_E {op : Clif.StoreOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {x q : Nat}
@@ -56,7 +66,8 @@ macro "mem_rootTI " hctx:ident hi:ident hic:ident : tactic => `(tactic| (
   have hdat0 := CtxInvT.data $hctx _ _ _ $hi $hic
   have $(Lean.mkIdent `hA64) := fun x => CtxInvT.addr64 $hctx _ _ _ x $hi $hic
   have hRT := CtxInvT.resTys $hctx _ _ _ $hi $hic
-  have $(Lean.mkIdent `hRE) := CtxT.resTysE $(Lean.mkIdent `hctxT) $hi $hic $(Lean.mkIdent `hE)
+  have $(Lean.mkIdent `hRE) := fun hcx =>
+    CtxTW.resTysE $(Lean.mkIdent `hctxT) $hi $hic $(Lean.mkIdent `hE) hcx
   simp only [$hi:ident, Option.some.injEq] at *
   isel_destruct; subst_vars
   have hdat := data_trans hdat0 ‹_›

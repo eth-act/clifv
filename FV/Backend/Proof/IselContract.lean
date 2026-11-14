@@ -1380,13 +1380,22 @@ def intArgs : Clif.Inst → List Nat
   | _ => []
 
 /-- `intArgs` with a direct `call`'s arguments: the integer positions of the scopes whose calls
-are integer-only (`Compile.intOperands`; `intArgs` before S11g). -/
+are integer-only (`Compile.intOperands`; this was `intArgs` before S11g). -/
 def intArgsE : Clif.Inst → List Nat
+  | .unary _ _ x | .extend _ _ x | .ireduce _ x | .bmask _ x => [x]
+  | .binary _ _ x y | .div _ _ x y | .icmp _ _ x y => [x, y]
+  | .load _ _ _ p _ | .atomicLoad _ _ p => [p]
+  | .store _ ty _ x p _ => if ty.isFloat then [p] else [x, p]
+  | .select ty c x y => if ty.isFloat then [c] else [c, x, y]
+  | .atomicStore _ _ x p => [x, p]
+  | .atomicRmw _ _ _ p x => [p, x]
+  | .atomicCas _ _ p e x => [p, e, x]
   | .call _ args => args
-  | i => intArgs i
+  | .callIndirect _ c args => c :: args
+  | _ => []
 
 theorem mem_intArgsE {i : Clif.Inst} {x : Nat} (h : x ∈ intArgs i) : x ∈ intArgsE i := by
-  cases i <;> simp_all [intArgsE]
+  cases i <;> simp_all [intArgsE, intArgs]
 
 /-- **The invariant of a float-capable lowering context** (`CtxInv` with class-aware vregs,
 `f32`/`f64` types and the integer typing of `intArgs`; S11g: not of a `call`'s arguments, which

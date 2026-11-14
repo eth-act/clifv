@@ -176,6 +176,7 @@ theorem lowerCheck_partsTF {f : Clif.Function} {vc : VCode} (hd : Dominated f)
   obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_runT hs.externsE h
   obtain ⟨hu, -, hwf⟩ := alias_factsTF hd hs hb hl
   have hctx : CtxInvT f ctx := ctxInvT_ofF hs hb
+  have hca : CallArgsInt ctx := (ctxSpec_of hb).callArgs_ofF hs.subsetTF
   have hnm : LowerNoMatch ctx := fun _ _ _ hi hc _ hr hroot =>
     lower_nonroot_nomatchTF_calls hctx ((ctxSpec_of hb).instScopeTF hs.subsetTF)
       (callsE_of_externs hs.externsE ctx) hi hc hr hroot
@@ -305,7 +306,7 @@ theorem lowerCheck_partsTF {f : Clif.Function} {vc : VCode} (hd : Dominated f)
         split
         · rename_i e he
           rw [hcall] at hic
-          have h1 := callOut_runTermT hctx hi hic he hrun
+          have h1 := callOut_runTermT hctx hca hi hic he hrun
           have h2 := (hlo L (List.mem_of_getElem? hL')).1 sl (List.mem_of_getElem? hsl)
           simp only [Bool.and_eq_true, decide_eq_true_eq]
           exact ⟨by rw [← hfin]; omega, hs.stackLayout.1 B hB st hst fn args e hcall he⟩
