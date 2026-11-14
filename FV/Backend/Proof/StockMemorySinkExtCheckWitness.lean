@@ -1,10 +1,11 @@
-import FV.Backend.Proof.StockMemorySinkSourceCheck
+import FV.Backend.Proof.StockMemorySinkExtCheck
 import FV.Backend.MemorySinkExtNIProduction
 
 /-! Non-vacuity of the executable selector and check on Cranelift's
 `%load_uextend_i8_i32` and `%load_sextend_i16_i64` (`load-extends.clif`, default
-trapping loads), near-miss sources that the selector rejects, and selected sources that
-the checker rejects. -/
+trapping loads) and on `%atomic_load_i8_i64` and `%atomic_load_i16_i32` (`atomic_load.clif`,
+rule 810), near-miss sources that the selector rejects, and selected sources that the
+checker rejects. -/
 namespace Backend.Stock.MemorySinkExt.Fixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
 open Backend.Stock.Memory.SinkExtend
@@ -100,54 +101,141 @@ private theorem dominatedB_of_facts {f : Clif.Function}
         · exact .inl isLocal
         · exact .inr (dominated.paramFree _ _ _ built bi x available isLocal)
 
-private def effects (kind : Kind) (out : Clif.Ty) : Option Bool :=
-  (Stock.lower (function kind out)).toOption.map fun result => Memory.effectsOnly result.code
+/-- `atomic_load.clif`'s block: `v1 = atomic_load.<in> v0; v2 = uextend.<out> v1; return v2`. -/
+def atomicBlock (kind : Kind) (out : Clif.Ty) : Clif.Block :=
+  { id := 0, params := [(0,.i64)],
+    body := [⟨[1],.atomicLoad (loadTy kind) {} 0⟩,⟨[2],.extend (extendOp kind) out 1⟩],
+    term := .ret [2] }
+
+/-- `atomic_load.clif`'s function with signature `(i64) -> <out>`. -/
+def atomicFunction (kind : Kind) (out : Clif.Ty) : Clif.Function :=
+  { name := "atomic_load_extend",
+    sig := { params := [⟨.i64,.none,.normal⟩], returns := [⟨out,.none,.normal⟩] },
+    blocks := [atomicBlock kind out] }
+
+theorem atomicDominated (kind : Kind) (out : Clif.Ty) : Dominated (atomicFunction kind out) := by
+  constructor
+  · change ([0,1,2] : List Nat).Nodup; decide
+  · intro ctx ranges st build bi b found
+    have bound : bi < 1 := by have h := lt_of_getElem? found; simpa [atomicFunction] using h
+    have zero : bi = 0 := by omega
+    subst bi
+    simp [atomicFunction] at found
+    subst b
+    constructor
+    · intro j stm present
+      cases j with
+      | zero =>
+        simp [atomicBlock] at present
+        subst stm
+        intro x member
+        have zero : x = 0 := by simpa [Driver.instArgs] using member
+        subst x
+        simp [availOf,atomicFunction,atomicBlock,defsBefore,defsFrom]
+      | succ j =>
+        cases j with
+        | zero =>
+          simp [atomicBlock] at present
+          subst stm
+          intro x member
+          have one : x = 1 := by simpa [Driver.instArgs] using member
+          subst x
+          simp [availOf,atomicFunction,atomicBlock,defsBefore,defsFrom]
+        | succ j => simp [atomicBlock] at present
+    · intro x member
+      have two : x = 2 := by
+        simpa [abiTerm,Driver.termArgs,sretRet,sigRets,atomicFunction,atomicBlock] using member
+      subst x
+      simp [availOf,atomicFunction,atomicBlock,defsBefore,defsFrom]
+  · intro ctx ranges st build tl x available notLocal y member
+    have bound := (inFix_fixOk (f := atomicFunction kind out) (ctx := ctx) (gn := id)).cand tl x available
+    have length : (atomicFunction kind out).blocks.length = 1 := rfl
+    omega
+
+
+private def sinkEffects (f : Clif.Function) : Option Bool :=
+  (Stock.lower f).toOption.map fun result => Memory.sinkEffectsOnly result.code
 
 section Kernel
 attribute [local semireducible] Isle.Aarch64.program Stock.lower
 private theorem scope_uextend : lowerScopeB (function .unsigned8 .i32) = true := by decide +kernel
 private theorem scope_sextend : lowerScopeB (function .signed16 .i64) = true := by decide +kernel
-private theorem effects_uextend : effects .unsigned8 .i32 = some true := by decide +kernel
-private theorem effects_sextend : effects .signed16 .i64 = some true := by decide +kernel
+private theorem scope_atomic8 : lowerScopeB (atomicFunction .unsigned8 .i64) = true := by decide +kernel
+private theorem scope_atomic16 : lowerScopeB (atomicFunction .unsigned16 .i32) = true := by decide +kernel
+private theorem sinkEffects_uextend : sinkEffects (function .unsigned8 .i32) = some true := by
+  decide +kernel
+private theorem sinkEffects_sextend : sinkEffects (function .signed16 .i64) = some true := by
+  decide +kernel
+private theorem sinkEffects_atomic8 : sinkEffects (atomicFunction .unsigned8 .i64) = some true := by
+  decide +kernel
+private theorem sinkEffects_atomic16 : sinkEffects (atomicFunction .unsigned16 .i32) = some true := by
+  decide +kernel
 end Kernel
 
-private theorem source_of (kind : Kind) (out : Clif.Ty) (selected : eligible (function kind out) = true)
-    (scope : lowerScopeB (function kind out) = true) (abi : sigAbiOk (function kind out).sig = true)
-    (registers : Memory.registerEntry (function kind out).sig = true) :
-    sourceOk (function kind out) = true := by
+private theorem source_of {f : Clif.Function} (selected : eligible f = true)
+    (scope : lowerScopeB f = true) (dominated : Dominated f) (unique : nodupB (valueDefs f) = true)
+    (abi : sigAbiOk f.sig = true) (ordinary : (sigRets f.sig).any (·.purpose == .sret) = false)
+    (registers : Memory.registerEntry f.sig = true) : sourceOk f = true := by
   simp only [sourceOk,Bool.and_eq_true,Bool.not_eq_true']
-  refine ⟨⟨⟨⟨⟨selected,scope⟩,?_⟩,abi⟩,by simp [function,sigRets]⟩,registers⟩
-  apply dominatedB_of_facts ?_ (dominated kind out)
-  change nodupB [0,1,2] = true
-  simp [nodupB]
+  exact ⟨⟨⟨⟨⟨selected,scope⟩,dominatedB_of_facts unique dominated⟩,abi⟩,ordinary⟩,registers⟩
 
-private theorem check_of (kind : Kind) (out : Clif.Ty) (source : sourceOk (function kind out) = true)
-    (effective : effects kind out = some true) :
-    ∃ result,Stock.lower (function kind out) = .ok result ∧ check (function kind out) result.code = true := by
-  unfold effects at effective
-  cases run : Stock.lower (function kind out) with
+private theorem check_of {f : Clif.Function} (source : sourceOk f = true)
+    (effective : sinkEffects f = some true) :
+    ∃ result,Stock.lower f = .ok result ∧ check f result.code = true := by
+  unfold sinkEffects at effective
+  cases run : Stock.lower f with
   | error e => rw [run] at effective; cases effective
   | ok result =>
     rw [run] at effective
-    have only : Memory.effectsOnly result.code = true := Option.some.inj effective
+    have only : Memory.sinkEffectsOnly result.code = true := Option.some.inj effective
     refine ⟨result,rfl,?_⟩
     simp only [check,source,run,Bool.true_and,decide_true,only]
 
-/-- Both filetest functions pass the actual executable source checker and the actual
-artifact check, and the source checker derives their proved class. -/
+private theorem atomic_source (kind : Kind) (out : Clif.Ty) (selected : eligible (atomicFunction kind out) = true)
+    (scope : lowerScopeB (atomicFunction kind out) = true) :
+    sourceOk (atomicFunction kind out) = true :=
+  source_of selected scope (atomicDominated kind out) (by change nodupB [0,1,2] = true; simp [nodupB])
+    rfl (by simp [atomicFunction,sigRets]) rfl
+
+private theorem plain_source (kind : Kind) (out : Clif.Ty) (selected : eligible (function kind out) = true)
+    (scope : lowerScopeB (function kind out) = true) :
+    sourceOk (function kind out) = true :=
+  source_of selected scope (dominated kind out) (by change nodupB [0,1,2] = true; simp [nodupB])
+    rfl (by simp [function,sigRets]) rfl
+
+
+/-- Both `load-extends.clif` functions pass the actual executable source checker and the
+actual artifact check, and the source checker derives their proved class. -/
 theorem checked_sink_extend_witness :
     sourceOk (function .unsigned8 .i32) = true ∧ sourceOk (function .signed16 .i64) = true ∧
-      (∃ kind ty,SinkExtClass kind ty (function .unsigned8 .i32)) ∧
-      (∃ kind ty,SinkExtClass kind ty (function .signed16 .i64)) ∧
+      (∃ src kind ty,SourceExtClass src kind ty (function .unsigned8 .i32)) ∧
+      (∃ src kind ty,SourceExtClass src kind ty (function .signed16 .i64)) ∧
       (∃ result,Stock.lower (function .unsigned8 .i32) = .ok result ∧
         check (function .unsigned8 .i32) result.code = true) ∧
       (∃ result,Stock.lower (function .signed16 .i64) = .ok result ∧
         check (function .signed16 .i64) result.code = true) := by
-  have unsignedSource := source_of .unsigned8 .i32 rfl scope_uextend rfl rfl
-  have signedSource := source_of .signed16 .i64 rfl scope_sextend rfl rfl
+  have unsignedSource := plain_source .unsigned8 .i32 rfl scope_uextend
+  have signedSource := plain_source .signed16 .i64 rfl scope_sextend
   exact ⟨unsignedSource,signedSource,sourceOk_sound unsignedSource,sourceOk_sound signedSource,
-    check_of .unsigned8 .i32 unsignedSource effects_uextend,
-    check_of .signed16 .i64 signedSource effects_sextend⟩
+    check_of unsignedSource sinkEffects_uextend,check_of signedSource sinkEffects_sextend⟩
+
+/-- Rule 810's sources `%atomic_load_i8_i64` and `%atomic_load_i16_i32` pass the actual
+executable source checker and the actual artifact check (their code is one acquiring
+load), and the source checker derives their proved class. -/
+theorem checked_atomic_extend_witness :
+    sourceOk (atomicFunction .unsigned8 .i64) = true ∧
+      sourceOk (atomicFunction .unsigned16 .i32) = true ∧
+      (∃ src kind ty,SourceExtClass src kind ty (atomicFunction .unsigned8 .i64)) ∧
+      (∃ src kind ty,SourceExtClass src kind ty (atomicFunction .unsigned16 .i32)) ∧
+      (∃ result,Stock.lower (atomicFunction .unsigned8 .i64) = .ok result ∧
+        check (atomicFunction .unsigned8 .i64) result.code = true) ∧
+      (∃ result,Stock.lower (atomicFunction .unsigned16 .i32) = .ok result ∧
+        check (atomicFunction .unsigned16 .i32) result.code = true) := by
+  have byte := atomic_source .unsigned8 .i64 rfl scope_atomic8
+  have half := atomic_source .unsigned16 .i32 rfl scope_atomic16
+  exact ⟨byte,half,sourceOk_sound byte,sourceOk_sound half,check_of byte sinkEffects_atomic8,
+    check_of half sinkEffects_atomic16⟩
+
 
 /-- Activation: the provider and the production layer publish the actual Stock code of
 `%load_uextend_i8_i32`, and the production semantic check accepts it. -/
@@ -161,6 +249,22 @@ theorem activation_witness :
   have lowered : lowerValidated (function .unsigned8 .i32) = .ok result.code := by
     simp [lowerValidated,selected,run,checked]
   have semantic : SemanticNI.check (function .unsigned8 .i32) result.code = true := by
+    simp [SemanticNI.check,checked]
+  refine ⟨result,run,lowered,semantic,?_⟩
+  simp [lowerCheckedMemorySinkExtNI,lowered,semantic]
+
+/-- Activation of rule 810: the provider and the production layer publish the actual Stock
+code of `%atomic_load_i8_i64`, and the production semantic check accepts it. -/
+theorem atomic_activation_witness :
+    ∃ result,Stock.lower (atomicFunction .unsigned8 .i64) = .ok result ∧
+      lowerValidated (atomicFunction .unsigned8 .i64) = .ok result.code ∧
+      SemanticNI.check (atomicFunction .unsigned8 .i64) result.code = true ∧
+      lowerCheckedMemorySinkExtNI (atomicFunction .unsigned8 .i64) true = .ok result.code := by
+  obtain ⟨result,run,checked⟩ := checked_atomic_extend_witness.2.2.2.2.1
+  have selected : eligible (atomicFunction .unsigned8 .i64) = true := rfl
+  have lowered : lowerValidated (atomicFunction .unsigned8 .i64) = .ok result.code := by
+    simp [lowerValidated,selected,run,checked]
+  have semantic : SemanticNI.check (atomicFunction .unsigned8 .i64) result.code = true := by
     simp [SemanticNI.check,checked]
   refine ⟨result,run,lowered,semantic,?_⟩
   simp [lowerCheckedMemorySinkExtNI,lowered,semantic]
@@ -225,136 +329,15 @@ theorem selected_sources_rejected :
   · intro vc
     simp only [check,sourceOk,stack_entry,Bool.and_false,Bool.false_and]
 
-/-- `atomic_load.clif`'s block: `v1 = atomic_load.<in> v0; v2 = uextend.<out> v1; return v2`. -/
-def atomicBlock (kind : Kind) (out : Clif.Ty) : Clif.Block :=
-  { id := 0, params := [(0,.i64)],
-    body := [⟨[1],.atomicLoad (loadTy kind) {} 0⟩,⟨[2],.extend (extendOp kind) out 1⟩],
-    term := .ret [2] }
-
-/-- `atomic_load.clif`'s function with signature `(i64) -> <out>`. -/
-def atomicFunction (kind : Kind) (out : Clif.Ty) : Clif.Function :=
-  { name := "atomic_load_extend",
-    sig := { params := [⟨.i64,.none,.normal⟩], returns := [⟨out,.none,.normal⟩] },
-    blocks := [atomicBlock kind out] }
-
-theorem atomicDominated (kind : Kind) (out : Clif.Ty) : Dominated (atomicFunction kind out) := by
-  constructor
-  · change ([0,1,2] : List Nat).Nodup; decide
-  · intro ctx ranges st build bi b found
-    have bound : bi < 1 := by have h := lt_of_getElem? found; simpa [atomicFunction] using h
-    have zero : bi = 0 := by omega
-    subst bi
-    simp [atomicFunction] at found
-    subst b
-    constructor
-    · intro j stm present
-      cases j with
-      | zero =>
-        simp [atomicBlock] at present
-        subst stm
-        intro x member
-        have zero : x = 0 := by simpa [Driver.instArgs] using member
-        subst x
-        simp [availOf,atomicFunction,atomicBlock,defsBefore,defsFrom]
-      | succ j =>
-        cases j with
-        | zero =>
-          simp [atomicBlock] at present
-          subst stm
-          intro x member
-          have one : x = 1 := by simpa [Driver.instArgs] using member
-          subst x
-          simp [availOf,atomicFunction,atomicBlock,defsBefore,defsFrom]
-        | succ j => simp [atomicBlock] at present
-    · intro x member
-      have two : x = 2 := by
-        simpa [abiTerm,Driver.termArgs,sretRet,sigRets,atomicFunction,atomicBlock] using member
-      subst x
-      simp [availOf,atomicFunction,atomicBlock,defsBefore,defsFrom]
-  · intro ctx ranges st build tl x available notLocal y member
-    have bound := (inFix_fixOk (f := atomicFunction kind out) (ctx := ctx) (gn := id)).cand tl x available
-    have length : (atomicFunction kind out).blocks.length = 1 := rfl
-    omega
-
-private def sinkEffects (f : Clif.Function) : Option Bool :=
-  (Stock.lower f).toOption.map fun result => Memory.sinkEffectsOnly result.code
-
-section Kernel
-attribute [local semireducible] Isle.Aarch64.program Stock.lower
-private theorem scope_atomic8 : lowerScopeB (atomicFunction .unsigned8 .i64) = true := by decide +kernel
-private theorem scope_atomic16 : lowerScopeB (atomicFunction .unsigned16 .i32) = true := by decide +kernel
-private theorem sinkEffects_atomic8 : sinkEffects (atomicFunction .unsigned8 .i64) = some true := by
-  decide +kernel
-private theorem sinkEffects_atomic16 : sinkEffects (atomicFunction .unsigned16 .i32) = some true := by
-  decide +kernel
-private theorem sinkEffects_uextend : sinkEffects (function .unsigned8 .i32) = some true := by
-  decide +kernel
-end Kernel
-
-private theorem sourceAny_of {f : Clif.Function} (selected : eligibleAny f = true)
-    (scope : lowerScopeB f = true) (dominated : Dominated f) (unique : nodupB (valueDefs f) = true)
-    (abi : sigAbiOk f.sig = true) (ordinary : (sigRets f.sig).any (·.purpose == .sret) = false)
-    (registers : Memory.registerEntry f.sig = true) : sourceOkAny f = true := by
-  simp only [sourceOkAny,Bool.and_eq_true,Bool.not_eq_true']
-  exact ⟨⟨⟨⟨⟨selected,scope⟩,dominatedB_of_facts unique dominated⟩,abi⟩,ordinary⟩,registers⟩
-
-private theorem checkAny_of {f : Clif.Function} (source : sourceOkAny f = true)
-    (effective : sinkEffects f = some true) :
-    ∃ result,Stock.lower f = .ok result ∧ checkAny f result.code = true := by
-  unfold sinkEffects at effective
-  cases run : Stock.lower f with
-  | error e => rw [run] at effective; cases effective
-  | ok result =>
-    rw [run] at effective
-    have only : Memory.sinkEffectsOnly result.code = true := Option.some.inj effective
-    refine ⟨result,rfl,?_⟩
-    simp only [checkAny,source,run,Bool.true_and,decide_true,only]
-
-private theorem atomic_source (kind : Kind) (out : Clif.Ty) (selected : eligibleAny (atomicFunction kind out) = true)
-    (scope : lowerScopeB (atomicFunction kind out) = true) :
-    sourceOkAny (atomicFunction kind out) = true :=
-  sourceAny_of selected scope (atomicDominated kind out) (by change nodupB [0,1,2] = true; simp [nodupB])
-    rfl (by simp [atomicFunction,sigRets]) rfl
-
-/-- Rule 810's sources `%atomic_load_i8_i64` and `%atomic_load_i16_i32` pass the general
-selector, source checker and artifact check (their code is one acquiring load), and the
-checker derives their proved class. The plain-only selector rejects them. -/
-theorem checked_atomic_extend_witness :
-    sourceOkAny (atomicFunction .unsigned8 .i64) = true ∧
-      sourceOkAny (atomicFunction .unsigned16 .i32) = true ∧
-      (∃ src kind ty,SourceExtClass src kind ty (atomicFunction .unsigned8 .i64)) ∧
-      (∃ src kind ty,SourceExtClass src kind ty (atomicFunction .unsigned16 .i32)) ∧
-      (∃ result,Stock.lower (atomicFunction .unsigned8 .i64) = .ok result ∧
-        checkAny (atomicFunction .unsigned8 .i64) result.code = true) ∧
-      (∃ result,Stock.lower (atomicFunction .unsigned16 .i32) = .ok result ∧
-        checkAny (atomicFunction .unsigned16 .i32) result.code = true) ∧
-      eligible (atomicFunction .unsigned8 .i64) = false := by
-  have byte := atomic_source .unsigned8 .i64 rfl scope_atomic8
-  have half := atomic_source .unsigned16 .i32 rfl scope_atomic16
-  exact ⟨byte,half,sourceOkAny_sound byte,sourceOkAny_sound half,checkAny_of byte sinkEffects_atomic8,
-    checkAny_of half sinkEffects_atomic16,rfl⟩
-
-/-- The general checker keeps the plain sources: `%load_uextend_i8_i32` passes it. -/
-theorem checked_plain_any_witness :
-    sourceOkAny (function .unsigned8 .i32) = true ∧
-      ∃ result,Stock.lower (function .unsigned8 .i32) = .ok result ∧
-        checkAny (function .unsigned8 .i32) result.code = true := by
-  have source := sourceAny_of (f := function .unsigned8 .i32) rfl scope_uextend (dominated .unsigned8 .i32)
-    (by change nodupB [0,1,2] = true; simp [nodupB]) rfl (by simp [function,sigRets]) rfl
-  exact ⟨source,checkAny_of source sinkEffects_uextend⟩
-
 /-- Rule 810 folds only zero extensions: an atomic load under a sign extension, an atomic
-`i64` load and an extension to `i128` are not selected; a plain load at offset 8 is still
-not selected. -/
-theorem near_misses_any :
-    eligibleAny {atomicFunction .unsigned8 .i64 with blocks := [{atomicBlock .unsigned8 .i64 with
+`i64` load and an atomic load extended to `i128` keep the previous provider. -/
+theorem near_misses_atomic :
+    eligible {atomicFunction .unsigned8 .i64 with blocks := [{atomicBlock .unsigned8 .i64 with
       body := [⟨[1],.atomicLoad .i8 {} 0⟩,⟨[2],.extend .sextend .i64 1⟩]}]} = false ∧
-    eligibleAny {atomicFunction .unsigned8 .i64 with blocks := [{atomicBlock .unsigned8 .i64 with
+    eligible {atomicFunction .unsigned8 .i64 with blocks := [{atomicBlock .unsigned8 .i64 with
       body := [⟨[1],.atomicLoad .i64 {} 0⟩,⟨[2],.extend .uextend .i128 1⟩]}]} = false ∧
-    eligibleAny {atomicFunction .unsigned8 .i64 with blocks := [{atomicBlock .unsigned8 .i64 with
-      body := [⟨[1],.atomicLoad .i8 {} 0⟩,⟨[2],.extend .uextend .i128 1⟩]}]} = false ∧
-    eligibleAny {function .unsigned8 .i32 with blocks := [{block .unsigned8 .i32 with
-      body := [⟨[1],.load .load .i8 {} 0 8⟩,⟨[2],.extend .uextend .i32 1⟩]}]} = false := by
-  exact ⟨rfl,rfl,rfl,rfl⟩
+    eligible {atomicFunction .unsigned8 .i64 with blocks := [{atomicBlock .unsigned8 .i64 with
+      body := [⟨[1],.atomicLoad .i8 {} 0⟩,⟨[2],.extend .uextend .i128 1⟩]}]} = false := by
+  exact ⟨rfl,rfl,rfl⟩
 
 end Backend.Stock.MemorySinkExt.Fixture
