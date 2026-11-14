@@ -66,7 +66,11 @@ M7's validators (`docs/contracts/e2e.md`, "The validators"): after lowering, `lo
 a compile error (the function is not compiled, with the reason). Functions outside the
 end-to-end theorem (`unverifiedReason?`: outside clif-subset-v2 E, unsupported ABI signatures,
 or indirect calls with special-purpose parameters) are compiled without the lowering validator
-and listed in `FileAsm.unverified` (`lean-backend` prints `compiled, unverified`). Calls of
+and listed in `FileAsm.unverified` (`lean-backend` prints `compiled, unverified`). Outside
+subset E the reason names every condition of the typed scope the function fails
+(`typedScopeFails`, #1015: the conjuncts of `Compile.functionETCF` and `storeTypedB`, an
+unadmitted instruction by its opcode), e.g. `outside clif-subset-v2 E and the typed scope:
+instETF: fma.f64`, so `cargo fv`'s reason histogram says what each fallback needs. Calls of
 functions in the file, including self-calls, use per-activation environment contracts and do
 not by themselves exclude verification.
 
