@@ -148,9 +148,9 @@ theorem RL.twoRunCTNV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
     countIn_zero_of fun i hi => (ht0' i hi).1.2
   -- the prologue does not read the external semantics
   have hRw : R.Wf := ⟨hR0.check, hR0.alloc, hR0.emit, hR0.layout, hR0.lm, hR0.fit, hR0.stack,
-    hR0.psF, hR0.prog0, hR0.gfree⟩
+    hR0.psF, hR0.prog0, hR0.gfree, hR0.leaf⟩
   have hRw'' : R''.Wf := ⟨hR0'.check, hR0'.alloc, hR0'.emit, hR0'.layout, hR0'.lm, hR0'.fit,
-    hR0'.stack, hR0'.psF, hR0'.prog0, hR0'.gfree⟩
+    hR0'.stack, hR0'.psF, hR0'.prog0, hR0'.gfree, hR0'.leaf⟩
   have hsP : ∀ n, ({ R with X := XI.at n } : RL).sP = R.sP := fun n => RL.sP_withX hRw hent (XI.at n)
   have hsP' : ∀ n, ({ R with s0 := t0, G := G', X := XI'.at n } : RL).sP = R''.sP :=
     fun n => RL.sP_withX hRw'' hent' (XI'.at n)

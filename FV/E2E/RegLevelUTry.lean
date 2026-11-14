@@ -379,13 +379,13 @@ raises, the personality installs the first handler's landing pad, and the machin
 landing-pad edge block with the payload in the call's defs, the raising-call state `RaiseXF`
 (`RealizesTryRaiseP … R.GoodXUF`), for any semantics with `csemU`'s raising-`tryCall` clause
 (`TryRaiseSem`: `R.semU`, `csemU`, the dead-cleanup chain's value semantics). -/
-theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
+theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU)
     (hT : LsdaAt R) (hpad : PadsNonzero R.af R.fa) (hsite : SiteAt R.toRL) :
     RealizesTryRaiseP R semU R.GoodXUF := by
   intro s b k allocs its m w vb info ti ops c' obj w2 hq _hA hvb hi hops hraise hm
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hcpc := callAt_of_q hR hq hvb hi tryCall_hcall
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins, hasgf,
     hsuccf, itx, hitx, hqx⟩
@@ -500,7 +500,7 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
   obtain ⟨icT, hiT, -⟩ := (assign_call_tryCall info regs).2 ti i' hasg
   have hmemT : ∃ lb code, (lb, code) ∈ R.af.blocks.toList ∧
       AInst.inst (.tryCall icT ti) ∈ code.toList := by
-    obtain ⟨-, -, -, hblk⟩ := (lowerRFunc_ok hR.alloc).1
+    obtain ⟨-, -, -, hblk⟩ := (hR.alloc.ok).1
     obtain ⟨codeAll, hcodeAll, hab⟩ := hblk b vb items hvb hit
     rw [hsplit] at hcodeAll
     obtain ⟨cpre, crest, -, hcrest, rfl⟩ := itemsCode_append hcodeAll
@@ -531,7 +531,7 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
   have hsucc' := hsucc
   simp only [succOf, hcfg, hss, Option.bind_some] at hsucc'
   obtain ⟨vs, hvs, hlj⟩ := hlab _ st hsucc'
-  have hst0 : st ≠ 0 := ctlCheck_succ ((lowerRFunc_ok hR.alloc).2.2) hsucc
+  have hst0 : st ≠ 0 := ctlCheck_succ ((hR.alloc.ok).2.2) hsucc
   have hvl : vs.label = l := by
     simp only [MInst.targets, hfirstEq, List.map_cons, List.cons_append,
       List.getElem?_cons_zero, Option.some.injEq] at hlj
@@ -659,7 +659,7 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
       obtain rfl := hdesc x d hx hd
       rw [hUr] at hr'
       cases hr'
-      exact hFK.2.2.trans (hst.fp (lowerRFunc_frame hR.alloc))
+      exact hFK.2.2.trans (hst.fp hframe)
     exact .inr ⟨hRX, hnext, hexit, htsp, htfp, fun x hx => ⟨hxzr x hx, hst.code⟩,
       ⟨.tryCall info ti, info, hsite0, .inr ⟨ti, rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
         fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,

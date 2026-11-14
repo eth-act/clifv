@@ -188,7 +188,7 @@ theorem backend_correct_world_cleanupT (hsub : InSubsetT p f)
   have hP := prepareCorrect_cleanupT (F := F) (X := X) hc (fun _ => 0) w₀
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
       ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ := fun H G base ra s he => by
-    have h := regLevelCorrect_world_value hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
+    have h := regLevelCorrect_world_value hc.check (AllocAF.of_lowerRFunc hc.alloc) (noLeaf_of_lowerRFunc hc.alloc) hc.emit hc.layout (X := X) (H := H)
       (K := K) (G := G) (gv := GotV vcp) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
       (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)
       (fun _ => 0)
@@ -554,7 +554,7 @@ theorem backend_correct_world_ni_valueT (hsub : InSubsetT p f)
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
     fun w₀ H G base ra s he => by
-      have h := regLevelCorrect_world_value hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
+      have h := regLevelCorrect_world_value hc.check (AllocAF.of_lowerRFunc hc.alloc) (noLeaf_of_lowerRFunc hc.alloc) hc.emit hc.layout (X := X) (H := H)
         (K := K) (G := G) (gv := GotV vcp) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
         (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)
         (fun _ => 0)

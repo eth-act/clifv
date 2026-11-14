@@ -27,7 +27,7 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
 
 /-- **A single run's facts at its return from a `rets` configuration**: the frame record holds
 the entry `x30`/`x29`, the kept bytes are the entry's, no error, the entry `sp` and `x29`. -/
-theorem _root_.Backend.Proof.RL.retFacts_rets {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem _root_.Backend.Proof.RL.retFacts_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {u : Arm.ArmState} {e : MConf CV Arm.ArmState}
     (hqa : QA R u e) (hre : R.RetsAt e) :
     Arm.read_mem_bytes 16 (spv R.s0 - 16#64) (iterN R.step R.retLen u) =
@@ -41,14 +41,13 @@ theorem _root_.Backend.Proof.RL.retFacts_rets {R : RL} (hR : R.Wf) {ra : BitVec 
   obtain ⟨n3, hn3, -, -, herr, hsp, h29, -, -, hmem, -⟩ :=
     ret_machineNA (Y := fun _ => True) hR hent hqa hvb hi
   subst hn3
-  have hframe := lowerRFunc_frame hR.alloc
   refine ⟨?_, fun a ha => ?_, herr, hsp, h29⟩
   · rw [show Arm.read_mem_bytes 16 (spv R.s0 - 16#64) (iterN R.step R.retLen u) =
         Arm.read_mem_bytes 16 (spv R.s0 - 16#64) u from
       read_mem_bytes_congr _ _ (fun k _ => by rw [hmem])]
     -- the frame record is the top 16 bytes of what the prologue left above the clobber area
     have hbytes := read_mem_bytes_bytes R.topN R.topB u R.sP (hst.fplr hframe)
-    obtain ⟨sP, -, hsP, hP16, -⟩ := RL.sP_steps hR hent
+    obtain ⟨sP, -, hsP, hP16, -⟩ := RL.sP_steps hR hframe hent
     rw [hsP] at hbytes
     have htopcb : R.topB + BitVec.ofNat 64 (clobberBytes R.af.saves) = spv R.s0 - 16#64 := by
       rw [RL.topB, RL.topN, BitVec.ofNat_add]; bv_omega

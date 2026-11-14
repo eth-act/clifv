@@ -89,8 +89,8 @@ theorem regLevelCorrect_world_atCSNG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
-  have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR hent hbe
+  have hck := (hR.alloc.ok).2.2
+  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR (lowerRFunc_frame halloc) hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep hcheck (locVal R.fr (iterN R.step n0 s))
       (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
@@ -156,7 +156,7 @@ theorem regLevelCorrect_world_atCSNG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
         obtain ⟨mt, hq2''⟩ := qa_q hq2'
         have hst := q_stRel hq2''
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machineN hR hent hq2' hvb hi
+          ret_machineN hR (lowerRFunc_frame halloc) hent hq2' hvb hi
         have htrX : ∀ i < n0 + n1 + n3, R.GoodE (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
           intro i hi
           rw [runX_eq]
@@ -430,8 +430,8 @@ theorem regLevelCorrect_world_value_atCSNG {vcp : VCode} {rf : RFunc} {af : AFun
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
-  have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR hent hbe
+  have hck := (hR.alloc.ok).2.2
+  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR (lowerRFunc_frame halloc) hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf (valueSemVI R.gv R.F R.ctx XI) ckeep hcheck (locVal R.fr (iterN R.step n0 s))
       (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
@@ -499,7 +499,7 @@ theorem regLevelCorrect_world_value_atCSNG {vcp : VCode} {rf : RFunc} {af : AFun
         obtain ⟨mt, hq2''⟩ := qa_q hq2'
         have hst := q_stRel hq2''
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machineN hR hent hq2' hvb hi
+          ret_machineN hR (lowerRFunc_frame halloc) hent hq2' hvb hi
         have htrX : ∀ i < n0 + n1 + n3, R.GoodE (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
           intro i hi
           rw [runX_eq]

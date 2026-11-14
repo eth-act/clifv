@@ -79,7 +79,7 @@ of steps (a function of the code only) and `QW` at `R.initW`. (#581: the number 
 and the flags join the changed fields; the former statement, `n` = the prologue's length and
 every field but the pc, x16, x29 and `sp` unchanged, became false for a probed stack of 16 KiB
 or more.) -/
-theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+theorem q_initNA {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
     ∃ n, n = prologueSteps R.af.saves R.af.frameSize R.af.isCaller ∧
@@ -89,12 +89,13 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
         (∀ fl, f ≠ .FLAG fl) → Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
-  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR hframe
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,
     hdrop, hx, hsc⟩ := entry_block hR
+  rw [RL.proLines, if_pos hframe] at hpl0
   subst hpl0
   obtain ⟨s', hsteps, hsp', hfp', ho', hfl', hm', -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
@@ -223,7 +224,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
         have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
         rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; simp only [spv] at *; omega),
           BitVec.toNat_ofNat, hm]
-        have : R.fr.total % 16 = 0 := (RL.frame_facts hR).2.2.2.2.2.2.1
+        have : R.fr.total % 16 = 0 := (RL.alloc_facts hR).2.2.2.2.2.1
         simp only [spv, spOf] at *
         omega
       · simp only [RL.topImg, hsP]
@@ -231,7 +232,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
     obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
-    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2 hvb' hi').2.2 _ hv).2
+    have hr := ((ctlCheck_args (hR.alloc.ok).2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
@@ -335,7 +336,7 @@ epilogue and `ret` reach the return address with `sp` and x29 as at entry, the m
 item, the allocatable registers but the saved ones as in the store, each saved register's low 64
 bits (its slot) as at entry, and the returned values in their fixed registers; the run takes
 exactly `R.retLen` steps. -/
-theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+theorem ret_machineNA {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0)
     {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : Arm.ArmState} (hqa : QA R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
@@ -351,9 +352,8 @@ theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
       ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
         ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
         regVal (iterN R.step n s) p = x := by
-  have hframe := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨-, hfs, hsav, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  have hck := (hR.alloc.ok).2.2
+  obtain ⟨hfs, hsav, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -427,7 +427,7 @@ theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
@@ -512,7 +512,7 @@ theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
   -- the reads: the clobber area and fp/lr, no kept address
   have hrdE : LinesReads (R.envOf j0) (epiLines R.af.saves R.af.frameSize) s R.ReadOk :=
     epilogue_reads (R.envOf j0) hs hsv hcb' s hal fun k hk => by
-      rw [hB]; exact .inl (RL.top_notG hR k (by simp only [RL.topN]; omega))
+      rw [hB]; exact .inl (RL.top_notG hR hframe k (by simp only [RL.topN]; omega))
   obtain ⟨hiter, hpc1, hgood, hgx⟩ := iterN_stepsN hR hdrop'
     (fun ln h => by obtain ⟨x, e, hh, -, -⟩ := epiLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
     hst.prog hpc hst.err hsteps
@@ -579,7 +579,7 @@ theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
     rw [iterN_one_succ, hiter]; exact hstep.trans he'
   -- the top of the frame as the prologue left it
   have hbytes := read_mem_bytes_bytes R.topN R.topB s R.sP (hst.fplr hframe)
-  obtain ⟨sP, -, hsP, hP16, hPsl⟩ := RL.sP_steps hR hent
+  obtain ⟨sP, -, hsP, hP16, hPsl⟩ := RL.sP_steps hR hframe hent
   rw [hsP] at hbytes
   have hfplr : Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 R.af.frameSize) s =
       xreg 30 R.s0 ++ xreg 29 R.s0 := by

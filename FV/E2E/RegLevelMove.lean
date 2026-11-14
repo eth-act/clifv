@@ -1,4 +1,6 @@
 import FV.E2E.RegLevelSim
+import FV.E2E.RegLevelAllocAF
+import FV.E2E.LeafKeepDefs
 import FV.Backend.Proof.RegallocMoves
 import FV.E2E.RegLevelPush
 
@@ -283,7 +285,8 @@ theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
 /-- What the pipeline and the ABI entry give an activation. -/
 structure RL.Wf (R : RL) : Prop where
   check : AllocChecked R.vc R.rf
-  alloc : lowerRFunc R.vc R.rf = .ok R.af
+  /-- `lowerRFunc`'s output, or (#1028) that output without its frame for a leaf -/
+  alloc : AllocAF R.vc R.rf R.af
   emit : emitFunc R.fa.k R.af = .ok R.fa
   layout : R.fa.layout = .ok R.fb
   lm : labelOffsets R.fa.lines = .ok R.lm
@@ -295,6 +298,13 @@ structure RL.Wf (R : RL) : Prop where
   prog0 : R.s0.program = R.fb.program R.base
   /-- the kept addresses are not in the frame or the callees' dead stack -/
   gfree : ∀ a, R.G a → ¬ StackBelow (frameDrop R.af + R.K) (spv R.s0) a
+  /-- a frameless leaf (#1028): no line of its code but `ret` names `x29` or `x30` -/
+  leaf : R.af.frame = false → R.fa.leafKeep R.lm = true
+
+/-- `lowerRFunc`'s output has a frame: it is no frameless leaf (`RL.Wf.leaf` holds vacuously). -/
+theorem noLeaf_of_lowerRFunc {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc rf = .ok af)
+    {P : Prop} : af.frame = false → P :=
+  fun e => absurd (lowerRFunc_frame h) (by rw [e]; decide)
 
 /-- The kept addresses are not written by the prologue's stack probes (#581): the probes are in
 the frame or the callees' dead stack below it (`StackAvail`: the budget covers them). -/
@@ -316,7 +326,7 @@ theorem RL.Wf.gprobe {R : RL} (hR : R.Wf) : ∀ a, R.G a → probeHit R.af (spv 
 theorem RL.frameOkF {R : RL} (hR : R.Wf) :
     FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB
       (frameF R.fr.intBase R.fr.size R.af R.s0) := by
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
@@ -367,7 +377,7 @@ theorem RL.frameOk {R : RL} (hR : R.Wf) :
 
 /-- The allocator's slots lie inside the dropped frame. -/
 theorem RL.size_le_drop {R : RL} (hR : R.Wf) : R.fr.size ≤ frameDrop R.af := by
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   by_cases h0 : R.fr.total = 0
   · simp only [RL.fr] at h0 hle ⊢; omega
@@ -529,30 +539,49 @@ theorem saveShapeOk_saves {vc : VCode} {rf : RFunc} (h : saveShapeOk vc rf = tru
   · rw [e] at hr; exact (List.mem_filter.1 hr).1
   · rw [e]; exact hnd.filter _
 
-/-- The frame facts of an activation: it has a frame of `fr.total` bytes, pushes the
+/-- The allocation facts of an activation, with or without a frame: a frame size of `fr.total`
+bytes, the allocation's saved registers in the clobber area `[total - clobberBytes, total)` above
+the CLIF slots, and room for the frame below the entry `sp` (`StackAvail`). -/
+theorem RL.alloc_facts {R : RL} (hR : R.Wf) :
+    R.af.frameSize = R.fr.total ∧ R.af.saves = R.rf.saved ∧
+      SavesOk R.af.saves ∧ R.fr.size + R.vc.slotBytes ≤ R.fr.total - clobberBytes R.af.saves ∧
+      clobberBytes R.af.saves ≤ R.fr.total ∧ R.fr.total % 16 = 0 ∧
+      R.fr.total + 16 ≤ (spv R.s0).toNat := by
+  obtain ⟨⟨hfs, -⟩, -⟩ := hR.alloc.ok
+  obtain ⟨hsh, hsv⟩ := hR.alloc.saves
+  have h1 := compute_saveBase R.vc R.rf
+  have hst := hR.stack.frame.1
+  rw [hfs] at hst
+  refine ⟨hfs, hsv, hsv ▸ saveShapeOk_saves hsh, ?_, ?_, ?_, hst⟩
+  · rw [hsv]; exact h1.1
+  · rw [hsv]; simp only [RL.fr]; omega
+  · have := h1.2.2; have := clobberBytes_mod R.rf.saved; simp only [RL.fr]; omega
+
+/-- The frame facts of an activation with a frame: it has a frame of `fr.total` bytes, pushes the
 allocation's saved registers into its clobber area `[total - clobberBytes, total)` above the
 CLIF slots, and fits below the entry `sp`. -/
-theorem RL.frame_facts {R : RL} (hR : R.Wf) :
+theorem RL.frame_facts {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     R.af.frame = true ∧ R.af.frameSize = R.fr.total ∧ R.af.saves = R.rf.saved ∧
       SavesOk R.af.saves ∧ R.fr.size + R.vc.slotBytes ≤ R.fr.total - clobberBytes R.af.saves ∧
       clobberBytes R.af.saves ≤ R.fr.total ∧ R.fr.total % 16 = 0 ∧
       R.fr.total + 16 ≤ (spv R.s0).toNat ∧ frameDrop R.af = R.fr.total + 16 := by
-  obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
-  have hframe := lowerRFunc_frame hR.alloc
-  obtain ⟨hsh, hsv⟩ := lowerRFunc_saves hR.alloc
-  have h1 := compute_saveBase R.vc R.rf
-  have hst := hR.stack.frame.1
-  rw [hfs] at hst
-  refine ⟨hframe, hfs, hsv, hsv ▸ saveShapeOk_saves hsh, ?_, ?_, ?_, hst, ?_⟩
-  · rw [hsv]; exact h1.1
-  · rw [hsv]; simp only [RL.fr]; omega
-  · have := h1.2.2; have := clobberBytes_mod R.rf.saved; simp only [RL.fr]; omega
-  · simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+  obtain ⟨hfs, hsv, hsvo, h5, h6, h7, h8⟩ := RL.alloc_facts hR
+  exact ⟨hframe, hfs, hsv, hsvo, h5, h6, h7, h8, by simp only [frameDrop, hframe, ite_true, hfs, RL.fr]⟩
+
+/-- A frameless activation (#1028) is a leaf: no frame size, slot area or callee saves, nothing
+dropped from `sp`. -/
+theorem RL.leaf_facts {R : RL} (hR : R.Wf) (hframe : R.af.frame = false) :
+    R.af.frameSize = 0 ∧ R.af.slotBase = 0 ∧ R.af.saves = [] ∧ R.fr.total = 0 ∧
+      frameDrop R.af = 0 ∧ R.spB = spv R.s0 := by
+  obtain ⟨h1, h2, h3, -⟩ := leafB_spec (hR.alloc.leaf hframe)
+  have hfs := (RL.alloc_facts hR).1
+  refine ⟨h1, h2, h3, by rw [← hfs, h1], by simp [frameDrop, hframe], ?_⟩
+  simp [RL.spB, frameDrop, hframe]
 
 /-- The fp/lr slot and the clobber area lie above the frame's slot area. -/
 theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < R.topN, ∀ o, o < R.fr.size → R.topB + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
-  obtain ⟨-, -, -, -, hsz, hcb, -, hst', hd⟩ := RL.frame_facts hR
+  obtain ⟨-, -, -, -, hsz, hcb, -, hst', hd⟩ := RL.frame_facts hR hframe
   have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   intro k hk o ho e
   have := congrArg BitVec.toNat e
@@ -570,7 +599,7 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
 /-- The code lies outside the frame's slot area. -/
 theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a) :
     ∀ o, o < R.fr.size → a ≠ R.spB + BitVec.ofNat 64 o := by
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
@@ -792,7 +821,7 @@ theorem qs_term {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {it : RItem} {
   obtain ⟨-, hidx⟩ := segX_mem hp hx
   unfold segTermOk at hok
   rw [hidx] at hok
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
   rw [hsplit] at hcF
   obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF

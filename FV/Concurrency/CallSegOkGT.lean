@@ -164,7 +164,7 @@ registers). -/
 theorem r0_saves {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
     (hS : StatOk L env p g) :
     ∀ r ∈ (g.RL L).af.saves, ckeep r (g.r0 L r) = ckeep r (regVal (g.RL L).s0 r) := by
-  obtain ⟨-, -, -, hsv, -⟩ := RL.frame_facts hS.wf
+  obtain ⟨-, -, hsv, -⟩ := RL.alloc_facts hS.wf
   intro r hr
   have hcs := hsv.1 r hr
   simp only [Act.r0, locVal]

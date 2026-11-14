@@ -324,7 +324,7 @@ theorem regLevel_prefix_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
       (∃ info, i = .call info ∨ ∃ ti, i = .tryCall info ti) → ∀ ops, i.operands = .ok ops →
       ∃ u, OnCall R.step R.fa R.base R.s0 N u ∧ spOf u = R.spB ∧
         CallSiteAt R.F R.K R.G R.s0 R.fa R.base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
-  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR hent hbe
+  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR (lowerRFunc_frame halloc) hent hbe
   let m₀ := locVal R.fr (iterN R.step n0 R.s0)
   have hSim := isSimulation_match (sem := ISem.counted sem) (keep := ckeep) hcheck
     (fun r => m₀ (.reg r))

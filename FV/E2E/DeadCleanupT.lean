@@ -320,7 +320,7 @@ theorem backend_correct_final_cleanup_exT {p : Clif.Program} {f : Clif.Function}
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefinesT fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
   backend_correct_m4_cleanup_exT (ctx := fun _ => ⟨fa.k, af.slotBase⟩) (X := fun _ => X) hsub hc hT
-    (regLevelCorrect_backend_ex_value hc.check hc.alloc hc.emit hc.layout hcov hC
+    (regLevelCorrect_backend_ex_value hc.check (AllocAF.of_lowerRFunc hc.alloc) (noLeaf_of_lowerRFunc hc.alloc) hc.emit hc.layout hcov hC
       (fun h => hCT (hasTry_of_hasTryCallCleanupAT hc h))
       (fun h => hTls (hasTls_of_vcodeCleanupAT hc h)))
     (fun _ => refines_valueSem _ _ X) hX hXI (fun _ => hsym)
@@ -392,7 +392,7 @@ theorem backend_correct_final_cleanup_ofT {p : Clif.Program} {f : Clif.Function}
   have hcA := hc.toT.toA
   exact backend_correct_of_rules_cleanup_ex_ofT hsub.toT hcA hT (functionE_sig_int hsub.subsetE).2
     lowerRulesCorrectT_program lowerRulesCorrectFT_program memRulesCorrectRT_program
-    (regLevelCorrect_backend_ex_value hcA.check hcA.alloc hcA.emit hcA.layout hcov hC
+    (regLevelCorrect_backend_ex_value hcA.check (AllocAF.of_lowerRFunc hcA.alloc) (noLeaf_of_lowerRFunc hcA.alloc) hcA.emit hcA.layout hcov hC
       (fun h => hCT (hasTry_of_hasTryCallCleanupAT hcA h))
       (fun h => hTls (hasTls_of_vcodeCleanupAT hcA h)))
     (fun _ => refines_valueSem _ _ X)

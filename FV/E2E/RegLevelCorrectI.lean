@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelCorrect
 import FV.Backend.Proof.VCodeSemI
+import FV.E2E.RegLevelLeafKeep
 
 /-!
 # The register-level theorem for the counted VCode world (SEM1 step 2, `docs/plans/uninit.md` §5.4)
@@ -129,7 +130,7 @@ theorem RL.sP_withX {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
     (X : ExtSem) : ({ R with X := X } : RL).sP = R.sP := by
   have hR' : ({ R with X := X } : RL).Wf :=
     ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree⟩
-  obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hfs, -, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0, hdrop,
@@ -279,7 +280,7 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep hcheck (locVal R.fr (iterN R.step n0 s))
@@ -336,7 +337,7 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         obtain ⟨mt, hq2''⟩ := qa_q hq2'
         have hst := q_stRel hq2''
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machine hR hent hq2' hvb hi
+          ret_machine hR hent hq2' hvb hi (RL.leafRegs3 hR ht0 ht1 ht2)
         have htr : ∀ i < n0 + n1 + n2 + n3, R.Good (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
           intro i hi
           rw [runX_eq]

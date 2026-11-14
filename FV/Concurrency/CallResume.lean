@@ -467,7 +467,7 @@ theorem noRet_epiLines (saves : List Reg) (size : Nat) : NoRet (epiLines saves s
 `ret`, each step's events private (the pops and the `ldp` read the clobber area and fp/lr), no
 store exclusive, the program kept, at a line; then the return address with no error, `sp` as at
 entry, the memory and the program kept, x29 as at entry (the `ldp` of fp/lr). -/
-theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem rets_privP {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
     {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb)
@@ -481,7 +481,7 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
       (∀ i, i + 1 < n → AtNonRet R (iterN R.step i s)) ∧ 0 < n ∧
       ∃ j t, R.fa.lines.toList[j]? = some (.ins .ret t) ∧
         Arm.r .PC (iterN R.step (n - 1) s) = R.pcOf j := by
-  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR hframe
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -543,7 +543,7 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
@@ -652,7 +652,7 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
     rw [iterN_one_succ, hiter]; exact hstep.trans he'
   -- fp/lr as the prologue left them
   have hbytes := read_mem_bytes_bytes R.topN R.topB s R.sP (hst.fplr hframe)
-  obtain ⟨sP, -, hsP, hP16, -⟩ := RL.sP_steps hR hent
+  obtain ⟨sP, -, hsP, hP16, -⟩ := RL.sP_steps hR hframe hent
   rw [hsP] at hbytes
   have hfplr : Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 R.af.frameSize) s =
       xreg 30 R.s0 ++ xreg 29 R.s0 := by

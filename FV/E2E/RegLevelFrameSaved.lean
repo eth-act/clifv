@@ -529,7 +529,7 @@ theorem mem_leadSaves : ∀ {l : List RItem} {r : Reg}, r ∈ RItem.leadSaves l 
 /-- **The entry block saves only registers of `rf.saved`** (`saveShapeOk`: block 0 starts with
 the saves of `rf.saved`, and no later item stores into a save slot). -/
 theorem saveRegs_saved {R : RL} (hR : R.Wf) {r : Reg} (h : r ∈ R.rf.saveRegs) : r ∈ R.rf.saved := by
-  obtain ⟨hsh, -⟩ := lowerRFunc_saves hR.alloc
+  obtain ⟨hsh, -⟩ := hR.alloc.saves
   obtain ⟨vb, items, -, -, -, -, -, -, -, hvb, hit, -⟩ := entry_block hR
   obtain ⟨h0, -⟩ := saveShapeOk_block hsh hvb hit
   obtain ⟨htake, hseg⟩ := h0 rfl
@@ -556,11 +556,11 @@ theorem frameSaved_of_stRel {R : RL} (hR : R.Wf) {ra : BitVec 64}
     (hinv : SavedInv R.rf ckeep e (.run ⟨b, .op k allocs :: its, m, w⟩ : MConf CV Arm.ArmState)) :
     Unw.FrameSaved R.af R.s0 s := by
   obtain ⟨-, hA, -, -⟩ := hinv
-  obtain ⟨-, -, hsav, hsv, -, hcb, -, hst', -⟩ := RL.frame_facts hR
+  obtain ⟨-, hsav, hsv, -, hcb, -, hst'⟩ := RL.alloc_facts hR
   have hcbl := hsv.clobber_le
   have hreg : ∀ r ∈ calleeSaved, m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e' => by cases e'; exact calleeSaved_allocatable hr) trivial
-  obtain ⟨h29, h30, hsl⟩ := RL.top_bytes hR hent (hst.fplr hf)
+  obtain ⟨h29, h30, hsl⟩ := RL.top_bytes hR hframe hent (hst.fplr hf)
   have hns : ∀ r ∈ calleeSaved, r ∉ R.af.saves → r ∉ R.rf.saveRegs := fun r _ hn hm =>
     hn (hsav ▸ saveRegs_saved hR hm)
   have hunsaved : ∀ r ∈ calleeSaved, ∀ d, r.dwarf? = some d →

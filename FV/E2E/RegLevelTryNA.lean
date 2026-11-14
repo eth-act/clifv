@@ -37,7 +37,7 @@ theorem realizes_tryCallNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : A
       (∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)) ∧
       R.SegLen j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' s n ∧ R.FRFree s n := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hcpc := callAt_of_q hR hq.q hvb hi tryCall_hcall
   -- the forwarding-block case of `QW` (`T ≠ []`): a `try_call`'s allocated form is no `jump`
   have hqq := hq
