@@ -49,16 +49,15 @@ theorem driverHypTCF_relW_of {sem : Sem} (hsub : InSubsetTCF p f) (hT : TypedRul
     (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) :
     DriverHypTC f vc ctx st0 R gn bl A sem (RelW ⟨F, syms, slotOff, out⟩ f c) env p := by
   let Γ : Rel := ⟨F, syms, slotOff, out⟩
-  have hctxT : CtxT f ctx :=
-    ctxT_of_functionETCF hsub.subsetETCF hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+  have hctxT : CtxTW f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   exact {
     shape := hshape
     cert := hcert
     dsem := hds.toDriverSemG
-    insts := instCallsTF_of_rules lowerRulesCorrectTI_program lowerRulesCorrectT_program
+    insts := instCallsTFW_of_rules lowerRulesCorrectTI_program lowerRulesCorrectT_program
       lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program lowerRulesCorrectFC_program
-      nonEUnmatchableTF_program hT.callsT hT.indT
+      nonEUnmatchableTFW_program callRulesCorrectTFP_program hT.ind
       memRulesCorrectRTI_program memRulesCorrectRT_program hRef (mrStable_relW Γ f c) hcalls
       hicalls hmem hFP (outArgsOk_relW Γ f c)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)

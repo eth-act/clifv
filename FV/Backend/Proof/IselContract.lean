@@ -1362,9 +1362,10 @@ def valClassOf (ctx : Ctx) (x : Nat) : RegClass := ((ctx.valueType? x).map CTy.v
 def IntPos (ctx : Ctx) (x : Nat) : Prop := ∀ t, ctx.valueType? x = some t → t ∈ eCTys
 
 /-- The operands of an instruction the CLIF verifier types as integers: every operand of an
-integer operation, the address of a memory access, the condition of a `select`, the arguments
-of a call (calls are integer-only, `sigIntB`); not the value of a float `store`, the operands of
-a float `select` or the operand of a `bitcast`. -/
+integer operation, the address of a memory access, the condition of a `select`, the callee and
+arguments of an indirect call (`sigIntB`); not the value of a float `store`, the operands of a
+float `select` or the operand of a `bitcast`, and (S11g) not a direct `call`'s arguments, which
+are passed in their values' classes (`IselCtlCallF`; `intArgsE` lists them). -/
 def intArgs : Clif.Inst → List Nat
   | .unary _ _ x | .extend _ _ x | .ireduce _ x | .bmask _ x => [x]
   | .binary _ _ x y | .div _ _ x y | .icmp _ _ x y => [x, y]
@@ -1374,12 +1375,22 @@ def intArgs : Clif.Inst → List Nat
   | .atomicStore _ _ x p => [x, p]
   | .atomicRmw _ _ _ p x => [p, x]
   | .atomicCas _ _ p e x => [p, e, x]
-  | .call _ args => args
+  | .call _ _ => []
   | .callIndirect _ c args => c :: args
   | _ => []
 
+/-- `intArgs` with a direct `call`'s arguments: the integer positions of the scopes whose calls
+are integer-only (`Compile.intOperands`; `intArgs` before S11g). -/
+def intArgsE : Clif.Inst → List Nat
+  | .call _ args => args
+  | i => intArgs i
+
+theorem mem_intArgsE {i : Clif.Inst} {x : Nat} (h : x ∈ intArgs i) : x ∈ intArgsE i := by
+  cases i <;> simp_all [intArgsE]
+
 /-- **The invariant of a float-capable lowering context** (`CtxInv` with class-aware vregs,
-`f32`/`f64` types and the integer typing of `intArgs`). -/
+`f32`/`f64` types and the integer typing of `intArgs`; S11g: not of a `call`'s arguments, which
+`CallArgsInt` records where they are integers). -/
 structure CtxInvT (f : Clif.Function) (ctx : Ctx) : Prop where
   func : ctx.func = f
   data : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
@@ -1404,6 +1415,22 @@ structure CtxInvT (f : Clif.Function) (ctx : Ctx) : Prop where
   /-- the operands in integer positions are integers -/
   intOps : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
     info.clif = some inst → ∀ x ∈ intArgs inst, IntPos ctx x
+
+/-- **The arguments of the context's `call` statements are in integer positions** (S11g: the
+part of `CtxInvT.intOps` that `intArgs` no longer lists; the contexts with integer calls,
+`LowerContractT`'s `CtxT`, record it). -/
+def CallArgsInt (ctx : Ctx) : Prop :=
+  ∀ (ii : Nat) (info : IInfo) (fn : Clif.FnRef) (args : List Nat), ctx.insts[ii]? = some info →
+    info.clif = some (.call fn args) → ∀ x ∈ args, IntPos ctx x
+
+/-- `CtxInvT.intOps` with a `call`'s arguments (`intArgsE`), where they are integers. -/
+theorem CtxInvT.intOpsE {f : Clif.Function} {ctx : Ctx} (h : CtxInvT f ctx) (hca : CallArgsInt ctx)
+    (ii : Nat) (info : IInfo) (inst : Clif.Inst) (hi : ctx.insts[ii]? = some info)
+    (hc : info.clif = some inst) : ∀ x ∈ intArgsE inst, IntPos ctx x := by
+  intro x hx
+  cases inst with
+  | call fn args => exact hca ii info fn args hi hc x hx
+  | _ => exact h.intOps ii info _ hi hc x hx
 
 theorem mem_mCTys_of_eCTys {t : CTy} (h : t ∈ eCTys) : t ∈ mCTys :=
   List.mem_append_left _ h

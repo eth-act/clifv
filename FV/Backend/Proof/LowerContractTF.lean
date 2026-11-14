@@ -63,6 +63,23 @@ def NonEUnmatchableTF (p : Program) : Prop :=
       ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
     (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) ≠ .ok (some env', s1)
 
+/-- **`NonEUnmatchableTF` over `CtxTW`** (S11g, #1015): the same unmatchability on contexts whose
+`call`s may take and return `f32`/`f64` (no condition on the callees; `IselNonETF`'s
+`nonEUnmatchableTFW_program`). -/
+def NonEUnmatchableTFW (p : Program) : Prop :=
+  ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → floatMoveRootRule r = false →
+    floatMemRootRule r = false → floatArithRootRule r = false → floatCvtRootRule r = false →
+    floatCmpRootRule r = false →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → Compile.instE inst = false → (r.id = 971 → ¬ FloatSelect inst) →
+    StoreTyped ctx inst →
+  ∀ (cfg : Config) (m : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V)
+    (s1 : LState × Array RuleId),
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) ≠ .ok (some env', s1)
+
 set_option maxRecDepth 20000 in
 /-- **The typed statement dispatcher with the proven float operations**
 (`lowerInstOk_of_rulesT` over `CtxT` alone, with the conversion and `fcmp` roots and

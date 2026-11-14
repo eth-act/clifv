@@ -553,10 +553,11 @@ theorem holdsAllT_exact {S : Clif.Inst → Bool} (fs : List V) :
   | nil => trivial
   | cons v fs ih => exact ⟨rfl, ih⟩
 
-/-- `inst_split` for one typed-scope instruction (the callees of the context's `call`s with
-integer signatures). -/
-theorem inst_split1_calls (hctx : CtxInvT f ctx) (hx : CallsE f ctx)
-    {j : Nat} {info : IInfo} {c : Clif.Inst} (hT : Compile.instET c = true)
+/-- `inst_split` for one typed-scope instruction whose callee (if a `call`) has an integer
+signature (S11g: the instruction-local form of `inst_split1_calls`). -/
+theorem inst_split1_at (hctx : CtxInvT f ctx) {j : Nat} {info : IInfo} {c : Clif.Inst}
+    (hcx : ∀ fn args, c = .call fn args → ∀ e, f.extern? fn = some e → Compile.sigE e.sig = true)
+    (hT : Compile.instET c = true)
     (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
     (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
       (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data floatOps).Holds f ctx info.data) := by
@@ -576,13 +577,22 @@ theorem inst_split1_calls (hctx : CtxInvT f ctx) (hx : CallsE f ctx)
         cases tys with
         | nil => cases hh
         | cons t tys => simp only [List.map_cons, List.cons.injEq] at hh; exact ⟨t, List.mem_cons_self, hh.1⟩
-      exact floatRes_op_calls (hx.at hi hc) hT hd hty ht (float_of_ofClif hf)
+      exact floatRes_op_calls hcx hT hd hty ht (float_of_ofClif hf)
     · left
       refine ⟨List.mem_cons_of_mem _ ?_, c, hT, hd, instData_shapeT hT hd⟩
       simp only [mCTys, List.mem_append] at ht0
       rcases ht0 with h | h
       · exact h
       · exact absurd h hf
+
+/-- `inst_split` for one typed-scope instruction (the callees of the context's `call`s with
+integer signatures). -/
+theorem inst_split1_calls (hctx : CtxInvT f ctx) (hx : CallsE f ctx)
+    {j : Nat} {info : IInfo} {c : Clif.Inst} (hT : Compile.instET c = true)
+    (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
+    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data floatOps).Holds f ctx info.data) :=
+  inst_split1_at hctx (hx.at hi hc) hT hi hc hd
 
 /-- `inst_split` for one typed-scope instruction. -/
 theorem inst_split1 (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)

@@ -164,8 +164,8 @@ theorem iselSimTC_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTC_of_check hlow
   have hctxT : CtxT f ctx :=
-    ctxT_of_functionETCF (Compile.functionETCF_of_functionETC hsub.subsetETC)
-      hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+    ⟨hshape.ctxInvT, hshape.scope, callsE_of_functionETC hsub.subsetETC hshape.hctx.choose_spec,
+      callArgsInt_of_functionETC hsub.subsetETC hshape.hctx.choose_spec⟩
   have hscT : InstScopeT ctx := instScopeT_of_lowerCheckTC hlow hshape.hctx.choose_spec
   have hstT : StoresTyped ctx :=
     storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec

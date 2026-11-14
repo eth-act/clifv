@@ -232,11 +232,13 @@ theorem lower_rule952_filter : (program.rulesOf TId.lower).filter (·.id == 952)
   rw [program_rulesOf_686]
   rfl
 
-/-- **One instruction of a context with the proven float operations** (the callees of the
-context's `call`s with integer signatures): an integer (or no) result with an opcode of
-`opsTF` (an `fcmp`'s `i8` among them), or a float result with an opcode of `floatOpsF`. -/
-theorem inst_splitF1_calls {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
-    (hx : CallsE f ctx) {j : Nat} {info : IInfo} {c : Clif.Inst}
+/-- **One instruction of a context with the proven float operations** whose callee (if a `call`)
+has an integer signature (S11g: the instruction-local form of `inst_splitF1_calls`): an integer
+(or no) result with an opcode of `opsTF` (an `fcmp`'s `i8` among them), or a float result with an
+opcode of `floatOpsF`. -/
+theorem inst_splitF1_at {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : Nat}
+    {info : IInfo} {c : Clif.Inst}
+    (hcx : ∀ fn args, c = .call fn args → ∀ e, f.extern? fn = some e → Compile.sigE e.sig = true)
     (hTF : Compile.instETF c = true) (hi : ctx.insts[j]? = some info) (hc : info.clif = some c)
     (hd : instData f c = .ok info.data) :
     (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
@@ -246,7 +248,7 @@ theorem inst_splitF1_calls {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx
   have hT := hTF
   simp only [Compile.instETF, Compile.instETA, Bool.or_eq_true] at hT
   rcases hT with ((hT | hA) | hV) | hC
-  · rcases inst_split1_calls hctx hx hT hi hc hd with ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩ |
+  · rcases inst_split1_at hctx hcx hT hi hc hd with ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩ |
       ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩
     · exact .inl ⟨h1, c', Compile.instETF_of_instET hT', hc', kf, ko, fs, he,
         List.mem_append_left _ hko⟩
@@ -269,6 +271,18 @@ theorem inst_splitF1_calls {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx
     refine .inl ⟨?_, _, hTF, hd, kf, ko, fs, he, hko⟩
     rw [fcmp_resTy hctx hi hc]
     simp [eCTys]
+
+/-- **One instruction of a context with the proven float operations** (the callees of the
+context's `call`s with integer signatures). -/
+theorem inst_splitF1_calls {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hx : CallsE f ctx) {j : Nat} {info : IInfo} {c : Clif.Inst}
+    (hTF : Compile.instETF c = true) (hi : ctx.insts[j]? = some info) (hc : info.clif = some c)
+    (hd : instData f c = .ok info.data) :
+    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
+        (AVT.data opsTF).HoldsS Compile.instETF f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧
+        (AVT.data floatOpsF).HoldsS Compile.instETF f ctx info.data) :=
+  inst_splitF1_at hctx (hx.at hi hc) hTF hi hc hd
 
 /-- **An instruction of a context with the proven float operations**: `InstSplit` at
 `opsTF`/`floatOpsF`. -/
@@ -300,6 +314,126 @@ theorem lower_nonroot_nomatchTF_calls {f : Clif.Function} {ctx : Ctx} (hctx : Ct
         rw [hargs] at ha
         obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
         exact failsTG_sound hctx (inst_splitF_calls hctx hsc hx) q .inst _ _ _ _ hok
+          ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
+      · cases hok
+  · have hsub : r ∈ (program.rulesOf TId.lower).filter (·.id == 952) :=
+      List.mem_filter.2 ⟨hr, h952⟩
+    rw [lower_rule952_filter, List.mem_singleton] at hsub
+    subst hsub
+    exact rule_lower_2179_nomatchT hctx hi hc hmatch
+
+/-! ## Float calls (S11g, #1015)
+
+In the typed scope with float calls (`Compile.functionETCF`) a `call`'s callee may return
+`f32`/`f64`: such a `call` has a float result and the opcode `call`. The checker over the
+float-result opcodes `floatOpsFC` (`floatOpsF` and `call`) refutes the excluded roots on such
+contexts without any condition on the callees (`exclOkTFC_program`, one kernel decision;
+`inst_splitFC`, `lower_nonroot_nomatchTFC`). -/
+
+/-- The float-result opcodes with the float calls: `floatOpsF` and `call`. -/
+def floatOpsFC : List Nat := floatOpsF ++ [VIdx.Opcode.Call]
+
+section
+variable (p : Program)
+
+/-- `exclOkTF` over `floatOpsFC`: a root rule of `lower` is in the closure, is
+`rule_lower_2179`, or cannot match an instruction of a float-capable context whose instructions
+are in `Compile.instETF` and whose `call`s may return floats. -/
+def exclOkTFC (r : Rule) : Bool :=
+  closureRootIds.contains r.id || r.id == 952 ||
+    match r.args with
+    | [q] => failsTG p opsTF floatOpsFC .inst q
+    | _ => false
+
+end
+
+set_option maxRecDepth 100000 in
+/-- Every root rule of `lower` is a closure root, `rule_lower_2179`, or cannot match an
+instruction of a float-capable context with the proven float operations and float calls
+(checked). -/
+theorem exclOkTFC_program : (program.rulesOf TId.lower).all (exclOkTFC program) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  decide +kernel
+
+set_option maxRecDepth 20000 in
+theorem callNamesFC_idx : [("Call", "Call")].all (fun pr =>
+    match variantIdx 152 pr.1, variantIdx 151 pr.2 with
+    | some _, some ko => floatOpsFC.contains ko
+    | _, _ => false) = true := by
+  decide +kernel
+
+/-- The data of a `call`: the opcode `call` (`floatOpsFC`). -/
+theorem instData_callFC {f : Clif.Function} {fn : Clif.FnRef} {args : List Nat} {d : V}
+    (h : instData f (.call fn args) = .ok d) :
+    ∃ kf ko fs, d = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ floatOpsFC := by
+  rcases instData_names h with ⟨rest, hd⟩ | ⟨ty', imm, he, -⟩
+  · exact data_of_names hd (by simp [instNames]) callNamesFC_idx
+  · cases he
+
+/-- **One instruction of a context with the proven float operations and float calls**: an
+integer (or no) result with an opcode of `opsTF`, or a float result with an opcode of
+`floatOpsFC` (a `call` of a callee returning a float among them). -/
+theorem inst_splitFC1 {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : Nat}
+    {info : IInfo} {c : Clif.Inst} (hTF : Compile.instETF c = true)
+    (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
+    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
+        (AVT.data opsTF).HoldsS Compile.instETF f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧
+        (AVT.data floatOpsFC).HoldsS Compile.instETF f ctx info.data) := by
+  by_cases hcall : ∃ fn args, c = .call fn args
+  · obtain ⟨fn, args, rfl⟩ := hcall
+    have hT : Compile.instET (.call fn args) = true := by simp [Compile.instET, Compile.instE]
+    cases hh : info.resTys with
+    | nil =>
+      obtain ⟨kf, ko, fs, he, hko⟩ := instData_shapeT hT hd
+      exact .inl ⟨List.mem_cons_self, _, hTF, hd, kf, ko, fs, he, List.mem_append_left _ hko⟩
+    | cons t0 ts =>
+      simp only [List.head?_cons, Option.getD_some]
+      have ht0 : t0 ∈ mCTys := hctx.resTysM j info hi t0 (by rw [hh]; exact List.mem_cons_self)
+      by_cases hf : t0 ∈ fTys
+      · obtain ⟨kf, ko, fs, he, hko⟩ := instData_callFC hd
+        exact .inr ⟨hf, _, hTF, hd, kf, ko, fs, he, hko⟩
+      · obtain ⟨kf, ko, fs, he, hko⟩ := instData_shapeT hT hd
+        refine .inl ⟨List.mem_cons_of_mem _ ?_, _, hTF, hd, kf, ko, fs, he,
+          List.mem_append_left _ hko⟩
+        simp only [mCTys, List.mem_append] at ht0
+        rcases ht0 with h | h
+        · exact h
+        · exact absurd h hf
+  · rcases inst_splitF1_at hctx (fun fn args h => absurd ⟨fn, args, h⟩ hcall) hTF hi hc hd with
+      h | ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩
+    · exact .inl h
+    · exact .inr ⟨h1, c', hT', hc', kf, ko, fs, he, List.mem_append_left _ hko⟩
+
+/-- **An instruction of a context with the proven float operations and float calls**:
+`InstSplit` at `opsTF`/`floatOpsFC`. -/
+theorem inst_splitFC {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeTF ctx) : InstSplit Compile.instETF f ctx opsTF floatOpsFC :=
+  fun hi hc hd => inst_splitFC1 hctx (hsc _ _ _ hi hc) hi hc hd
+
+/-- **The root rules of `lower` outside the closure never match an instruction of a
+float-capable context with the proven float operations** (instructions in `InstScopeTF`, `call`s
+of any typed signature): `rule_lower_2179` by `rule_lower_2179_nomatchT`, the others by the
+checker over `floatOpsFC`. -/
+theorem lower_nonroot_nomatchTFC {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeTF ctx) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hroot : closureRootIds.contains r.id = false) :
+    ∀ cfg m s0 env s1, (matchRule program (sem ctx) cfg m r [.inst ii]).run s0 ≠ .ok (some env, s1) := by
+  intro cfg m s0 env' s1 hmatch
+  have hok := List.all_eq_true.mp exclOkTFC_program r hr
+  simp only [exclOkTFC, hroot, Bool.false_or] at hok
+  cases h952 : r.id == 952
+  · rw [h952, Bool.false_or] at hok
+    cases m with
+    | zero => rw [matchRule.eq_1] at hmatch; cases hmatch
+    | succ m =>
+      obtain ⟨env0, ha, -⟩ := matchRule_some_inv hmatch
+      split at hok
+      · rename_i q hargs
+        rw [hargs] at ha
+        obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
+        exact failsTG_sound hctx (inst_splitFC hctx hsc) q .inst _ _ _ _ hok
           ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
       · cases hok
   · have hsub : r ∈ (program.rulesOf TId.lower).filter (·.id == 952) :=

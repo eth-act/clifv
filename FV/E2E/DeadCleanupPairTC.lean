@@ -287,7 +287,9 @@ theorem instCalls_pair_valueTC (hc : CompiledCleanupTC f k vc vcp rf af fa fb)
   exact hok
 
 /-- **The typed statement calls on pairs of worlds, value semantics, with the proven float
-operations** (`instCalls_pair_valueTC` for `CompiledCleanupTCF`, over `CtxT` alone). -/
+operations and float calls** (`instCalls_pair_valueTC` for `CompiledCleanupTCF`, over `CtxTW`;
+S11g: it was over `CtxT` with `lowerInstOkP_runTermTF`; every `call` by the float family,
+`lowerInstOkP_runTermTFW`). -/
 theorem instCalls_pair_valueTCF (hc : CompiledCleanupTCF f k vc vcp rf af fa fb)
     (hT : TypedRules)
     (hX : XCallsOk env (f.externs.map (·.2))
@@ -298,7 +300,7 @@ theorem instCalls_pair_valueTCF (hc : CompiledCleanupTCF f k vc vcp rf af fa fb)
     (hslot : af.slotBase = slotOff)
     (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
-    {ctx : Ctx} (hctx : CtxT f ctx) (hst : StoresTyped ctx) :
+    {ctx : Ctx} (hctx : CtxTW f ctx) (hst : StoresTyped ctx) :
     InstCallsT f ctx (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
   intro ii info inst st rss st' tr hmem hi hcl hsig hemp hvb hrun
@@ -307,9 +309,9 @@ theorem instCalls_pair_valueTCF (hc : CompiledCleanupTCF f k vc vcp rf af fa fb)
     (outgoing_le_intBaseCleanupATCF hc.toA)
   refine lowerInstOk_pairF_value hNI hTls (Γ := Γ) rfl hctx.inv.func hsig fun Rd Pc => ?_
   obtain ⟨B, hB, stm, hstm, hst'⟩ := hmem
-  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermTF lowerRulesCorrectTI_program
+  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermTFW lowerRulesCorrectTI_program
     lowerRulesCorrectT_program lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program
-    lowerRulesCorrectFC_program nonEUnmatchableTF_program hT.calls
+    lowerRulesCorrectFC_program nonEUnmatchableTFW_program callRulesCorrectTFP_program
     hT.ind memRulesCorrectRTI_program memRulesCorrectRT_program refines_valueSemGF
     (mrStable_relW Γ f c)
     (callsRefineP_valueSemGF hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
@@ -334,7 +336,7 @@ theorem tryCalls_pair_valueTC (hT : TypedRules)
     (hslot : af.slotBase = slotOff)
     (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
-    {ctx : Ctx} (hctx : CtxT f ctx) :
+    {ctx : Ctx} (hctx : CtxTW f ctx) :
     TryCallsTC f ctx (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p
       (RAFrame.compute vcp rf).intBase := by
@@ -393,8 +395,7 @@ theorem vcode_ni_valueTCF (hsub : InSubsetTCF p f)
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hc.lowerOk
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have H := driverHypTCF_relW_value (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
-  have hctxT : CtxT f ctx :=
-    ctxT_of_functionETCF hsub.subsetETCF hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+  have hctxT : CtxTW f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   have hmem : MemRefines F slotOff syms (valueSem F ⟨fa.k, af.slotBase⟩ X) :=
     memRefines_valueSem _ _ X hslot hsym

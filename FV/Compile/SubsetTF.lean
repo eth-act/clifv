@@ -16,6 +16,11 @@ integer position (`intOperandsF`); the operands of an `fcmp` are float positions
 
 `functionETC`, `functionET` and their theorems are unchanged; `functionETCF_of_functionETC`:
 every function of the scope with typed `try_call`s is in this one.
+
+S11g (#1015): the `call` statements of `functionETCF` may also take and return `f32`/`f64`. The
+conjunct `callsE` (every `call`'s callee has an integer signature) is dropped, and a `call`'s
+arguments are not integer positions (`intOperandsFC`): they are passed in their values' classes
+(x0..x7 / v0..v7, then the stack; `Backend.Proof.IselCtlCallF`), as a direct `try_call`'s.
 -/
 
 namespace Compile
@@ -58,16 +63,27 @@ theorem intOperandsF_eq {i : Inst} (h : instET i = true) : intOperandsF i = intO
   | float op ty args => simp [instET, instE] at h
   | _ => rfl
 
-/-- `opsTypedTC` with `intOperandsF`. -/
+/-- The operands in integer positions with float calls (S11g): `intOperandsF` without a `call`'s
+arguments, which are passed in their values' classes. -/
+def intOperandsFC : Inst → List Nat
+  | .call _ _ => []
+  | i => intOperandsF i
+
+theorem intOperandsFC_sub {i : Inst} {x : Nat} (h : x ∈ intOperandsFC i) : x ∈ intOperandsF i := by
+  cases i <;> simp_all [intOperandsFC]
+
+/-- `opsTypedTC` with `intOperandsFC` (S11g: it was `intOperandsF`, which lists a `call`'s
+arguments). -/
 def opsTypedTCF (f : Function) : Bool :=
   let fd := floatDefs f
   f.blocks.all fun b =>
-    b.body.all (fun s => (intOperandsF s.inst).all fun x => !fd.contains x) &&
+    b.body.all (fun s => (intOperandsFC s.inst).all fun x => !fd.contains x) &&
       (termIntOperandsC b.term).all fun x => !fd.contains x
 
-/-- **The typed scope with the proven float operations** (`functionETC` with `instETF`). -/
+/-- **The typed scope with the proven float operations and float calls** (`functionETC` with
+`instETF`; S11g: without `callsE`, a `call`'s arguments in their classes, `opsTypedTCF`). -/
 def functionETCF (f : Function) : Bool :=
-  sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigET ·.2.sig) && callsE f &&
+  sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigET ·.2.sig) &&
     f.blocks.all (fun b =>
       b.params.all (tyM ·.2) && b.body.all (instETF ·.inst) && termE b.term) &&
     opsTypedTCF f && edgeClassOk f
@@ -76,15 +92,16 @@ def functionETCF (f : Function) : Bool :=
 theorem functionETCF_of_functionETC {f : Function} (h : functionETC f = true) :
     functionETCF f = true := by
   simp only [functionETC, Bool.and_eq_true, List.all_eq_true] at h
-  obtain ⟨⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, hc⟩, hb⟩, ho⟩, he⟩ := h
+  obtain ⟨⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, -⟩, hb⟩, ho⟩, he⟩ := h
   simp only [functionETCF, Bool.and_eq_true, List.all_eq_true]
-  refine ⟨⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, hc⟩, fun b hb' => ?_⟩, ?_⟩, he⟩
+  refine ⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, fun b hb' => ?_⟩, ?_⟩, he⟩
   · obtain ⟨⟨hp, hi⟩, ht⟩ := hb b hb'
     exact ⟨⟨hp, fun s hs' => instETF_of_instET (hi s hs')⟩, ht⟩
   · simp only [opsTypedTC, opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at ho ⊢
     intro b hb'
-    refine ⟨fun s hs' => ?_, (ho b hb').2⟩
-    rw [intOperandsF_eq ((hb b hb').1.2 s hs')]
-    exact (ho b hb').1 s hs'
+    refine ⟨fun s hs' x hx => ?_, (ho b hb').2⟩
+    have hx' := intOperandsFC_sub hx
+    rw [intOperandsF_eq ((hb b hb').1.2 s hs')] at hx'
+    exact (ho b hb').1 s hs' x hx'
 
 end Compile

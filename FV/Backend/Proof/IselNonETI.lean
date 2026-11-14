@@ -277,9 +277,10 @@ theorem lower_intStoreRoot_filter : (program.rulesOf TId.lower).filter intStoreR
 
 /-- **An integer `store` root never matches a non-E instruction of a typed context** whose float
 stores store float values (`StoreTyped`): it matches a `store` whose stored value has an integer
-type, and a non-E `store` is a float store. -/
-theorem intStore_nonE {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : intStoreRoot r = true)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ii : Nat} {info : IInfo}
+type, and a non-E `store` is a float store. (S11g: over `CtxTW`; `intStore_nonE` is the `CtxT`
+form.) -/
+theorem intStore_nonEW {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : intStoreRoot r = true)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxTW f ctx) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hE : Compile.instE inst = false) (hst : StoreTyped ctx inst) {cfg : Config} {m : Nat}
     {st : LState} {tr : Array RuleId} {env' : Interp.Env V} {s1 : LState × Array RuleId}
@@ -313,6 +314,16 @@ theorem intStore_nonE {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : in
           Compile.instET, Compile.instE, Compile.tyE, Clif.Ty.isFloat]
     have := hst _ _ _ _ _ _ rfl hf _ hvt
     simp [fTys] at this
+
+/-- `intStore_nonEW` over `CtxT`. -/
+theorem intStore_nonE {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : intStoreRoot r = true)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ii : Nat} {info : IInfo}
+    {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    (hE : Compile.instE inst = false) (hst : StoreTyped ctx inst) {cfg : Config} {m : Nat}
+    {st : LState} {tr : Array RuleId} {env' : Interp.Env V} {s1 : LState × Array RuleId}
+    (hmatch : (matchRule program (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1)) :
+    False :=
+  intStore_nonEW hr hs hctx.toW hi hc hE hst hmatch
 
 /-! ## The theorem -/
 
