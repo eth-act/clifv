@@ -11,12 +11,22 @@ lines (`FnInput.cp`, `FV/Link/ConstPhiCompile.lean`). Both take this module's de
 compile what `lean-backend` compiled:
 
 * `reparse header g`: the function of the text `header ++ g.print` (index 0, after the `i128`
-  legalisation), as `FnInput.func` reads it (`header`: the file's header lines, `Link.clifHeader`);
+  legalisation), as `FnInput.func` reads it (`header`: the file's header lines, `Link.clifHeader`, here so that
+  `lean-backend` reads them without the linker's modules);
 * `keeps header f`: the pass changes `f` and the printed result parses back to itself;
 * `select header f`: `run f` when `keeps`, else `f` (`lean-backend`'s function).
 
 Kept free of proofs; `lean-backend` imports it without the linker's modules.
 -/
+
+namespace Link
+
+/-- The header lines of a CLIF file (before the first `function`), each with its newline. -/
+def clifHeader (t : String) : String :=
+  ((t.splitOn "\n").takeWhile (fun l => !l.startsWith "function")).foldl
+    (fun acc l => acc ++ l ++ "\n") ""
+
+end Link
 
 namespace Opt.ConstPhi
 
