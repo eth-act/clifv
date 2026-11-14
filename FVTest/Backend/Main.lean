@@ -2,6 +2,7 @@ import FV.Backend
 import FV.Backend.ReturnPinProduction
 import FV.Opt.Legalize128Pass
 import FV.Opt.LegalExn
+import FV.Opt.ConstPhiSelect
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.I128Native
@@ -62,6 +63,17 @@ source function and the unwinding theorem's checks pass on the optimised functio
 one by `E2E.backend_correct_legal_opt_unwind_any` (dead cleanup) when its compiled form is the
 mid-end's output on the source function's legalisation, which `Opt.Legal.check` and
 `Opt.Legal.exnOk` accept, and the checks pass.
+
+Constant-phi removal (#990): after the `i128` legalisation and before the mid-end and the
+backend, every function goes through `Opt.ConstPhi.run` (Cranelift's `eliminate_unreachable_code`
+and `remove_constant_phis`, which Cranelift runs at every optimisation level) when the pass changes
+it and its output, printed after the file's header, parses back to itself
+(`Opt.ConstPhi.select`, the decision `link-check` and `lean-link` take, `FnInput.cp`). A
+function the pass changed is covered by the theorems above composed with the pass
+(`FV/E2E/PassX.lean` at `T := Opt.ConstPhi.run`, with `--opt` at `T := Opt.ConstPhi.runOpt cfg`):
+`E2E.backend_correct_pass{,_cleanup}`, `backend_correct_pass_finalTCF`,
+`backend_correct_legal_pass_wide{,_cleanup}`, `backend_correct_pass{,_cleanup}_unwind_any`,
+`backend_correct_legal_pass_unwind_any`, and in general `E2E.pass_lift`.
 
 With `--settings <request.json> --settings-receipt <receipt.json>` (the proved settings mode),
 the settings of a Cranelift filetest (the `--stock-config` request schema) are compiler input:
@@ -281,7 +293,10 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let alloc := (← Allocator.ofName? ra).getD .spill
   let source := Clif.parseFile src
   let lg := Opt.Legalize128.parsedFile128 source
-  let pf := match o.opt with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
+  -- constant-phi removal after the legalisation, before the mid-end (#990)
+  let header := Link.clifHeader src
+  let lgc := Opt.ConstPhi.selectFile header lg.file
+  let pf := match o.opt with | some c => Opt.optimizeParsedFile c lgc | none => lgc
   -- the mid-end theorems (`E2E.backend_correct_opt_exe`, `E2E.backend_correct_legal_opt`) cover
   -- every function, legalised ones included, for the proven rule sets
   let unv128 := match o.opt with
@@ -409,16 +424,27 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- legalised one is inside `E2E.backend_correct_legal_opt_unwind_any` (dead cleanup only) when
   -- its compiled form is `Opt.optimizeExe` of the source function's legalisation, recomputed,
   -- which `Opt.Legal.check` and `Opt.Legal.exnOk` accept (`legalOptUnwOk`). No unwinding theorem
-  -- composes unproven rule sets.
+  -- composes unproven rule sets. A function the constant-phi removal changed (`cpOn`: its
+  -- compiled form is `Opt.ConstPhi.select` of its (legalised) source function, before the
+  -- mid-end) is covered by the same theorems composed with the pass (`FV/E2E/PassX.lean`:
+  -- `backend_correct_pass{,_cleanup}_unwind_any`, `backend_correct_legal_pass_unwind_any`, at
+  -- `T := Opt.ConstPhi.run`, with `--opt` at `T := Opt.ConstPhi.runOpt cfg`).
   let recs ← records.get
   let thm := if o.deadCleanup then "backend_correct_final_cleanup_unwind_any"
     else "backend_correct_final_unwind_any"
   let optThm := if o.deadCleanup then "backend_correct_opt_exe_cleanup_unwind_any"
     else "backend_correct_opt_exe_unwind_any"
+  let passThm := if o.deadCleanup then "backend_correct_pass_cleanup_unwind_any"
+    else "backend_correct_pass_unwind_any"
+  let passT := if o.opt.isSome then "Opt.ConstPhi.runOpt cfg" else "Opt.ConstPhi.run"
+  -- the pass changed the (legalised) source function
+  let cpOn (name : String) : Bool :=
+    ((lg.file.funcs.find? (·.name == name)).bind (·.func.toOption)).any (Opt.ConstPhi.keeps header)
   let legalUnwOk (name : String) (g : Clif.Function) : Bool :=
     match (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
     | some f => match Opt.Legalize128.function128Cert f with
-      | .ok (g', cert) => g' == g && Opt.Legal.check f g cert && Opt.Legal.exnOk f g cert
+      | .ok (g', cert) => Opt.ConstPhi.select header g' == g && Opt.Legal.check f g' cert &&
+        Opt.Legal.exnOk f g' cert
       | .error _ => false
     | none => false
   let provenOpt : Bool := match o.opt with
@@ -426,12 +452,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | none => false
   let optUnwOk (name : String) (g : Clif.Function) : Bool :=
     match o.opt, (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
-    | some c, some f => provenOpt && Opt.optimizeExe f c == g
+    | some c, some f => provenOpt && Opt.optimizeExe (Opt.ConstPhi.select header f) c == g
     | _, _ => false
   let legalOptUnwOk (name : String) (g : Clif.Function) : Bool :=
     match o.opt, (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
     | some c, some f => match Opt.Legalize128.function128Cert f with
-      | .ok (g', cert) => provenOpt && Opt.optimizeExe g' c == g && Opt.Legal.check f g' cert &&
+      | .ok (g', cert) => provenOpt && Opt.optimizeExe (Opt.ConstPhi.select header g') c == g &&
+        Opt.Legal.check f g' cert &&
         Opt.Legal.exnOk f g' cert
       | .error _ => false
     | _, _ => false
@@ -446,14 +473,17 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
           else if legal && !o.deadCleanup then
             some "i128 legalized: no unwinding theorem composes the legalisation without dead cleanup"
           else if o.opt.isSome && legal && !legalOptUnwOk p.name f then
-            some "--opt, i128 legalized: not Opt.optimizeExe of the source function's legalisation accepted by Opt.Legal.check and Opt.Legal.exnOk"
+            some "--opt, i128 legalized: not Opt.optimizeExe of the constant-phi removal of the source function's legalisation accepted by Opt.Legal.check and Opt.Legal.exnOk"
           else if o.opt.isSome && !legal && !optUnwOk p.name f then
-            some "--opt: the compiled function is not Opt.optimizeExe of its source function"
+            some "--opt: the compiled function is not Opt.optimizeExe of the constant-phi removal of its source function"
           else if o.opt.isNone && legal && !legalUnwOk p.name f then
             some "i128 legalized: Opt.Legal.check (no try_call_indirect, no call_indirect at an i128 signature) or Opt.Legal.exnOk (the handler edges) rejects"
           else (unwindCheckFailure? f ((recs.find? (·.1 == p.name)).bind (·.2))
             (fa.funcs.find? (·.name == p.name))).map (s!"unwinding check failed: {·}")
-        let thm := if legal && o.opt.isSome then "backend_correct_legal_opt_unwind_any"
+        let thm := if cpOn p.name then
+            (if legal then "backend_correct_legal_pass_unwind_any" else passThm) ++
+              s!" (T := {passT})"
+          else if legal && o.opt.isSome then "backend_correct_legal_opt_unwind_any"
           else if legal then "backend_correct_legal_unwind_any"
           else if o.opt.isSome then optThm else thm
         match why? with

@@ -10,6 +10,7 @@ import FV.E2E.BinCheckFast
 import FV.Link.Image
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.SemanticPipelineCheckT
+import FV.Link.ConstPhiCompile
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -43,7 +44,9 @@ def main (args : List String) : IO UInt32 := do
   let A ← match Front.assemble b with
     | .ok A => pure A
     | .error e => do IO.eprintln s!"link-check: {exe}: {e}"; return 1
-  let fis := A.funcs.toArray
+  -- the CLIF `lean-backend` compiled: each function after constant-phi removal when
+  -- `Opt.ConstPhi.keeps` holds (`FnInput.cp`, `lean-backend`'s decision, #990)
+  let fis := (A.funcs.map FnInput.cp).toArray
   -- the executable and the data objects the functions reach (renamed to the linked symbols)
   let file ← IO.FS.readBinFile exe
   let dataLines : List String := A.data.map Clif.dataObject
