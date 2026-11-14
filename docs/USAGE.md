@@ -1066,9 +1066,9 @@ The full gate measures fv-demo and survey on `main` this way, and the daily dige
 reports the counts and lost matches with the filetest comparison
 ([STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md#daily-change-reports)).
 Cause analysis: #557.
-Crate parity is the second of the two stock-parity metrics; the first is the filetest
-comparison above, which CI runs on every PR. A parity PR reports both
-([STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md#two-parity-metrics), `AGENTS.md`).
+Crate parity is the holdout of stock parity work; the target is the filetest comparison
+above, which CI runs on every PR. Run it to investigate a loss on `main`, not to choose or
+rank causes ([STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md#two-parity-metrics), `AGENTS.md`).
 
 ## Checking an edit: which loop to use
 
