@@ -222,12 +222,15 @@ def skipDead (f : Clif.Function) (vc : VCode) : VCode :=
 /-- `skipDead` as the compiler runs it (`skipDead_eq_impl`, `@[csimp]`): the set of skipped
 statements is built once. Lean compiles the function-valued `skipDrops` at its full arity, so in
 `skipDead` every `drop b j` query rebuilt the candidates and the fixpoint: quadratic in the
-statements, hours on corpus/clif-regress/large_frame.clif (9,000 statements in one block). -/
+statements, hours on corpus/clif-regress/large_frame.clif (9,000 statements in one block). The
+lowering is re-run with records without class arrays (`lowBlocksLite`, #1057: the full records
+take statements × vregs memory), which the skip does not read (`skipDropSet_lite`,
+`skipMask_lite`). -/
 def skipDeadImpl (f : Clif.Function) (vc : VCode) : VCode :=
   match buildCtx f with
   | .error _ => vc
   | .ok (ctx, _, st0) =>
-    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+    match lowBlocksLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
         f.blocks.length with
     | none => vc
     | some bl =>
@@ -236,6 +239,29 @@ def skipDeadImpl (f : Clif.Function) (vc : VCode) : VCode :=
       let mask := skipMask f R bl vc (skipAt f fun b j => tbl.contains (b, j))
       if deleteCheck vc mask then deleteWith vc mask else vc
 
-@[csimp] theorem skipDead_eq_impl : @skipDead = @skipDeadImpl := rfl
+theorem skipDropSet_lite (f : Clif.Function) (R : Reg → Reg) (bl : List BLow) (vc : VCode) :
+    skipDropSet f R (bl.map liteBL) vc = skipDropSet f R bl vc := by
+  unfold skipDropSet skipCands fixedUses
+  rw [seg_lite, tseg_lite]
+
+theorem skipMask_lite (f : Clif.Function) (R : Reg → Reg) (bl : List BLow) (vc : VCode)
+    (drop : Nat → Nat → Bool) : skipMask f R (bl.map liteBL) vc drop = skipMask f R bl vc drop := by
+  unfold skipMask
+  rw [seg_lite, tseg_lite]
+
+@[csimp] theorem skipDead_eq_impl : @skipDead = @skipDeadImpl := by
+  funext f vc
+  unfold skipDead skipDeadImpl
+  cases buildCtx f with
+  | error _ => rfl
+  | ok r =>
+    obtain ⟨ctx, _, st0⟩ := r
+    simp only [lowBlocksLite_eq]
+    cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length with
+    | none => rfl
+    | some bl =>
+      simp only [Option.map_some, aliasOf_lite, skipDropSet_lite, skipMask_lite]
+      rfl
 
 end Backend.Proof.Driver

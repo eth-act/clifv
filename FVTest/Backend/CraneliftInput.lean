@@ -204,7 +204,7 @@ def skipDeadDrops (f : Clif.Function) (vc : VCode) : VCode × (Nat → Nat → B
   match buildCtx f with
   | .error _ => (vc, fun _ _ => false)
   | .ok (ctx, _, st0) =>
-    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+    match lowBlocksLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
         f.blocks.length with
     | none => (vc, fun _ _ => false)
     | some bl =>
@@ -223,7 +223,7 @@ theorem skipDeadDrops_fst (f : Clif.Function) (vc : VCode) :
   | ok x =>
     obtain ⟨ctx, _, st0⟩ := x
     dsimp only
-    cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+    cases lowBlocksLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
         f.blocks.length with
     | none => rfl
     | some bl => dsimp only; split <;> rfl

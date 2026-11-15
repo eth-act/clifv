@@ -79,4 +79,77 @@ def lowerCheckTC (f : Clif.Function) (vc : VCode) : Bool :=
         ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
         (callsStackOkB f vc.outgoing && entryOkBT f)
 
+/-! ## `lowerCheckTC` in linear memory (#1057)
+
+`lowBlocksC` recording the states without their class arrays (`lowBlocksCLite`,
+`lowBlocksCLite_eq`); the compiler runs `lowerCheckTCLite` in place of `lowerCheckTC`
+(`DriverCheck.lean`'s section on `lowerCheckLite`). -/
+
+/-- `lowBlocksC` recording the states without their class arrays (`lowBlocksCLite_eq`). -/
+def lowBlocksCLite (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :
+    Nat → List Clif.Block → LState → Nat → Option (List BLow)
+  | _, [], _, _ => some []
+  | start, B :: Bs, st, nl =>
+    match lowStmtsLite call start B.body st with
+    | none => none
+    | some (sls, stE) =>
+      let ti := start + B.body.length
+      let tst : LState := { stE with emitted := #[] }
+      let ltst := liteSt tst
+      match lowTermC f tcall ycall ti B.term tst nl with
+      | some (data, targets, tl, tst', nl') =>
+        let ltst' := liteSt tst'
+        let ltl := tl.map liteTry
+        (lowBlocksCLite f call tcall ycall (ti + 1) Bs { tst' with emitted := #[] } nl').map
+          (⟨start, sls, data, targets, ltst, ltst', ltl⟩ :: ·)
+      | none => none
+
+theorem lowBlocksCLite_eq (f : Clif.Function) (call : StmtCall) (tcall : TermCallF)
+    (ycall : TryCallF) : ∀ (start : Nat) (Bs : List Clif.Block) (st : LState) (nl : Nat),
+    lowBlocksCLite f call tcall ycall start Bs st nl =
+      (lowBlocksC f call tcall ycall start Bs st nl).map (·.map liteBL)
+  | _, [], _, _ => rfl
+  | start, B :: Bs, st, nl => by
+    simp only [lowBlocksCLite, lowBlocksC, lowStmtsLite_eq]
+    cases lowStmts call start B.body st with
+    | none => rfl
+    | some p =>
+      obtain ⟨sls, stE⟩ := p
+      simp only [Option.map_some]
+      cases lowTermC f tcall ycall (start + B.body.length) B.term { stE with emitted := #[] } nl with
+      | none => rfl
+      | some q =>
+        obtain ⟨data, targets, tl, tst', nl'⟩ := q
+        simp only [lowBlocksCLite_eq f call tcall ycall _ Bs _ nl']
+        cases lowBlocksC f call tcall ycall (start + B.body.length + 1) Bs
+          { tst' with emitted := #[] } nl' <;> rfl
+
+/-- **`lowerCheckTC` in linear memory** (`lowerCheckTC_eq_lite`). -/
+def lowerCheckTCLite (f : Clif.Function) (vc : VCode) : Bool :=
+  match buildCtx f with
+  | .error _ => false
+  | .ok (ctx, _, st0) =>
+    match lowBlocksCLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => false
+    | some bl =>
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
+      shapeOkT f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
+        ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
+        (callsStackOkB f vc.outgoing && entryOkBT f)
+
+/-- The compiler runs `lowerCheckTCLite` in place of `lowerCheckTC`. -/
+@[csimp] theorem lowerCheckTC_eq_lite : @lowerCheckTC = @lowerCheckTCLite := by
+  funext f vc
+  unfold lowerCheckTC lowerCheckTCLite
+  cases buildCtx f with
+  | error _ => rfl
+  | ok r =>
+    obtain ⟨ctx, _, st0⟩ := r
+    simp only [lowBlocksCLite_eq]
+    cases lowBlocksC f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length with
+    | none => rfl
+    | some bl => simp only [Option.map_some, aliasOf_lite, shapeOkT_lite, certOk_lite]
+
 end Backend.Proof.Driver

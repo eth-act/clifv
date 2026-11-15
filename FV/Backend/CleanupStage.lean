@@ -25,13 +25,14 @@ open Proof.Driver
 
 /-- `skipStage` as the compiler runs it (`skipStage_eq_impl`, `@[csimp]`, #877): `lowerCheck` and
 `skipDead` both begin with the same lowering (`buildCtx`, `lowBlocks`), which `skipStage` ran
-twice; here it runs once and both read it (`skipDead`'s part is `skipDeadImpl`'s). -/
+twice; here it runs once and both read it (`skipDead`'s part is `skipDeadImpl`'s), with records
+without class arrays (`lowBlocksLite`, #1057). -/
 def skipStageImpl (f : Clif.Function) (vc : VCode) : VCode :=
   if Compile.functionE f then
     match buildCtx f with
     | .error _ => vc
     | .ok (ctx, _, st0) =>
-      match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      match lowBlocksLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
           f.blocks.length with
       | none => vc
       | some bl =>
@@ -56,11 +57,14 @@ def skipStageImpl (f : Clif.Function) (vc : VCode) : VCode :=
     | error e => simp
     | ok r =>
       obtain ⟨ctx, _, st0⟩ := r
-      simp only
+      simp only [lowBlocksLite_eq]
       cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
           f.blocks.length with
       | none => simp
-      | some bl => rfl
+      | some bl =>
+        simp only [Option.map_some, aliasOf_lite, shapeOk_lite, certOk_lite, skipDropSet_lite,
+          skipMask_lite]
+        rfl
 
 end
 

@@ -758,4 +758,368 @@ def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
         -- the outgoing area holds every call's stack arguments; the entry's parameter locations
         (callsStackOkB f vc.outgoing && entryOkB f)
 
+/-! ## The validator in linear memory (#1057)
+
+`lowBlocks` records every statement's states before and after its lowering call (`SLow.st`,
+`SLow.st'`), and every terminator's (`BLow.tst`, `BLow.tst'`, `TryLow.st1`). Each state holds the
+vreg class array `LState.classes`, which grows by one entry per fresh vreg. The recorded state is
+still alive while the next lowering call pushes onto its array, so every push copies the whole
+array: the records hold one copy per statement, statements × vregs entries in all (2.6 GB on
+`tiny_keccak::keccakf`, 12 GB on sha2's sha512 `compress_block`).
+
+None of the checks reads a recorded state's class array. `lowBlocksLite` is `lowBlocks` with
+every recorded state's class array dropped (`liteBL`; the threaded state keeps its array, so the
+lowering calls are the same), `lowBlocksLite_eq`. The checks on the stripped records equal the
+checks on the full ones (`seg_lite`, `tseg_lite`, `aliasOf_lite`, `shapeOk_lite`,
+`certOk_lite`), so `lowerCheckLite` (`lowerCheck` over `lowBlocksLite`) is `lowerCheck`, and the
+compiler runs it in its place (`lowerCheck_eq_lite`, `@[csimp]`; the typed validators:
+`DriverCheckTy.lean`, `DriverCheckC.lean`, `DriverCheckCF.lean`). `inFix`'s blocks × values
+table is built without the intermediate array of boxed bytes (`inFix_eq_fast`). Every theorem
+about `lowerCheck` and `inFix` keeps its statement and proof. -/
+
+/-! ## Records without class arrays -/
+
+/-- A recorded state without its vreg class array. -/
+def liteSt (s : LState) : LState := { s with classes := #[] }
+
+/-- A statement's record with its states' class arrays dropped. -/
+def liteSL (sl : SLow) : SLow := { sl with st := liteSt sl.st, st' := liteSt sl.st' }
+
+/-- A `try_call`'s record with its state's class array dropped. -/
+def liteTry (t : TryLow) : TryLow := { t with st1 := liteSt t.st1 }
+
+/-- A block's record with every recorded state's class array dropped. -/
+def liteBL (L : BLow) : BLow :=
+  { start := L.start
+    sl := L.sl.map liteSL
+    data := L.data
+    targets := L.targets
+    tst := liteSt L.tst
+    tst' := liteSt L.tst'
+    tl := L.tl.map liteTry }
+
+/-- `lowStmts` recording the states without their class arrays (`lowStmtsLite_eq`). The
+stripped records are made before the call, so the threaded state's array is not shared and the
+lowering pushes onto it in place. -/
+def lowStmtsLite (call : StmtCall) : Nat → List Clif.Stmt → LState → Option (List SLow × LState)
+  | _, [], st => some ([], st)
+  | ii, _ :: ss, st =>
+    let s0 : LState := { st with emitted := #[] }
+    let l0 := liteSt s0
+    match call ii s0 with
+    | .ok (out, st', _) =>
+      match regsOf out with
+      | some rss =>
+        let l' := liteSt st'
+        (lowStmtsLite call (ii + 1) ss { st' with emitted := #[] }).map fun (sls, stE) =>
+          (⟨l0, rss, l'⟩ :: sls, stE)
+      | none => none
+    | .error _ => none
+
+/-- `lowBlocks` recording the states without their class arrays (`lowBlocksLite_eq`). -/
+def lowBlocksLite (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :
+    Nat → List Clif.Block → LState → Nat → Option (List BLow)
+  | _, [], _, _ => some []
+  | start, B :: Bs, st, nl =>
+    match lowStmtsLite call start B.body st with
+    | none => none
+    | some (sls, stE) =>
+      let ti := start + B.body.length
+      let tst : LState := { stE with emitted := #[] }
+      let ltst := liteSt tst
+      match lowTerm f tcall ycall ti B.term tst nl with
+      | some (data, targets, tl, tst', nl') =>
+        let ltst' := liteSt tst'
+        let ltl := tl.map liteTry
+        (lowBlocksLite f call tcall ycall (ti + 1) Bs { tst' with emitted := #[] } nl').map
+          (⟨start, sls, data, targets, ltst, ltst', ltl⟩ :: ·)
+      | none => none
+
+theorem lowStmtsLite_eq (call : StmtCall) : ∀ (ii : Nat) (ss : List Clif.Stmt) (st : LState),
+    lowStmtsLite call ii ss st =
+      (lowStmts call ii ss st).map fun p => (p.1.map liteSL, p.2)
+  | _, [], _ => rfl
+  | ii, _ :: ss, st => by
+    simp only [lowStmtsLite, lowStmts]
+    cases call ii { st with emitted := #[] } with
+    | error _ => rfl
+    | ok r =>
+      obtain ⟨out, st', _⟩ := r
+      simp only
+      cases regsOf out with
+      | none => rfl
+      | some rss =>
+        simp only [lowStmtsLite_eq call (ii + 1) ss]
+        cases lowStmts call (ii + 1) ss { st' with emitted := #[] } <;> rfl
+
+theorem lowBlocksLite_eq (f : Clif.Function) (call : StmtCall) (tcall : TermCallF)
+    (ycall : TryCallF) : ∀ (start : Nat) (Bs : List Clif.Block) (st : LState) (nl : Nat),
+    lowBlocksLite f call tcall ycall start Bs st nl =
+      (lowBlocks f call tcall ycall start Bs st nl).map (·.map liteBL)
+  | _, [], _, _ => rfl
+  | start, B :: Bs, st, nl => by
+    simp only [lowBlocksLite, lowBlocks, lowStmtsLite_eq]
+    cases lowStmts call start B.body st with
+    | none => rfl
+    | some p =>
+      obtain ⟨sls, stE⟩ := p
+      simp only [Option.map_some]
+      cases lowTerm f tcall ycall (start + B.body.length) B.term { stE with emitted := #[] } nl with
+      | none => rfl
+      | some q =>
+        obtain ⟨data, targets, tl, tst', nl'⟩ := q
+        simp only [lowBlocksLite_eq f call tcall ycall _ Bs _ nl']
+        cases lowBlocks f call tcall ycall (start + B.body.length + 1) Bs
+          { tst' with emitted := #[] } nl' <;> rfl
+
+/-! ## The checks do not read the class arrays -/
+
+/-- `List.all` of pointwise equal functions. -/
+theorem all_congr_lite {α : Type _} (l : List α) {F G : α → Bool} (h : ∀ x, F x = G x) :
+    l.all F = l.all G := by
+  rw [funext h]
+
+/-- `flatMap` over a zip whose right list is mapped by a function the body does not see. -/
+theorem zip_map_flatMap_lite {α β γ δ : Type _} (g : β → γ) (F : α × γ → List δ)
+    (G : α × β → List δ) (h : ∀ a b, F (a, g b) = G (a, b)) :
+    ∀ (as : List α) (bs : List β), (as.zip (bs.map g)).flatMap F = (as.zip bs).flatMap G
+  | [], _ => by simp
+  | _ :: _, [] => by simp
+  | a :: as, b :: bs => by
+    simp only [List.map_cons, List.zip_cons_cons, List.flatMap_cons, h,
+      zip_map_flatMap_lite g F G h as bs]
+
+theorem seg_lite (f : Clif.Function) (R : Reg → Reg) (bl : List BLow) :
+    seg f R (bl.map liteBL) = seg f R bl := by
+  funext bi j
+  unfold seg
+  rw [List.getElem?_map]
+  cases f.blocks[bi]? with
+  | none => rfl
+  | some B =>
+    cases bl[bi]? with
+    | none => rfl
+    | some L =>
+      simp only [Option.map_some, liteBL, List.getElem?_map]
+      cases B.body[j]? with
+      | none => rfl
+      | some stm => cases L.sl[j]? <;> rfl
+
+theorem fixTry_lite (o : Option TryLow) (ms : List MInst) :
+    fixTry (o.map liteTry) ms = fixTry o ms := by
+  cases o <;> rfl
+
+theorem tseg_lite (R : Reg → Reg) (bl : List BLow) : tseg R (bl.map liteBL) = tseg R bl := by
+  funext bi
+  unfold tseg
+  rw [List.getElem?_map]
+  cases bl[bi]? with
+  | none => rfl
+  | some L =>
+    simp only [Option.map_some, liteBL, fixTry_lite]
+    rfl
+
+theorem aliasOf_lite (f : Clif.Function) (bl : List BLow) :
+    aliasOf f (bl.map liteBL) = aliasOf f bl := by
+  unfold aliasOf
+  refine zip_map_flatMap_lite _ _ _ (fun B L => ?_) _ _
+  dsimp only [liteBL]
+  exact zip_map_flatMap_lite liteSL _ _ (fun _ _ => rfl) _ _
+
+theorem succOk_lite (f : Clif.Function) (vc : VCode) (R : Reg → Reg) (B : Clif.Block)
+    (L : BLow) : succOk f vc R B (liteBL L) = succOk f vc R B L := by
+  unfold succOk
+  split <;> (try simp only [liteBL]) <;> (try rfl) <;>
+    (rename_i et _
+     cases blockIdx? f et.normal.block <;> cases L.targets.getLast? <;> cases L.tl <;> rfl)
+
+theorem blockOk_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
+    (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow) (bi : Nat) (B : Clif.Block) (L : BLow) :
+    blockOk f vc ctx st0 R gn (bl.map liteBL) bi B (liteBL L) =
+      blockOk f vc ctx st0 R gn bl bi B L := by
+  unfold blockOk
+  rw [seg_lite, tseg_lite, succOk_lite]
+  cases vc.blocks[bi]? with
+  | none => rfl
+  | some vb =>
+    simp only [liteBL, liteSt, List.length_map]
+    have hs : ∀ j, (match B.body[j]?, (L.sl.map liteSL)[j]? with
+        | some stm, some sl => stmtOk ctx st0 gn (L.start + j) stm sl
+        | _, _ => false) =
+        (match B.body[j]?, L.sl[j]? with
+        | some stm, some sl => stmtOk ctx st0 gn (L.start + j) stm sl
+        | _, _ => false) := by
+      intro j
+      rw [List.getElem?_map]
+      cases B.body[j]? with
+      | none => rfl
+      | some stm => cases L.sl[j]? <;> rfl
+    erw [all_congr_lite _ hs]
+    try rfl
+
+theorem shapeOk_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
+    (gn : Nat → Nat) (bl : List BLow) :
+    shapeOk f vc ctx st0 gn (bl.map liteBL) = shapeOk f vc ctx st0 gn bl := by
+  unfold shapeOk
+  have hb : ∀ bi, (match f.blocks[bi]?, (bl.map liteBL)[bi]? with
+      | some B, some L => blockOk f vc ctx st0 (renOf gn) gn (bl.map liteBL) bi B L
+      | _, _ => false) =
+      (match f.blocks[bi]?, bl[bi]? with
+      | some B, some L => blockOk f vc ctx st0 (renOf gn) gn bl bi B L
+      | _, _ => false) := by
+    intro bi
+    rw [List.getElem?_map]
+    cases f.blocks[bi]? with
+    | none => rfl
+    | some B =>
+      cases bl[bi]? with
+      | none => rfl
+      | some L => exact blockOk_lite f vc ctx st0 (renOf gn) gn bl bi B L
+  erw [all_congr_lite _ hb]
+  simp only [List.length_map]
+  try rfl
+
+theorem edgeOk_lite (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) (fb : Array Clif.Block)
+    (bla : Array BLow) (In : Array (List Clif.ValueId)) (a : Avail) (n : Nat) (b : Clif.BlockId) :
+    edgeOk f ctx gn fb (bla.map liteBL) In a n b = edgeOk f ctx gn fb bla In a n b := by
+  unfold edgeOk
+  cases blockIdx? f b with
+  | none => rfl
+  | some tl =>
+    simp only [Array.getElem?_map]
+    cases fb[tl]? with
+    | none => rfl
+    | some TB => cases bla[tl]? <;> rfl
+
+/-- `&&` of equal operands. -/
+theorem and_congr_lite {a a' b b' : Bool} (h1 : a = a') (h2 : b = b') : (a && b) = (a' && b') := by
+  rw [h1, h2]
+
+theorem avail_of_lite (B : Clif.Block) (L : BLow) (In : Array (List Clif.ValueId)) (bi : Nat) :
+    Avail.of B (liteBL L) In bi = Avail.of B L In bi := rfl
+
+theorem certBlockOk_lite (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
+    (fb : Array Clif.Block) (bla : Array BLow) (In : Array (List Clif.ValueId)) (bi : Nat)
+    (B : Clif.Block) (L : BLow) :
+    certBlockOk f ctx st0 gn fb (bla.map liteBL) In bi B (liteBL L) =
+      certBlockOk f ctx st0 gn fb bla In bi B L := by
+  unfold certBlockOk
+  simp only [edgeOk_lite, avail_of_lite]
+  simp only [liteBL, liteSt, List.length_map, List.getElem?_toArray, List.getElem?_map]
+  refine and_congr_lite (and_congr_lite (and_congr_lite (and_congr_lite rfl ?_) ?_) rfl) rfl
+  · refine congrArg _ (funext fun k => ?_)
+    cases (Avail.of B L In bi).body[k]? <;> cases L.sl[k]? <;> cases L.sl[k + 1]? <;> rfl
+  · refine congrArg _ (funext fun x => ?_)
+    cases L.sl[Avail.first ctx (Avail.of B L In bi) x]? <;> cases L.sl[B.body.length - 1]? <;> rfl
+
+theorem certOk_lite (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
+    (bl : List BLow) (In : Array (List Clif.ValueId)) :
+    certOk f ctx st0 gn (bl.map liteBL) In = certOk f ctx st0 gn bl In := by
+  unfold certOk
+  simp only [← List.map_toArray, Array.getElem?_map]
+  refine and_congr_lite (and_congr_lite (and_congr_lite ?_ ?_) rfl) rfl
+  · cases f.blocks.toArray[0]? <;> cases bl.toArray[0]? <;> rfl
+  · refine congrArg _ (funext fun bi => ?_)
+    cases f.blocks.toArray[bi]? with
+    | none => cases bl.toArray[bi]? <;> rfl
+    | some B =>
+      cases bl.toArray[bi]? with
+      | none => rfl
+      | some L => exact certBlockOk_lite f ctx st0 gn _ _ In bi B L
+
+/-! ## The dataflow's table without boxed bytes -/
+
+/-- `ByteArray.mk (Array.ofFn g)` built byte by byte (`byteArrayOfFn_eq`): without the
+intermediate `Array UInt8`, whose entries take 8 bytes each (`inFix`'s blocks × values table:
+0.8 GB on sha2's sha512 `compress_block`). -/
+def byteArrayOfFn (n : Nat) (g : Nat → UInt8) : ByteArray :=
+  Nat.fold n (fun i _ b => b.push (g i)) (ByteArray.emptyWithCapacity n)
+
+theorem byteArrayOfFn_data (g : Nat → UInt8) (c : Nat) : ∀ n : Nat,
+    (Nat.fold n (fun i _ b => b.push (g i)) (ByteArray.emptyWithCapacity c)).data =
+      Array.ofFn (n := n) fun i => g i.1
+  | 0 => by simp only [Nat.fold_zero, Array.ofFn_zero]; rfl
+  | n + 1 => by
+    rw [Nat.fold_succ, Array.ofFn_succ]
+    simp only [Fin.val_castSucc]
+    rw [← byteArrayOfFn_data g c n]
+    rfl
+
+theorem byteArrayOfFn_eq (n : Nat) (g : Nat → UInt8) :
+    byteArrayOfFn n g = ByteArray.mk (Array.ofFn (n := n) fun i => g i.1) := by
+  rw [← byteArrayOfFn_data g n n]
+  rfl
+
+/-- `inFix` with its table built by `byteArrayOfFn` (`inFix_eq_fast`). -/
+def inFixFast (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.ValueId) :=
+  let fb := f.blocks.toArray
+  let nb := fb.size
+  let nv := ctx.valDef.size
+  let bim : Std.HashMap Clif.BlockId Nat :=
+    fb.zipIdx.foldl (fun m (B, i) => m.insertIfNew B.id i) {}
+  let succs : Array (List Nat) := fb.map fun B => (succIds B.term).filterMap (bim[·]?)
+  let preds : Array (List Nat) := succs.zipIdx.foldl
+    (fun ps (ss, bi) => ss.foldl (fun ps s => ps.modify s (bi :: ·)) ps) (Array.replicate nb [])
+  let pars : Array (Std.HashSet Nat) := fb.map fun B => Std.HashSet.ofList (B.params.map (·.1))
+  let defs : Array (Std.HashSet Nat) :=
+    fb.map fun B => Std.HashSet.ofList (B.body.flatMap (·.results))
+  let isVal : Array Bool := fb.foldl (fun a B =>
+    let a := B.params.foldl (fun a p => a.setIfInBounds p.1 true) a
+    B.body.foldl (fun a s => s.results.foldl (fun a r => a.setIfInBounds r true) a) a)
+    (Array.replicate nv false)
+  let users : Array (List Nat) := (List.range nv).foldl (fun us z =>
+    (defArgs ctx z).foldl (fun us y => us.modify y (z :: ·)) us) (Array.replicate nv [])
+  let inB : ByteArray := byteArrayOfFn (nb * nv) fun i =>
+    let tl := i / nv
+    let x := i % nv
+    if 1 ≤ tl && isVal[x]! && !pars[tl]!.contains x && !pars[tl]!.contains (gn x) then 1 else 0
+  let work : List (Nat × Nat) := (List.range' 1 (nb - 1)).foldl (fun work tl =>
+    (List.range nv).foldl (fun work x =>
+      if fixHas nv inB tl x then
+        let outOk := preds[tl]!.all fun p =>
+          pars[p]!.contains x || defs[p]!.contains x || fixHas nv inB p x
+        let a0Ok := (defArgs ctx x).all fun y =>
+          (pars[tl]!.contains y || fixHas nv inB tl y) && !defs[tl]!.contains y
+        if !(outOk && a0Ok) then (tl, x) :: work else work
+      else work) work) []
+  let inB := fixLoop nv pars defs succs users (fixFuel nb nv succs users work) inB work
+  (Array.range nb).map fun tl => (List.range nv).filter (fixHas nv inB tl)
+
+/-- The compiler runs `inFixFast` in place of `inFix`. -/
+@[csimp] theorem inFix_eq_fast : @inFix = @inFixFast := by
+  funext f ctx gn
+  unfold inFix inFixFast
+  simp only [byteArrayOfFn_eq]
+
+/-! ## The validator -/
+
+/-- **`lowerCheck` in linear memory**: the same checks on the records of `lowBlocksLite`
+(`lowerCheck_eq_lite`). -/
+def lowerCheckLite (f : Clif.Function) (vc : VCode) : Bool :=
+  match buildCtx f with
+  | .error _ => false
+  | .ok (ctx, _, st0) =>
+    match lowBlocksLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => false
+    | some bl =>
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
+      shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
+        ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
+        (callsStackOkB f vc.outgoing && entryOkB f)
+
+/-- The compiler runs `lowerCheckLite` in place of `lowerCheck`. -/
+@[csimp] theorem lowerCheck_eq_lite : @lowerCheck = @lowerCheckLite := by
+  funext f vc
+  unfold lowerCheck lowerCheckLite
+  cases buildCtx f with
+  | error _ => rfl
+  | ok r =>
+    obtain ⟨ctx, _, st0⟩ := r
+    simp only [lowBlocksLite_eq]
+    cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length with
+    | none => rfl
+    | some bl => simp only [Option.map_some, aliasOf_lite, shapeOk_lite, certOk_lite]
+
 end Backend.Proof.Driver

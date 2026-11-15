@@ -660,4 +660,110 @@ theorem lowerCheckT_of_lowerCheck {f : Clif.Function} {vc : VCode} (h : lowerChe
       exact ⟨⟨⟨⟨shapeOkT_of_shapeOk h.1.1.1.1, h.1.1.1.2⟩, h.1.1.2⟩, h.1.2⟩,
         h.2.1, entryOkBT_of_entryOkB h.2.2⟩
 
+/-! ## `lowerCheckT` in linear memory (#1057)
+
+The typed checks do not read a recorded state's class array either (`segT_lite`,
+`succOkT_lite`, `shapeOkT_lite`), so the compiler runs `lowerCheckT` over `lowBlocksLite`
+(`lowerCheckT_eq_lite`, `@[csimp]`; `DriverCheck.lean`'s section on `lowerCheckLite`). -/
+
+theorem segT_lite (f : Clif.Function) (ctx : Ctx) (R : Reg → Reg) (bl : List BLow) :
+    segT f ctx R (bl.map liteBL) = segT f ctx R bl := by
+  funext bi j
+  unfold segT
+  rw [List.getElem?_map]
+  cases f.blocks[bi]? with
+  | none => rfl
+  | some B =>
+    cases bl[bi]? with
+    | none => rfl
+    | some L =>
+      simp only [Option.map_some, liteBL, List.getElem?_map]
+      cases B.body[j]? with
+      | none => rfl
+      | some stm => cases L.sl[j]? <;> rfl
+
+theorem succOkT_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (R : Reg → Reg)
+    (B : Clif.Block) (L : BLow) : succOkT f vc ctx R B (liteBL L) = succOkT f vc ctx R B L := by
+  unfold succOkT
+  split <;> (try simp only [liteBL]) <;> (try rfl) <;>
+    (rename_i et _
+     cases blockIdx? f et.normal.block <;> cases L.targets.getLast? <;> cases L.tl <;> rfl)
+
+theorem blockOkT_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
+    (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow) (bi : Nat) (B : Clif.Block) (L : BLow) :
+    blockOkT f vc ctx st0 R gn (bl.map liteBL) bi B (liteBL L) =
+      blockOkT f vc ctx st0 R gn bl bi B L := by
+  unfold blockOkT
+  rw [segT_lite, tseg_lite, succOkT_lite]
+  cases vc.blocks[bi]? with
+  | none => rfl
+  | some vb =>
+    simp only [liteBL, liteSt, List.length_map]
+    have hs : ∀ j, (match B.body[j]?, (L.sl.map liteSL)[j]? with
+        | some stm, some sl => stmtOk ctx st0 gn (L.start + j) stm sl
+        | _, _ => false) =
+        (match B.body[j]?, L.sl[j]? with
+        | some stm, some sl => stmtOk ctx st0 gn (L.start + j) stm sl
+        | _, _ => false) := by
+      intro j
+      rw [List.getElem?_map]
+      cases B.body[j]? with
+      | none => rfl
+      | some stm => cases L.sl[j]? <;> rfl
+    erw [all_congr_lite _ hs]
+    try rfl
+
+/-- The per-block conjunct of `shapeOkT`/`shapeOkTF` on the stripped records. -/
+theorem blocksOkT_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
+    (gn : Nat → Nat) (bl : List BLow) (bi : Nat) :
+    (match f.blocks[bi]?, (bl.map liteBL)[bi]? with
+      | some B, some L => blockOkT f vc ctx st0 (renOf gn) gn (bl.map liteBL) bi B L
+      | _, _ => false) =
+      (match f.blocks[bi]?, bl[bi]? with
+      | some B, some L => blockOkT f vc ctx st0 (renOf gn) gn bl bi B L
+      | _, _ => false) := by
+  rw [List.getElem?_map]
+  cases f.blocks[bi]? with
+  | none => rfl
+  | some B =>
+    cases bl[bi]? with
+    | none => rfl
+    | some L => exact blockOkT_lite f vc ctx st0 (renOf gn) gn bl bi B L
+
+theorem shapeOkT_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
+    (gn : Nat → Nat) (bl : List BLow) :
+    shapeOkT f vc ctx st0 gn (bl.map liteBL) = shapeOkT f vc ctx st0 gn bl := by
+  unfold shapeOkT
+  erw [all_congr_lite _ (blocksOkT_lite f vc ctx st0 gn bl)]
+  simp only [List.length_map]
+  try rfl
+
+/-- **`lowerCheckT` in linear memory** (`lowerCheckT_eq_lite`). -/
+def lowerCheckTLite (f : Clif.Function) (vc : VCode) : Bool :=
+  match buildCtx f with
+  | .error _ => false
+  | .ok (ctx, _, st0) =>
+    match lowBlocksLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => false
+    | some bl =>
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
+      shapeOkT f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
+        ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
+        (callsStackOkB f vc.outgoing && entryOkBT f)
+
+/-- The compiler runs `lowerCheckTLite` in place of `lowerCheckT`. -/
+@[csimp] theorem lowerCheckT_eq_lite : @lowerCheckT = @lowerCheckTLite := by
+  funext f vc
+  unfold lowerCheckT lowerCheckTLite
+  cases buildCtx f with
+  | error _ => rfl
+  | ok r =>
+    obtain ⟨ctx, _, st0⟩ := r
+    simp only [lowBlocksLite_eq]
+    cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length with
+    | none => rfl
+    | some bl => simp only [Option.map_some, aliasOf_lite, shapeOkT_lite, certOk_lite]
+
 end Backend.Proof.Driver
