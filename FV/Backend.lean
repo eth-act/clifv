@@ -220,6 +220,46 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
+/-- The opcode of `i` as Cranelift prints it (with an `fcmp`'s condition, and whether an
+`f64const` needs the literal pool, `Compile.f64PoolFree`): the diagnostics of
+`typedScopeFails`. -/
+def instOpText (i : Clif.Inst) : String :=
+  match i with
+  | .float (.fcmp cc) ty _ => s!"fcmp.{ty.name} {cc.name}"
+  | .iconst .f64 imm =>
+    if Compile.f64PoolFree imm.toNat then "f64const" else "f64const (literal pool)"
+  | _ => ((Clif.Print.inst (fun _ => none) i).splitOn " ").headD ""
+
+/-- **The conditions of the typed scope that `f` fails, by name** (#1015): the conjuncts of
+`Compile.functionETCF` in the order of its definition, then `Compile.storeTypedB`. The statement
+instructions outside `Compile.instETF` are named by opcode (`instOpText`); `opsTypedTCF` is split
+into a `call` argument that is a float value and the other integer positions. Diagnostics only:
+the verdict is `unverifiedReason?`'s condition. -/
+def typedScopeFails (f : Clif.Function) : List String :=
+  let c (b : Bool) (s : String) : List String := if b then [] else [s]
+  let fd := Compile.floatDefs f
+  let insts := (f.blocks.flatMap fun b => b.body.filterMap fun s =>
+    if Compile.instETF s.inst then none else some (instOpText s.inst)).eraseDups
+  let callArgF := f.blocks.any fun b => b.body.any fun s => match s.inst with
+    | .call _ args => args.any fd.contains
+    | _ => false
+  let otherIntF := !(f.blocks.all fun b =>
+    b.body.all (fun s => match s.inst with
+      | .call .. => true
+      | i => (Compile.intOperandsF i).all fun x => !fd.contains x) &&
+    (Compile.termIntOperandsC b.term).all fun x => !fd.contains x)
+  c (Compile.sigET f.sig) "sigET (own signature)" ++
+  c (f.globals.all (Compile.globalE ·.2)) "globalE" ++
+  c (f.externs.all (Compile.sigET ·.2.sig)) "sigET (an extern's signature)" ++
+  c (Compile.callsE f) "callsE (a call whose callee signature has a float)" ++
+  c (f.blocks.all fun b => b.params.all (Compile.tyM ·.2)) "tyM (a block parameter's type)" ++
+  insts.map (s!"instETF: {·}") ++
+  c (f.blocks.all fun b => Compile.termE b.term) "termE (a terminator)" ++
+  (if callArgF then ["opsTypedTCF: a call argument is a float value"] else []) ++
+  (if otherIntF then ["opsTypedTCF: an integer position holds a float value"] else []) ++
+  c (Compile.edgeClassOk f) "edgeClassOk" ++
+  c (Compile.storeTypedB f) "storeTypedB"
+
 /-- Why a compiled function is outside the per-activation theorems (`E2E.InSubset`, and outside
 subset E the typed `E2E.InSubsetT` of S11e5 Stage C: float data movement, float parameters and
 returns, `backend_correct_finalT`/`backend_correct_final_cleanupT` with `E2E.typedRules_program`):
@@ -238,7 +278,9 @@ covered. `try_call` and
 the single-threaded Arm model, and TLS uses the trusted resolver contract. -/
 def unverifiedReason? (f : Clif.Function) : Option String :=
   if !(Compile.functionE f || (Compile.functionETCF f && Compile.storeTypedB f)) then
-    some "outside clif-subset-v2 E"
+    some (match typedScopeFails f with
+      | [] => "outside clif-subset-v2 E"
+      | fs => s!"outside clif-subset-v2 E and the typed scope: {", ".intercalate fs}")
   else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"
   else if !indSigsAbiOk f then
     some "indirect call with a special-purpose parameter other than one sret pointer (outside backend_correct)"
