@@ -32,7 +32,7 @@ def fCvtET : Inst → Bool
 `Backend.Proof.IselFloatCmp`): `fcmp` of two operands at `f32`/`f64` (the operands' type; the
 result is an `i8`), at a condition of `Backend.fccOk` (the conditions `instData` admits). -/
 def fCmpET : Inst → Bool
-  | .float (.fcmp cc) ty [_, _] => ty.isFloat && Backend.fccOk cc
+  | .float (.fcmp cc) ty [_, _] => ty.isArithFloat && Backend.fccOk cc
   | _ => false
 
 /-- **The instructions of the typed scope with the proven float operations**: `instET`, the

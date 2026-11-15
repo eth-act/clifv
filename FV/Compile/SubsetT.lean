@@ -20,8 +20,9 @@ namespace Compile
 
 open Clif
 
-/-- The admissible value types of the typed scope: E's integers, `f32` and `f64`. -/
-def tyM (t : Ty) : Bool := tyE t || t.isFloat
+/-- The admissible value types of the typed scope: E's integers, `f32` and `f64`
+(`isArithFloat`; not the move-only `f16`). -/
+def tyM (t : Ty) : Bool := tyE t || t.isArithFloat
 
 /-- An `f64` constant `constant_f64` lowers without the literal pool (inst.isle:4264-4274: zero,
 an `fmov` immediate (`fpModImm?`), a value below `2^32` (`constant_f32`), or zero low 32 bits
@@ -32,8 +33,8 @@ def f64PoolFree (n : Nat) : Bool :=
 /-- The instructions of the typed scope: `instE`, and the float data movement of S11e4. -/
 def instET : Inst → Bool
   | .iconst ty imm => tyE ty || ty == .f32 || (ty == .f64 && f64PoolFree imm.toNat)
-  | .load op ty f _ _ => flagsE f && (tyE ty || (ty.isFloat && op == .load))
-  | .store op ty f _ _ _ => flagsE f && (tyE ty || (ty.isFloat && op == .store))
+  | .load op ty f _ _ => flagsE f && (tyE ty || (ty.isArithFloat && op == .load))
+  | .store op ty f _ _ _ => flagsE f && (tyE ty || (ty.isArithFloat && op == .store))
   | .select ty _ _ _ => tyM ty
   | .bitcast ty _ _ => tyM ty
   | i => instE i

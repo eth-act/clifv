@@ -612,8 +612,9 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     if t == .i128 || t.isFloat then malformed s!"iconst.{t.name} is not valid CLIF"
     let i ← anyInt
     return .inst (.iconst t (BitVec.ofInt t.width i))
-  -- `f32const`/`f64const` are the constants of the float types: `Inst.iconst` at a float type
-  -- (`docs/contracts/clif.md`, "Floats")
+  -- `f16const`/`f32const`/`f64const` are the constants of the float types: `Inst.iconst` at a
+  -- float type (`docs/contracts/clif.md`, "Floats")
+  | "f16const" => return .inst (.iconst .f16 (← floatLit .f16))
   | "f32const" => return .inst (.iconst .f32 (← floatLit .f32))
   | "f64const" => return .inst (.iconst .f64 (← floatLit .f64))
   | "uadd_overflow_trap" =>
