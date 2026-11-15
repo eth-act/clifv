@@ -2892,6 +2892,21 @@ Stock artifact contract `CompiledSemanticNI`; `FV/E2E/CompiledAnyTS.lean`) and `
 `cargo fv test --lean-link --verified` (agent/float-stock1 ab76e3f0): 4 of 4 executables written
 by `attemptT` and verified by this checker (15,224, 16,724, 17,130 and 19,901 functions).
 
+**The typed checker's route per function** (#1040). `link-check` recovers each function's Stock
+route from the executable's bytes; since #892 it probes the ABI-aware routes (`sret` copy, void
+call) first, so where one of them and the compiler's typed route give the same machine words from
+different VCode (an `sret` copy: the Stock sret-copy route and `lowerFunction`), it recovers the
+Stock artifact, which `okRWithTS` rejects (no `sret` in its Stock alternative), although
+`attemptT` lowered that function with `lowerFunction` and was accepted. With the typed Stock
+checker, a function whose recovered artifact fails `staticChksWithTS` therefore takes the first
+route in the compiler's order whose artifact has the same bytes and passes `lowerOkTSB`
+(`typedRoute?`, `FVTest/E2E/TypedRouteChoice.lean`; untrusted selection: the proof files name the
+route list chosen, and the checks run on its results). Witness on the captured `sret` copy
+(`FVTest/E2E/TypedRouteChoiceWitness.lean`): the two artifacts have equal words, the integer
+return-pin checker accepts the Stock one and `okRWithTS` rejects it on the lowering check alone,
+`typedRoute?` picks route 0 and `okRWithTS` accepts its results. fv-demo `--build-std`: 1 of 2
+executables before (`black_box::<enums::Shape>` and its 25 callers dropped), 2 of 2 after.
+
 **Results** (the ten crates of `crate-proofs/`, rebuilt: survey `cargo fv test --keep-temps`,
 `fv-demo` `cargo fv build --keep-temps`; all pass, no difference):
 
