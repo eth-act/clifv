@@ -361,10 +361,14 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- argument is in a register (`E2E.regArgsB`). A function without calls is unwound through by
   -- no exception, so the theorem's normal-return form covers it. Only with dead cleanup (the
   -- theorem's pipeline), and not for an `i128`-legalised function (`backend_correct_legal_wide`
-  -- has no frameless form).
+  -- has no frameless form), without `--opt` (the mid-end theorems have none either). A function
+  -- constant-phi removal changed is covered by the theorem composed with the pass (`E2E.pass_lift`).
+  -- With the spill fallback allocation (`AllocChecked` in place of `checkAlloc`), the theorem's
+  -- `CompiledCleanupAL` form `E2E.backend_correct_final_cleanup_exL` covers it.
   let nf ← noFrame.get
   let leafMiss? (name : String) : Option String :=
     if !o.deadCleanup then some "no dead cleanup (backend_correct_final_cleanup_leaf's pipeline)"
+    else if o.opt.isSome then some "--opt (the mid-end theorems have no frameless form)"
     else if lg.accepted.contains name then some "i128-legalised"
     else if !(fa.funcs.find? (·.name == name)).any (·.leafChk) then
       some "FnAsm.leafChk: a line other than ret names x29/x30"
