@@ -220,14 +220,16 @@ def checkFunction (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFun
   pure frame
 
 /-- The per-function part of the settings policy of the stock-configured driver:
-`checkFunction`, then the frame and the stack probes as stock decides them, and stack-argument
-loads from `sp` (unproved). -/
+`checkFunction`, the compiler's frame decision (`Backend.frameless`, #1028: the same in the proved
+settings mode), the stack probes as stock decides them, and stack-argument loads from `sp`
+(unproved). -/
 def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
     Except String AFunc := do
-  let frame ← checkFunction c fs vc af
+  let _ ← checkFunction c fs vc af
+  let af := frameless c.preserveFramePointers vc af
   -- Stock's `total_stacksize` counts the callees' setup area when the function calls.
   let probes ← probeSetting c (probeTotal af.frameSize (if af.callsOut then .caller else .leaf))
-  pure (if frame then argLoadsFromSp { af with frame, probes } else { af with frame, probes })
+  pure (if af.frame then argLoadsFromSp { af with probes } else { af with probes })
 
 /-- The start of the `unsupported` reason of a function that `configure` rejects. -/
 def rejectionPrefix : String := "stock configuration unsupported for this function: "
@@ -258,7 +260,8 @@ def admit (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
 `rejected` as (name, reason): the function stays compiled, so that its callers in the file are
 compiled as without the option (their code does not depend on the callee), and its own output is
 not claimed for these settings (the receipt's `setting_rejection`). Each function without a
-frame is recorded in `noFrame`. -/
+frame is recorded in `noFrame` (`lean-backend` decides whether `backend_correct_final_cleanup_leaf`
+covers it). -/
 def admitWith (c : Config) (clif : String → List Clif.Function)
     (rejected noFrame : IO.Ref (Array (String × String)))
     (run : Array VCode → IO (Array (Except String AFunc))) (vcs : Array VCode) :
@@ -270,8 +273,7 @@ def admitWith (c : Config) (clif : String → List Clif.Function)
     | .ok af =>
       let af' := frameless c.preserveFramePointers vc af
       if !af'.frame then
-        noFrame.modify (·.push (vc.name,
-          "frameless leaf (preserve_frame_pointers=false): no end-to-end theorem covers it yet (#1028)"))
+        noFrame.modify (·.push (vc.name, "frameless leaf (preserve_frame_pointers=false)"))
       if let .error why := admit c (clif vc.name) vc af then
         rejected.modify (·.push (vc.name, why))
       pure (.ok af')
