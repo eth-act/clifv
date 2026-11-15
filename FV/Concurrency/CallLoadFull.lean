@@ -153,10 +153,10 @@ theorem calleePath (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) :
         trM (.run ⟨0, rest2L, mL, w₀X s⟩) ∧
       (∀ x ∈ trM, x = []) ∧ mL (.reg (.x 0)) = 0 := by
   have hR := wfX hS
-  obtain ⟨hlat, hq, hA⟩ := q_init_lines hR (abiX hS) (bodyX s)
-  have hpe := prologue_evs hR (abiX hS) (probeF_L rfl) hlat
-  have hpr0 := prologue_program hR (abiX hS) hlat
-  have hnr0 := prologue_nonRet hR (abiX hS) hlat
+  obtain ⟨hlat, hq, hA⟩ := q_init_lines hR (frameX _) (abiX hS) (bodyX s)
+  have hpe := prologue_evs hR (frameX _) (abiX hS) (probeF_L rfl) hlat
+  have hpr0 := prologue_program hR (frameX _) (abiX hS) hlat
+  have hnr0 := prologue_nonRet hR (frameX _) (abiX hS) hlat
   generalize hP : (prologueSteps (RLx s).af.saves (RLx s).af.frameSize (RLx s).af.isCaller) = n0 at hpe hpr0 hnr0 hq hA ⊢
   have hq0 := hq
   have hA0 := hA
@@ -518,7 +518,7 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
   obtain ⟨mt1, hq1⟩ := qa_q hqa1
   have hvb : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
   obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hx29, hnr2, hn2, j, t, hj, hpcj⟩ :=
-    rets_privP hR (abiX hS) hq1 hvb instL2
+    rets_privP hR (frameX _) (abiX hS) hq1 hvb instL2
   have hstr := q_stRel hq1
   have hshift : ∀ i, iterN (RLx s).step i (iterN (RLx s).step n1 x) =
       iterN (RLx s).step (n1 + i) x := fun i => (iterN_add _ _ _ _).symm

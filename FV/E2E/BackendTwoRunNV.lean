@@ -353,7 +353,7 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
       ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
         by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
-    exact stEqOutX_prologueZ_entry hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag
+    exact stEqOutX_prologueZ_entry hW0 (lowerRFunc_frame hc.alloc) he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag
       hx29 hx30 (fun _ h => by exact h)
   have hwi0 : ∀ (m₀ m₀' : Loc → CV), MConf.WIn (fun b => F b ∨ D b)
       (MConf.init R.rf m₀ w₀) (MConf.init R.rf m₀' w₀') := by

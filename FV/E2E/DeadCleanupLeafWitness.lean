@@ -61,6 +61,7 @@ theorem compiledL_exists :
     | error e => rw [hp] at h; cases h
     | ok vcp =>
       rw [hp] at h
+      simp only at h
       cases hra : leanAlloc vcp with
       | error e => rw [hra] at h; cases h
       | ok rf =>

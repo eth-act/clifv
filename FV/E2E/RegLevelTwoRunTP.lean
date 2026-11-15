@@ -231,6 +231,7 @@ on `RL.realizesJCPTP`). -/
 theorem RL.twoRunCTP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI XI' : ExtSemI}
     (hRn : ∀ n, ({ R with X := XI.at n } : RL).Wf)
     (hRn' : ∀ n, ({ R with s0 := t0, G := G', X := XI'.at n } : RL).Wf)
+    (hframe : R.af.frame = true)
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hcheck : CheckedAt R.vc R.rf cc ins a0) (ρ₀ : Nat → CV)
     (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ ρ₀ (fun r => m₀ (.reg r)))
@@ -345,9 +346,9 @@ theorem RL.twoRunCTP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI 
   let R'' : RL := { R with s0 := t0, G := G' }
   have hR0 : R0.Wf := hRn 0
   have hR0' : R0'.Wf := hRn' 0
-  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (R := R0) (Y := fun _ => True) hR0 hent hbe
+  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (R := R0) (Y := fun _ => True) hR0 hframe hent hbe
   obtain ⟨n0', hn0', ht0', hq0', hA0', -⟩ :=
-    q_initNA (R := R0') (Y := fun _ => True) hR0' hent' hbe'
+    q_initNA (R := R0') (Y := fun _ => True) hR0' hframe hent' hbe'
   have e0 : n0 = (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := hn0
   have e0' : n0' = (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := hn0'
   subst e0 e0'
@@ -401,9 +402,9 @@ theorem RL.twoRunCTP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI 
   obtain ⟨⟨W, hqA, hqB⟩, hJr⟩ := hjN
   have hqA0 : QA R0 _ _ := (RL.QA_withX R (XI.at 0) hPX _ _).2 hqA.qa
   have hqB0 : QA R0' _ _ := (RL.QA_withX R'' (XI'.at 0) hPX' _ _).2 hqB.qa
-  obtain ⟨n3, hn3, ht3, hpc3, -⟩ := ret_machineNA (R := R0) (Y := fun _ => True) hR0 hent hqA0 hvb hi
+  obtain ⟨n3, hn3, ht3, hpc3, -⟩ := ret_machineNA (R := R0) (Y := fun _ => True) hR0 hframe hent hqA0 hvb hi
   obtain ⟨n3', hn3', ht3', hpc3', -⟩ :=
-    ret_machineNA (R := R0') (Y := fun _ => True) hR0' hent' hqB0 hvb2 hi2
+    ret_machineNA (R := R0') (Y := fun _ => True) hR0' hframe hent' hqB0 hvb2 hi2
   have e3 : n3 = R.retLen := hn3
   have e3' : n3' = R.retLen := hn3'
   subst e3 e3'

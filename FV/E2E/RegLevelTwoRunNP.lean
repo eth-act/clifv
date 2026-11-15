@@ -19,6 +19,7 @@ set_option maxHeartbeats 2000000 in
 theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI XI' : ExtSemI}
     (hRn : ∀ n, ({ R with X := XI.at n } : RL).Wf)
     (hRn' : ∀ n, ({ R with s0 := t0, G := G', X := XI'.at n } : RL).Wf)
+    (hframe : R.af.frame = true)
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hcheck : CheckedAt R.vc R.rf cc ins a0) (ρ₀ : Nat → CV)
     (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ ρ₀ (fun r => m₀ (.reg r)))
@@ -126,9 +127,9 @@ theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
   let R'' : RL := { R with s0 := t0, G := G' }
   have hR0 : R0.Wf := hRn 0
   have hR0' : R0'.Wf := hRn' 0
-  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (R := R0) (Y := fun _ => True) hR0 hent hbe
+  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (R := R0) (Y := fun _ => True) hR0 hframe hent hbe
   obtain ⟨n0', hn0', ht0', hq0', hA0', -⟩ :=
-    q_initNA (R := R0') (Y := fun _ => True) hR0' hent' hbe'
+    q_initNA (R := R0') (Y := fun _ => True) hR0' hframe hent' hbe'
   have e0 : n0 = (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := hn0
   have e0' : n0' = (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := hn0'
   subst e0 e0'

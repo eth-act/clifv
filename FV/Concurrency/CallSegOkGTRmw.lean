@@ -201,10 +201,10 @@ theorem scope_R (s0 : ArmState) (K : Nat) (G : BitVec 64 → Prop) :
   | _ => simp [formRB] at h2
 
 theorem static_CR : callerRF.Static :=
-  ⟨wfRC.check, wfRC.alloc, wfRC.emit, wfRC.layout, wfRC.lm, wfRC.fit, wfRC.psF, entryArgRC⟩
+  ⟨wfRC.check, wfRC.alloc.lowerRFunc_of_frame frameRC, wfRC.emit, wfRC.layout, wfRC.lm, wfRC.fit, wfRC.psF, entryArgRC⟩
 
 theorem static_R : rmwF.Static :=
-  ⟨wfRR.check, wfRR.alloc, wfRR.emit, wfRR.layout, wfRR.lm, wfRR.fit, wfRR.psF, entryArgRR⟩
+  ⟨wfRR.check, wfRR.alloc.lowerRFunc_of_frame frameRR, wfRR.emit, wfRR.layout, wfRR.lm, wfRR.fit, wfRR.psF, entryArgRR⟩
 
 /-! ## The two functions compiled -/
 
@@ -229,6 +229,7 @@ theorem fnOk_CR {env : Clif.Env} (henv : env.extern "rmw" = none) :
   exact {
     mem := mem_callerR
     wf := hwf
+    frame := Backend.lowerRFunc_frame static_CR.alloc
     scope := scope_CR rfl
     abi := habi
     H := driverHypT_mk (Γ := ⟨(linkR.act callerRF s0 K G).F, fun _ => none,
@@ -294,6 +295,7 @@ theorem fnOk_R {env : Clif.Env} : FnOk linkR env pCR (fun _ => none) "rmw" rmwF 
   exact {
     mem := mem_rmw
     wf := hwf
+    frame := Backend.lowerRFunc_frame static_R.alloc
     scope := scope_R s0 K G
     abi := habi
     H := driverHypT_mk (Γ := ⟨(linkR.act rmwF s0 K G).F, fun _ => none,
@@ -627,7 +629,7 @@ theorem ent_O : ∃ g : Act, Ent linkR Clif.Env.empty pCR (PrivA RAc) (.run csO)
     fnOk_CR (env := Clif.Env.empty) rfl
   have hS := hF sC0 0x240 GL 0x4000#64 (E2E.spv w₀C) [] [] callerRF [] (fun _ => False) [] wf_RAc
     abiRC checksO.2.2.2.2.2.2.2.2
-  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RAc abiRC body_RAc
+  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RAc frameRC abiRC body_RAc
   refine ⟨⟨"f", callerRF, sC0, 0x240, GL, 0x4000#64, fC, vc, ctx, st0, R, gn, bl, A,
     ⟨RAc.F, fun _ => none, RAc.ctx.slotBase, 0⟩, E2E.spv w₀C, Lp, ss, ss', cc, ins, a0, [], [],
     callerRF, [], fun _ => False, []⟩, rfl, csO, fun _ => False, rfl, ?_, ?_, func_f⟩

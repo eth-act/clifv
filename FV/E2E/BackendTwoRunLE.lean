@@ -373,14 +373,14 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) 
 
 /-- **The prologue keeps a lock** whose set contains the frame record's saved-LR word: it reads
 nothing and names `x30` only in the record store. -/
-theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hx30 : R.fa.x30Free R.lm = true)
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
     StEqOutX Z (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t)
       (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) :=
-  stEqOutX_prologueZ_le hR hent hx30 hLR h _ (Nat.le_refl _)
+  stEqOutX_prologueZ_le hR hframe hent hx30 hLR h _ (Nat.le_refl _)
 
 /-- An ABI entry with other flags is an ABI entry. -/
 theorem abiCall_of_flagTwin {fb : FnBin} {base ra : BitVec 64} {s t : Arm.ArmState}
@@ -459,7 +459,7 @@ theorem stEqOutX_prologueZ_entry {R : RL} (hR : R.Wf) (hframe : R.af.frame = tru
       (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)
       (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t0) := by
   have hLR : ∀ k, 8 ≤ k → k < 16 → R.Zc c c' (spv R.s0 - 16#64 + BitVec.ofNat 64 k) :=
-    fun k h8 h16 => RL.lrWord_Zc hR c c' h8 h16
+    fun k h8 h16 => RL.lrWord_Zc hR hframe c c' h8 h16
   by_cases hl : probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true
   · have htw := flagsOf_twin R.s0 t0
     have hent1 := abiCall_of_flagTwin hent' htw
@@ -468,12 +468,12 @@ theorem stEqOutX_prologueZ_entry {R : RL} (hR : R.Wf) (hframe : R.af.frame = tru
       ⟨fun f hm hpc h30 => (hag.1 f hm hpc h30).trans
           (htw.1 f (fun fl e => by subst e; exact hm)).symm,
         fun a ha => (hag.2 a ha).trans (congrFun htw.2.2 a).symm⟩
-    have h := (stEqOutX_prologueZ hR hent hx30 hLR
+    have h := (stEqOutX_prologueZ hR hframe hent hx30 hLR
       (stEqOutX_entryZ hR hent hent1 hbe hbe1 hF' hsw hag1
         (hx29.trans (htw.1 _ (by simp)).symm)
         (EntryFlags.of_eq fun fl => (flagsOf_flag R.s0 t0 fl).symm) hW).symm).symm
-    rwa [iterN_prologue_flagTwin hR hent1 hent' htw hl] at h
-  · exact (stEqOutX_prologueZ hR hent hx30 hLR
+    rwa [iterN_prologue_flagTwin hR hframe hent1 hent' htw hl] at h
+  · exact (stEqOutX_prologueZ hR hframe hent hx30 hLR
       (stEqOutX_entryZ hR hent hent' hbe hbe' hF' hsw hag hx29
         (EntryFlags.of_not (fun _ => by simpa using hl) _ _) hW).symm).symm
 
@@ -588,7 +588,7 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
       ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
         by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
-    exact stEqOutX_prologueZ_entry hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag
+    exact stEqOutX_prologueZ_entry hW0 (lowerRFunc_frame hc.alloc) he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag
       hx29 hx30 (fun _ h => by exact h)
   exact backend_twoRunL hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg
     hstk htr fuel hlm hpsF he he' hR hcov hx30 hfr hcall htls hpro

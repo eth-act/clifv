@@ -90,7 +90,7 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : 
     (∀ a, ¬ R.Zc d d' a → (iterN R.step R.retLen u').mem a = (iterN R.step R.retLen u).mem a) ∧
     ∀ i < R.retLen, StEqOutX (R.Zc d d') (iterN R.step i u') (iterN R.step i u) := by
   obtain ⟨b, k, allocs, its, m, w, vb, us, rfl, hvb, hi⟩ := hre
-  obtain ⟨n3, hn3, hgx, -⟩ := ret_machineNA (Y := fun _ => True) hR hent hqa hvb hi
+  obtain ⟨n3, hn3, hgx, -⟩ := ret_machineNA (Y := fun _ => True) hR hframe hent hqa hvb hi
   subst hn3
   obtain ⟨mt, hq⟩ := qa_q hqa
   obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR hframe
@@ -356,13 +356,13 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : 
 /-- **The return agreement from the lock at the `rets` item** (module doc): from states locked at
 `Zc d d'`, the first (`u`) at `QA` of a `rets` configuration, the two runs return after `retLen`
 steps in `RetAgreeX (frameDrop + K) (spv s0)`. -/
-theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hx30 : R.fa.x30Free R.lm = true) {u u' : Arm.ArmState} {e : MConf CV Arm.ArmState}
     (hqa : QA R u e) (hre : R.RetsAt e) {d d' : MConf CV Arm.ArmState}
     (hl : StEqOutX (R.Zc d d') u' u) :
     RetAgreeX (frameDrop R.af + R.K) (spv R.s0) (iterN R.step R.retLen u')
       (iterN R.step R.retLen u) :=
-  (RL.retLock_rets hR hent hx30 hqa hre hl).1
+  (RL.retLock_rets hR hframe hent hx30 hqa hre hl).1
 
 /-- **A base call keeps the lock** (`HookNIX`, #704) when the lock set is inside the exterior:
 the worlds of the two configurations differ only on `F` (the lock set is `F` or the difference
@@ -477,7 +477,7 @@ theorem backend_twoRunLER (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
     ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
       he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
-  exact RL.retAgreeX_rets hW0 he.abi hx30 (QWA.qaX hqA hW0 he.abi) hre hLB.symm
+  exact RL.retAgreeX_rets hW0 (lowerRFunc_frame hc.alloc) he.abi hx30 (QWA.qaX hqA hW0 he.abi) hre hLB.symm
 
 end
 

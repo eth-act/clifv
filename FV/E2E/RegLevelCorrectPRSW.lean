@@ -194,7 +194,7 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, hpsF, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   have hR : R.Wf := hRn 0
   have hck := (hR.alloc.ok).2.2
-  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (Y := fun _ => True) hR hent hbe
+  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (Y := fun _ => True) hR (lowerRFunc_frame halloc) hent hbe
   have hn0' : n0 = (prologueSteps af.saves af.frameSize af.isCaller) := hn0
   subst hn0'
   let s₁ := iterN R.step (prologueSteps af.saves af.frameSize af.isCaller) s
@@ -264,7 +264,7 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         rw [hi] at hi'; cases hi'
         have hq2' : QA R (iterN R.step n2 (iterN R.step n1 s₁))
             (.run ⟨b, .op k _ :: _, _, w₁.1⟩) := hqW.qa
-        obtain ⟨n3, hn3, ht3, hpc, -⟩ := ret_machineNA (Y := fun _ => True) hR hent hq2' hvb hi
+        obtain ⟨n3, hn3, ht3, hpc, -⟩ := ret_machineNA (Y := fun _ => True) hR (lowerRFunc_frame halloc) hent hq2' hvb hi
         exact ⟨n3, hn3, ht3, hpc⟩
   obtain ⟨n3, hn3, ht3, hpc⟩ := hret
   subst hn3

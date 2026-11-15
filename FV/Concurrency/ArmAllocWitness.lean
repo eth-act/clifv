@@ -65,6 +65,11 @@ def act (vc : VCode) (rf : RFunc) : RL :=
     G := fun _ => False
     gv := fun _ _ => False }
 
+/-- `act`'s function has its frame (`lowerRFunc`'s output). -/
+theorem frame_act {vc : VCode} {rf : RFunc} (ha : (lowerRFunc vc rf).toBool = true) :
+    (act vc rf).af.frame = true :=
+  lowerRFunc_frame (ok_getD ha)
+
 /-- `args; rets`. -/
 def vcN : VCode :=
   { name := "w", blocks := #[{ label := 0, insts := #[.args [], .rets []] }], classes := #[],

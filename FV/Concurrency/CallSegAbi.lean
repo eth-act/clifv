@@ -47,19 +47,19 @@ theorem hr₀_init {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) {ra : Bi
 under `OkPriv` is the single-core path, its events private plain writes. (#581: `hpf`
 (`ProbeF`) is new: the stack probes' writes are private only when the probed bytes are in
 `RA.F`.) -/
-theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+theorem prun_prologueG {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA) {mon : Mon}
     {L : List Lab}
     {t1 : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1)
     (hL : L.length ≤ (prologueSteps RA.af.saves RA.af.frameSize RA.af.isCaller)) :
     t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
       ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := by
-  have hlat := prologue_linesAt hR hent
-  have hpe := prologue_evs hR hent hpf hlat
-  have hnr := CallSeg.prologue_nonRet hR hent hlat
+  have hlat := prologue_linesAt hR hframe hent
+  have hpe := prologue_evs hR hframe hent hpf hlat
+  have hnr := CallSeg.prologue_nonRet hR hframe hent hlat
   obtain ⟨h1, hev, -⟩ := CallSeg.prun_privF hr fun i hi =>
     ⟨fun e he => ((hpe i (by omega)).1 e he).1, (hpe i (by omega)).2,
-      hg _ (prologue_program hR hent hlat i (by omega)) (hnr i (by omega))⟩
+      hg _ (prologue_program hR hframe hent hlat i (by omega)) (hnr i (by omega))⟩
   refine ⟨h1, ?_, ?_⟩
   · rw [hev]
     exact privW_segEvs (fun i hi e he => ((hpe i (by omega)).1 e he).1)
@@ -128,7 +128,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = 
       PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1 → L.length ≤ P →
       t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
         ∀ p y, evAt (evTr L) p = some y → y.k = .plainW :=
-    fun h hL => prun_prologueG hR hg hent hpf h (hP ▸ hL)
+    fun h hL => prun_prologueG hR hframe hg hent hpf h (hP ▸ hL)
   by_cases hle : ls.length ≤ P
   · obtain ⟨-, hpw, hpk0⟩ := hpp hr hle
     refine ⟨ls.length, [], _, id, Nat.le_refl _, ?_, .nil, ?_, .inl rfl⟩
@@ -143,7 +143,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = 
     obtain ⟨v1, vm⟩ := v
     simp only at hv1
     subst hv1
-    obtain ⟨k2, trS, t, ψ2, hk2, hx2, hrun, href, hend⟩ := arm_isel_refines_entryCRNX hR hsc hgv hg hent
+    obtain ⟨k2, trS, t, ψ2, hk2, hx2, hrun, href, hend⟩ := arm_isel_refines_entryCRNX hR hframe hsc hgv hg hent
       H hchk hMR hMRw hX hX0 hMem hMRs hreg H3 hm3 hc hm4 hB0 hcall hfunc hslots hbody hterm hregs
       hty hsig hmr hr₀ hargs hq hA hrest
     have e : ∀ n, evTr (ls.take (P + n)) = evTr (ls.take P) ++ evTr ((ls.drop P).take n) := by

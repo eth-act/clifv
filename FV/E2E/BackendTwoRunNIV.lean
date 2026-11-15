@@ -161,8 +161,8 @@ theorem backend_twoRunLERWZNpWPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         X := (XI.upTo N).at 0 } : RL).step i s) := fun i hi => by
     have hF := he.hF
     subst hF
-    exact ⟨_, _, stEqOutX_prologueZ_le hW0 he.abi hx30
-      (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
+    exact ⟨_, _, stEqOutX_prologueZ_le hW0 (lowerRFunc_frame hc.alloc) he.abi hx30
+      (fun k h8 h16 => RL.lrWord_Zc hW0 (lowerRFunc_frame hc.alloc) _ _ h8 h16)
       (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
         (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
         (fun _ h => h)).symm i hi⟩
@@ -181,11 +181,11 @@ theorem backend_twoRunLERWZNpWPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
       obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre; exact ⟨_, rfl⟩
     have hr2 : ∃ ms, e' = .run ms := by
       obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre'; exact ⟨_, rfl⟩
-    obtain ⟨hra, -, hm, hepi⟩ := RL.retLock_rets hW0 he.abi hx30
+    obtain ⟨hra, -, hm, hepi⟩ := RL.retLock_rets hW0 (lowerRFunc_frame hc.alloc) he.abi hx30
       (QWA.qaX hqA hW0 he.abi) hre hLB.1.symm
-    obtain ⟨f1, g1, -, -, -⟩ := RL.retFacts_rets hW0 he.abi
+    obtain ⟨f1, g1, -, -, -⟩ := RL.retFacts_rets hW0 (lowerRFunc_frame hc.alloc) he.abi
       (QWA.qaX hqA hW0 he.abi) hre
-    obtain ⟨f2, g2, e2, sp2, x2⟩ := RL.retFacts_rets hW0' he'.abi
+    obtain ⟨f2, g2, e2, sp2, x2⟩ := RL.retFacts_rets hW0' (lowerRFunc_frame hc.alloc) he'.abi
       (QWA.qaX hqB hW0' he'.abi) hre'
     refine ⟨by rw [hs, hs]; exact hra, fun a hFa hDa => ?_, by rw [hs]; exact f1,
       by rw [hs]; exact f2, fun a ha => by rw [hs]; exact g1 a ha,

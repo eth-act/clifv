@@ -81,7 +81,7 @@ theorem regLevel_value_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     · show CalleeTryOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
       rw [XI.upTo_at_lt h]; exact hCT ht n h
     · exact calleeTryOkGP_upTo_ge (by omega)
-  obtain ⟨m₀, h⟩ := regLevel_prefix_coreG hR hent hbe hcheck
+  obtain ⟨m₀, h⟩ := regLevel_prefix_coreG hR (lowerRFunc_frame halloc) hent hbe hcheck
     (sem := fun n => valueSemV R.gv R.F R.ctx (XN.at n))
     (fun n => ((realizes_value_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T

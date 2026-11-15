@@ -163,7 +163,7 @@ theorem enter_call (hL : L.Ok) {nB : String} {FB : LFn} (hB : (nB, FB) ∈ L.fns
       show (Arm.r (.GPR 31#5) (enter FB x)).toNat % 16 = 0
       rw [r_enter (by simp) (by simp)]; exact this
     fits := (hL.laid _ hB).fit }
-  obtain ⟨-, hq, hA⟩ := q_init_lines hRB hent
+  obtain ⟨-, hq, hA⟩ := q_init_lines hRB (lowerRFunc_frame hFB.alloc) hent
     ((Binary.bodyEntry_bodyOf FB.af (enter FB x)).w (L.act FB (enter FB x) KB GB).F
       hFB.entryArg)
   exact ⟨hRB, hent, fun f h1 h2 => r_enter h1 h2 FB x, enter_x30 FB x, enter_mem FB x, hq, hA⟩

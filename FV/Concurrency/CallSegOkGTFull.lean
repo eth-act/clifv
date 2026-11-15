@@ -504,7 +504,7 @@ theorem ent_O : ∃ g : Act, Ent link2 Clif.Env.empty pCL (PrivA RA5) (.run csO)
     fnOk_C (env := Clif.Env.empty) rfl
   have hS := hF sC0 0x200 GL 0x4000#64 (E2E.spv w₀C) [] [] callerF [] (fun _ => False) [] wf_RA5
     abiRC checksO.2.2.2.2.2.2.2.2
-  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RA5 abiRC body_RA5
+  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RA5 frameRC abiRC body_RA5
   refine ⟨⟨"f", callerF, sC0, 0x200, GL, 0x4000#64, fC, vc, ctx, st0, R, gn, bl, A,
     ⟨RA5.F, fun _ => none, RA5.ctx.slotBase, 0⟩, E2E.spv w₀C, Lp, ss, ss', cc, ins, a0, [], [],
     callerF, [], fun _ => False, []⟩, rfl, csO, fun _ => False, rfl, ?_, ?_, func_f⟩

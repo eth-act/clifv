@@ -170,7 +170,7 @@ theorem call_endK_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitVe
 at a `rets` pause with its contract. -/
 theorem retEnd_n_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program} {MR : MemRelT}
     {slots : List (Clif.SlotId × Nat)} {r₀ : Reg → CV} {x : ArmState} {s' : Clif.State}
-    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
+    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hframeB : (link2.act ldF s0 0 RC.F).af.frame = true) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
     (hret : RetEnd (link2.act ldF s0 0 RC.F) (RC.pcOf 15 + 4#64) env p MR slots r₀ x s') :
     ∃ n, 0 < n ∧ ∃ b k allocs its m w vb us ops ρ vals cm,
       QA (link2.act ldF s0 0 RC.F) x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧
@@ -181,9 +181,9 @@ theorem retEnd_n_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program} {MR : Me
       (iterN (link2.act ldF s0 0 RC.F).step n x).mem = x.mem ∧
       ∀ (j : Nat) (v q : Reg) (y : CV), us[j]? = some (v, q) → (vuses ops ρ)[j]? = some y →
         regVal (iterN (link2.act ldF s0 0 RC.F).step n x) q = y := by
-  obtain ⟨n, hn, hRC, -, -⟩ := ret_end ok2 (nB := "ld") mem_ld hRB hent ra_out (nA := "f")
+  obtain ⟨n, hn, hRC, -, -⟩ := ret_end ok2 (nB := "ld") mem_ld hRB hframeB hent ra_out (nA := "f")
     (by simp [link2]) ra_in hret
-  exact ⟨n, hn, retEnd_n hRB hent ra_out hret hRC.1 hRC.2.1⟩
+  exact ⟨n, hn, retEnd_n hRB hframeB hent ra_out hret hRC.1 hRC.2.1⟩
 
 /-- `atomic_load`'s `rets` read `x0` (as a check). -/
 def retsB : Bool :=
@@ -255,7 +255,7 @@ theorem resume_ret_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitV
   obtain ⟨hlow, -, -, -, hind, hv, hnt, -, hout0, -, hexts⟩ := IselCall.Witness.checksFC
   refine ⟨ctx, st0, R, gn, bl, A, Lp, ss', cc, ins, H, fun hq hA hP hat hm2 hm3 hm4 hRB hent hfx
     hlr hm0 hr₀B hret hΓB hsyms hy hdone hD hd hmR hbody hcl hext hvals htys hrty hregs => ?_⟩
-  exact resume_ret wfRC hRB rfl (fun _ _ _ => rfl) H hchk har hlow (List.isEmpty_iff.mp hind) hv
+  exact resume_ret wfRC hRB LinkedMachine.Witness.frame_ld rfl (fun _ _ _ => rfl) H hchk har hlow (List.isEmpty_iff.mp hind) hv
     hnt hout0 rfl rfl (fun _ _ h => by cases h) H3 hat0 CallResumeAll.Witness.defs_fC.1 hq hA hP
     hat hm2 hm3 hm4 hent ra_out hfx hlr hm0 (fun a h => h.elim (fun h => .inl (.inl h)) .inr) hr₀B
     (fun b vb us hb hk => by rw [rets_ld hb hk]; exact CallResumeAll.Witness.defs_fC.2) hret hΓB

@@ -163,7 +163,7 @@ theorem scope_ld (s0 : ArmState) (K : Nat) (G : BitVec 64 → Prop) :
 
 /-- The compiled caller is statically checked. -/
 theorem static_C : callerF.Static :=
-  ⟨wf_C.check, wf_C.alloc, wf_C.emit, wf_C.layout, wf_C.lm, wf_C.fit, wf_C.psF, entryArgRC⟩
+  ⟨wf_C.check, wf_C.alloc.lowerRFunc_of_frame frameRC, wf_C.emit, wf_C.layout, wf_C.lm, wf_C.fit, wf_C.psF, entryArgRC⟩
 
 /-! ## The two functions compiled -/
 
@@ -188,6 +188,7 @@ theorem fnOk_C {env : Clif.Env} (henv : env.extern "ld" = none) :
   exact {
     mem := mem_caller
     wf := hwf
+    frame := Backend.lowerRFunc_frame static_C.alloc
     scope := scope_C rfl
     abi := habi
     H := driverHypT_mk (Γ := ⟨(link2.act callerF s0 K G).F, fun _ => none,
@@ -251,6 +252,7 @@ theorem fnOk_L {env : Clif.Env} : FnOk link2 env pCL (fun _ => none) "ld" ldF fL
   exact {
     mem := mem_ld
     wf := hwf
+    frame := Backend.lowerRFunc_frame static_ld.alloc
     scope := scope_ld s0 K G
     abi := habi
     H := driverHypT_mk (Γ := ⟨(link2.act ldF s0 K G).F, fun _ => none,

@@ -131,7 +131,7 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
     obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre; exact ⟨_, rfl⟩
   have hr2 : ∃ ms, e' = .run ms := by
     obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre'; exact ⟨_, rfl⟩
-  obtain ⟨hra, -, hm, hepi⟩ := RL.retLock_rets hW0 he.abi hx30 (QWA.qaX hqA hW0 he.abi) hre
+  obtain ⟨hra, -, hm, hepi⟩ := RL.retLock_rets hW0 (lowerRFunc_frame hc.alloc) he.abi hx30 (QWA.qaX hqA hW0 he.abi) hre
     hLB.1.symm
   refine ⟨by rw [hs, hs]; exact hra, fun a hFa hDa => ?_, fun i hi => ?_⟩
   · rw [hs, hs]
@@ -150,8 +150,8 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
       rfl
     rw [hPe] at hi hs
     rcases Nat.lt_or_ge i (prologueSteps af.saves af.frameSize af.isCaller) with h1 | h1
-    · exact ⟨_, _, stEqOutX_prologueZ_le hW0 he.abi hx30
-        (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
+    · exact ⟨_, _, stEqOutX_prologueZ_le hW0 (lowerRFunc_frame hc.alloc) he.abi hx30
+        (fun k h8 h16 => RL.lrWord_Zc hW0 (lowerRFunc_frame hc.alloc) _ _ h8 h16)
         (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
           (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
           (fun _ h => h)).symm i (Nat.le_of_lt h1)⟩

@@ -36,7 +36,7 @@ theorem ckeep_regVal_of_slotVal {t u : ArmState} {r : Reg} (h : slotVal t r = sl
 registers. `hr₀`: the registers the prologue pushes (`R.af.saves`) come back with their values at
 the ABI entry, so the checker's entry values must be those (Cranelift's frame: the restores emit
 no code, the save slots are not `Q`'s locations). -/
-theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem rets_alloc {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {c : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt R.vc R.rf c ins a0) {r₀ : Reg → CV}
     (hr₀ : ∀ r ∈ R.af.saves, ckeep r (r₀ r) = ckeep r (regVal R.s0 r))
@@ -98,7 +98,7 @@ theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
       | ret _ =>
       rw [Backend.Proof.rets_store hlen2 rfl hho hcl] at hks
       obtain ⟨n, ht, hpc, herr, hsp, hx29, hregs, hsaved, hmem, -, hprogF, hvalsM⟩ :=
-        ret_machine hR hent hqa hvbV hi
+        ret_machine hR hent hqa hvbV hi (fun h => by rw [hframe] at h; cases h)
       refine ⟨n, _, operands_retsC ns, ht, hpc, herr, hsp, hmem, ⟨hprogF, hx29⟩, fun r hr => ?_,
         fun j v p x hj hx => ?_⟩
       · by_cases hsv : r ∈ R.af.saves

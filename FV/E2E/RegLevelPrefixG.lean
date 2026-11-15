@@ -64,7 +64,7 @@ theorem OnCallG.onCall {Mm : Arm.ArmState → Arm.ArmState} {fa : FnAsm} {base :
 
 /-- **`regLevel_prefix_core` with the trace**: the machine state `u` of the counted VCode call is
 reached after `i` steps, every earlier state `Good`. -/
-theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {w₀ : Arm.ArmState}
     (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {sem : Nat → ISem CV Arm.ArmState}
@@ -78,7 +78,7 @@ theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) {ra : BitVec 64}
       (∃ info, i = .call info ∨ ∃ ti, i = .tryCall info ti) → ∀ ops, i.operands = .ok ops →
       ∃ u, OnCallG R.step R.fa R.base R.s0 R.Good N u ∧ spOf u = R.spB ∧
         CallSiteAt R.F R.K R.G R.s0 R.fa R.base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
-  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR (lowerRFunc_frame halloc) hent hbe
+  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR hframe hent hbe
   let m₀ := locVal R.fr (iterN R.step n0 R.s0)
   have hSim := isSimulation_match (sem := ISem.counted sem) (keep := ckeep) hcheck
     (fun r => m₀ (.reg r))
@@ -236,7 +236,7 @@ theorem regLevel_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     · show CalleeTryOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
       rw [XI.upTo_at_lt h]; exact hCT ht n h
     · exact calleeTryOkGP_upTo_ge (by omega)
-  obtain ⟨m₀, h⟩ := regLevel_prefix_coreG hR hent hbe hcheck
+  obtain ⟨m₀, h⟩ := regLevel_prefix_coreG hR (lowerRFunc_frame halloc) hent hbe hcheck
     (sem := fun n => csemV R.gv R.F R.ctx (XN.at n))
     (fun n => ((realizes_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T

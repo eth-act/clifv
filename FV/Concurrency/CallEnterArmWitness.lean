@@ -36,7 +36,7 @@ theorem entryArg_ld : ∀ r, ldF.vc.EntryArg r → r.isArgReg = true := by
 theorem static_ld : ldF.Static := by
   obtain ⟨m, -, hq, -⟩ := prefixF
   have hW := wfX (q_stRel hq)
-  exact ⟨hW.check, hW.alloc, hW.emit, hW.layout, hW.lm, hW.fit, hW.psF, entryArg_ld⟩
+  exact ⟨hW.check, hW.alloc.lowerRFunc_of_frame (frameX _), hW.emit, hW.layout, hW.lm, hW.fit, hW.psF, entryArg_ld⟩
 
 /-- The caller's activation in the link is `RC` but for its hooks. -/
 theorem wf_C : (link2.act callerF sC0 0 GL).Wf :=

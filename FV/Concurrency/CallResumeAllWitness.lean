@@ -61,7 +61,7 @@ theorem resume_all_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitV
         {FB : BitVec 64 → Prop} {cmB : Clif.Mem} {wB : ArmState} {bases : List Nat}
         {stm : Clif.Stmt} {rest : List Clif.Stmt} {fn : Clif.FnRef} {args : List Clif.ValueId}
         {vals : List Clif.Val} {regs' : Clif.Regs},
-        RB.Wf → Q RC x (.run cM') → AInv RC (.run cM') → Pause RC (.run cM') → AtCallS s' →
+        RB.Wf → RB.af.frame = true → Q RC x (.run cM') → AInv RC (.run cM') → Pause RC (.run cM') → AtCallS s' →
         Match fC ctx R gn bl A (RelW ΓC fC c) slots s' vV' →
         PMatch vcC RC.vc (csem RC.F RC.ctx RC.X) (cEvs RC.F RC.ctx) L ss' (.run vV') (.run vP') →
         MatchRun cc ins ckeep r₀ cM' vP' →
@@ -94,10 +94,10 @@ theorem resume_all_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitV
     CallResumeL.Witness.prepC
   obtain ⟨cc, ins, a0, hat0, -⟩ := CallLayers.alloc_init (vc := RC.vc) (rf := RC.rf) allocC ckeep
   obtain ⟨hlow, -, -, -, hind, hv, hnt, -, hout0, -, hexts⟩ := checksFC
-  refine ⟨ctx, st0, R, gn, bl, A, L, ss', cc, ins, H, fun hRB hq hA hP hat hm2 hm3 hm4 hent hy
+  refine ⟨ctx, st0, R, gn, bl, A, L, ss', cc, ins, H, fun hRB hRBf hq hA hP hat hm2 hm3 hm4 hent hy
     hfx hlr hm0 hG hr₀B hprog hus hpreB hlenR hB hval hmemB hbody hcl hext hvals htys hrty
     hregs => ?_⟩
-  refine resume_all wfRC hRB rfl (fun _ _ _ => rfl) H hchk hlow (List.isEmpty_iff.mp hind) hv
+  refine resume_all wfRC hRB hRBf rfl (fun _ _ _ => rfl) H hchk hlow (List.isEmpty_iff.mp hind) hv
     hnt hout0 rfl rfl (fun _ _ h => by cases h) H3 hat0
     (fun _ _ _ _ hb hk => (calls_fC hb hk).2) hq hA hP hat hm2 hm3 hm4 hent hy hfx hlr hm0 hG
     hr₀B hprog hus hpreB hB hval hmemB hbody hcl hext ?_ hvals htys hrty hregs ?_

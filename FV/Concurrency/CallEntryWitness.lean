@@ -74,7 +74,7 @@ theorem arm_entry_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitVe
   obtain ⟨L, ss, ss', H3, hm3⟩ := CallLayers.prep_init (vc := vcC) (vcp := RC.vc)
     CallResumeL.Witness.prepC
   obtain ⟨cc, ins, a0, hat, hm4⟩ := CallLayers.alloc_init (vc := RC.vc) (rf := RC.rf) allocC ckeep
-  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
+  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC frameRC abiRC bodyRC
   refine ⟨ctx, st0, R, gn, bl, A, L, ss', cc, ins, H, fun slots cs B0 args mon ls t' hB0 hcall hfunc
     hslots hbody hterm hregs hty hsig hmr hargs hr => ?_⟩
   exact CallLayers.arm_isel_refines_entryC wfRC scopeRC rfl agreesAt_MC2 H hchk

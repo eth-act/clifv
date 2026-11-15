@@ -202,6 +202,9 @@ theorem wfRCM : RCM.Wf := by
   simp only [BitVec.toNat_ofNat] at h1
   omega
 
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameRCM : RCM.af.frame = true := ArmAllocThread.Witness.frame_act factsM.2.1
+
 theorem abiRCM : AbiCall RCM.fb RCM.base 0x4000#64 RCM.s0 where
   program := program_RCM
   code k w hk := by
@@ -346,7 +349,7 @@ theorem scope_M {R : RL} (hR : R.vc = vcpM) : MemScopeLSC R := by
   | _ => simp [callerFormB] at h2
 
 theorem static_M : callerM.Static :=
-  ⟨wfRCM.check, wfRCM.alloc, wfRCM.emit, wfRCM.layout, wfRCM.lm, wfRCM.fit, wfRCM.psF,
+  ⟨wfRCM.check, wfRCM.alloc.lowerRFunc_of_frame frameRCM, wfRCM.emit, wfRCM.layout, wfRCM.lm, wfRCM.fit, wfRCM.psF,
     entryArgRCM⟩
 
 /-- **The caller is compiled in `linkM`.** -/
@@ -373,6 +376,7 @@ theorem fnOk_M {env : Clif.Env} (henvL : env.extern "ld" = none) (henvT : env.ex
   exact {
     mem := mem_callerM
     wf := hwf
+    frame := Backend.lowerRFunc_frame static_M.alloc
     scope := scope_M rfl
     abi := habi
     H := driverHypT_mk (Γ := ⟨(linkM.act callerM s0 K G).F, fun _ => none,
@@ -454,6 +458,7 @@ theorem fnOk_LM {env : Clif.Env} : FnOk linkM env pM (fun _ => none) "ld" ldF fL
   exact {
     mem := mem_ldM
     wf := hwf
+    frame := Backend.lowerRFunc_frame static_ld.alloc
     scope := scope_ldM s0 K G
     abi := habi
     H := driverHypT_mk (Γ := ⟨(linkM.act ldF s0 K G).F, fun _ => none,
@@ -1073,7 +1078,7 @@ theorem ent_M : ∃ g : Act, Ent linkM Clif.Env.empty pM (PrivA RAM) (.run csOM)
     fnOk_M (env := Clif.Env.empty) rfl rfl
   have hS := hF sM0 0x200 GM 0x4000#64 (E2E.spv w₀M) [] [] callerM [] (fun _ => False) []
     wf_RAM abiRCM checksOM.2.2.2.2.2.2.2.2.2.2.2
-  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RAM abiRCM body_RAM
+  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RAM frameRCM abiRCM body_RAM
   refine ⟨⟨"f", callerM, sM0, 0x200, GM, 0x4000#64, fM, vc, ctx, st0, R, gn, bl, A,
     ⟨RAM.F, fun _ => none, RAM.ctx.slotBase, 0⟩, E2E.spv w₀M, Lp, ss, ss', cc, ins, a0, [], [],
     callerM, [], fun _ => False, []⟩, rfl, csOM, fun _ => False, rfl, ?_, ?_, func_fM⟩

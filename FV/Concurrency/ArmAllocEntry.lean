@@ -262,12 +262,12 @@ theorem prologue_states {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : 
 
 /-- **The prologue keeps the program** (#581: `CallSeg.linesAt_program` for the prologue's run,
 `ProRun`). -/
-theorem prologue_program {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem prologue_program {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {s' : ArmState} (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
     ∀ i ≤ prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
       (iterN R.step i R.s0).program = R.fb.program R.base := by
   intro i hi
-  obtain ⟨hit, hst⟩ := prologue_states hR hent hpr
+  obtain ⟨hit, hst⟩ := prologue_states hR hframe hent hpr
   rcases Nat.lt_or_ge i (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) with h | h
   · obtain ⟨-, -, -, -, -, -, hp, -⟩ := hst i h
     exact hp
@@ -308,7 +308,7 @@ theorem prologue_evs {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : Bit
     simp only [List.mem_cons, List.mem_replicate] at hk
     rcases hk with rfl | ⟨-, rfl⟩ <;> exact .inr rfl
   intro i hi
-  obtain ⟨k, x, -, hj, hmem, hxh, hprog, hpck, herr⟩ := (prologue_states hR hent hpr).2 i hi
+  obtain ⟨k, x, -, hj, hmem, hxh, hprog, hpck, herr⟩ := (prologue_states hR hframe hent hpr).2 i hi
   obtain ⟨a, ha, -, hev, hdec⟩ := stepEvs_line (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj hxh
     hprog (by rw [hpck]; rfl) herr
   refine ⟨fun e he => ?_, fun rel rs rn hc => ?_⟩
@@ -334,7 +334,7 @@ theorem prologue_evs {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : Bit
 its events are private plain writes. (#581: `hpf` (`ProbeF`) is new: the stack probes' writes are
 private only when the probed bytes are in `R.F`; the prologue's run is `ProRun`, its steps
 `prologueSteps`, as in `prologue_evs`.) -/
-theorem prun_prologue {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem prun_prologue {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hpf : ProbeF R)
     {s' : ArmState} (hlat : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s')
     {mon : Mon} {L : List Lab} {t1 : ArmState × Mon}
@@ -342,7 +342,7 @@ theorem prun_prologue {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb
     (hL : L.length ≤ prologueSteps R.af.saves R.af.frameSize R.af.isCaller) :
     t1.1 = iterN R.step L.length R.s0 ∧ PrivW (PrivA R) (evTr L) ∧
       ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := by
-  have hpe := prologue_evs hR hent hpf hlat
+  have hpe := prologue_evs hR hframe hent hpf hlat
   obtain ⟨h1, h2⟩ := prun_priv hr fun i hi =>
     ⟨fun e he => (hpe i (by omega)).1 e he |>.1, (hpe i (by omega)).2⟩
   have hk : ∀ p y, evAt (evTr L) p = some y → R.F y.addr ∧ y.k = .plainW := by
@@ -412,7 +412,7 @@ prologue** (`arm_alloc_refines_entry` with `Q ∧ AInv` given). (#581: `hpf` (`P
 the prologue's stack probes refine no CLIF step only when the probed bytes are private; the
 state after the prologue is after `prologueSteps` steps, which Cranelift's stack-probe loop
 makes more than `prologueLines`' length.) -/
-theorem arm_alloc_refines_entryQ {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra : BitVec 64}
+theorem arm_alloc_refines_entryQ {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) (hsc : MemScopeLS R) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hpf : ProbeF R) {c : MConf CV ArmState}
     (hq : Q R (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) c)
     (hA : AInv R c) {mon : Mon} {ls : List Lab}
@@ -420,12 +420,12 @@ theorem arm_alloc_refines_entryQ {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra :
     ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) c trS cE ∧
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
-  have hlat := prologue_linesAt hR hent
+  have hlat := prologue_linesAt hR hframe hent
   have hpp : ∀ {mon : Mon} {L : List Lab} {t1 : ArmState × Mon},
       PRun Policy.arm R.step (OkPriv R) (R.s0, mon) L t1 →
       L.length ≤ prologueSteps R.af.saves R.af.frameSize R.af.isCaller →
       t1.1 = iterN R.step L.length R.s0 ∧ PrivW (PrivA R) (evTr L) ∧
-        ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := fun h hL => prun_prologue hR hent hpf hlat h hL
+        ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := fun h hL => prun_prologue hR hframe hent hpf hlat h hL
   generalize hP : prologueSteps R.af.saves R.af.frameSize R.af.isCaller = P at hq hpp
   by_cases hle : ls.length ≤ P
   · -- the run ends inside the prologue: private writes only
@@ -460,7 +460,7 @@ the world private, the atomic updates monitor pairs), up to the allocated code's
 undefined behaviour (`Done`), for functions in `MemScopeLS` (event-free forms, `fence`, `ldar`,
 `stlr`, LL/SC loops, block-ending branches, plain loads/stores). (#581: `hpf` (`ProbeF`) is new:
 the prologue's stack probes refine no CLIF step only when the probed bytes are private.) -/
-theorem arm_alloc_refines_entry {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra : BitVec 64}
+theorem arm_alloc_refines_entry {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) (hsc : MemScopeLS R) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hpf : ProbeF R) {w₀ : ArmState}
     (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) {mon : Mon} {ls : List Lab}
     {t' : ArmState × Mon} (hr : PRun Policy.arm R.step (OkPriv R) (R.s0, mon) ls t') :
@@ -468,7 +468,7 @@ theorem arm_alloc_refines_entry {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra : 
       MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) (MConf.init R.rf m₀ w₀) trS cE ∧
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
-  obtain ⟨-, hq, hA⟩ := q_init_lines hR hent hbe
-  exact ⟨_, arm_alloc_refines_entryQ hR hsc hent hpf hq hA hr⟩
+  obtain ⟨-, hq, hA⟩ := q_init_lines hR hframe hent hbe
+  exact ⟨_, arm_alloc_refines_entryQ hR hframe hsc hent hpf hq hA hr⟩
 
 end Concurrency.ArmAllocThread
