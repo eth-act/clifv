@@ -266,7 +266,9 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
    per file means every call is a call of an extern. The theorem covers extern calls through
    its callee contract, and a function the backend rejects does not make its callers fall
    back: their calls reach cg_clif's code for it. Functions with a landing pad (`try_call`)
-   are compiled too (*Panics and unwinding*).
+   are compiled too (*Panics and unwinding*). Before the backend, `lean-backend` legalises
+   `i128` and removes constant phis as Cranelift does (`Opt.ConstPhi.select`, #990); `link-check`
+   and `lean-link` take the same decision (`FnInput.cp`), so they compile the same function.
 4. **Safety net**: every symbol a Lean object references must be defined or referenced by
    cg_clif's object (or be a runtime helper: `mem*`, `__{u,}{div,mod}ti3`, all in every Rust
    executable); otherwise the function falls back. A calling-convention guard (`abi_guard`)

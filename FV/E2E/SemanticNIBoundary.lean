@@ -387,8 +387,8 @@ theorem hasTls_of_vcode_semantic {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     rw [prepared] at ht
     cases ht
 
-  | @memorySinkExtend kind ty cleanup result family equal effects h =>
-    have raw := Stock.Memory.effectsOnly_noTls effects
+  | @memorySinkExtend src kind ty cleanup result family equal effects h =>
+    have raw := E2E.StockMemory.sinkEffectsOnly_noTls effects
     have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
       rw [equal]
       cases cleanup with

@@ -1,7 +1,7 @@
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Opt.OptimizeX
-import FV.Clif.Print
+import FV.Opt.ConstPhiSelect
 
 /-! # The optimising executable compiler: the definition
 
@@ -26,11 +26,6 @@ cleanup) are `lake exe lean-link --opt`'s compilers; kept free of proofs.
 namespace Link
 
 open E2E.LinkCheck
-
-/-- The header lines of a CLIF file (before the first `function`), each with its newline. -/
-def clifHeader (t : String) : String :=
-  ((t.splitOn "\n").takeWhile (fun l => !l.startsWith "function")).foldl
-    (fun acc l => acc ++ l ++ "\n") ""
 
 /-- `g` keeps the signature of each of `f`'s indirect calls (`call_indirect`,
 `try_call_indirect`): the mid-end's branch folding can drop an indirect call with its block. -/
