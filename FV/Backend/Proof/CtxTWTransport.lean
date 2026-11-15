@@ -17,10 +17,10 @@ replacement `basePairs` (`CtxT ↦ CtxTW`, `CtxT.inv ↦ CtxTW.inv`, `CtxT.scope
 `CtxT.toW ↦ CtxTW.self`, each family `X ↦ XW`, `TypedRules ↦ TypedRulesW` with its fields),
 proven by `src`'s proof term with the same replacement. Every theorem that proof uses whose
 statement mentions a replaced constant is transported first, under the name `<name>.ctxW` (reused
-when it exists). The kernel checks every transported declaration (`addDecl`), so a proof that
-reads a `call` fact (`CtxT.calls`, `CtxT.callArgs`, a `CtxT` constructor or recursor) fails to
-transport instead of giving a wrong theorem; so does a definition outside `basePairs` whose
-statement or body mentions a replaced constant.
+when it exists). Definitions outside `basePairs` are kept (the families that read the `call`
+facts stay over `CtxT`). The kernel checks every transported declaration (`addDecl`), so a proof
+that reads a `call` fact (`CtxT.calls`, `CtxT.callArgs`, a `CtxT`-only family at a `CtxTW`
+context, a `CtxT` constructor or recursor) fails to transport instead of giving a wrong theorem.
 -/
 
 namespace Backend.Proof.CtxTWTransport
@@ -129,14 +129,14 @@ partial def ensure (c : Name) : M (Option Name) := do
       transportThm t (autoName c)
       return some (autoName c)
     return none
-  | .defnInfo d =>
-    let m := (← get).map
-    if direct m d.type || direct m d.value then
-      throwError "ctxW_transport: definition {c} mentions a replaced constant; give it a counterpart in `basePairs`"
+  | .defnInfo _ =>
+    -- a definition outside `basePairs` is kept: the families that read the `call` facts stay over
+    -- `CtxT` (`CallRuleOkT`, `TryRuleOkT`, `TryUnmatchableT`, …); a transported proof that used
+    -- one at a `CtxTW` context fails the kernel's check
     return none
   | info =>
     if direct (← get).map info.type then
-      throwError "ctxW_transport: {c} mentions a replaced constant and is not a theorem (a `CtxT` constructor, recursor or field other than `inv`/`scope`?)"
+      throwError "ctxW_transport: {c} mentions a replaced constant and is not a theorem or definition (a `CtxT` constructor or recursor?)"
     return none
 
 /-- Declare `n`: theorem `t` with the replacement. -/
