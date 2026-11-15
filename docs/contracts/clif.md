@@ -33,16 +33,20 @@ All names are in namespace `Clif` (per-op semantics in `Clif.Sem`).
 
 ### `FV/Clif/Syntax.lean`
 
-- `inductive Ty | i8 | i16 | i32 | i64 | i128 | f32 | f64`; `Ty.width : Ty → Nat` (8…128;
-  `f32` 32, `f64` 64), `Ty.bytes`, `Ty.name`, `Ty.ofName?`, `Ty.isInt`, `Ty.isFloat`,
-  `Ty.ofWidth?` (integer types), `Ty.double?`/`Ty.half?` (integer types; `none` at floats),
-  `Ty.intOfWidth`, `Ty.width_pos`. **Floats** (S11b, `docs/plans/floats.md`): a float value
-  is its IEEE 754 bit pattern (`Val.bits`), so NaN payloads and signed zeros are exact.
-  `f32const`/`f64const` are `iconst` at a float type (the literal's bits; `Clif.FloatLit`
-  parses and prints Cranelift's hexadecimal float text); `load`/`store`/`select`/block
-  parameters/calls/returns move float bits like equal-width integer bits; `bitcast` keeps the
-  bits at a type of the same width (`i32 ↔ f32`, `i64 ↔ f64`). Float arithmetic is not in S
-  yet (S11c).
+- `inductive Ty | i8 | i16 | i32 | i64 | i128 | f32 | f64 | f16`; `Ty.width : Ty → Nat` (8…128;
+  `f16` 16, `f32` 32, `f64` 64), `Ty.bytes`, `Ty.name`, `Ty.ofName?`, `Ty.isInt`, `Ty.isFloat`
+  (`f16`/`f32`/`f64`, Cranelift's `Type::is_float`), `Ty.isArithFloat` (`f32`/`f64`: the float
+  types whose operations and ABI uses the typed scopes admit), `Ty.ofWidth?` (integer types),
+  `Ty.double?`/`Ty.half?` (integer types; `none` at floats), `Ty.intOfWidth`, `Ty.width_pos`.
+  **Floats** (S11b, `docs/plans/floats.md`): a float value is its IEEE 754 bit pattern
+  (`Val.bits`), so NaN payloads and signed zeros are exact. `f16const`/`f32const`/`f64const` are
+  `iconst` at a float type (the literal's bits; `Clif.FloatLit` parses and prints Cranelift's
+  hexadecimal float text); `load`/`store`/`select`/block parameters/calls/returns move float
+  bits like equal-width integer bits; `bitcast` keeps the bits at a type of the same width
+  (`i16 ↔ f16`, `i32 ↔ f32`, `i64 ↔ f64`). Float arithmetic, comparisons and conversions are in
+  S at `f32`/`f64` (S11c); **`f16` is move-only** (#35): the parser rejects a float operation on
+  an `f16` operand or with an `f16` result as `unsupported` (cg_clif lowers f16 arithmetic to the
+  libcalls `__extendhfsf2`/`__truncsfhf2`). `f128` is not in S.
 - `structure Val where ty : Ty; bits : BitVec ty.width` (`DecidableEq`);
   `Val.ofInt`, `Val.ofNat`, `Val.ofBool` (`i8` 0/1), `Val.toNat`, `Val.toInt`,
   `Val.as? : Val → (ty : Ty) → Option (BitVec ty.width)` (`@[simp] Val.as?_mk`).

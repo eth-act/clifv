@@ -38,7 +38,7 @@ theorem stock_select_nonzero_actual_allocation {f : Clif.Function} {ctx : Ctx}
     · rw [finish]; exact Nat.le_refl _
     · rw [complete,finish]; rfl
     · rw [complete]; rfl
-  case i16 =>
+  case i16 | f16 =>
     obtain ⟨_,_,_,producer,finish⟩ := stock_select_nonzero16_emitter_observed inv enoughEmit typed emitter
     rw [producer] at consumer
     obtain ⟨_,_,_,_,_,_,output,complete⟩ := stock_select_zero_observed data_program ctx rfl enoughSelect width
