@@ -41,7 +41,7 @@ def RetEnd (RA : RL) (ra : BitVec 64) (env : Clif.Env) (p : Clif.Program) (MR : 
 
 /-- **All layers from a segment's start, layers 2–4a given, pausing at calls and at returns
 with their contract** (`arm_isel_refinesCR`, `arm_isel_refines_entryCR`). -/
-theorem arm_isel_refinesCRG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+theorem arm_isel_refinesCRG {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {R : Reg → Reg}
@@ -142,7 +142,7 @@ theorem arm_isel_refinesCRG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     subst hk'
     obtain ⟨ops, hops, rfl, rfl, rfl⟩ := ret_link H3 h6 h7 h8 hvb hi h11
     obtain ⟨n, ops2, hops2, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩ :=
-      rets_alloc hR hent hc hr₀ hrq h9 hvb hi
+      rets_alloc hR hframe hent hc hr₀ hrq h9 hvb hi
     rw [hops] at hops2; cases hops2
     exact ⟨b, kk, allocs, its, m, _, vb, _, ops, ρ, vals, cm, n, hrq, hvb, hi, hops, h10, h12,
       h13, h14, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩
@@ -150,7 +150,7 @@ theorem arm_isel_refinesCRG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
 
 /-- **All layers from related configurations, pausing at calls and at returns with their
 contract** (module doc). -/
-theorem arm_isel_refinesCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+theorem arm_isel_refinesCR {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
@@ -184,13 +184,13 @@ theorem arm_isel_refinesCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ (RetEnd RA ra env p MR slots r₀ tE.1 s' ∨
             ∃ cE, RelQ RA tE cE ∧ (Done RA cE ∨ AtCall RA cE)))) := by
-  exact arm_isel_refinesCRG hR hsc hgv hg hent hX hX0 H3 hc hr₀
+  exact arm_isel_refinesCRG hR hframe hsc hgv hg hent hX hX0 H3 hc hr₀
     (fun hM => isel_alloc_refinesCR H hchk hMR hMRw hX hX0 H3 hc hm2 hm3 hm4 hM) hq hA hr
 
 /-- **All layers from the activation's entry configuration, pausing at calls and at returns
 with their contract** (`arm_isel_refinesCRG` with `CallRets.isel_alloc_refines_entryCR`; as
 `CallLayers.arm_isel_refines_entryC`). -/
-theorem arm_isel_refines_entryCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+theorem arm_isel_refines_entryCR {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
@@ -235,7 +235,7 @@ theorem arm_isel_refines_entryCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ (RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s' ∨
             ∃ cE, RelQ RA tE cE ∧ (Done RA cE ∨ AtCall RA cE)))) :=
-  arm_isel_refinesCRG hR hsc hgv hg hent hX hX0 H3 hc hr₀ (s := cs)
+  arm_isel_refinesCRG hR hframe hsc hgv hg hent hX hX0 H3 hc hr₀ (s := cs)
     (cM := ⟨0, RA.rf.blocks[0]!.toList, m₀, w₀⟩)
     (fun hM => isel_alloc_refines_entryCR (ρ₀ := fun _ => 0) H hchk hMR hMRw hX hX0 hMem hMRs
       hreg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs H3 hc (hm3 _ _)

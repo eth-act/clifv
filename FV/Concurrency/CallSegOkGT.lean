@@ -164,12 +164,12 @@ registers). -/
 theorem r0_saves {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
     (hS : StatOk L env p g) :
     ∀ r ∈ (g.RL L).af.saves, ckeep r (g.r0 L r) = ckeep r (regVal (g.RL L).s0 r) := by
-  obtain ⟨-, -, -, hsv, -⟩ := RL.frame_facts hS.wf
+  obtain ⟨-, -, hsv, -⟩ := RL.alloc_facts hS.wf
   intro r hr
   have hcs := hsv.1 r hr
   simp only [Act.r0, locVal]
   exact congrArg (ckeep r) (regVal_calleeSaved_congrX
-    (fun f h1 h2 h3 h4 h5 h6 h7 => prologue_fields hS.wf hS.abi f h1 h3 h5 h2 h6 h7) r hcs)
+    (fun f h1 h2 h3 h4 h5 h6 h7 => prologue_fields hS.wf hS.frame hS.abi f h1 h3 h5 h2 h6 h7) r hcs)
 
 /-- **The activations of a link with externals**: compiled program functions and externals
 (`CallSegExt.XAct`). -/
@@ -608,7 +608,7 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
       have hD : AllocInvD s'.mem g.ext.length
           ⟨{ { s'.frame with body := rest' } with regs := regs }, g.ext, cm⟩ :=
         hopens _ (by rw [hop]; exact List.mem_cons_self ..)
-      obtain ⟨vV'', vP'', cM'', h1, h2, h3, h4, h5⟩ := resume_ret (RB := h.RL L) hS.wf hSB.wf rfl
+      obtain ⟨vV'', vP'', cM'', h1, h2, h3, h4, h5⟩ := resume_ret (RB := h.RL L) hS.wf hSB.wf hSB.frame rfl
         hS.noCall hS.H hS.chk hS.ar hS.low hS.ind hS.ver hS.nt hS.out0 hS.ΓF hS.slot hS.sym hS.H3
         hS.checked hS.dv hRQ.1 hRQ.2 hPz hat hm2 hm3 hm4 hSB.abi
         (by simp only [Act.RL, act_fb, act_base]; rw [hra, hF]; exact hraOut)
@@ -653,7 +653,7 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
       | cons a cs => exact ⟨a.1, a.2, cs, rfl⟩
     obtain ⟨⟨cnm, hcA⟩, hrA, hra⟩ := hLv.ret hroot
     have hcall' : s'.callers = [] := hLv'.call
-    obtain ⟨k2, d2, hR2, hE2⟩ := ret_seg (Bnd := Bnd) hLv.stat.ok hLv.stat.mem hLv.stat.wf
+    obtain ⟨k2, d2, hR2, hE2⟩ := ret_seg (Bnd := Bnd) hLv.stat.ok hLv.stat.mem hLv.stat.wf hLv.stat.frame
       hLv.stat.abi hLv.bnd hcA hrA hra hext hret hat
       hcall' M DE (prun_okPriv hLv.bnd hrest)
     have hR12 : RealT env p Bnd ls (k' + k2) _ d2 := RealizedT.trans hR hR2

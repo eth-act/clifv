@@ -65,8 +65,8 @@ theorem regLevel_value_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   let XN := XI.upTo N
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
-  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
+  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   have hR : R.Wf := hRn 0
   have hC' : ∀ n, CalleeOkGP (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
       (CallAt fa base) (XN.at n) H vcp.CallSite gv := fun n => by
@@ -81,7 +81,7 @@ theorem regLevel_value_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     · show CalleeTryOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
       rw [XI.upTo_at_lt h]; exact hCT ht n h
     · exact calleeTryOkGP_upTo_ge (by omega)
-  obtain ⟨m₀, h⟩ := regLevel_prefix_coreG hR hent hbe hcheck
+  obtain ⟨m₀, h⟩ := regLevel_prefix_coreG hR (lowerRFunc_frame halloc) hent hbe hcheck
     (sem := fun n => valueSemV R.gv R.F R.ctx (XN.at n))
     (fun n => ((realizes_value_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T

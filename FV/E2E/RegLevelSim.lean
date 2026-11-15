@@ -428,8 +428,9 @@ def topN : Nat := 16 + clobberBytes R.af.saves
 def topB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 R.topN
 
 /-- The state after the prologue (its `prologueSteps` instructions: the stack-probe loop runs its
-body `probeCount` times, #581). -/
-noncomputable def sP : Arm.ArmState := iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0
+body `probeCount` times, #581); the entry state for a frameless leaf, which has no prologue (#1028). -/
+noncomputable def sP : Arm.ArmState :=
+  if R.af.frame then iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0 else R.s0
 
 /-- What the prologue leaves in fp/lr and the clobber area. -/
 noncomputable def topImg : BitVec (R.topN * 8) := Arm.read_mem_bytes R.topN R.topB R.sP

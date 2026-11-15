@@ -310,7 +310,7 @@ theorem armStepX_call_irrel (X : ExtSem)
 realises from the activation's call-`n` states (`RealizesCP`, every `n`): every state of the
 counted VCode run with counter `N` at a call is matched by a machine state of the run with `N`
 call states before it, at the body `sp`, with the contract's premises (`CallSiteAt`). -/
-theorem regLevel_prefix_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem regLevel_prefix_core {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {w₀ : Arm.ArmState}
     (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {sem : Nat → ISem CV Arm.ArmState}
@@ -324,7 +324,7 @@ theorem regLevel_prefix_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
       (∃ info, i = .call info ∨ ∃ ti, i = .tryCall info ti) → ∀ ops, i.operands = .ok ops →
       ∃ u, OnCall R.step R.fa R.base R.s0 N u ∧ spOf u = R.spB ∧
         CallSiteAt R.F R.K R.G R.s0 R.fa R.base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
-  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR hent hbe
+  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR hframe hent hbe
   let m₀ := locVal R.fr (iterN R.step n0 R.s0)
   have hSim := isSimulation_match (sem := ISem.counted sem) (keep := ckeep) hcheck
     (fun r => m₀ (.reg r))
@@ -460,8 +460,8 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
   let XN := XI.upTo N
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
-  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
+  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   have hR : R.Wf := hRn 0
   have hC' : ∀ n, CalleeOkGP (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
       (CallAt fa base) (XN.at n) H vcp.CallSite gv := fun n => by
@@ -476,7 +476,7 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     · show CalleeTryOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
       rw [XI.upTo_at_lt h]; exact hCT ht n h
     · exact calleeTryOkGP_upTo_ge (by omega)
-  obtain ⟨m₀, h⟩ := regLevel_prefix_core hR hent hbe hcheck (sem := fun n => csemV R.gv R.F R.ctx (XN.at n))
+  obtain ⟨m₀, h⟩ := regLevel_prefix_core hR (lowerRFunc_frame halloc) hent hbe hcheck (sem := fun n => csemV R.gv R.F R.ctx (XN.at n))
     (fun n => ((realizes_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T
       (T' := R.Good) fun _ h => h.good).congr_Q fun u c =>

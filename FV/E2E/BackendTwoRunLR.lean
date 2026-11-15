@@ -80,7 +80,7 @@ after `retLen` steps in `RetAgreeX (frameDrop + K) (spv s0)`, with the same prog
 memory outside `Zc d d'`. The epilogue's `sp` adjustment and pops read frame bytes but the
 saved-LR word (`ret_machineNA`'s located reads), outside `Zc`; the frame-record reload reads the
 saved fp word, outside `Zc`. -/
-theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem RL.retLock_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hx30 : R.fa.x30Free R.lm = true) {u u' : Arm.ArmState} {e : MConf CV Arm.ArmState}
     (hqa : QA R u e) (hre : R.RetsAt e) {d d' : MConf CV Arm.ArmState}
     (hl : StEqOutX (R.Zc d d') u' u) :
@@ -90,10 +90,10 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
     (∀ a, ¬ R.Zc d d' a → (iterN R.step R.retLen u').mem a = (iterN R.step R.retLen u).mem a) ∧
     ∀ i < R.retLen, StEqOutX (R.Zc d d') (iterN R.step i u') (iterN R.step i u) := by
   obtain ⟨b, k, allocs, its, m, w, vb, us, rfl, hvb, hi⟩ := hre
-  obtain ⟨n3, hn3, hgx, -⟩ := ret_machineNA (Y := fun _ => True) hR hent hqa hvb hi
+  obtain ⟨n3, hn3, hgx, -⟩ := ret_machineNA (Y := fun _ => True) hR hframe hent hqa hvb hi
   subst hn3
   obtain ⟨mt, hq⟩ := qa_q hqa
-  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR hframe
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -155,7 +155,7 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
@@ -356,13 +356,13 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
 /-- **The return agreement from the lock at the `rets` item** (module doc): from states locked at
 `Zc d d'`, the first (`u`) at `QA` of a `rets` configuration, the two runs return after `retLen`
 steps in `RetAgreeX (frameDrop + K) (spv s0)`. -/
-theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hx30 : R.fa.x30Free R.lm = true) {u u' : Arm.ArmState} {e : MConf CV Arm.ArmState}
     (hqa : QA R u e) (hre : R.RetsAt e) {d d' : MConf CV Arm.ArmState}
     (hl : StEqOutX (R.Zc d d') u' u) :
     RetAgreeX (frameDrop R.af + R.K) (spv R.s0) (iterN R.step R.retLen u')
       (iterN R.step R.retLen u) :=
-  (RL.retLock_rets hR hent hx30 hqa hre hl).1
+  (RL.retLock_rets hR hframe hent hx30 hqa hre hl).1
 
 /-- **A base call keeps the lock** (`HookNIX`, #704) when the lock set is inside the exterior:
 the worlds of the two configurations differ only on `F` (the lock set is `F` or the difference
@@ -474,10 +474,10 @@ theorem backend_twoRunLER (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
   obtain ⟨a0, hat, hle⟩ := hck.at
   have hW0 : ({ actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp) with X := XI.at 0 } :
       RL).Wf :=
-    ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
+    ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
-      he.abi.program, he.gfree⟩
-  exact RL.retAgreeX_rets hW0 he.abi hx30 (QWA.qaX hqA hW0 he.abi) hre hLB.symm
+      he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
+  exact RL.retAgreeX_rets hW0 (lowerRFunc_frame hc.alloc) he.abi hx30 (QWA.qaX hqA hW0 he.abi) hre hLB.symm
 
 end
 

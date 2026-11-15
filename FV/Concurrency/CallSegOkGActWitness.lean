@@ -47,6 +47,7 @@ theorem statOk_C {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitVec 64
   exact {
     mem := by simp [link2]
     wf := wf_C
+    frame := frameRC
     scope := scopeRC
     abi := abiRC
     H := H
@@ -108,7 +109,7 @@ theorem chainP_entry_C {env : Clif.Env} (henv : env.extern "ld" = none) {c : Bit
   obtain ⟨g⟩ := g
   simp only at hF hs0 hK hG hra hf hΓ hcg hsl
   subst hF hs0 hK hG hra hf hΓ hcg hsl
-  obtain ⟨-, hq, hA⟩ := q_init_lines (R := link2.act callerF sC0 0 GL) wf_C abiRC bodyRC
+  obtain ⟨-, hq, hA⟩ := q_init_lines (R := link2.act callerF sC0 0 GL) wf_C frameRC abiRC bodyRC
   exact chainP_entry hS hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hq hA
 
 /-- **Non-vacuity of `chainP_resume`**: the caller from every paused configuration related to a
@@ -162,7 +163,7 @@ def actL (s0 : ArmState) : Act where
 /-- **Non-vacuity of `ret_seg`**: every activation of `atomic_load` entered by the caller's `bl`
 at its done `return` with its contract, below the caller's suspended frame. -/
 theorem ret_seg_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program}
-    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
+    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hframeB : (link2.act ldF s0 0 RC.F).af.frame = true) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
     {x : ArmState} {sR : Clif.State}
     (hret : RetEnd ((actL s0).RL link2) (actL s0).ra env p (RelW (actL s0).Γ (actL s0).f (actL s0).c)
       (actL s0).slots ((actL s0).r0 link2) x sR)
@@ -181,7 +182,7 @@ theorem ret_seg_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program}
           v.1 = set_program (iterN ((actL s0).RL link2).step k x) (callerF.fb.program callerF.base) ∧
           d' = (encT U (.run ⟨{ ({ csC.frame with body := [] } : Clif.Frame) with regs := regs }, [],
             cm⟩), fun a => D a ∨ PrivA ((actL s0).RL link2) a)) :=
-  ret_seg (g := actL s0) (Bnd := fun _ => True) ok2 (by simp [actL, link2]) hRB hent
+  ret_seg (g := actL s0) (Bnd := fun _ => True) ok2 (by simp [actL, link2]) hRB hframeB hent
     (fun _ _ => trivial) (cnm := "f") (by simp [actL, link2]) ra_in ra_out rfl hret hat hcall U D hr
 
 end Concurrency.CallSegOkG.Witness

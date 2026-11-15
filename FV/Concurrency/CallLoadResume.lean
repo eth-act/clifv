@@ -77,9 +77,9 @@ theorem prefixCQ : ∃ (n0 : Nat) (m : Loc → CV),
       NoStx (iterN RC.step i RC.s0)) ∧ (iterN RC.step i RC.s0).program = RC.fb.program RC.base) ∧
     Q RC (iterN RC.step n0 RC.s0) (.run ⟨0, restC, m, w₀C⟩) ∧
     regVal (iterN RC.step n0 RC.s0) (.x 0) = 0 := by
-  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
-  have hpe := prologue_evs wfRC abiRC probeF_RC hlat
-  have hpr0 := prologue_program wfRC abiRC hlat
+  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC frameRC abiRC bodyRC
+  have hpe := prologue_evs wfRC frameRC abiRC probeF_RC hlat
+  have hpr0 := prologue_program wfRC frameRC abiRC hlat
   generalize hn0 : (prologueSteps RC.af.saves RC.af.frameSize RC.af.isCaller) = n0 at hpe hpr0 hq hA
   have hq0 := hq
   have hA0 := hA
@@ -147,7 +147,7 @@ theorem callerPost {y : ArmState} (hy : PostA sBF y) :
   obtain ⟨n1, hqa2, hp1⟩ := moves_privQA wfRC (postMv (.x 0)) _ _ _ (.inl ⟨hq1, hA1⟩)
     (moves_noRet (R := RC) postMvC_noRet)
   obtain ⟨mt2, hq2⟩ := qa_q hqa2
-  obtain ⟨n2, hp2, -⟩ := rets_privP wfRC abiRC hq2 vb0C instC2
+  obtain ⟨n2, hp2, -⟩ := rets_privP wfRC frameRC abiRC hq2 vb0C instC2
   refine ⟨n1 + n2, fun i hi => ?_⟩
   by_cases h : i < n1
   · exact ⟨(hp1 i h).1, (hp1 i h).2.1⟩

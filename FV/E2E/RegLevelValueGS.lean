@@ -152,7 +152,7 @@ theorem QWA.op {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Li
 theorem aInv_step_anySem {R : RL} {sem : ISem CV Arm.ArmState} (hR : R.Wf)
     {s : Arm.ArmState} {c c' : MConf CV Arm.ArmState}
     (hq : Q R s c) (hA : AInv R c) (h : MStep R.vc sem ckeep R.rf c c') : AInv R c' := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases h with
   | @move b src dst its m w =>
     intro hb hop

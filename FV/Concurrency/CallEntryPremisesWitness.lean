@@ -25,6 +25,6 @@ theorem entry_premises_L {s : ArmState} {m : Loc → CV} (hS : StRel RC s m w₀
         (prologueSteps (RLx s).af.saves (RLx s).af.frameSize (RLx s).af.isCaller) (RLx s).s0) (.reg r)) =
         ckeep r (regVal s r)) ∧
     spv (RLx s).s0 = spOf s ∧ Arm.r .PC s + 4#64 = Arm.r .PC s + 4#64 :=
-  entry_premises (wfX hS) (abiX hS) (fun f h1 h2 => r_enterL h1 h2 s) (xreg30_enterL s)
+  entry_premises (wfX hS) (frameX _) (abiX hS) (fun f h1 h2 => r_enterL h1 h2 s) (xreg30_enterL s)
 
 end Concurrency.CallSeg.WitnessC

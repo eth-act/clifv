@@ -231,6 +231,7 @@ on `RL.realizesJCPTP`). -/
 theorem RL.twoRunCTP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI XI' : ExtSemI}
     (hRn : ∀ n, ({ R with X := XI.at n } : RL).Wf)
     (hRn' : ∀ n, ({ R with s0 := t0, G := G', X := XI'.at n } : RL).Wf)
+    (hframe : R.af.frame = true)
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hcheck : CheckedAt R.vc R.rf cc ins a0) (ρ₀ : Nat → CV)
     (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ ρ₀ (fun r => m₀ (.reg r)))
@@ -345,9 +346,9 @@ theorem RL.twoRunCTP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI 
   let R'' : RL := { R with s0 := t0, G := G' }
   have hR0 : R0.Wf := hRn 0
   have hR0' : R0'.Wf := hRn' 0
-  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (R := R0) (Y := fun _ => True) hR0 hent hbe
+  obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (R := R0) (Y := fun _ => True) hR0 hframe hent hbe
   obtain ⟨n0', hn0', ht0', hq0', hA0', -⟩ :=
-    q_initNA (R := R0') (Y := fun _ => True) hR0' hent' hbe'
+    q_initNA (R := R0') (Y := fun _ => True) hR0' hframe hent' hbe'
   have e0 : n0 = (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := hn0
   have e0' : n0' = (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := hn0'
   subst e0 e0'
@@ -363,9 +364,9 @@ theorem RL.twoRunCTP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI 
     countIn_zero_of fun i hi => (ht0' i hi).1.2
   -- the prologue does not read the external semantics
   have hRw : R.Wf := ⟨hR0.check, hR0.alloc, hR0.emit, hR0.layout, hR0.lm, hR0.fit, hR0.stack,
-    hR0.psF, hR0.prog0, hR0.gfree⟩
+    hR0.psF, hR0.prog0, hR0.gfree, hR0.leaf⟩
   have hRw'' : R''.Wf := ⟨hR0'.check, hR0'.alloc, hR0'.emit, hR0'.layout, hR0'.lm, hR0'.fit,
-    hR0'.stack, hR0'.psF, hR0'.prog0, hR0'.gfree⟩
+    hR0'.stack, hR0'.psF, hR0'.prog0, hR0'.gfree, hR0'.leaf⟩
   have hsP : ∀ n, ({ R with X := XI.at n } : RL).sP = R.sP := fun n => RL.sP_withX hRw hent (XI.at n)
   have hsP' : ∀ n, ({ R with s0 := t0, G := G', X := XI'.at n } : RL).sP = R''.sP :=
     fun n => RL.sP_withX hRw'' hent' (XI'.at n)
@@ -401,9 +402,9 @@ theorem RL.twoRunCTP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI 
   obtain ⟨⟨W, hqA, hqB⟩, hJr⟩ := hjN
   have hqA0 : QA R0 _ _ := (RL.QA_withX R (XI.at 0) hPX _ _).2 hqA.qa
   have hqB0 : QA R0' _ _ := (RL.QA_withX R'' (XI'.at 0) hPX' _ _).2 hqB.qa
-  obtain ⟨n3, hn3, ht3, hpc3, -⟩ := ret_machineNA (R := R0) (Y := fun _ => True) hR0 hent hqA0 hvb hi
+  obtain ⟨n3, hn3, ht3, hpc3, -⟩ := ret_machineNA (R := R0) (Y := fun _ => True) hR0 hframe hent hqA0 hvb hi
   obtain ⟨n3', hn3', ht3', hpc3', -⟩ :=
-    ret_machineNA (R := R0') (Y := fun _ => True) hR0' hent' hqB0 hvb2 hi2
+    ret_machineNA (R := R0') (Y := fun _ => True) hR0' hframe hent' hqB0 hvb2 hi2
   have e3 : n3 = R.retLen := hn3
   have e3' : n3' = R.retLen := hn3'
   subst e3 e3'
@@ -530,12 +531,12 @@ theorem RL.twoRunPRTP {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb :
   subst hF hF'
   exact RL.twoRunCTP (R := actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)) (t0 := t0)
     (G' := G') (XI := XI) (XI' := XI')
-    (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
+    (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
-      he.abi.program, he.gfree⟩)
-    (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
+      he.abi.program, he.gfree, noLeaf_of_lowerRFunc halloc⟩)
+    (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack, hpsF,
-      he'.abi.program, he'.gfree⟩)
+      he'.abi.program, he'.gfree, noLeaf_of_lowerRFunc halloc⟩) (lowerRFunc_frame halloc)
     hat ρ₀ (fun _ => Inv_mono hle Inv_entryState) he.abi he'.abi he.body he'.body OkG OkG'
     (fun n => (he.calls n).mono fun _ h => ⟨onCallPR_of he.proph he.regp h.1, h.2⟩)
     (fun h n => (he.tries h n).mono fun _ h => ⟨onCallPR_of he.proph he.regp h.1, h.2⟩) he.tls

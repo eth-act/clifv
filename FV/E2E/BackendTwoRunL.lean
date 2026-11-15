@@ -304,7 +304,7 @@ theorem QWA.qaX {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List L
     (hR : ({ R with X := X } : RL).Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
     QA { R with X := X } s c :=
   (RL.QA_withX R X (RL.sP_withX (R := R) (⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit,
-    hR.stack, hR.psF, hR.prog0, hR.gfree⟩ : R.Wf) hent X) s c).2 h.qa
+    hR.stack, hR.psF, hR.prog0, hR.gfree, hR.leaf⟩ : R.Wf) hent X) s c).2 h.qa
 
 /-- **The lock carries over a segment end** (`hend`): at configurations `d`, `d'` related to the
 states by `QWA`, a byte outside `Zc d d'` and inside `Zc c c'` is outside `F` where the two worlds

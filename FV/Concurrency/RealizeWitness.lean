@@ -154,6 +154,9 @@ theorem wfRA : RA.Wf := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := factsF
   exact ArmAllocThread.Witness.wf_of allocF h1 h2 h3 h4 h5 h6 h7 h8 h9
 
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameRA : RA.af.frame = true := ArmAllocThread.Witness.frame_act factsF.1
+
 theorem codeRA : ∀ k < RA.fb.words.size,
     Arm.read_mem_bytes 4 (0x10000#64 + BitVec.ofNat 64 (4 * k)) RA.s0 = RA.fb.words[k]! := by
   native_decide

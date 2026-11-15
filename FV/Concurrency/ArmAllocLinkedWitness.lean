@@ -34,7 +34,7 @@ theorem caller_lsCL {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
       (n = ls.length ∨ ∃ tE, PRun Policy.arm MC2 (OkPriv RC)
         (iterN RC.step (prologueSteps RC.af.saves RC.af.frameSize RC.af.isCaller) RC.s0, mon) (ls.take n) tE ∧
         RelQ RC tE cE ∧ Pause RC cE) := by
-  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
+  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC frameRC abiRC bodyRC
   exact arm_alloc_refines_lsCL wfRC scopeRC agreesAt_MC2 hq hA hr
 
 end Concurrency.CallSeg.WitnessC
