@@ -82,7 +82,11 @@ the settings of a Cranelift filetest (the `--stock-config` request schema) are c
 settings the proved compiler does not implement reject the request (exit 3) or, per function,
 the function's output (`StockConfig.admit`; "compiled, not for these settings: …"). No
 stock-configured step runs: the functions are compiled exactly as without the option. The
-receipt lists, per function, whether `backend_correct` covers it. `scripts/stock-compiler-compare.py`
+receipt lists, per function, whether `backend_correct` covers it. Without `preserve_frame_pointers`
+a leaf that needs no frame is compiled without one (`Backend.frameless`); it is covered by
+`E2E.backend_correct_final_cleanup_leaf` (normal-return form: the leaf makes no call) when its
+code passes `FnAsm.leafChk` and its arguments are in registers (`E2E.regArgsB`), which stderr and
+the receipt (`theorem`, `frameless_leaf`) state. `scripts/stock-compiler-compare.py`
 counts the outputs of this mode that are identical to stock and covered (the honest metric).
 
 A function inside the theorem's scope whose size is over the validation budget
@@ -361,14 +365,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- argument is in a register (`E2E.regArgsB`). A function without calls is unwound through by
   -- no exception, so the theorem's normal-return form covers it. Only with dead cleanup (the
   -- theorem's pipeline), and not for an `i128`-legalised function (`backend_correct_legal_wide`
-  -- has no frameless form), without `--opt` (the mid-end theorems have none either). A function
+  -- has no frameless form). (`--opt` is refused in this mode.) A function
   -- constant-phi removal changed is covered by the theorem composed with the pass (`E2E.pass_lift`).
   -- With the spill fallback allocation (`AllocChecked` in place of `checkAlloc`), the theorem's
   -- `CompiledCleanupAL` form `E2E.backend_correct_final_cleanup_exL` covers it.
   let nf ← noFrame.get
   let leafMiss? (name : String) : Option String :=
     if !o.deadCleanup then some "no dead cleanup (backend_correct_final_cleanup_leaf's pipeline)"
-    else if o.opt.isSome then some "--opt (the mid-end theorems have no frameless form)"
     else if lg.accepted.contains name then some "i128-legalised"
     else if !(fa.funcs.find? (·.name == name)).any (·.leafChk) then
       some "FnAsm.leafChk: a line other than ret names x29/x30"
