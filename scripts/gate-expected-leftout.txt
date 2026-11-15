@@ -12,9 +12,9 @@
 #   pinned example needs its line; an example without lines is not checked.
 # - No pin may rise above the base revision's (main's) pin for the same executable: lowering a
 #   left-out count is free, raising one is a parent decision.
-# - Not a baseline of "intended" exclusions: deps' and survey's non-zero counts include the
-#   SrcScopeB `declSigB` exclusions that #1036 introduced (#1042 fixes them), and deps' include
-#   the 113 float-call functions that S11g verifies per function (#1048).
+# - Not a baseline of "intended" exclusions: deps' and survey's counts are the SrcScopeB
+#   `declSigB` exclusions that #1036 introduced (#1042 addresses them); deps' include
+#   num_integer's one float-call function verified since S11g, which fails `declSigB` the same way.
 #
 # Format: EXAMPLE  EXECUTABLE  LEFT_OUT
 
@@ -38,7 +38,7 @@ survey   h_dyn_generic/h_dyn_generic  0
 survey   h_dyn_generic/values  0
 survey   i_alloc/i_alloc  0
 survey   i_alloc/values  0
-deps     deps-demo/crates  126
-deps     deps-demo/deps_demo  105
-deps     deps-demo/deps_demo  59
-deps     deps-demo/deps_demo  101
+deps     deps-demo/crates  18
+deps     deps-demo/deps_demo  13
+deps     deps-demo/deps_demo  10
+deps     deps-demo/deps_demo  13

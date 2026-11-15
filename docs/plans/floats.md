@@ -1073,17 +1073,29 @@ verified (the 113 of the histogram), binary check 4 of 4, SAME 16; fv-demo 1,372
 survey 3,251 of 3,251 unchanged (2 of 2, 18 of 18); generated code unchanged (encode-check 1,473
 identical, crate proofs regenerate to the same files). deps' 14 left: 2 pooled `f64const`
 (#1002 part 2), 9 SIMD types (`i32x4`/`i64x2`: sha2 8, zmij 1), 3 over the validation budget
-(sha2 2, tiny_keccak 1). **The 113 do not reach the executables yet (#1048):** `lean-link
---verified` admits a function into an executable's region only if it meets `fnScopeInTB` or the
-admission predicate `fnScopeInTCB`, whose `driverInTCB`/`stmtInB` requires `sigIntB` of a
-`call`'s callee, so they are left out of the region with their cg_clif code (per executable
-126/105/59/101 left out, of which 17/12/9/12 are `SrcScopeB` `declSigB` exclusions that #1036
-introduced and #1042 addresses; Lean-compiled functions in the binary check unchanged,
-19,900/17,134/15,222/16,726; pinned per executable in `scripts/gate-expected-leftout.txt`, and
-cargo fv's `--lean-link:` line counts them). Still out: a pooled `f64const` (#1002 part 2);
-float `call_indirect`/`try_call_indirect` (`sigIntB`); the decider-free totality scopes
-(`InScopeInT3`, `fnScopeInTB3F`: integer extern signatures), so float calls are admitted through
-the run-time deciders (`lowerCheckTCF`, `okRWithTS`) only, and in executables not before #1048.
+(sha2 2, tiny_keccak 1). **#1048: the 113 inside the executables.** `lean-link --verified`
+admits a function into an executable's region if it meets `fnScopeInTB` (`InScopeInT`, under the
+totality theorem `resultsCleanupT_ok_inT`) or the admission predicate `fnScopeInTCB` (no
+totality theorem: it contains the run-time decider `lowersTCB`). Until #1048 `fnScopeInTCB`'s
+`driverInTCB` asked `stmtInB`'s `sigIntB` of every `call`'s callee, so the 113 were left out of
+the regions with cg_clif's code (per executable 126/105/59/101 left out, Lean-compiled functions
+in the binary check 19,900/17,134/15,222/16,726). `driverInTCB` now uses `stmtInTCB` (a `call`
+of any signature with an AAPCS64 callee); `stmtInB`, `fnScopeInTB`/`InScopeInT` and every totality
+theorem are unchanged (`driverInTCB_of_driverInB`, `fnScopeInTCB_of_T3F`: statements unchanged).
+The executables' correctness theorem is the typed route's, `Link.SemanticCompilerWith
+.attemptT_correct` → `E2E.SemanticExecBytes.binary_correct_exec_provenTS`, whose compiler-side
+premises are the link-time checks `okBTS` (`okRWithTS`, class-aware since #742) and
+`BinOkWithResults`, `codeMapB`, `GotOk`: no input condition. Measured: per executable
+20,008/17,226/15,271/16,814 Lean-compiled functions in the binary check (+108/+92/+49/+88),
+left out 18/13/10/13 (the `SrcScopeB` `declSigB` exclusions of #1036, which #1042 addresses,
+plus num_integer's float-call function, which fails `declSigB` the same way), admitted only
+through `fnScopeInTCB` (so without a totality claim; lean-link's coverage line prints it)
+140/117/65/113; binary check 4 of 4, SAME 16; cargo fv: 21,005 of the 21,023 verified functions
+inside the regions, 18 left out; fv-demo and survey unchanged (1,372 inside of 1,372; 3,249 of
+3,251, 2 left out). Witness `FloatPlainCallsTWitness.admitted_tcb`. Still out: a pooled
+`f64const` (#1002 part 2); float `call_indirect`/`try_call_indirect` (`sigIntB`); the
+decider-free totality scopes (`InScopeInT3`, `fnScopeInTB3F`: integer extern signatures), so
+float calls are admitted through the run-time deciders (`lowerCheckTCF`, `okRWithTS`) only.
 
 ## 4. Known hazards
 

@@ -4464,9 +4464,12 @@ outside the program alike. The decider-free scopes (`InScopeInT3`, `fnScopeInTB3
 extern signatures. Witnesses `FVTest/E2E/FloatCallFinalTCF.lean` (`backend_correct_finalTCF_fCallP`)
 and `FVTest/Link/FloatPlainCallsT.lean` (`%f`/`%h` passing `f32`/`f64` by `bl` and by `blr`
 through the GOT, an outside `f64` callee; `okBTS`, `attemptT`, `correct_spec`). Generated code
-is unchanged. `lean-link --verified` still leaves these functions out of the region (cg_clif
-code): its input condition `InScopeInT` (`fnScopeInTCB`'s `driverInTCB`/`stmtInB`) keeps integer
-`call` signatures (#1048). `docs/plans/floats.md` (S11g) lists the statement changes.
+is unchanged. `lean-link --verified` admits such functions into the executables' regions
+through the admission predicate `fnScopeInTCB` (#1048: its `driverInTCB` uses `stmtInTCB`, a
+`call` of any signature); they are under the typed route's correctness theorem
+(`attemptT_correct`, the link-time checks `okRWithTS`) and under no totality theorem, which
+lean-link's coverage line states with the per-executable count of functions admitted only
+through `fnScopeInTCB`. `docs/plans/floats.md` (S11g) lists the statement changes.
 
 ## Contract changes taken (byte-identical)
 
