@@ -513,14 +513,14 @@ theorem argStoreC_step {Rd F : BitVec 64 → Prop} {isem : Sem} {sb : Nat}
           .fpuStore .size32 (.vreg x .float) (.spOffset off) trustedFlags := by
         simp [argStoreC, stackArgStore, hcx, Reg.homeCls]
       rw [this, hlo _ (by decide)]
-      exact hFP.2 .size32 x (.spOffset off) trustedFlags v [] w _ (.inl rfl) ha hav
+      exact hFP.2.1 .size32 x (.spOffset off) trustedFlags v [] w _ (.inl rfl) ha hav
     · have ha : amodeAddr sb (.spOffset (off : Int)) ScalarSize.size64.bytes [] w =
           some (spOf w + BitVec.ofNat 64 off) := by simp [amodeAddr]
       have : argStoreC cls (off, x, 8) =
           .fpuStore .size64 (.vreg x .float) (.spOffset off) trustedFlags := by
         simp [argStoreC, stackArgStore, hcx, Reg.homeCls]
       rw [this, hlo _ (by decide)]
-      exact hFP.2 .size64 x (.spOffset off) trustedFlags v [] w _ (.inr rfl) ha hav
+      exact hFP.2.1 .size64 x (.spOffset off) trustedFlags v [] w _ (.inr rfl) ha hav
 
 /-- **The outgoing stores of typed arguments** (`argStores_run` with `argStoreC`). -/
 theorem argStoresC_run {Rd F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}

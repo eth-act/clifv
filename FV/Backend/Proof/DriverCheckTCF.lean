@@ -5,8 +5,9 @@ import FV.Backend.Proof.DriverCheckCF
 # The typed lowering validator with the proven float operations (S11f, #35)
 
 Soundness of `lowerCheckTCF` (`DriverCheckCF.lean`: `lowerCheckTC` whose supported-instruction
-check is `instScopeOkF`, `Compile.instETF`): `lowerShapeTC_of_okF`, `loweringTCF_of_check` (the
-shape `LowerShapeTC`, whose scope is `InstScopeTF`) and the tail facts
+check is `instScopeOkFL`, `Compile.instETFL`; #1002 part 2, it was `instScopeOkF`):
+`lowerShapeTC_of_okF`, `loweringTCF_of_check` (the shape `LowerShapeTC`, whose scope is
+`InstScopeTFL`) and the tail facts
 (`noTryCallTCF_of_check`, `noTlsTCF_of_check`, `callsStackTCF_of_check`, `tryStackTCF_of_check`,
 `entryOkTCF_of_check`, `entryRegsTCF_of_check`). It accepts what `lowerCheckTC` accepts
 (`lowerCheckTCF_of_lowerCheckTC`). `lowerCheckTC` and its theorems are unchanged.
@@ -24,7 +25,7 @@ theorem shapeOkTF_of_shapeOkT {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 
   unfold shapeOkTF
   cases hI : instScopeOk ctx
   · simp [hI] at h
-  · have hF := instScopeOkF_complete (instScopeOk_sound hI).toTF
+  · have hF := instScopeOkFL_complete (instScopeOk_sound hI).toTF.toTFL
     simp only [hI] at h
     simp only [hF]
     exact h
@@ -61,7 +62,7 @@ theorem lowerShapeTC_of_okF {f : Clif.Function} {vc : VCode} {ctx : Ctx}
     intro bi B L hB hL
     have := all_range hblk (lt_of_getElem? hB)
     simpa [hB, hL] using this
-  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, instScopeOkF_sound hsc, renOf_vrenaming gn, hgn, ?_,
+  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, instScopeOkFL_sound hsc, renOf_vrenaming gn, hgn, ?_,
     hlen, hsize, ?_, ?_, hfresh, ?_, ?_⟩
   · intro B hB p hp
     have := List.all_eq_true.mp (List.all_eq_true.mp hpar B hB) p hp

@@ -1,5 +1,6 @@
 import FV.Backend.Proof.LowerContractTPF
 import FV.Backend.Proof.IselCtlCallF
+import FV.Backend.Proof.IselFloatConstPool
 
 /-!
 # The typed statement dispatcher with float calls (S11g, #1015)
@@ -7,11 +8,13 @@ import FV.Backend.Proof.IselCtlCallF
 `LowerContractTF.lean`'s / `LowerContractTPF.lean`'s statement dispatchers over contexts whose
 `call` statements may take and return `f32`/`f64` (`CtxTW`: no condition on the callees of the
 `call`s and on the classes of their arguments; for the scope `Compile.functionETCF` it is the
-validated shape's `CtxInvT` and `InstScopeTF`). The first matching root of `lower` is
+validated shape's `CtxInvT` and `InstScopeTFL`). The first matching root of `lower` is
 
-* a non-closure root: never matches (`lower_nonroot_nomatchTFC`: the exclusion checker over
+* a non-closure root: never matches (`lower_nonroot_nomatchTFCL`: the exclusion checker over
   `floatOpsFC`, in which a `call` of a callee returning a float has a float result);
 * a float root (movement, memory, arithmetic, conversion, `fcmp`) or the float arm of `select`;
+  #1002 part 2: the movement roots by `lowerRulesCorrectTL_program` (an `f64const` from the
+  literal pool among them, under `MemRefinesFP`'s `PoolRefinesFP`; `hT` gives the `select` arm);
 * on a subset-E instruction other than a `call`, an integer root;
 * on a `call`, a `call` root (rules 1031 `bl`, 1032 GOT + `blr`): the float family
   `CallRulesCorrectTFP` (`IselCtlCallF`; arguments in their values' classes, x0..x7 / v0..v7,
@@ -92,9 +95,9 @@ theorem lowerInstOkP_of_rulesTFW (hrules : LowerRulesCorrectTIW program)
   have hmv : floatMoveRootRule r = true → ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧
       out = .regsVec rss ∧ LowerInstOkP Rd Pc isem MR env cp ctx inst info.results st rss st' ms := by
     intro hfm
-    obtain ⟨ms, rss, h1, h2, h3⟩ := (hT F isem MR env cp hR hMR).1 r hr hfm f ctx hctx.inv ii info
-      inst hi hc (f64PoolFreeInst_of_instETF (hctx.scope ii info inst hi hc)) cfg hco m n st tr
-      env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
+    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerRulesCorrectTL_program F isem MR env cp hR hMR hFP.2.2 r
+      hr hfm f ctx hctx.inv ii info inst hi hc trivial cfg hco m n st tr env' s1 out st' tr2 hm1
+      hn1 hvb hfirst hmatch heval
     exact ⟨ms, rss, h1, h2, h3.toP⟩
   have har : floatArithRootRule r = true → ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧
       out = .regsVec rss ∧ LowerInstOkP Rd Pc isem MR env cp ctx inst info.results st rss st' ms := by
@@ -115,7 +118,7 @@ theorem lowerInstOkP_of_rulesTFW (hrules : LowerRulesCorrectTIW program)
       inst hi hc trivial cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
     exact ⟨ms, rss, h1, h2, h3.toP⟩
   cases hroot : closureRoot r
-  · exact absurd hmatch (lower_nonroot_nomatchTFC hctx.inv hctx.scope hi hc hr
+  · exact absurd hmatch (lower_nonroot_nomatchTFCL hctx.inv hctx.scope hi hc hr
       (by rw [← closureRoot_eq]; exact hroot) cfg m (st, tr) env' s1)
   cases hE : Compile.instE inst
   · -- an instruction of the scope outside subset E

@@ -233,9 +233,13 @@ namespace E2E
 open Backend Backend.Proof
 
 /-- The specification of the scalar float accesses (`MemRefinesFP`'s results): `csemGF`'s
-fallback for them, as `mspec` is `csem`'s for the integer accesses. -/
+fallback for them, as `mspec` is `csem`'s for the integer accesses. #1002 part 2: with the
+literal-pool load (`ldr s/d, <entry>` of `AMode.Const v`, from no use: the entry's value
+`poolVal`, as `mspec` states it). -/
 def fspec (sb : Nat) : Sem := fun i uses w =>
   match i, uses with
+  | .fpuLoad sz (.vreg _ .float) (.const v) _, [] =>
+    if sz = .size32 ∨ sz = .size64 then some ([poolVal sz v], w, .next) else none
   | .fpuLoad sz (.vreg _ .float) am _, us =>
     if sz = .size32 ∨ sz = .size64 then
       (amodeAddr sb am sz.bytes us w).map fun a =>
@@ -249,8 +253,11 @@ def fspec (sb : Nat) : Sem := fun i uses w =>
   | _, _ => none
 
 /-- The guard of the float accesses of `csemGF`: the forms the float memory rules use (an
-addressing mode with an address, avoiding the frame `F`), every byte read satisfying `Rd`. -/
+addressing mode with an address, avoiding the frame `F`), every byte read satisfying `Rd`;
+#1002 part 2: and the literal-pool load of `constant_f64` (`ldr s/d, <entry>`, no use), which
+reads no data memory. -/
 def GuardFP (F Rd : BitVec 64 → Prop) (sb : Nat) : MInst → List CV → Arm.ArmState → Prop
+  | .fpuLoad sz (.vreg _ .float) (.const _) _, [], _ => sz = .size32 ∨ sz = .size64
   | .fpuLoad sz (.vreg _ .float) am _, us, w => (sz = .size32 ∨ sz = .size64) ∧
       ∃ a, amodeAddr sb am sz.bytes us w = some a ∧ Avoids F sz.bytes a ∧
         ∀ k < sz.bytes, Rd (a + BitVec.ofNat 64 k)
@@ -291,6 +298,47 @@ theorem refines_csemGF : Refines F (csemGF F ctx X Rd syms exts sigs sp0 Pc) := 
   case fpuStore => simp [ispec] at h
   all_goals exact hG
 
+/-- A mode with an address is not the literal pool's. -/
+theorem ne_const_of_amodeAddr {sb n : Nat} {am : AMode} {us : List CV} {w : Arm.ArmState}
+    {a : BitVec 64} (h : amodeAddr sb am n us w = some a) : ∀ v, am ≠ .const v := by
+  intro v e; subst e; simp [amodeAddr] at h
+
+/-- `fspec` of a float load through a mode other than the literal pool's (#1002 part 2: `fspec`'s
+first clause is the literal-pool load). -/
+theorem fspec_fpuLoad_ne (sb : Nat) {sz : ScalarSize} {d : Nat} {am : AMode} {fl : Clif.MemFlags}
+    (h : ∀ v, am ≠ .const v) (us : List CV) (w : Arm.ArmState) :
+    fspec sb (.fpuLoad sz (.vreg d .float) am fl) us w =
+      if sz = .size32 ∨ sz = .size64 then
+        (amodeAddr sb am sz.bytes us w).map fun a =>
+          ([(Arm.read_mem_bytes sz.bytes a w).setWidth 128], w, .next)
+      else none := by
+  cases am <;> (try exact absurd rfl (h _)) <;> cases us <;> rfl
+
+/-- `GuardFP` of a float load through a mode other than the literal pool's. -/
+theorem guardFP_fpuLoad_ne {sb : Nat} {sz : ScalarSize} {d : Nat} {am : AMode}
+    {fl : Clif.MemFlags} (h : ∀ v, am ≠ .const v) (us : List CV) (w : Arm.ArmState) :
+    GuardFP F Rd sb (.fpuLoad sz (.vreg d .float) am fl) us w ↔
+      ((sz = .size32 ∨ sz = .size64) ∧ ∃ a, amodeAddr sb am sz.bytes us w = some a ∧
+        Avoids F sz.bytes a ∧ ∀ k < sz.bytes, Rd (a + BitVec.ofNat 64 k)) := by
+  cases am <;> (try exact absurd rfl (h _)) <;> cases us <;> exact Iff.rfl
+
+/-- **`csem`'s literal-pool load** (#1002 part 2): the entry's value (`mspec`'s pool clause), the
+world unchanged. -/
+theorem csem_poolLoad (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (sz : ScalarSize)
+    (hsz : sz = .size32 ∨ sz = .size64) (d v : Nat) (fl : Clif.MemFlags) (w : Arm.ArmState) :
+    csem F ctx X (.fpuLoad sz (.vreg d .float) (.const v) fl) [] w =
+      some ([poolVal sz v], w, .next) := by
+  rw [csem_straight rfl]
+  have hwf : csemWF ctx (.fpuLoad sz (.vreg d .float) (.const v) fl) [] = false := by
+    simp [csemWF, FormOk, memOk]
+  simp only [hwf, Bool.false_eq_true, false_and, ite_false]
+  simp [mspec, hsz]
+
+/-- **`csem` refines the literal-pool load** (`PoolRefinesFP`, #1002 part 2). -/
+theorem poolRefinesFP_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
+    PoolRefinesFP F (csem F ctx X) :=
+  fun sz d v fl w hsz => ⟨w, csem_poolLoad F ctx X sz hsz d v fl w, SameWorld.refl F w⟩
+
 /-- **`csemGF` refines the integer memory forms with guarded reads** (`MemRefinesR Rd`): there
 it is `csemG`. -/
 theorem memRefinesR_csemGF {sb : Nat} (hsb : ctx.slotBase = sb)
@@ -299,20 +347,22 @@ theorem memRefinesR_csemGF {sb : Nat} (hsb : ctx.slotBase = sb)
   memRefinesR_csemG (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc) hsb hsym
 
 /-- **`csemGF` refines the scalar float accesses with guarded reads** (`MemRefinesFP Rd`): the
-Arm run of `ldr`/`str` of an `s`/`d` register (`straight_fpuLoad`/`straight_fpuStore`). -/
+Arm run of `ldr`/`str` of an `s`/`d` register (`straight_fpuLoad`/`straight_fpuStore`), and
+(#1002 part 2) the literal-pool load (`GuardFP` admits it; `fspec`'s pool clause). -/
 theorem memRefinesFP_csemGF {sb : Nat} (hsb : ctx.slotBase = sb) :
     MemRefinesFP Rd F sb (csemGF F ctx X Rd syms exts sigs sp0 Pc) := by
   subst hsb
-  refine ⟨?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   · intro sz d am fl uses w a hsz ha hav hrd
+    have hne := ne_const_of_amodeAddr ha
     have hg : GuardFP F Rd ctx.slotBase (.fpuLoad sz (.vreg d .float) am fl) uses w :=
-      ⟨hsz, a, ha, hav, hrd⟩
+      (guardFP_fpuLoad_ne hne uses w).mpr ⟨hsz, a, ha, hav, hrd⟩
     simp only [csemGF, if_pos hg]
     split
     · rename_i hc
       rw [csem_straight rfl, if_pos hc]
       exact straight_fpuLoad F ctx sz hsz d am fl uses w a ha hav hc.2.1 hc.2.2
-    · exact ⟨w, by simp [fspec, hsz, ha], SameWorld.refl F w⟩
+    · exact ⟨w, by rw [fspec_fpuLoad_ne _ hne]; simp [hsz, ha], SameWorld.refl F w⟩
   · intro sz d am fl v uses w a hsz ha hav
     have hg : GuardFP F Rd ctx.slotBase (.fpuStore sz (.vreg d .float) am fl) (v :: uses) w :=
       ⟨hsz, a, ha, hav⟩
@@ -322,6 +372,15 @@ theorem memRefinesFP_csemGF {sb : Nat} (hsb : ctx.slotBase = sb) :
       rw [csem_straight rfl, if_pos hc]
       exact straight_fpuStore F ctx sz hsz d am fl v uses w a ha hav hc.2.1 hc.2.2
     · exact ⟨_, by simp [fspec, hsz, ha], SameWorld.refl F _⟩
+  · intro sz d v fl w hsz
+    have hg : GuardFP F Rd ctx.slotBase (.fpuLoad sz (.vreg d .float) (.const v) fl) [] w := by
+      simp only [GuardFP]; exact hsz
+    refine ⟨w, ?_, SameWorld.refl F w⟩
+    simp only [csemGF, if_pos hg]
+    split
+    · rename_i hc
+      rw [csem_poolLoad F ctx X sz hsz d v fl w] <;> rfl
+    · simp [fspec, hsz, poolVal]
 
 
 /-! ## The float accesses of `csem` (S11e5, Stage C slice 4) -/
@@ -331,6 +390,7 @@ theorem fspec_mspec {sb : Nat} {i : MInst} {us : List CV} {w : Arm.ArmState}
     {r : List CV × Arm.ArmState × Ctl} (h : fspec sb i us w = some r) : mspec sb i us w = some r := by
   unfold fspec at h
   split at h
+  · simpa [mspec] using h
   · rw [mspec_fpuLoad_ne sb ?_]
     · exact h
     · intro v e; subst e; simp [amodeAddr] at h
@@ -342,9 +402,10 @@ theorem fspec_eq_mspec {sb : Nat} {i : MInst} {us : List CV} {w : Arm.ArmState}
     (hg : GuardFP F Rd sb i us w) : fspec sb i us w = mspec sb i us w := by
   unfold GuardFP at hg
   split at hg
-  · rw [mspec_fpuLoad_ne sb ?_]
-    · rfl
-    · intro v e; subst e; obtain ⟨-, a, ha, -⟩ := hg; simp [amodeAddr] at ha
+  · rfl
+  · obtain ⟨-, a, ha, -⟩ := hg
+    have hne := ne_const_of_amodeAddr ha
+    rw [fspec_fpuLoad_ne sb hne, mspec_fpuLoad_ne sb hne] <;> rfl
   · rfl
   · exact hg.elim
 
@@ -381,7 +442,8 @@ theorem memRefinesFP_csem (Rd F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
     (hsb : ctx.slotBase = sb) : MemRefinesFP Rd F sb (csem F ctx X) := by
   subst hsb
   exact ⟨fun sz d am fl us w a hsz ha hav _ => csem_fpuLoad F ctx X sz hsz d am fl us w a ha hav,
-    fun sz d am fl v us w a hsz ha hav => csem_fpuStore F ctx X sz hsz d am fl v us w a ha hav⟩
+    fun sz d am fl v us w a hsz ha hav => csem_fpuStore F ctx X sz hsz d am fl v us w a ha hav,
+    poolRefinesFP_csem F ctx X⟩
 
 /-! ## `csemGF` against `csem` and `csemG` -/
 
@@ -454,13 +516,19 @@ theorem indCallsRefineP_csemGF {env : Clif.Env} {MR : MemRelT}
 
 /-! ## Two `csemGF` runs in lockstep -/
 
+/-- A guarded float load through a mode other than the literal pool's (#1002 part 2: `hne`;
+`GuardFP` also admits the literal-pool load, which has no address, so without `hne` the
+statement is false: `GuardedFPWitness.guardFP_fpuLoad_needs_ne`). -/
 theorem guardFP_fpuLoad {sb : Nat} {sz : ScalarSize} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
-    {us : List CV} {w : Arm.ArmState} (h : GuardFP F Rd sb (.fpuLoad sz rd am fl) us w) :
+    {us : List CV} {w : Arm.ArmState} (hne : ∀ v, am ≠ .const v)
+    (h : GuardFP F Rd sb (.fpuLoad sz rd am fl) us w) :
     ∃ d, rd = .vreg d .float ∧ (sz = .size32 ∨ sz = .size64) ∧
       ∃ a, amodeAddr sb am sz.bytes us w = some a ∧ Avoids F sz.bytes a ∧
         ∀ k < sz.bytes, Rd (a + BitVec.ofNat 64 k) := by
   rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _
-  all_goals first | exact ⟨_, rfl, h⟩ | (simp [GuardFP] at h)
+  all_goals first
+    | exact ⟨_, rfl, (guardFP_fpuLoad_ne hne us w).mp h⟩
+    | (cases am <;> (try exact absurd rfl (hne _)) <;> cases us <;> simp [GuardFP] at h)
 
 theorem guardFP_fpuStore {sb : Nat} {sz : ScalarSize} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
     {us : List CV} {w : Arm.ArmState} (h : GuardFP F Rd sb (.fpuStore sz rd am fl) us w) :
@@ -493,7 +561,16 @@ theorem csemGF_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {i 
     · rename_i hg
       split at h'
       · rcases hfp with ⟨sz, rd, am, fl, rfl⟩ | ⟨sz, rd, am, fl, rfl⟩
-        · obtain ⟨d, rfl, hsz, a, ha, hF, hrd⟩ := guardFP_fpuLoad hg
+        · by_cases hcst : ∃ v, am = .const v
+          · obtain ⟨v, rfl⟩ := hcst
+            obtain ⟨-, -, -, -, hr⟩ := csem_pool_some h
+            obtain ⟨-, -, -, -, hr'⟩ := csem_pool_some h'
+            simp only [Prod.mk.injEq] at hr hr'
+            obtain ⟨rfl, rfl, rfl⟩ := hr
+            obtain ⟨rfl, rfl, rfl⟩ := hr'
+            exact ⟨rfl, rfl, hw⟩
+          obtain ⟨d, rfl, hsz, a, ha, hF, hrd⟩ :=
+            guardFP_fpuLoad (fun v e => hcst ⟨v, e⟩) hg
           obtain ⟨w₂, h2, hs2⟩ := csem_fpuLoad F ctx X sz hsz d am fl us w a ha hF
           obtain ⟨w₂', h2', hs2'⟩ := csem_fpuLoad F ctx X sz hsz d am fl us w' a
             (by rw [← amodeAddr_sameWorld hw]; exact ha) hF

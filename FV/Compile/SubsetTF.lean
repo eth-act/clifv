@@ -21,6 +21,14 @@ S11g (#1015): the `call` statements of `functionETCF` may also take and return `
 conjunct `callsE` (every `call`'s callee has an integer signature) is dropped, and a `call`'s
 arguments are not integer positions (`intOperandsFC`): they are passed in their values' classes
 (x0..x7 / v0..v7, then the stack; `Backend.Proof.IselCtlCallF`), as a direct `try_call`'s.
+
+#1002 part 2: the statements of `functionETCF` may also be an `f64const` whose bits need the
+literal pool (`instETFL`: `instETF` or any `f64const`; `instETF`'s `f64const`s are
+`f64PoolFree`). Cranelift loads such a constant with `ldr d, <literal>` from the function's
+constant pool (`constant_f64`'s last rule, `emit_u64_le_const`); its `lower` root is proven over
+the contexts of `InstScopeTFL` (`Backend.Proof.lowerRulesCorrectTL_program`). `instETF`,
+`functionETF` and the float scope's theorems (`LowerScopeTF`, #1002 part 1's
+`E2E.noPoolB_lowerTF`) are unchanged.
 -/
 
 namespace Compile
@@ -50,6 +58,18 @@ theorem instETF_of_instETA {i : Inst} (h : instETA i = true) : instETF i = true 
 
 theorem instETF_of_instET {i : Inst} (h : instET i = true) : instETF i = true :=
   instETF_of_instETA (instETA_of_instET h)
+
+/-- An `f64const` (any bits: one that needs the literal pool among them, #1002 part 2). -/
+def f64ConstET : Inst → Bool
+  | .iconst ty _ => ty == .f64
+  | _ => false
+
+/-- **The instructions of the typed scope with the proven float operations and the literal
+pool** (#1002 part 2): `instETF` or an `f64const` of any bits. -/
+def instETFL (i : Inst) : Bool := instETF i || f64ConstET i
+
+theorem instETFL_of_instETF {i : Inst} (h : instETF i = true) : instETFL i = true := by
+  simp [instETFL, h]
 
 /-- The operands in integer positions with the conversions: an `fcvt_from_*`'s operand is an
 integer (the CLIF verifier's typing). -/
@@ -81,11 +101,12 @@ def opsTypedTCF (f : Function) : Bool :=
       (termIntOperandsC b.term).all fun x => !fd.contains x
 
 /-- **The typed scope with the proven float operations and float calls** (`functionETC` with
-`instETF`; S11g: without `callsE`, a `call`'s arguments in their classes, `opsTypedTCF`). -/
+`instETF`; S11g: without `callsE`, a `call`'s arguments in their classes, `opsTypedTCF`; #1002
+part 2: `instETFL`, an `f64const` from the literal pool among the statements). -/
 def functionETCF (f : Function) : Bool :=
   sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigET ·.2.sig) &&
     f.blocks.all (fun b =>
-      b.params.all (tyM ·.2) && b.body.all (instETF ·.inst) && termE b.term) &&
+      b.params.all (tyM ·.2) && b.body.all (instETFL ·.inst) && termE b.term) &&
     opsTypedTCF f && edgeClassOk f
 
 /-- **The scope with typed `try_call`s is in the scope with the float operations.** -/
@@ -96,7 +117,7 @@ theorem functionETCF_of_functionETC {f : Function} (h : functionETC f = true) :
   simp only [functionETCF, Bool.and_eq_true, List.all_eq_true]
   refine ⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, fun b hb' => ?_⟩, ?_⟩, he⟩
   · obtain ⟨⟨hp, hi⟩, ht⟩ := hb b hb'
-    exact ⟨⟨hp, fun s hs' => instETF_of_instET (hi s hs')⟩, ht⟩
+    exact ⟨⟨hp, fun s hs' => instETFL_of_instETF (instETF_of_instET (hi s hs'))⟩, ht⟩
   · simp only [opsTypedTC, opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at ho ⊢
     intro b hb'
     refine ⟨fun s hs' x hx => ?_, (ho b hb').2⟩

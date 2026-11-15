@@ -183,11 +183,14 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
 /-- The float loads/stores of the value semantics are `csem`'s (they are not pure forms). -/
 theorem memRefinesFP_valueSem (Rd F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) {sb : Nat}
     (hsb : ctx.slotBase = sb) : MemRefinesFP Rd F sb (valueSem F ctx X) := by
-  obtain ⟨h1, h2⟩ := memRefinesFP_csem Rd F ctx X hsb
-  refine ⟨fun sz d am fl us w a hsz ha hav hrd => ?_, fun sz d am fl v us w a hsz ha hav => ?_⟩
+  obtain ⟨h1, h2, h3⟩ := memRefinesFP_csem Rd F ctx X hsb
+  refine ⟨fun sz d am fl us w a hsz ha hav hrd => ?_, fun sz d am fl v us w a hsz ha hav => ?_,
+    fun sz d v fl w hsz => ?_⟩
   · obtain ⟨w', e, hw⟩ := h1 sz d am fl us w a hsz ha hav hrd
     exact ⟨w', by simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e, hw⟩
   · obtain ⟨w', e, hw⟩ := h2 sz d am fl v us w a hsz ha hav
+    exact ⟨w', by simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e, hw⟩
+  · obtain ⟨w', e, hw⟩ := h3 sz d v fl w hsz
     exact ⟨w', by simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e, hw⟩
 
 theorem hasTry_of_hasTryCallCleanupAT {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
