@@ -1,10 +1,12 @@
 import FV.E2E.DeadCleanupWitness
 import FV.E2E.DeadCleanupFinal
+import FV.Backend.LinearScan
 
 /-!
 # Non-vacuity of `backend_correct_final_cleanup_leaf` (#1028)
 
-`compiledL_exists`: the compiler run of `DeadCleanupWitness.source` (a leaf), with its frame
+`compiledL_exists`: the compiler run of `DeadCleanupWitness.source` (a leaf) with the Lean
+allocator (`leanAlloc`, which gives it no callee saves and no frame size), with its frame
 dropped as `Backend.frameless` drops it under `preserve_frame_pointers=false`, inhabits
 `CompiledCleanupL` without a frame: `AllocAF` (`AllocAF.of_frameless`), the leaf check `FnAsm.leafChk`
 on its emitted code and `regArgsB` all hold, together with form coverage and `InSubset`, the
@@ -15,7 +17,8 @@ namespace E2E.DeadCleanupLeafWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 open E2E.DeadCleanupWitness (source)
 
-/-- Closed compilation through cleanup, allocation, `frameless false`, emission and layout. -/
+/-- Closed compilation through cleanup, allocation (`leanAlloc`), `frameless false`, emission and
+layout. -/
 def checks : Bool :=
   match lowerFunction source with
   | .error _ => false
@@ -24,8 +27,11 @@ def checks : Bool :=
     match Backend.prepare (cleanupStage source vc) with
     | .error _ => false
     | .ok vcp =>
-      prepCheck (cleanupStage source vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
-      match lowerRFunc vcp (spillAlloc vcp) with
+      match leanAlloc vcp with
+      | .error _ => false
+      | .ok rf =>
+      prepCheck (cleanupStage source vc) vcp && (checkAlloc vcp rf).isOk &&
+      match lowerRFunc vcp rf with
       | .error _ => false
       | .ok af0 =>
         !(frameless false vcp af0).frame &&
@@ -41,7 +47,7 @@ theorem checks_true : checks = true := by native_decide
 without a frame.** -/
 theorem compiledL_exists :
     InSubset ({ funcs := [] } : Clif.Program) source ∧
-    ∃ vc vcp af fa fb, CompiledCleanupL source 0 vc vcp (spillAlloc vcp) af fa fb ∧
+    ∃ vc vcp rf af fa fb, CompiledCleanupL source 0 vc vcp rf af fa fb ∧
       af.frame = false ∧ (∀ ctx, FormsCovered ctx vcp) := by
   have h := checks_true
   simp only [checks] at h
@@ -55,13 +61,17 @@ theorem compiledL_exists :
     | error e => rw [hp] at h; cases h
     | ok vcp =>
       rw [hp] at h
+      cases hra : leanAlloc vcp with
+      | error e => rw [hra] at h; cases h
+      | ok rf =>
+      rw [hra] at h
       simp only [Bool.and_eq_true] at h
       obtain ⟨⟨hpr, hck⟩, h⟩ := h
-      have hc : checkAlloc vcp (spillAlloc vcp) = .ok () := by
-        cases he : checkAlloc vcp (spillAlloc vcp) with
+      have hc : checkAlloc vcp rf = .ok () := by
+        cases he : checkAlloc vcp rf with
         | error e => rw [he] at hck; cases hck
         | ok u => cases u; rfl
-      cases ha : lowerRFunc vcp (spillAlloc vcp) with
+      cases ha : lowerRFunc vcp rf with
       | error e => rw [ha] at h; cases h
       | ok af0 =>
         rw [ha] at h
@@ -77,7 +87,7 @@ theorem compiledL_exists :
           | error e => rw [hb] at hlay; cases hlay
           | ok fb =>
             have hs := (DeadCleanupWitness.compiled_covered_exists).1
-            refine ⟨hs, vc, vcp, _, fa, fb,
+            refine ⟨hs, vc, vcp, rf, _, fa, fb,
               ⟨hl, hlo, hp, hpr, hc, AllocAF.of_frameless false ha, fun _ => ⟨hlc, hra⟩, he, hb⟩,
               hfr, fun ctx => ?_⟩
             exact formsCovered_cleanup_complete DeadCleanupWitness.compiled_exists.2.1 hl hp ctx

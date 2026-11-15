@@ -53,6 +53,7 @@ theorem stack_RA5 : StackAvail 0x200 callerF.af sC0 := by
 theorem wf_RA5 : RA5.Wf where
   check := wfRC.check
   alloc := wfRC.alloc
+  leaf := wfRC.leaf
   emit := wfRC.emit
   layout := wfRC.layout
   lm := wfRC.lm

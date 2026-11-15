@@ -41,7 +41,7 @@ theorem static_ld : ldF.Static := by
 /-- The caller's activation in the link is `RC` but for its hooks. -/
 theorem wf_C : (link2.act callerF sC0 0 GL).Wf :=
   ⟨wfRC.check, wfRC.alloc, wfRC.emit, wfRC.layout, wfRC.lm, wfRC.fit, wfRC.stack, wfRC.psF,
-    wfRC.prog0, wfRC.gfree⟩
+    wfRC.prog0, wfRC.gfree, wfRC.leaf⟩
 
 /-- **The caller's `bl` on the linked machine** (module doc). -/
 theorem step_call_C : link2.M sBF = enterL sBF ∧ stepEvs sBF = [] ∧ cls sBF = .plain := by

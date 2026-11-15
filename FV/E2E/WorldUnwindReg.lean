@@ -191,7 +191,7 @@ theorem regLevelCorrect_worldUTG_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
     ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
       hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
-  obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUTP hR hent hat hU hgot (fun _ h => .inl h)
+  obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUTP hR (lowerRFunc_frame halloc) hent hat hU hgot (fun _ h => .inl h)
     (fun _ h => .inr h) (hRz lm p.ps _ rfl hR) hrets
     hhalt (lsda_cases hsites hlsda) (siteAt_any hR) hrows hcie hfde hsaved hbe
     (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)

@@ -37,7 +37,7 @@ abbrev RA2 : RL := link2.act callerF sC0 0x100 GL
 
 theorem wf_RA2 : RA2.Wf :=
   ⟨wfRCK.check, wfRCK.alloc, wfRCK.emit, wfRCK.layout, wfRCK.lm, wfRCK.fit, wfRCK.stack,
-    wfRCK.psF, wfRCK.prog0, wfRCK.gfree⟩
+    wfRCK.psF, wfRCK.prog0, wfRCK.gfree, wfRCK.leaf⟩
 
 /-- **The linked code is kept by the caller.** -/
 theorem codeIn_RA2 : CodeIn link2 RA2 := by

@@ -632,6 +632,7 @@ theorem stack_RAM : StackAvail 0x200 callerM.af sM0 := by
 theorem wf_RAM : RAM.Wf where
   check := wfRCM.check
   alloc := wfRCM.alloc
+  leaf := wfRCM.leaf
   emit := wfRCM.emit
   layout := wfRCM.layout
   lm := wfRCM.lm

@@ -34,7 +34,8 @@ theorem wf_gen {vc : VCode} {rf : RFunc} {base : BitVec 64} {s0 : ArmState} {H :
     (hg : ∀ a, G a → ¬ StackBelow (frameDrop (act vc rf).af + 0) (E2E.spv s0) a) :
     ({ act vc rf with base := base, s0 := s0, H := H, G := G } : RL).Wf where
   check := allocChecked_of_checkAlloc hc
-  alloc := ArmAllocThread.Witness.ok_getD ha
+  alloc := AllocAF.of_lowerRFunc (ArmAllocThread.Witness.ok_getD ha)
+  leaf := noLeaf_of_lowerRFunc (ArmAllocThread.Witness.ok_getD ha)
   emit := by
     rw [show ({ act vc rf with base := base, s0 := s0, H := H, G := G } : RL).fa.k = 0 from hk]
     exact ArmAllocThread.Witness.ok_getD he

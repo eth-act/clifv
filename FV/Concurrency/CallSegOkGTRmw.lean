@@ -417,6 +417,7 @@ theorem stack_RAc : StackAvail 0x240 callerRF.af sC0 := by
 theorem wf_RAc : RAc.Wf where
   check := wfRC.check
   alloc := wfRC.alloc
+  leaf := wfRC.leaf
   emit := wfRC.emit
   layout := wfRC.layout
   lm := wfRC.lm
