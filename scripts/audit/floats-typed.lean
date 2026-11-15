@@ -47,6 +47,7 @@ import FVTest.Link.FloatPlainCallsT
 import FVTest.Backend.FloatCallF
 import FVTest.Backend.CallArgsIntW
 import FV.E2E.DeadCleanupPairTC
+import FV.E2E.LinkScopeTotalTF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
