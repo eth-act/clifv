@@ -19,9 +19,13 @@ whose `DriverHypTC` takes the scope `functionETCF`), and the driver's statements
 `instCallsTFW_of_rules` (S11g; it was `instCallsTF_of_rules`, whose contexts have integer
 `call`s): the conversion roots `lowerRulesCorrectCvtT_program`, the `fcmp` roots
 `lowerRulesCorrectFC_program`, the non-E unmatchability `nonEUnmatchableTFW_program`, every
-`call` by the float family `callRulesCorrectTFP_program`. The final theorems take no rule-family
-premise; `iselSimTCF_of_rules`'s `hnE`, `hcallRules` and `hindRules` are no longer used (the
-statement is unchanged; the proven `…TFW`/`…TFP`/`…TP` families replace them).
+`call` by the float family `callRulesCorrectTFP_program`, the other families over the contexts
+without integer-call facts (`CtxTW`: `lowerRulesCorrectTIW_program`, `memRulesCorrectRTIW_program`,
+`typedRulesW_program`, `termCallsTW_of_rules`, `tryIndCallsTW_of_rules`, `TypedRulesW.lean`). The
+final theorems take no rule-family premise; `iselSimTCF_of_rules`'s rule-family premises over
+`CtxT` (`hrules`, `hnE`, `hcallRules`, `hindRules`, `hmemRules`, `htermRules`, `htermUn`,
+`hbranch`, `hbranchEx`, `htryIndRules`, `htryIndUn`) are no longer used: its statement is
+unchanged, and the proven `CtxTW` families replace them.
 
 * `InSubsetTCF`, `InSubsetTC.toTCF`, `CompiledTCF`, `CompiledATCF`, `CompiledTC.toTCF`,
   `CompiledTCF.toA`;

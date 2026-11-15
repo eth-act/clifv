@@ -46,6 +46,7 @@ import FVTest.E2E.FloatCallFinalTCF
 import FVTest.Link.FloatPlainCallsT
 import FVTest.Backend.FloatCallF
 import FVTest.Backend.CallArgsIntW
+import FV.E2E.DeadCleanupPairTC
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -390,3 +391,25 @@ import FVTest.Backend.CallArgsIntW
 #print axioms CallArgsIntW.not_famCover_fMis -- witness: native_decide
 #print axioms CallArgsIntW.famCover_ofG_needs_callArgs -- witness: native_decide
 #print axioms CallArgsIntW.ctxT_of_needs_buildCtx -- witness: native_decide
+#print axioms E2E.typedRulesW_program
+#print axioms E2E.TypedRulesW.toT
+#print axioms E2E.TypedRulesW.tryIndT
+#print axioms Backend.Proof.lowerRulesCorrectTIW_program
+#print axioms Backend.Proof.memRulesCorrectRTIW_program
+#print axioms Backend.Proof.Driver.termCallsTW_of_rules
+#print axioms Backend.Proof.Driver.tryIndCallsTW_of_rules
+#print axioms E2E.instCalls_pairTCFW
+#print axioms E2E.tryCalls_pairTCW
+#print axioms E2E.termCalls_pairTW
+#print axioms E2E.tryIndCalls_pairTW
+#print axioms E2E.instCalls_pair_valueTCFW
+#print axioms E2E.tryCalls_pair_valueTCW
+#print axioms E2E.termCalls_pair_valueTW
+#print axioms E2E.tryIndCalls_pair_valueTW
+#print axioms Backend.Proof.LowerRulesCorrectTIW.toT
+#print axioms Backend.Proof.MemRulesCorrectRTIW.toT
+#print axioms Backend.Proof.IndRulesCorrectTPW.toT
+#print axioms Backend.Proof.TryIndRulesCorrectTPW.toT
+#print axioms E2E.vcode_niTCF
+#print axioms E2E.vcode_ni_valueTCF
+#print axioms E2E.driverHypTCF_relW_of

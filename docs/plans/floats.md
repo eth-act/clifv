@@ -1037,15 +1037,26 @@ old `intArgs`, `CallArgsInt ctx` the dropped part, and `CtxT` (the integer-call 
 `inv`, `scope`, `calls`, `callArgs`) keeps its meaning, built by `CtxT.ofExterns`,
 `ctxT_of_functionET`, `ctxT_of_functionETC` from `CtxSpec.callArgs_of[F]` /
 `callArgsInt_of_functionETC`; `PInvT`/`PInvTB.intArgsOf` are over `intArgsE`. The rule families
-that do not lower `call`s (`LowerRuleOkTX`, `MemRuleOkRTX`, `IndRuleOkT`, the terminator, branch
-and `try_call_indirect` families) quantify over `CtxTW f ctx := ⟨CtxInvT, InstScopeTF⟩`
-(stronger; `CtxT.toW`). The exclusion with calls returning floats: `floatOpsFC = floatOpsF ++
+keep their statements over `CtxT`; the contexts of the new scope are `CtxTW f ctx :=
+⟨CtxInvT, InstScopeTF⟩` (no integer-call facts), and the families that never read those facts
+have new `…W` forms over it (`LowerRuleOkTXW`, `MemRuleOkRTXW`, `IndRuleOkTW`,
+`LowerTermRuleOkTW`, `TermUnmatchableTW`, `BranchRuleOkTW`, `BranchExcludedUnmatchableTW`,
+`TryIndRuleOkTW`, `TryIndUnmatchableTW`, `IndRuleOkTPW`, `TryIndRuleOkTPW`, their
+`…RulesCorrect…W`, `TypedRulesW`), each giving its `CtxT` form (`.toT`). Their proofs for
+`program` are the `CtxT` proofs transported (`ctxW_transport`, `CtxTWTransport.lean`: the same
+proof terms with each `CtxT` constant replaced by its `CtxTW` counterpart, as Mathlib's
+`to_additive`, every declaration re-checked by the kernel; `TypedRulesW.lean`:
+`typedRulesW_program`, `lowerRulesCorrectTIW_program`, `memRulesCorrectRTIW_program`,
+`Driver.termCallsTW_of_rules`, `Driver.tryIndCallsTW_of_rules`). The exclusion with calls
+returning floats: `floatOpsFC = floatOpsF ++
 [Call]`, `exclOkTFC_program` and `nonEOkFC_program` (kernel decisions over the exported program,
 both true), `inst_splitFC`, `lower_nonroot_nomatchTFC`, `nonEUnmatchableTFW_program`. The
 dispatchers `LowerContractTFW.lean` (`lowerInstOkP_of_rulesTFW`, `lowerInstOkP_runTermTFW`,
 `lowerInstOk_runTermTFW`, `instCallsTFW_of_rules`) lower every `call` with the float family
-(`CtxInvT.toCallCtx`), and `FinalTCF`/`LinkWorldTC`/`PairDriverTC`/`DeadCleanupPairTC` use them
-(statements unchanged). Witnesses: `FVTest/E2E/FloatCallFinalTCF.lean` (`fCallP` calling
+(`CtxInvT.toCallCtx`) and take the `CtxTW` families; `FinalTCF`/`LinkWorldTC` use them, and
+`PairDriverTC`/`DeadCleanupPairTC` through new `CtxTW` twins (`instCalls_pairTCFW`,
+`tryCalls_pairTCW`, `termCalls_pairTW`, `tryIndCalls_pairTW` and the `…_value…W` ones); every
+existing statement over `CtxT` is unchanged. Witnesses: `FVTest/E2E/FloatCallFinalTCF.lean` (`fCallP` calling
 `%g (f64, i64, f32) -> f64` and `%k (f32) -> f32`: `InSubsetTCF`, `CompiledTCF`, the verdict,
 `backend_correct_finalTCF_fCallP`; `functionETCF` but not `callsE`, so the removed
 `callsE_of_functionETCF`/`ctxT_of_functionETCF` are false), `FVTest/Link/FloatPlainCallsT.lean`
@@ -1063,14 +1074,16 @@ survey 3,251 of 3,251 unchanged (2 of 2, 18 of 18); generated code unchanged (en
 identical, crate proofs regenerate to the same files). deps' 14 left: 2 pooled `f64const`
 (#1002 part 2), 9 SIMD types (`i32x4`/`i64x2`: sha2 8, zmij 1), 3 over the validation budget
 (sha2 2, tiny_keccak 1). **The 113 do not reach the executables yet (#1048):** `lean-link
---verified` requires `InScopeInT`, whose `fnScopeInTCB` keeps the driver's decider-free totality
-condition `driverInTCB`/`stmtInB` (`sigIntB` of a `call`'s callee), so they are left out of the
-region with their cg_clif code (per executable 17/12/9/12 → 126/105/59/101 left out; Lean-compiled
-functions in the binary check unchanged, 19,900/17,134/15,222/16,726). Still out: a pooled
-`f64const` (#1002 part 2); float `call_indirect`/`try_call_indirect` (`sigIntB`); the decider-free
-totality scopes (`InScopeInT3`, `fnScopeInTB3F`, and `stmtInB` behind `InScopeInT`: integer extern
-signatures), so float calls are admitted through the run-time deciders (`lowerCheckTCF`,
-`okRWithTS`) only, and in executables not before #1048.
+--verified` admits a function into an executable's region only if it meets `fnScopeInTB` or the
+admission predicate `fnScopeInTCB`, whose `driverInTCB`/`stmtInB` requires `sigIntB` of a
+`call`'s callee, so they are left out of the region with their cg_clif code (per executable
+126/105/59/101 left out, of which 17/12/9/12 are `SrcScopeB` `declSigB` exclusions that #1036
+introduced and #1042 addresses; Lean-compiled functions in the binary check unchanged,
+19,900/17,134/15,222/16,726; pinned per executable in `scripts/gate-expected-leftout.txt`, and
+cargo fv's `--lean-link:` line counts them). Still out: a pooled `f64const` (#1002 part 2);
+float `call_indirect`/`try_call_indirect` (`sigIntB`); the decider-free totality scopes
+(`InScopeInT3`, `fnScopeInTB3F`: integer extern signatures), so float calls are admitted through
+the run-time deciders (`lowerCheckTCF`, `okRWithTS`) only, and in executables not before #1048.
 
 ## 4. Known hazards
 
