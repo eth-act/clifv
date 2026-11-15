@@ -4,6 +4,7 @@ import FV.E2E.DeadCleanupT
 import FV.E2E.DeadCleanupPair
 import FV.E2E.DeadCleanupPairT
 import FV.E2E.DeadCleanupGuardedFP
+import FV.E2E.PoolRefinesFPV
 
 /-! # The dead-cleanup world and non-interference, typed `try_call`s (S11e6, #419)
 
@@ -20,6 +21,13 @@ import FV.E2E.DeadCleanupGuardedFP
 S11f (#35): the same for the scope with the proven float operations (`InSubsetTCF`,
 `CompiledCleanupTCF`), suffix `TCF` (`instCalls_pair_valueTCF` from `lowerInstOkP_runTermTF`, no
 `InstScopeT` premise); the `TC` theorems over `InSubsetTC` are their corollaries, statements
+unchanged.
+
+#1002 part 2: the validated shape is `LowerShapeTCS InstScope.tfl` (an `f64const` from the
+literal pool among the instructions). `driverHypTCFS_relW_value` (`poolRefinesFP_valueSem`),
+`instCalls_pair_valueTCFS` (`poolRefinesFP_valueSemGF`), `tryCalls_pair_valueTCS`,
+`termCalls_pair_valueTS`, `tryIndCalls_pair_valueTS` (transported to `CtxTS S`) give
+`iselSim_relW_cleanupTCF` and `vcode_ni_valueTCF` through `DriverHypTCS`, their statements
 unchanged.
 -/
 
@@ -81,6 +89,29 @@ theorem driverHypTC_relW_value (hsub : InSubsetTC p f)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) env p :=
   driverHypTCF_relW_value hsub.toTCF hc.toTCF hT hX hXI hsym hslot hshape hcert hbr
 
+/-- **The driver hypothesis at `valueSem` with the memory relation `RelW` over a scope inside
+`InstScopeTFL`** (#1002 part 2: `driverHypTCF_relW_value` for `LowerShapeTCS S`;
+`poolRefinesFP_valueSem`). -/
+theorem driverHypTCFS_relW_value {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeTFL ctx)
+    (hsub : InSubsetTCF p f) (hc : CompiledCleanupTCF f k vc vcp rf af fa fb)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff) {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
+    (hshape : LowerShapeTCS S f vc ctx st0 R gn bl) (hcert : Cert f ctx st0 gn bl A)
+    (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) :
+    DriverHypTCS S f vc ctx st0 R gn bl A (valueSem F ⟨fa.k, af.slotBase⟩ X)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) env p :=
+  driverHypTCFS_relW_of hS hsub hc.lowerOk (cfg_of_cleanupTCF hc)
+    (outgoing_le_intBaseCleanupATCF hc.toA) (refines_valueSem _ _ X)
+    (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) (callsRefine_valueSem hX)
+    (indCallsRefine_valueSem hXI hsym (fun _ _ _ h => h.1.1.symbols))
+    (memRefines_valueSem _ _ X hslot hsym) (memRefinesFP_valueSem (fun _ => True) F _ X hslot)
+    (poolRefinesFP_valueSem F _ X) hshape hcert hbr
+
 /-- The prune-then-prepare step is correct for `valueSem`. -/
 theorem prepareCorrect_cleanupTC (hc : CompiledCleanupTC f k vc vcp rf af fa fb) :
     PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
@@ -123,11 +154,12 @@ theorem iselSim_relW_cleanupTCF (hsub : InSubsetTCF p f)
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hc.lowerOk
-  have H := driverHypTCF_relW_value (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
+  have H := driverHypTCFS_relW_value (S := InstScope.tfl) (fun _ h => h) (c := c) hsub hc hX hXI
+    hsym hslot hshape hcert hbr
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
-  have hrun := driver_correctTC H (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
+  have hrun := driver_correctTCS _ H (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
     (memRefines_valueSem _ _ X hslot hsym) (memRefinesFP_valueSem (fun _ => True) F _ X hslot)
     (mrStable_relW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) hB0 hce.callers
     hce.func rfl hbody hterm hregs hty.symm hce.sig
@@ -365,6 +397,46 @@ theorem instCalls_pair_valueTCFW (hc : CompiledCleanupTCF f k vc vcp rf af fa fb
   rw [hem, List.toList_toArray]
   exact hok
 
+/-- **`instCalls_pair_valueTCFW` over a scope inside `InstScopeTFL`** (#1002 part 2: over
+`CtxTS S`; `lowerInstOkP_runTermTFS`, the guarded value semantics' literal-pool load
+`poolRefinesFP_valueSemGF`). -/
+theorem instCalls_pair_valueTCFS {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeTFL ctx)
+    (hc : CompiledCleanupTCF f k vc vcp rf af fa fb) (hT : TypedRulesS S)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {ctx : Ctx} (hctx : CtxTS S f ctx) (hst : StoresTyped ctx) :
+    InstCallsT f ctx (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
+      (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
+  intro ii info inst st rss st' tr hmem hi hcl hsig hemp hvb hrun
+  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
+  have hstk := callsStack_mono (callsStackTCF_of_check hc.lowerOk)
+    (outgoing_le_intBaseCleanupATCF hc.toA)
+  refine lowerInstOk_pairF_value hNI hTls (Γ := Γ) rfl hctx.inv.func hsig fun Rd Pc => ?_
+  obtain ⟨B, hB, stm, hstm, hst'⟩ := hmem
+  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermTFS hS (lowerRulesCorrectTIS_program S)
+    lowerRulesCorrectT_program lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program
+    lowerRulesCorrectFC_program (nonEUnmatchableTFS_program hS) callRulesCorrectTFP_program
+    hT.ind (memRulesCorrectRTIS_program S) memRulesCorrectRT_program refines_valueSemGF
+    (mrStable_relW Γ f c)
+    (callsRefineP_valueSemGF hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (indCallsRefineP_valueSemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (memRefinesR_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
+    (memRefinesFP_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot) poolRefinesFP_valueSemGF
+    hctx (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    (indStack_mono (indStackTCF_of_check hc.lowerOk) (outgoing_le_intBaseCleanupATCF hc.toA))
+    (hst ii info inst hi hcl)
+    (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
+  cases hov
+  rw [hemp, Array.empty_append] at hem
+  rw [hem, List.toList_toArray]
+  exact hok
+
 /-- **The typed `try_call` calls on pairs of worlds, value semantics** (`TryCallsTC` of
 `pairSem` at `valueSem`). -/
 theorem tryCalls_pair_valueTC (hT : TypedRules)
@@ -408,6 +480,11 @@ ctxW_transport tryCalls_pair_valueTC => tryCalls_pair_valueTCW
 ctxW_transport termCalls_pair_valueT => termCalls_pair_valueTW
 ctxW_transport tryIndCalls_pair_valueT => tryIndCalls_pair_valueTW
 
+-- **The same over `CtxTS S`** (#1002 part 2; `ScopeTransport.lean`).
+scopeS_transport tryCalls_pair_valueTCW => tryCalls_pair_valueTCS
+scopeS_transport termCalls_pair_valueTW => termCalls_pair_valueTS
+scopeS_transport tryIndCalls_pair_valueTW => tryIndCalls_pair_valueTS
+
 /-- **Non-interference of a dead-cleanup VCode run, with the proven float operations**
 (`vcode_ni_value` for the scope with the proven float operations). -/
 theorem vcode_ni_valueTCF (hsub : InSubsetTCF p f)
@@ -439,31 +516,34 @@ theorem vcode_ni_valueTCF (hsub : InSubsetTCF p f)
         SameWorld (fun b => F b ∨ D b) w w' := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hc.lowerOk
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
-  have H := driverHypTCF_relW_value (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
-  have hctxT : CtxTW f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
+  have hS : ∀ ctx, InstScope.tfl.P ctx → InstScopeTFL ctx := fun _ h => h
+  have H := driverHypTCFS_relW_value (S := InstScope.tfl) hS (c := c) hsub hc hX hXI hsym hslot
+    hshape hcert hbr
+  have hctxT : CtxTS InstScope.tfl f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   have hmem : MemRefines F slotOff syms (valueSem F ⟨fa.k, af.slotBase⟩ X) :=
     memRefines_valueSem _ _ X hslot hsym
   have houtB := outgoing_le_intBaseCleanupATCF hc.toA
-  have HP : DriverHypTC f vc ctx st0 R gn bl A (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
-      (MRP Γ f c D) env p := {
+  have hTS := typedRulesS_program InstScope.tfl
+  have HP : DriverHypTCS InstScope.tfl f vc ctx st0 R gn bl A
+      (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X)) (MRP Γ f c D) env p := {
     shape := hshape
     cert := hcert
     dsem := driverSemG_pair_value F ⟨fa.k, af.slotBase⟩ X
-    insts := instCalls_pair_valueTCFW hc typedRulesW_program hX hXI hsym hslot hNI hTls hctxT hstT
-    terms := termCalls_pair_valueTW Γ rfl hTls ⟨fa.k, af.slotBase⟩ typedRulesW_program hctxT
+    insts := instCalls_pair_valueTCFS hS hc hTS hX hXI hsym hslot hNI hTls hctxT hstT
+    terms := termCalls_pair_valueTS _ Γ rfl hTls ⟨fa.k, af.slotBase⟩ hTS hctxT
     ext := H.ext
     indSig := H.indSig
     subETC := H.subETC
     entryLocs := H.entryLocs
     brIdx := H.brIdx
     noTail := H.noTail
-    tries := ⟨_, tryCalls_pair_valueTCW typedRulesW_program hX hsym hslot hNI hTls hctxT,
+    tries := ⟨_, tryCalls_pair_valueTCS _ hTS hX hsym hslot hNI hTls hctxT,
       tryStack_mono (tryStackTCF_of_check hc.lowerOk) houtB⟩
     tryExt := H.tryExt
-    tryInd := tryIndCalls_pair_valueTW
+    tryInd := tryIndCalls_pair_valueTS _
       (indStack_mono (indStackTCF_of_check hc.lowerOk) houtB)
-      typedRulesW_program hXI hsym hNI hTls hctxT
+      hTS hXI hsym hNI hTls hctxT
     tryIndSig := H.tryIndSig
     cfg := H.cfg }
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
@@ -471,7 +551,7 @@ theorem vcode_ni_valueTCF (hsub : InSubsetTCF p f)
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
   have hP := runPrem_of_traps hce htr
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2TC H
+  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2TCS _ H
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) hmem
     (memRefinesFP_valueSem (fun _ => True) F _ X hslot) (mrStable_relW Γ f c) hB0 hce.callers
     hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
@@ -483,7 +563,7 @@ theorem vcode_ni_valueTCF (hsub : InSubsetTCF p f)
         (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
     exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
   intro vals cm hrun
-  have hR := sim_runTC HP hP fuel cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ (.refl _) hmP
+  have hR := sim_runTCS _ HP hP fuel cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ (.refl _) hmP
   rw [hrun] at hR
   obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -, -⟩ := hR
   obtain ⟨h1, h2⟩ := vRetFrom_pair hret

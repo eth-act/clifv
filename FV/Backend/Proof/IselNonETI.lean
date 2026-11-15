@@ -310,8 +310,7 @@ theorem intStore_nonEW {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : i
     subst ht
     have hf : ty.isFloat = true := by
       revert hT hE; cases ty <;> cases op <;>
-        simp [Compile.instETFL, Compile.f64ConstET, Compile.instETF, Compile.instETA,
-          Compile.fArithET, Compile.fCvtET, Compile.fCmpET,
+        simp [Compile.instETF, Compile.instETA, Compile.fArithET, Compile.fCvtET, Compile.fCmpET,
           Compile.instET, Compile.instE, Compile.tyE, Clif.Ty.isFloat]
     have := hst _ _ _ _ _ _ rfl hf _ hvt
     simp [fTys] at this

@@ -334,11 +334,6 @@ theorem csem_poolLoad (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (sz : 
   simp only [hwf, Bool.false_eq_true, false_and, ite_false]
   simp [mspec, hsz]
 
-/-- **`csem` refines the literal-pool load** (`PoolRefinesFP`, #1002 part 2). -/
-theorem poolRefinesFP_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
-    PoolRefinesFP F (csem F ctx X) :=
-  fun sz d v fl w hsz => ⟨w, csem_poolLoad F ctx X sz hsz d v fl w, SameWorld.refl F w⟩
-
 /-- **`csemGF` refines the integer memory forms with guarded reads** (`MemRefinesR Rd`): there
 it is `csemG`. -/
 theorem memRefinesR_csemGF {sb : Nat} (hsb : ctx.slotBase = sb)
@@ -347,12 +342,11 @@ theorem memRefinesR_csemGF {sb : Nat} (hsb : ctx.slotBase = sb)
   memRefinesR_csemG (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc) hsb hsym
 
 /-- **`csemGF` refines the scalar float accesses with guarded reads** (`MemRefinesFP Rd`): the
-Arm run of `ldr`/`str` of an `s`/`d` register (`straight_fpuLoad`/`straight_fpuStore`), and
-(#1002 part 2) the literal-pool load (`GuardFP` admits it; `fspec`'s pool clause). -/
+Arm run of `ldr`/`str` of an `s`/`d` register (`straight_fpuLoad`/`straight_fpuStore`). -/
 theorem memRefinesFP_csemGF {sb : Nat} (hsb : ctx.slotBase = sb) :
     MemRefinesFP Rd F sb (csemGF F ctx X Rd syms exts sigs sp0 Pc) := by
   subst hsb
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_⟩
   · intro sz d am fl uses w a hsz ha hav hrd
     have hne := ne_const_of_amodeAddr ha
     have hg : GuardFP F Rd ctx.slotBase (.fpuLoad sz (.vreg d .float) am fl) uses w :=
@@ -372,15 +366,6 @@ theorem memRefinesFP_csemGF {sb : Nat} (hsb : ctx.slotBase = sb) :
       rw [csem_straight rfl, if_pos hc]
       exact straight_fpuStore F ctx sz hsz d am fl v uses w a ha hav hc.2.1 hc.2.2
     · exact ⟨_, by simp [fspec, hsz, ha], SameWorld.refl F _⟩
-  · intro sz d v fl w hsz
-    have hg : GuardFP F Rd ctx.slotBase (.fpuLoad sz (.vreg d .float) (.const v) fl) [] w := by
-      simp only [GuardFP]; exact hsz
-    refine ⟨w, ?_, SameWorld.refl F w⟩
-    simp only [csemGF, if_pos hg]
-    split
-    · rename_i hc
-      rw [csem_poolLoad F ctx X sz hsz d v fl w] <;> rfl
-    · simp [fspec, hsz, poolVal]
 
 
 /-! ## The float accesses of `csem` (S11e5, Stage C slice 4) -/
@@ -442,8 +427,7 @@ theorem memRefinesFP_csem (Rd F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
     (hsb : ctx.slotBase = sb) : MemRefinesFP Rd F sb (csem F ctx X) := by
   subst hsb
   exact ⟨fun sz d am fl us w a hsz ha hav _ => csem_fpuLoad F ctx X sz hsz d am fl us w a ha hav,
-    fun sz d am fl v us w a hsz ha hav => csem_fpuStore F ctx X sz hsz d am fl v us w a ha hav,
-    poolRefinesFP_csem F ctx X⟩
+    fun sz d am fl v us w a hsz ha hav => csem_fpuStore F ctx X sz hsz d am fl v us w a ha hav⟩
 
 /-! ## `csemGF` against `csem` and `csemG` -/
 

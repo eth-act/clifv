@@ -383,112 +383,9 @@ end
 
 end
 
-/-! ## The literal pool (#1002 part 2)
-
-An `f64const` of any bits (`Compile.instETFL`) is non-E with the float result opcode `f64const`
-(`neFOps`), as an `f64const` without literal pool: `nonE_splitFL`, and `rootNEFC_sound` over
-`InstScopeTFL` (`rootNEFCL_sound`, the look-through fields by `inst_splitFCL`). -/
-
-/-- **A non-E instruction of the scope with the proven float operations and the literal pool**
-(`nonE_splitF` over `Compile.instETFL`). -/
-theorem nonE_splitFL {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : Nat}
-    {info : IInfo} {c : Clif.Inst} (hi : ctx.insts[j]? = some info) (hc : info.clif = some c)
-    (hd : instData f c = .ok info.data) (hTF : Compile.instETFL c = true)
-    (hE : Compile.instE c = false) {sel : Bool} (hsel : sel = true → ¬ FloatSelect c) :
-    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
-        (AVT.data neIOpsF).HoldsS Compile.instETFL f ctx info.data) ∨
-      (info.resTys.head?.getD .invalid ∈ fTys ∧
-        (AVT.data (neFOpsF sel)).HoldsS Compile.instETFL f ctx info.data) := by
-  cases hF : Compile.instETF c
-  · obtain ⟨imm, rfl⟩ := f64const_of_instETFL hTF hF
-    exact .inr ⟨f64const_resTy hctx hi hc, _, hTF, hd, 34, 60, _, instData_f64const_eq hd,
-      by cases sel <;> decide⟩
-  · rcases nonE_splitF hctx hi hc hd hF hE hsel with ⟨h1, c', hS, hd', rest⟩ |
-      ⟨h1, c', hS, hd', rest⟩
-    · exact .inl ⟨h1, c', Compile.instETFL_of_instETF hS, hd', rest⟩
-    · exact .inr ⟨h1, c', Compile.instETFL_of_instETF hS, hd', rest⟩
-
-section
-variable {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeTFL ctx)
-  {ii : Nat} {info : IInfo} {sel : Bool}
-  (hsp : (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
-        (AVT.data neIOpsF).HoldsS Compile.instETFL f ctx info.data) ∨
-      (info.resTys.head?.getD .invalid ∈ fTys ∧
-        (AVT.data (neFOpsF sel)).HoldsS Compile.instETFL f ctx info.data))
-  (hi : ctx.insts[ii]? = some info)
-include hctx hsc hsp hi
-
-mutual
-/-- `rootNEFC_sound` over `InstScopeTFL`. -/
-theorem rootNEFCL_sound : ∀ (q : Pattern) (st : LState) (env env' : Interp.Env V),
-    rootNEFC program sel q = true →
-    matchPat program (sem ctx) st q (.inst ii) env = .ok (some env') → False
-  | .bind ty x q, st, env, env', hf, hm => by
-    rw [rootNEFC.eq_1] at hf
-    exact rootNEFCL_sound q st _ env' hf (matchPat_bind_inv hm).2
-  | .and ty qs, st, env, env', hf, hm => by
-    rw [rootNEFC.eq_2] at hf
-    rw [matchPat.eq_7] at hm
-    exact rootNEFCLAny_sound qs st env env' hf hm
-  | .term ty t args, st, env, env', hf, hm => by
-    rw [rootNEFC.eq_3] at hf
-    cases ht : termOf program t with
-    | error e => exact matchPat_termOf_error ht hm
-    | ok term =>
-      rw [ht] at hf
-      simp only at hf
-      cases hk : term.kind with
-      | decl flags c ex =>
-        rw [hk] at hf
-        cases ex with
-        | none => simp at hf
-        | some ex =>
-          cases ex with
-          | internal form => simp at hf
-          | external fn inf =>
-            simp only at hf
-            cases hmu : flags.isMulti
-            · rw [hmu] at hf
-              simp only [Bool.false_eq_true, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at hf
-              obtain ⟨⟨hid, hf1⟩, hf2⟩ := hf
-              obtain ⟨fs, hx', hma⟩ := matchPat_extract_inv ht hk hmu hm
-              rw [sem_extract] at hx'
-              obtain ⟨info', hi', rfl⟩ := ext_idv_inv hid hx'
-              rw [hi] at hi'
-              cases hi'
-              rcases hsp with ⟨h1, h2⟩ | ⟨h1, h2⟩
-              · exact failsArgsTG_sound hctx (inst_splitFCL hctx hsc) args _
-                  [.ty (info.resTys.head?.getD .invalid), info.data] st env env' hf1
-                  ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
-              · exact failsArgsTG_sound hctx (inst_splitFCL hctx hsc) args _
-                  [.ty (info.resTys.head?.getD .invalid), info.data] st env env' hf2
-                  ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
-            · exact matchPat_multi ht hk hmu hm
-      | _ => rw [hk] at hf; simp at hf
-  | .var .., _, _, _, hf, _ => by simp [rootNEFC] at hf
-  | .constBool .., _, _, _, hf, _ => by simp [rootNEFC] at hf
-  | .constInt .., _, _, _, hf, _ => by simp [rootNEFC] at hf
-  | .constPrim .., _, _, _, hf, _ => by simp [rootNEFC] at hf
-  | .wildcard .., _, _, _, hf, _ => by simp [rootNEFC] at hf
-
-theorem rootNEFCLAny_sound : ∀ (qs : List Pattern) (st : LState) (env env' : Interp.Env V),
-    rootNEFCAny program sel qs = true →
-    matchAll program (sem ctx) st qs (.inst ii) env = .ok (some env') → False
-  | [], _, _, _, hf, _ => by simp [rootNEFCAny] at hf
-  | q :: qs, st, env, env', hf, hm => by
-    rw [rootNEFCAny.eq_2, Bool.or_eq_true] at hf
-    obtain ⟨e1, h1, h2⟩ := matchAll_cons_inv_ex hm
-    rcases hf with hf | hf
-    · exact rootNEFCL_sound q st env e1 hf h1
-    · exact rootNEFCLAny_sound qs st e1 env' hf h2
-end
-
-end
-
 /-- **The integer roots never match the non-E instructions of a typed context with the proven
 float operations and float calls** (`NonEUnmatchableTFW`: over `CtxTW`, no condition on the
-callees of the `call`s; #1002 part 2: `CtxTW`'s scope is `InstScopeTFL`, through
-`nonE_splitFL`/`rootNEFCL_sound`). -/
+callees of the `call`s). -/
 theorem nonEUnmatchableTFW_program : NonEUnmatchableTFW program := by
   intro r hr hroot hfm hmm hfa hfc hfcmp f ctx hctx ii info inst hi hc hE hsel hst cfg m st tr
     env' s1 _ hmatch
@@ -506,9 +403,9 @@ theorem nonEUnmatchableTFW_program : NonEUnmatchableTFW program := by
         rw [hargs] at ha
         obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
         have hd := hctx.inv.data ii info inst hi hc
-        have hsp := nonE_splitFL hctx.inv hi hc hd (hctx.scope ii info inst hi hc) hE
+        have hsp := nonE_splitF hctx.inv hi hc hd (hctx.scope ii info inst hi hc) hE
           (sel := r.id == 971) (fun h => hsel (beq_iff_eq.mp h))
-        exact rootNEFCL_sound hctx.inv hctx.scope hsp hi q _ _ _ hok h1
+        exact rootNEFC_sound hctx.inv hctx.scope hsp hi q _ _ _ hok h1
       · cases hok
   · exact intStore_nonEW hr his hctx hi hc hE hst hmatch
 

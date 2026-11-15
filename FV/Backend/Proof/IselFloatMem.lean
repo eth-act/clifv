@@ -627,7 +627,7 @@ theorem fpu_store_lower_ok (hMR : MRStable F MR) (hFP : MemRefinesFP Rd F sb ise
     intro k hk
     rw [← BitVec.ofNat_add]
     exact hF k (by omega)
-  obtain ⟨w2, hs, hsw⟩ := hFP.2.1 sz x am fl (ρ1 x) _ w1 _ hsz.sz haddr havoid
+  obtain ⟨w2, hs, hsw⟩ := hFP.2 sz x am fl (ρ1 x) _ w1 _ hsz.sz haddr havoid
   obtain ⟨ops, hopsE, hvu, hlen, hupd⟩ := hops.ops
   rw [← hvu] at hs
   have hr2 := seqRun_isem_one hopsE hs (by rw [hlen]; rfl)

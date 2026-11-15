@@ -13,10 +13,7 @@ helpers' (`tryCallDataC`, `exnTableOpndC`, `tryRegsOfC`): `lowerShapeTC_of_ok`,
 `LowerShapeT`, `lowerCheckT` and their theorems are unchanged. S11f: `LowerShapeTC.scope` is
 `InstScopeTF` (the typed scope with the proven float operations; it was `InstScopeT`), so the
 shape also describes the validator with the float operations (`DriverCheckTCF.lean`);
-`instScopeT_of_lowerCheckTC` keeps the movement scope `lowerCheckTC` checks. #1002 part 2:
-`LowerShapeTC.scope` is `InstScopeTFL` (an `f64const` from the literal pool also; it was
-`InstScopeTF`), so the shape also describes the float validator that admits the literal pool;
-`instScopeT_of_lowerCheckTC` still gives `lowerCheckTC`'s movement scope.
+`instScopeT_of_lowerCheckTC` keeps the movement scope `lowerCheckTC` checks.
 -/
 
 namespace Backend.Proof.Driver
@@ -150,7 +147,7 @@ variable (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg �
 structure LowerShapeTC : Prop where
   hctx : ∃ ranges, buildCtx f = .ok (ctx, ranges, st0)
   ctxInvT : CtxInvT f ctx
-  scope : InstScopeTFL ctx
+  scope : InstScopeTF ctx
   ren : VRenaming R gn
   temps : ∀ n, st0.nextVreg ≤ n → gn n = n
   params : ∀ B ∈ f.blocks, ∀ p ∈ B.params, gn p.1 = p.1
@@ -224,7 +221,7 @@ theorem lowerShapeTC_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges 
     intro bi B L hB hL
     have := all_range hblk (lt_of_getElem? hB)
     simpa [hB, hL] using this
-  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, (instScopeOk_sound hsc).toTF.toTFL, renOf_vrenaming gn, hgn, ?_,
+  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, (instScopeOk_sound hsc).toTF, renOf_vrenaming gn, hgn, ?_,
     hlen, hsize, ?_, ?_, hfresh, ?_, ?_⟩
   · intro B hB p hp
     have := List.all_eq_true.mp (List.all_eq_true.mp hpar B hB) p hp

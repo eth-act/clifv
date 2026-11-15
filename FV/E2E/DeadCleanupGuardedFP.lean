@@ -81,9 +81,9 @@ theorem memRefinesR_valueSemGF {sb : Nat} (hsb : ctx.slotBase = sb)
 
 theorem memRefinesFP_valueSemGF {sb : Nat} (hsb : ctx.slotBase = sb) :
     MemRefinesFP Rd F sb (valueSemGF F ctx X Rd syms exts sigs sp0 Pc) := by
-  obtain ⟨h1, h2, h3⟩ := memRefinesFP_csemGF (F := F) (ctx := ctx) (X := X) (Rd := Rd)
+  obtain ⟨h1, h2⟩ := memRefinesFP_csemGF (F := F) (ctx := ctx) (X := X) (Rd := Rd)
     (syms := syms) (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc) hsb
-  exact ⟨h1, h2, h3⟩
+  exact ⟨h1, h2⟩
 
 theorem callsRefineP_valueSemGF {env : Clif.Env} {MR : MemRelT}
     (hX : XCallsOk env exts MR X) (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)

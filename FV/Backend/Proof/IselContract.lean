@@ -1524,24 +1524,11 @@ theorem LowerRuleOkTP.toOk_f64 {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp 
   have := hctx.instE ii info _ hi hic
   simp [Compile.instE, Compile.tyE] at this
 
-/-- **The literal-pool float load** (#1002 part 2): `ldr s/d, <entry>` of a constant-pool entry
-(`AMode.Const v`, the `u64` value `v` of `emit_u64_le_const`, from no use) gives the entry's low
-`sz.bytes` bytes zero-extended into the 128-bit register, with a world that agrees with the start
-outside the allocatable registers and `F`. This is `mspec`'s literal-pool clause (`poolVal`, #565);
-the register-level proof reads the entry from the function's code (`E2E.RegLevelPool`). -/
-def PoolRefinesFP (F : BitVec 64 → Prop) (isem : Sem) : Prop :=
-  ∀ (sz : ScalarSize) (d v : Nat) (fl : Clif.MemFlags) (w : Arm.ArmState),
-    (sz = .size32 ∨ sz = .size64) →
-    ∃ w', isem (.fpuLoad sz (.vreg d .float) (.const v) fl) [] w =
-        some ([(BitVec.ofNat (sz.bytes * 8) v).setWidth 128], w', .next) ∧
-      SameWorld F w' w
-
 /-- **What the float memory rules need of the VCode semantics** (as `MemRefinesR` for the
 integer accesses): `ldr st/dt` through an addressing mode whose access avoids `F` and whose
 bytes satisfy `Rd` reads the `4`/`8` little-endian bytes at `amodeAddr`, zero-extended into the
 128-bit register (Arm `write_sfp`); `str st/dt` writes the register's low bytes there (M6's
-`execMInst_fpuLoad`/`execMInst_fpuStore`, `RegallocMemFP`); and (#1002 part 2) the literal-pool
-load `ldr d, <entry>` of `f64const`'s `constant_f64` reads the entry (`PoolRefinesFP`). -/
+`execMInst_fpuLoad`/`execMInst_fpuStore`, `RegallocMemFP`). -/
 def MemRefinesFP (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat) (isem : Sem) : Prop :=
   (∀ (sz : ScalarSize) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
       (w : Arm.ArmState) (a : BitVec 64),
@@ -1555,8 +1542,7 @@ def MemRefinesFP (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat) (
     (sz = .size32 ∨ sz = .size64) → amodeAddr sb am sz.bytes uses w = some a →
     Avoids F sz.bytes a →
     ∃ w', isem (.fpuStore sz (.vreg d .float) am fl) (v :: uses) w = some ([], w', .next) ∧
-      SameWorld F w' (Arm.write_mem_bytes sz.bytes a (v.setWidth (sz.bytes * 8)) w)) ∧
-  PoolRefinesFP F isem
+      SameWorld F w' (Arm.write_mem_bytes sz.bytes a (v.setWidth (sz.bytes * 8)) w))
 
 /-- `MemRuleOkR` over float-capable contexts. -/
 def MemRuleOkRT (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)

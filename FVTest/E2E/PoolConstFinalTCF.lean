@@ -23,6 +23,11 @@ Non-vacuity of the literal-pool `f64const` in the typed final theorem (#1002 par
 * `shapeOkTF_eq_S_old_false`: the statement of `Driver.shapeOkTF_eq_S` before #1002 part 2 (the
   check `instScopeOkF`) is false: `shapeOkTF` accepts `fLit`'s lowering, which `instScopeOkF`
   rejects.
+* `loweringTCF_of_check_old_false`, `lowerShapeTC_of_okF_old_false`: the statements of
+  `Driver.loweringTCF_of_check` and `Driver.lowerShapeTC_of_okF` before #1002 part 2 (the shape
+  `LowerShapeTC`, scope `InstScopeTF`) are false: `lowerCheckTCF` accepts `fLit`'s lowering, whose
+  context has an instruction outside `Compile.instETF` (they now give
+  `LowerShapeTCS InstScope.tfl`).
 
 Checks by `native_decide` (witness only). `lake build FVTest.E2E.PoolConstFinalTCF`.
 -/
@@ -196,5 +201,54 @@ theorem shapeOkTF_eq_S_old_false :
   · split at hd
     · cases hd
     · simp [h] at hd
+
+/-- The validator accepts `fLit`'s lowering. -/
+theorem lowerCheckTCF_lit : lowerCheckTCF fLit (FloatDriverT.vcOf fLit) = true := by
+  native_decide
+
+/-- `fLit`'s lowering context has an instruction outside `Compile.instETF` (its literal-pool
+`f64const`). -/
+def ctxNotTF (f : Clif.Function) : Bool :=
+  match buildCtx f with
+  | .error _ => false
+  | .ok (ctx, _, _) => !instScopeOkF ctx
+
+/-- **The statement of `Driver.loweringTCF_of_check` before #1002 part 2 is false**: the shape
+`LowerShapeTC` has the scope `InstScopeTF`, which `fLit`'s context fails. -/
+theorem loweringTCF_of_check_old_false :
+    ¬ ∀ (f : Clif.Function) (vc : VCode), lowerCheckTCF f vc = true →
+      ∃ ctx st0 R gn bl A, LowerShapeTC f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
+        ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
+  intro h
+  obtain ⟨ctx, st0, R, gn, bl, A, hs, -, -⟩ := h fLit _ lowerCheckTCF_lit
+  obtain ⟨ranges, hb⟩ := hs.hctx
+  have hd : ctxNotTF fLit = true := by native_decide
+  unfold ctxNotTF at hd
+  rw [hb] at hd
+  simp [instScopeOkF_complete hs.scope] at hd
+
+/-- **The statement of `Driver.lowerShapeTC_of_okF` before #1002 part 2 is false**: with it,
+`loweringTCF_of_check`'s proof gives the false statement `loweringTCF_of_check_old_false`. -/
+theorem lowerShapeTC_of_okF_old_false :
+    ¬ ∀ (f : Clif.Function) (vc : VCode) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState)
+      (bl : List BLow) (gn : Nat → Nat), buildCtx f = .ok (ctx, ranges, st0) →
+      lowBlocksC f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length = some bl →
+      (∀ n, st0.nextVreg ≤ n → gn n = n) → shapeOkTF f vc ctx st0 gn bl = true →
+      LowerShapeTC f vc ctx st0 (renOf gn) gn bl := by
+  intro h
+  apply loweringTCF_of_check_old_false
+  intro f vc hc
+  unfold lowerCheckTCF at hc
+  split at hc
+  · cases hc
+  · rename_i ctx ranges st0 hb
+    split at hc
+    · cases hc
+    · rename_i bl hl
+      simp only [Bool.and_eq_true] at hc
+      have hS := h f vc ctx ranges st0 bl (gnAt (gnTable st0.nextVreg (aliasOf f bl))) hb hl
+        (fun n hn => gnAt_temp hn) hc.1.1.1.1
+      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len hc.1.1.1.2, brIdx_of_ok hc.1.1.2⟩
 
 end PoolConstFinalTCF

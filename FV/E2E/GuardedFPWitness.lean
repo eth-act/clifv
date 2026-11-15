@@ -1,5 +1,6 @@
 import FV.E2E.DeadCleanupPair
 import FV.E2E.DeadCleanupGuardedFP
+import FV.E2E.PoolRefinesFP
 
 /-! # Non-vacuity of the guarded lockstep with the float accesses (S11e5, Stage C slice 4)
 
@@ -184,14 +185,15 @@ theorem csemG_csemGF_witness (ctx : FnCtx) (w : Arm.ArmState) :
 
 /-- **The guarded semantics defines the literal-pool load**: on every world, `csemGF` gives
 `ldr d0, <entry>` the entry's value (`GuardFP` admits it, `fspec`'s pool clause;
-`memRefinesFP_csemGF`'s `PoolRefinesFP`). -/
+`poolRefinesFP_csemGF`). Before #1002 part 2 it was undefined there (`GuardFP` needed an
+address). -/
 theorem csemGF_pool_defined (ctx : FnCtx) (w : Arm.ArmState) :
     ∃ w', csemGF (fun _ => False) ctx xNone' (fun _ => True) (fun _ => none) [] [] 0
         (fun _ _ _ _ => False) (.fpuLoad .size64 (.vreg 0 .float) (.const 0x3ff7b8bac710cb29) fl0)
         [] w = some ([(BitVec.ofNat 64 0x3ff7b8bac710cb29).setWidth 128], w', .next) := by
-  obtain ⟨w', h, -⟩ := (memRefinesFP_csemGF (F := fun _ => False) (ctx := ctx) (X := xNone')
+  obtain ⟨w', h, -⟩ := poolRefinesFP_csemGF (F := fun _ => False) (ctx := ctx) (X := xNone')
     (Rd := fun _ => True) (syms := fun _ => none) (exts := []) (sigs := []) (sp0 := 0)
-    (Pc := fun _ _ _ _ => False) rfl).2.2 .size64 0 0x3ff7b8bac710cb29 fl0 w (.inr rfl)
+    (Pc := fun _ _ _ _ => False) .size64 0 0x3ff7b8bac710cb29 fl0 w (.inr rfl)
   exact ⟨w', h⟩
 
 /-- **`guardFP_fpuLoad` needs `am ≠ .const`**: `GuardFP` admits the literal-pool load

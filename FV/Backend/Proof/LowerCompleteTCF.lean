@@ -94,7 +94,7 @@ theorem lowBlocksC_of_lowBlocks {f : Clif.Function} {call : StmtCall} {tcall : T
 /-- `shapeOkTF` is `shapeOkTS` at its supported-instruction check. #1002 part 2: the check is
 `instScopeOkFL` (it was `instScopeOkF`, since `shapeOkTF` changed: the old statement is false on
 a context with an `f64const` from the literal pool,
-`FVTest/E2E/PoolConstWitness.lean`: `shapeOkTF_eq_S_old_false`). -/
+`FVTest/E2E/PoolConstFinalTCF.lean`: `shapeOkTF_eq_S_old_false`). -/
 theorem shapeOkTF_eq_S {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {gn : Nat → Nat} {bl : List BLow} :
     shapeOkTF f vc ctx st0 gn bl = shapeOkTS (instScopeOkFL ctx) f vc ctx st0 gn bl := rfl

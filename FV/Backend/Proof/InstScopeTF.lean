@@ -6,14 +6,17 @@ import FV.Compile.SubsetTF
 
 `InstScopeTF ctx`: every instruction of `ctx` is in `Compile.instETF` (the typed movement scope,
 the S11f float arithmetic and rounding, the saturating and `from` conversions, the scalar
-`fcmp`). It is the scope premise of the typed rule contexts with integer calls (`CtxT.scope`);
-`InstScopeT` (the movement scope alone) gives it (`InstScopeT.toTF`). `Driver.instScopeOkF`
-decides it (`instScopeOkF_sound`, `instScopeOkF_complete`).
+`fcmp`). It is the scope
+premise of the typed rule contexts (`CtxT.scope`) and of the typed shapes with typed `try_call`s
+(`Driver.LowerShapeTC.scope`); `InstScopeT` (the movement scope alone) gives it
+(`InstScopeT.toTF`). `Driver.instScopeOkF` decides it (`instScopeOkF_sound`,
+`instScopeOkF_complete`).
 
-#1002 part 2: `InstScopeTFL ctx`, every instruction of `ctx` in `Compile.instETFL` (an `f64const`
-from the literal pool also), is the scope of the typed shapes with typed `try_call`s
-(`Driver.LowerShapeTC.scope`) and of the contexts with float calls (`CtxTW.scope`);
-`InstScopeTF.toTFL`; `Driver.instScopeOkFL` decides it.
+#1002 part 2: `InstScopeTFL ctx`, every instruction of `ctx` in `Compile.instETFL` (`instETF` or
+an `f64const` of any bits, one from the literal pool among them), is the scope that the float
+validator `Driver.lowerCheckTCF` checks (`Driver.instScopeOkFL` decides it); `InstScopeTF` gives
+it (`InstScopeTF.toTFL`). The typed contexts and shapes over it are the scope-generic ones
+(`InstScope.tfl`, `ScopeS.lean`).
 -/
 
 namespace Backend.Proof

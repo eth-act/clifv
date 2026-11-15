@@ -32,9 +32,8 @@ instructions of a mixed context; the float families already proven over `CtxInvT
   `lowerInstOk_of_rulesT`, `lowerInstOk_runTermT`, `instCallsT_of_rules`) take `InstScopeT ctx`
   explicitly, so their meaning is unchanged; the dispatchers over `InstScopeTF` are
   `LowerContractTF.lean`'s.
-* `CtxTW f ctx`: `CtxInvT f ctx ∧ InstScopeTFL ctx` (S11g; #1002 part 2: `InstScopeTFL`, an
-  `f64const` from the literal pool among the instructions, it was `InstScopeTF`), the context of
-  the typed scope with float `call`s (`Compile.functionETCF`). The families that never read the call facts have
+* `CtxTW f ctx`: `CtxInvT f ctx ∧ InstScopeTF ctx` (S11g), the context of the typed scope with
+  float `call`s (`Compile.functionETCF`). The families that never read the call facts have
   `…W` forms over it (`LowerRuleOkTXW`, `MemRuleOkRTXW`, `IndRuleOkTW`, `LowerTermRuleOkTW`,
   `TermUnmatchableTW`, `BranchRuleOkTW`, `BranchExcludedUnmatchableTW`, `TryIndRuleOkTW`,
   `TryIndUnmatchableTW` and their `…RulesCorrect…W`), each giving the `CtxT` form (`….toT`,
@@ -65,13 +64,10 @@ open Backend Isle Isle.Interp Isle.Aarch64 Backend.Proof.Driver
 
 /-- **The context premise of the typed rule families** (S11g): a float-capable lowering context
 (`CtxInvT`, whose `call` arguments may be floats) and its instructions in the typed scope with
-the proven float operations and the literal pool (`InstScopeTFL`; #1002 part 2: it was
-`InstScopeTF`, which gives it, `InstScopeTF.toTFL`: the families over `CtxTW` never read the
-field except to rule out non-closure roots and integer roots on its instructions, which an
-`f64const` from the literal pool does not change, so each is stronger). -/
+the proven float operations (`InstScopeTF`). -/
 structure CtxTW (f : Clif.Function) (ctx : Ctx) : Prop where
   inv : CtxInvT f ctx
-  scope : InstScopeTFL ctx
+  scope : InstScopeTF ctx
 
 /-- **The context premise of the typed obligations with integer calls**: `CtxTW`, the callees of
 its `call` statements with integer signatures (`CallsE`: the statement calls are integer-only;
@@ -84,7 +80,7 @@ structure CtxT (f : Clif.Function) (ctx : Ctx) : Prop where
   callArgs : CallArgsInt ctx
 
 theorem CtxT.toW {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) : CtxTW f ctx :=
-  ⟨h.inv, h.scope.toTFL⟩
+  ⟨h.inv, h.scope⟩
 
 instance {f : Clif.Function} {ctx : Ctx} : CoeOut (CtxT f ctx) (CtxTW f ctx) := ⟨CtxT.toW⟩
 
@@ -1444,11 +1440,8 @@ theorem ctxTW_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxTW f ctx) {ti : Na
 theorem ctxT_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) {ti : Nat}
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) :
     CtxT f (termCtx ctx ti data) := by
-  refine ⟨(ctxTW_termCtx h.toW hph data).inv, fun ii info inst hi hc => ?_,
+  refine ⟨(ctxTW_termCtx h.toW hph data).inv, (ctxTW_termCtx h.toW hph data).scope,
     fun ii info fn args e hi hc he => ?_, fun ii info fn args hi hc => ?_⟩
-  · by_cases e : ii = ti
-    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
-    · rw [termCtx_insts_ne e] at hi; exact h.scope ii info inst hi hc
   · by_cases e' : ii = ti
     · subst e'; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e'] at hi; exact h.calls ii info fn args e hi hc he

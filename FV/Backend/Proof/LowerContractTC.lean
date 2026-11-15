@@ -403,8 +403,7 @@ S11g: `callsE_of_functionETCF` and `ctxT_of_functionETCF` (`CtxT` of a `function
 function's context) are removed: `Compile.functionETCF` admits `call`s of float signatures (no
 `callsE` conjunct, no integer position in a `call`'s arguments), so their conclusions are false
 for it. The context premise of the scope's dispatchers (`LowerContractTFW.lean`) is
-`CtxTW f ctx = ⟨CtxInvT f ctx, InstScopeTFL ctx⟩`, the shape's two facts (#1002 part 2:
-`InstScopeTFL`, an `f64const` from the literal pool admitted). -/
+`CtxTW f ctx = ⟨CtxInvT f ctx, InstScopeTF ctx⟩`, the shape's two facts. -/
 
 /-- The integer-position operands of a `functionETCF` function's terminators other than the
 direct `try_call`s. -/

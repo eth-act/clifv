@@ -7,11 +7,13 @@ import FV.Backend.Proof.IselLowerAll
 rules builds (not zero, not an `fmov` immediate, not below `2^32`, low 32 bits not zero) from the
 function's constant pool: `fpu_load64 (AMode.Const (emit_u64_le_const n)) (mem_flags_trusted)`,
 `ldr d, <entry>` (`MInst.fpuLoad .size64 _ (.const n) trustedFlags`, #565). Its value is the
-entry's when the VCode semantics gives the literal-pool load the entry's value
-(`PoolRefinesFP`, a part of `MemRefinesFP`): `csem` does (`E2E.poolRefinesFP_csem`, `mspec`'s pool
-clause), and the register-level proof reads the entry from the function's code
+entry's when the VCode semantics gives the literal-pool load the entry's value (`PoolRefinesFP`,
+a premise of its own next to `MemRefinesFP`, which is unchanged): `csem`, `csemGF`, `valueSem` and
+`valueSemGF` do (`E2E.poolRefinesFP_csem`, …, `PoolRefinesFP.lean`: `mspec`'s and `fspec`'s pool
+clauses), and the register-level proof reads the entry from the function's code
 (`E2E.RegLevelPool`).
 
+* `PoolRefinesFP F isem`: the literal-pool load gives the entry's value;
 * `fpu_load64_ok`: the internal term `fpu_load64` (`inst.isle:5548`) emits `ldr d` into a fresh
   float vreg;
 * `fconst_pool`: the pool load's `FConstOut` under `PoolRefinesFP`;
@@ -31,6 +33,18 @@ namespace Backend.Proof
 open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
+
+/-- **The literal-pool float load** (#1002 part 2): `ldr s/d, <entry>` of a constant-pool entry
+(`AMode.Const v`, the `u64` value `v` of `emit_u64_le_const`, from no use) gives the entry's low
+`sz.bytes` bytes zero-extended into the 128-bit register, with a world that agrees with the start
+outside the allocatable registers and `F`. This is `mspec`'s literal-pool clause (`poolVal`, #565);
+the register-level proof reads the entry from the function's code (`E2E.RegLevelPool`). -/
+def PoolRefinesFP (F : BitVec 64 → Prop) (isem : Sem) : Prop :=
+  ∀ (sz : ScalarSize) (d v : Nat) (fl : Clif.MemFlags) (w : Arm.ArmState),
+    (sz = .size32 ∨ sz = .size64) →
+    ∃ w', isem (.fpuLoad sz (.vreg d .float) (.const v) fl) [] w =
+        some ([(BitVec.ofNat (sz.bytes * 8) v).setWidth 128], w', .next) ∧
+      SameWorld F w' w
 
 /-! ## Running the literal-pool load -/
 
