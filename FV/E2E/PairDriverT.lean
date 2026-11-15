@@ -64,7 +64,7 @@ theorem instCalls_pairT (hc : CompiledT f k vc vcp rf af fa fb) (hT : TypedRules
 
 /-- **The typed terminator calls on pairs of worlds** (`TermCallsT` of `pairSem`). -/
 theorem termCalls_pairT {f₀ : Clif.Function} (Γ : Rel) (hΓ : Γ.F = F) (hTls : XTls F X)
-    (ctx' : FnCtx) (hT : TypedRules) {ctx : Ctx} (hctx : CtxTW f₀ ctx) :
+    (ctx' : FnCtx) (hT : TypedRules) {ctx : Ctx} (hctx : CtxT f₀ ctx) :
     TermCallsT ctx (pairSem (csem F ctx' X)) (MRP Γ f₀ c D) := by
   intro ti t data targets out st st' tr hbt hip htl hph hvb hd hemp hrun
   have key : ∀ (Rd : BitVec 64 → Prop), LowerTermOkT
@@ -152,13 +152,13 @@ theorem tryIndCalls_pairT (hIstk : IndStack (indSigs f) (RAFrame.compute vcp rf)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
-    {ctx : Ctx} (hctx : CtxTW f ctx) :
+    {ctx : Ctx} (hctx : CtxT f ctx) :
     TryIndCallsT f ctx (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p (indSigs f) := by
   intro ti callee args et data sig items targets info trs lo st1 out st' tr hd hip he hsig
     hph hinfo hregs hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
-  have hctx' := ctxTW_tryRegs (ctxTW_termCtx hctx hph data) trs
+  have hctx' := ctxT_tryRegs (ctxT_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
   have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
@@ -229,7 +229,7 @@ theorem vcode_niT (hsub : InSubsetT p f) (hc : CompiledT f k vc vcp rf af fa fb)
     cert := hcert
     dsem := driverSemG_pair F ⟨fa.k, af.slotBase⟩ X
     insts := instCalls_pairT hc hT hX hXI hsym hslot hNI hTls hctxT hshape.scope hstT
-    terms := termCalls_pairT Γ rfl hTls ⟨fa.k, af.slotBase⟩ hT hctxT.toW
+    terms := termCalls_pairT Γ rfl hTls ⟨fa.k, af.slotBase⟩ hT hctxT
     ext := H.ext
     indSig := H.indSig
     subET := H.subET
@@ -241,7 +241,7 @@ theorem vcode_niT (hsub : InSubsetT p f) (hc : CompiledT f k vc vcp rf af fa fb)
     tryExt := H.tryExt
     tryInd := tryIndCalls_pairT
       (indStack_mono (indStackT_of_check hc.lowerOk) (outgoing_le_intBaseAT hc.toA))
-      hT hXI hsym hNI hTls hctxT.toW
+      hT hXI hsym hNI hTls hctxT
     tryIndSig := H.tryIndSig
     cfg := H.cfg }
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry

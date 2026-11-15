@@ -67,7 +67,7 @@ def IndRuleOkTP (Rd : BitVec 64 → Prop)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (isem : Sem) (MR : MemRelT)
     (env : Clif.Env) (cp : Clif.Program) (sigs : List Clif.Signature) (p : Program) (r : Rule) :
     Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   Compile.instE inst = true → IndSigOk f sigs inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
@@ -150,7 +150,7 @@ def TryIndRuleOkTP (Rd : BitVec 64 → Prop)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (isem : Sem) (MR : MemRelT)
     (env : Clif.Env) (cp : Clif.Program) (sigs : List Clif.Signature) (p : Program) (r : Rule) :
     Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)
     (sig : Clif.Signature) (items : List (Option Nat)) (targets : List Label) (info : TryInfo)
     (lo st1 : LState),
@@ -193,6 +193,81 @@ theorem tryIndRulesCorrectT_of_P {p : Program} (h : TryIndRulesCorrectTP p) :
     data sig items targets info lo st1 hd hip he hsig hi hinfo htr hvb cfg hco m n st tr env' s1
     out st' tr' hm hn hst hfirst hmatch heval
   exact ⟨ms, h1, h2.toOk⟩
+
+/-! ## The pinned families over `CtxTW` (S11g; `LowerContractT`'s `CtxTW` families) -/
+
+/-- `IndRuleOkTP` over `CtxTW`. -/
+def IndRuleOkTPW (Rd : BitVec 64 → Prop)
+    (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (isem : Sem) (MR : MemRelT)
+    (env : Clif.Env) (cp : Clif.Program) (sigs : List Clif.Signature) (p : Program) (r : Rule) :
+    Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  Compile.instE inst = true → IndSigOk f sigs inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOkP Rd Pc isem MR env cp ctx inst info.results st rss st' ms
+
+/-- `IndRulesCorrectTP` over `CtxTW`. -/
+def IndRulesCorrectTPW (p : Program) : Prop :=
+  ∀ (Rd : BitVec 64 → Prop) (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop)
+    (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (sigs : List Clif.Signature) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
+    Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem → OutArgsOk F outB MR →
+    IndStack sigs outB → IndCallsRefineP Pc env sigs MR isem →
+    ∀ r ∈ p.rulesOf TId.lower, indRootRule r = true → IndRuleOkTPW Rd Pc isem MR env cp sigs p r
+
+theorem IndRulesCorrectTPW.toT {p : Program} (h : IndRulesCorrectTPW p) : IndRulesCorrectTP p :=
+  fun Rd Pc F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi f ctx hctx =>
+    h Rd Pc F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi f ctx hctx.toW
+
+/-- `TryIndRuleOkTP` over `CtxTW`. -/
+def TryIndRuleOkTPW (Rd : BitVec 64 → Prop)
+    (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (isem : Sem) (MR : MemRelT)
+    (env : Clif.Env) (cp : Clif.Program) (sigs : List Clif.Signature) (p : Program) (r : Rule) :
+    Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)
+    (sig : Clif.Signature) (items : List (Option Nat)) (targets : List Label) (info : TryInfo)
+    (lo st1 : LState),
+  tryCallData f (.tryCallIndirect callee args et) = .ok data →
+  TermIntPos ctx (.tryCallIndirect callee args et) →
+  exnTableOpnd f et = .ok (sig, items) → sig ∈ sigs →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → tryInfoOf sig items targets = some info →
+  tryRegsOf sig lo = some (ctx.tryRegs, st1) → ValsBelow ctx lo →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n →
+    st1.nextVreg ≤ st.nextVreg →
+    (∀ pre post, p.rulesOf TId.lower_branch = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run (st, tr) =
+        .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run (st, tr) =
+      .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
+      LowerTryOkP Rd Pc isem MR env cp ctx (.callIndirect et.sig callee args) info st st' ms
+
+/-- `TryIndRulesCorrectTP` over `CtxTW`. -/
+def TryIndRulesCorrectTPW (p : Program) : Prop :=
+  ∀ (Rd : BitVec 64 → Prop) (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop)
+    (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (sigs : List Clif.Signature) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
+    Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem → OutArgsOk F outB MR →
+    IndStack sigs outB → IndCallsRefineP Pc env sigs MR isem →
+    ∀ r ∈ p.rulesOf TId.lower_branch, tryIndRootRule r = true →
+      TryIndRuleOkTPW Rd Pc isem MR env cp sigs p r
+
+theorem TryIndRulesCorrectTPW.toT {p : Program} (h : TryIndRulesCorrectTPW p) :
+    TryIndRulesCorrectTP p :=
+  fun Rd Pc F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi f ctx hctx =>
+    h Rd Pc F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi f ctx hctx.toW
 
 /-! ## The dispatchers -/
 
@@ -444,7 +519,7 @@ theorem tryIndOkP_of_rulesT {p : Program} (hp : Data p) (hrules : TryIndRulesCor
     (hR : Refines F isem) (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
     (hIstk : IndStack sigs outB) (hcr : IndCallsRefineP Pc env sigs MR isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxTW f ctx) {ti callee : Nat} {args : List Nat}
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ti callee : Nat} {args : List Nat}
     {et : Clif.ExnTable} {data : V} {sig : Clif.Signature} {items : List (Option Nat)}
     {targets : List Label} {info : TryInfo} {lo st1 : LState}
     (hd : tryCallData f (.tryCallIndirect callee args et) = .ok data)
@@ -493,7 +568,7 @@ theorem tryIndOkP_runTermT (hrules : TryIndRulesCorrectTP program)
     {sigs : List Clif.Signature} (hR : Refines F isem) (hMR : MRStable F MR) {sb : Nat}
     {syms : String → Option Nat} (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat}
     (hout : OutArgsOk F outB MR) (hIstk : IndStack sigs outB)
-    (hcr : IndCallsRefineP Pc env sigs MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxTW f ctx)
+    (hcr : IndCallsRefineP Pc env sigs MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx)
     {ti callee : Nat} {args : List Nat} {et : Clif.ExnTable} {data : V} {sig : Clif.Signature}
     {items : List (Option Nat)} {targets : List Label} {info : TryInfo} {lo st1 : LState}
     (hd : tryCallData f (.tryCallIndirect callee args et) = .ok data)

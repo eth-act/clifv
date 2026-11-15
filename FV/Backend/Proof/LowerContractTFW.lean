@@ -25,6 +25,9 @@ Generated code is unchanged: these are the proofs of the shipped lowering.
 * `lowerInstOkP_of_rulesTFW`, `lowerInstOkP_runTermTFW` (pinned obligations, `LowerInstOkP`);
 * `lowerInstOk_runTermTFW`, `instCallsTFW_of_rules` (unpinned, from the pinned ones at
   `Rd = Pc = True`).
+
+The integer families are taken over `CtxTW` (`LowerRulesCorrectTIW`, `IndRulesCorrectTPW`,
+`MemRulesCorrectRTIW`; `CtxTWRules.lean` proves them for `program`).
 -/
 
 namespace Backend.Proof
@@ -35,11 +38,11 @@ set_option maxRecDepth 20000 in
 /-- **The typed statement dispatcher with pinned obligations, the proven float operations and
 float calls** (`lowerInstOkP_of_rulesTF` over `CtxTW`: the exclusion `lower_nonroot_nomatchTFC`,
 the non-E unmatchability `NonEUnmatchableTFW`, every `call` by `CallRulesCorrectTFP`). -/
-theorem lowerInstOkP_of_rulesTFW (hrules : LowerRulesCorrectTI program)
+theorem lowerInstOkP_of_rulesTFW (hrules : LowerRulesCorrectTIW program)
     (hT : LowerRulesCorrectT program) (hFT : LowerRulesCorrectFT program)
     (hCvt : LowerRulesCorrectCvtT program) (hFC : LowerRulesCorrectFC program)
     (hnE : NonEUnmatchableTFW program) (hcalls : CallRulesCorrectTFP program)
-    (hind : IndRulesCorrectTP program) (hmem : MemRulesCorrectRTI program)
+    (hind : IndRulesCorrectTPW program) (hmem : MemRulesCorrectRTIW program)
     (hmemF : MemRulesCorrectRT program) {Rd : BitVec 64 → Prop}
     {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop}
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
@@ -161,11 +164,11 @@ theorem lowerInstOkP_of_rulesTFW (hrules : LowerRulesCorrectTI program)
 
 set_option maxRecDepth 20000 in
 /-- `lowerInstOkP_of_rulesTFW` for the backend's own call (`runTerm ctx "lower" [.inst ii]`). -/
-theorem lowerInstOkP_runTermTFW (hrules : LowerRulesCorrectTI program)
+theorem lowerInstOkP_runTermTFW (hrules : LowerRulesCorrectTIW program)
     (hT : LowerRulesCorrectT program) (hFT : LowerRulesCorrectFT program)
     (hCvt : LowerRulesCorrectCvtT program) (hFC : LowerRulesCorrectFC program)
     (hnE : NonEUnmatchableTFW program) (hcalls : CallRulesCorrectTFP program)
-    (hind : IndRulesCorrectTP program) (hmem : MemRulesCorrectRTI program)
+    (hind : IndRulesCorrectTPW program) (hmem : MemRulesCorrectRTIW program)
     (hmemF : MemRulesCorrectRT program) {Rd : BitVec 64 → Prop}
     {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop}
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem} {MR : MemRelT}
@@ -207,11 +210,11 @@ theorem lowerInstOkP_runTermTFW (hrules : LowerRulesCorrectTI program)
 
 /-- **The typed statement dispatcher with float calls, unpinned** (`lowerInstOkP_runTermTFW` at
 `Rd = Pc = True`). -/
-theorem lowerInstOk_runTermTFW (hrules : LowerRulesCorrectTI program)
+theorem lowerInstOk_runTermTFW (hrules : LowerRulesCorrectTIW program)
     (hT : LowerRulesCorrectT program) (hFT : LowerRulesCorrectFT program)
     (hCvt : LowerRulesCorrectCvtT program) (hFC : LowerRulesCorrectFC program)
     (hnE : NonEUnmatchableTFW program) (hcalls : CallRulesCorrectTFP program)
-    (hind : IndRulesCorrectTP program) (hmem : MemRulesCorrectRTI program)
+    (hind : IndRulesCorrectTPW program) (hmem : MemRulesCorrectRTIW program)
     (hmemF : MemRulesCorrectRT program)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem} {MR : MemRelT}
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
@@ -235,13 +238,13 @@ theorem lowerInstOk_runTermTFW (hrules : LowerRulesCorrectTI program)
 
 /-- **From the typed rule families with float calls to the driver's `lower` calls**
 (`instCallsTF_of_rules` over `CtxTW`, every `call` by `CallRulesCorrectTFP`). -/
-theorem instCallsTFW_of_rules (hrules : LowerRulesCorrectTI Isle.Aarch64.program)
+theorem instCallsTFW_of_rules (hrules : LowerRulesCorrectTIW Isle.Aarch64.program)
     (hT : LowerRulesCorrectT Isle.Aarch64.program) (hFT : LowerRulesCorrectFT Isle.Aarch64.program)
     (hCvt : LowerRulesCorrectCvtT Isle.Aarch64.program)
     (hFC : LowerRulesCorrectFC Isle.Aarch64.program)
     (hnE : NonEUnmatchableTFW Isle.Aarch64.program)
     (hcalls : CallRulesCorrectTFP Isle.Aarch64.program)
-    (hind : IndRulesCorrectTP Isle.Aarch64.program) (hmem : MemRulesCorrectRTI Isle.Aarch64.program)
+    (hind : IndRulesCorrectTPW Isle.Aarch64.program) (hmem : MemRulesCorrectRTIW Isle.Aarch64.program)
     (hmemF : MemRulesCorrectRT Isle.Aarch64.program)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {sem : Sem}
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} {ctx : Ctx}

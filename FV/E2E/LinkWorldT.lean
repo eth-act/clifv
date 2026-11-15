@@ -53,7 +53,7 @@ theorem driverHypT_relW_of {sem : Sem} (hsub : InSubsetT p f) (hT : TypedRules)
       (callsStack_mono (callsStackT_of_check hlow) houtB)
       (indStack_mono (indStackT_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hshape.scope hstT
     terms := termCallsT_of_rules hT.term hT.termUn hT.branch hT.branchEx hRef
-      (mrStable_relW Γ f c) hctxT.toW
+      (mrStable_relW Γ f c) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetT hsub
     subET := hsub.subsetET
@@ -64,7 +64,7 @@ theorem driverHypT_relW_of {sem : Sem} (hsub : InSubsetT p f) (hT : TypedRules)
       (outArgsOk_relW Γ f c) hcalls hctxT, tryStack_mono (tryStackT_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCallsT_of_rules hT.tryIndT hT.tryIndUn hRef (mrStable_relW Γ f c) hmem
-      (outArgsOk_relW Γ f c) (indStack_mono (indStackT_of_check hlow) houtB) hicalls hctxT.toW
+      (outArgsOk_relW Γ f c) (indStack_mono (indStackT_of_check hlow) houtB) hicalls hctxT
     tryIndSig := tryIndSig_of_subsetT hsub
     cfg := hcfg }
 

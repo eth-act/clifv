@@ -101,7 +101,7 @@ context** (class-aware returns, `LowerTermOkT`). -/
 theorem termCallsT_fCtl : TermCallsT (ctxStOf fCtl).1 ispec (fun _ _ _ => True) :=
   termCallsT_of_rules lowerTermRulesCorrectT_program termUnmatchableT_program
     branchRulesCorrectT_program branchExcludedUnmatchableT_program refines_ispec mrStable_true
-    ctxT_fCtl.toW
+    ctxT_fCtl
 
 /-! ## Calls: `fCall` -/
 

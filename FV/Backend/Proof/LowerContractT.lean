@@ -18,26 +18,26 @@ contexts (`CtxT`), for the integer
 instructions of a mixed context; the float families already proven over `CtxInvT`
 (`LowerRulesCorrectT`, `MemRulesCorrectRT`, `LowerRulesCorrectFT`) are reused unchanged.
 
-* `CtxTW f ctx`: `CtxInvT f ctx ∧ InstScopeTF ctx`, the context premise of the rule families
-  (S11g, #1015). `CtxT f ctx`: `CtxTW` with the callees of the `call` statements with integer
-  signatures (`CallsE`) and the `call` arguments in integer positions (`CallArgsInt`)
-  (`CtxT.toW`, `CtxInv.toCtxT`, `CtxT.ofExterns`). S11e6: until then the `calls` field was
-  `f.externs.all sigE`. S11f: until then the scope field was `InstScopeT`; the rule families'
-  proofs never read it, so it is the weaker `InstScopeTF` (the S11f float arithmetic, rounding
-  and conversions among the instructions, `Compile.instETF`). S11g: `CtxInvT` no longer types a
-  `call`'s arguments as integers (`intArgs`; the validator `ctxOkT` accepts float call
-  arguments), so `CtxT` records them itself (`callArgs`: its meaning is the old one), and the
-  rule families that do not lower `call`s quantify over `CtxTW` (stronger; they never read the
-  call facts), as do the terminator dispatchers (`lowerTermOk_of_rulesT`, `branchOk_of_rulesT`,
-  `termCallsT_of_rules`, `tryIndOk_of_rulesT`, `tryIndCallsT_of_rules`, … : premise weakened
-  from `CtxT`, `CtxT.toW` is the coercion). The typed scope with float calls
-  (`Compile.functionETCF`) gives `CtxTW` only, and its dispatchers (`LowerContractTFW.lean`)
-  lower every `call` with the float family `callRulesCorrectTFP_program`. The integer `call`
-  family `CallRulesCorrectT` and `NonEUnmatchableT` stay over `CtxT`. The statements whose truth
-  depends on the
-  instructions (`NonEUnmatchableT`, the dispatchers `lowerInstOk_of_rulesT`,
-  `lowerInstOk_runTermT`, `instCallsT_of_rules`) take `InstScopeT ctx` explicitly, so their
-  meaning is unchanged; the dispatchers over `InstScopeTF` are `LowerContractTF.lean`'s.
+* `CtxT f ctx`: `CtxInvT f ctx ∧ InstScopeTF ctx ∧ CallsE f ctx ∧ CallArgsInt ctx`
+  (`CtxInv.toCtxT`; integer externs give `CallsE`, `CtxT.ofExterns`). S11e6: until then the
+  third field was `f.externs.all sigE`; the proofs only use it for the `call` statements, and a
+  `try_call`'s callee may have float parameters and returns (`IselCtlTryF`), so the field is the
+  weaker `CallsE` (every family over `CtxT` is stronger). S11f: until then the second field was
+  `InstScopeT`; the rule families' proofs never read it, so it is the weaker `InstScopeTF` (the
+  S11f float arithmetic, rounding and conversions among the instructions, `Compile.instETF`):
+  every family over `CtxT` is stronger. S11g (#1015): `CtxInvT` no longer types a `call`'s
+  arguments as integers (`intArgs`; the validator `ctxOkT` accepts float `call` arguments), so
+  `CtxT` records them itself (`callArgs : CallArgsInt ctx`): `CtxT` keeps its meaning. The
+  statements whose truth depends on the instructions (`NonEUnmatchableT`, the dispatchers
+  `lowerInstOk_of_rulesT`, `lowerInstOk_runTermT`, `instCallsT_of_rules`) take `InstScopeT ctx`
+  explicitly, so their meaning is unchanged; the dispatchers over `InstScopeTF` are
+  `LowerContractTF.lean`'s.
+* `CtxTW f ctx`: `CtxInvT f ctx ∧ InstScopeTF ctx` (S11g), the context of the typed scope with
+  float `call`s (`Compile.functionETCF`). The families that never read the call facts have
+  `…W` forms over it (`LowerRuleOkTXW`, `MemRuleOkRTXW`, `IndRuleOkTW`, `LowerTermRuleOkTW`,
+  `TermUnmatchableTW`, `BranchRuleOkTW`, `BranchExcludedUnmatchableTW`, `TryIndRuleOkTW`,
+  `TryIndUnmatchableTW` and their `…RulesCorrect…W`), each giving the `CtxT` form (`….toT`,
+  through `CtxT.toW`); their proofs are the `CtxT` proofs, transported (`CtxTWTransport.lean`).
 * Statements, on the subset-E instructions (`Compile.instE`) of a typed context:
   `LowerRuleOkTX`, `LowerRulesCorrectTI` (the integer `lower` roots: closure roots that are not
   call, indirect-call, memory, float-movement or float-arithmetic roots), `MemRuleOkRTX`,
@@ -83,6 +83,9 @@ theorem CtxT.toW {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) : CtxTW f ctx 
   ⟨h.inv, h.scope⟩
 
 instance {f : Clif.Function} {ctx : Ctx} : CoeOut (CtxT f ctx) (CtxTW f ctx) := ⟨CtxT.toW⟩
+
+/-- `CtxTW` from `CtxTW` (the image of `CtxT.toW` under the `CtxT` → `CtxTW` transport). -/
+theorem CtxTW.self {f : Clif.Function} {ctx : Ctx} (h : CtxTW f ctx) : CtxTW f ctx := h
 
 /-- A typed context of a function with integer externs (`Compile.functionET`) whose `call`
 arguments are integers (S11g: `hca`, which `CtxInvT` no longer gives; without it the statement
@@ -138,7 +141,7 @@ def FloatSelect (i : Clif.Inst) : Prop := ∃ ty c x y, i = .select ty c x y ∧
 instructions satisfying `P`. -/
 def LowerRuleOkTX (P : Clif.Inst → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)
     (cp : Clif.Program) (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst),
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst),
   ctx.insts[ii]? = some info → info.clif = some inst → P inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
@@ -260,7 +263,7 @@ def NonEUnmatchableT (p : Program) : Prop :=
 def MemRuleOkRTX (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
     (syms : String → Option Nat) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx → MemRelOk F sb syms f MR →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx → MemRelOk F sb syms f MR →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   Compile.instE inst = true →
   ∀ (cfg : Config), cfg.checkOverlap = false →
@@ -283,8 +286,7 @@ def MemRulesCorrectRTI (p : Program) : Prop :=
     ∀ r ∈ p.rulesOf TId.lower, memRootRule r = true → floatMemRootRule r = false →
       MemRuleOkRTX Rd F sb syms isem MR env cp p r
 
-/-- `CallRuleOk` over typed contexts, on the subset-E instructions (over `CtxT`, whose `call`s
-are integer: the float `call`s are `IselCtlCallF`'s `CallRuleOkTFP`). -/
+/-- `CallRuleOk` over typed contexts, on the subset-E instructions. -/
 def CallRuleOkT (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (outB : Nat) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx → ExternsIn f exts →
@@ -312,7 +314,7 @@ def CallRulesCorrectT (p : Program) : Prop :=
 /-- `IndRuleOk` over typed contexts, on the subset-E instructions. -/
 def IndRuleOkT (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature) (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   Compile.instE inst = true → IndSigOk f sigs inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
@@ -463,7 +465,7 @@ theorem valClassOf_int_of_ctxE {ctx : Ctx} (hE : CtxE ctx) : ∀ x, valClassOf c
 matches the `return`/`trap` at `ti` of a typed context, the code it appended satisfies
 `LowerTermOkT`. -/
 def LowerTermRuleOkT (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
   ∀ (cfg : Config), cfg.checkOverlap = false →
@@ -484,7 +486,7 @@ def LowerTermRulesCorrectT (p : Program) : Prop :=
 /-- The other rules of `lower` never match a `return`/`trap` of a typed context. -/
 def TermUnmatchableT (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower, termRootRule r = false →
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
   ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
@@ -493,7 +495,7 @@ def TermUnmatchableT (p : Program) : Prop :=
 /-- **Root rule correctness (`lower_branch`) over typed contexts** (`BranchRuleOk` with
 `CtxT`; the branch clauses of `LowerTermOk` are class-independent). -/
 def BranchRuleOkT (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t → TermIntPos ctx t →
   TargetsLen t targets →
@@ -518,7 +520,7 @@ def BranchRulesCorrectT (p : Program) : Prop :=
 context. -/
 def BranchExcludedUnmatchableT (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower_branch, closureRoot r = false →
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), retOrTrap t = false →
   termData t = .ok data → ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
   ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
@@ -570,7 +572,7 @@ def TryUnmatchableT (p : Program) : Prop :=
 /-- `TryIndRuleOk` over typed contexts. -/
 def TryIndRuleOkT (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature) (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)
     (sig : Clif.Signature) (items : List (Option Nat)) (targets : List Label) (info : TryInfo)
     (lo st1 : LState),
@@ -604,6 +606,240 @@ def TryIndRulesCorrectT (p : Program) : Prop :=
 /-- The other rules of `lower_branch` never match a `try_call_indirect` of a typed context. -/
 def TryIndUnmatchableT (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower_branch, tryIndRootRule r = false →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
+  ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)
+    (targets : List Label),
+  tryCallData f (.tryCallIndirect callee args et) = .ok data →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run s ≠ .ok (some env', s1)
+
+/-! ## The families over `CtxTW` (S11g)
+
+Each is its `CtxT` family above with the context premise `CtxTW` (no `call` facts), and gives
+it (`….toT`). They are the premises of the dispatchers of the typed scope with float `call`s
+(`LowerContractTFW.lean`); their proofs over `program` are the `CtxT` proofs transported
+(`CtxTWTransport.lean`, `CtxTWRules.lean`). -/
+
+/-- `LowerRuleOkTX` over `CtxTW`. -/
+def LowerRuleOkTXW (P : Clif.Inst → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst),
+  ctx.insts[ii]? = some info → info.clif = some inst → P inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
+
+theorem LowerRuleOkTXW.toT {P : Clif.Inst → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {p : Program} {r : Rule} (h : LowerRuleOkTXW P isem MR env cp p r) :
+    LowerRuleOkTX P isem MR env cp p r :=
+  fun f ctx hctx => h f ctx hctx.toW
+
+/-- `LowerRulesCorrectTI` over `CtxTW`. -/
+def LowerRulesCorrectTIW (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR →
+    ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → callRootRule r = false →
+      indRootRule r = false → memRootRule r = false → floatMoveRootRule r = false →
+      floatArithRootRule r = false →
+      LowerRuleOkTXW (fun i => Compile.instE i = true) isem MR env cp p r
+
+theorem LowerRulesCorrectTIW.toT {p : Program} (h : LowerRulesCorrectTIW p) :
+    LowerRulesCorrectTI p :=
+  fun F isem MR env cp hR hMR r hr h1 h2 h3 h4 h5 h6 =>
+    (h F isem MR env cp hR hMR r hr h1 h2 h3 h4 h5 h6).toT
+
+/-- `MemRuleOkRTX` over `CtxTW`. -/
+def MemRuleOkRTXW (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
+    (syms : String → Option Nat) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx → MemRelOk F sb syms f MR →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  Compile.instE inst = true →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOkR Rd isem MR env cp ctx inst info.results st rss st' ms
+
+theorem MemRuleOkRTXW.toT {Rd F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {p : Program} {r : Rule}
+    (h : MemRuleOkRTXW Rd F sb syms isem MR env cp p r) :
+    MemRuleOkRTX Rd F sb syms isem MR env cp p r :=
+  fun f ctx hctx => h f ctx hctx.toW
+
+/-- `MemRulesCorrectRTI` over `CtxTW`. -/
+def MemRulesCorrectRTIW (p : Program) : Prop :=
+  ∀ (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat)
+    (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem →
+    ∀ r ∈ p.rulesOf TId.lower, memRootRule r = true → floatMemRootRule r = false →
+      MemRuleOkRTXW Rd F sb syms isem MR env cp p r
+
+theorem MemRulesCorrectRTIW.toT {p : Program} (h : MemRulesCorrectRTIW p) :
+    MemRulesCorrectRTI p :=
+  fun Rd F sb syms isem MR env cp hR hMR hM r hr h1 h2 =>
+    (h Rd F sb syms isem MR env cp hR hMR hM r hr h1 h2).toT
+
+/-- `IndRuleOkT` over `CtxTW`. -/
+def IndRuleOkTW (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (sigs : List Clif.Signature) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  Compile.instE inst = true → IndSigOk f sigs inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
+
+theorem IndRuleOkTW.toT {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    {sigs : List Clif.Signature} {p : Program} {r : Rule}
+    (h : IndRuleOkTW isem MR env cp sigs p r) : IndRuleOkT isem MR env cp sigs p r :=
+  fun f ctx hctx => h f ctx hctx.toW
+
+/-- `IndRulesCorrectT` over `CtxTW`. -/
+def IndRulesCorrectTW (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (sigs : List Clif.Signature) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
+    Refines F isem → MRStable F MR → MemRefines F sb syms isem → OutArgsOk F outB MR →
+    IndStack sigs outB → IndCallsRefine env sigs MR isem →
+    ∀ r ∈ p.rulesOf TId.lower, indRootRule r = true → IndRuleOkTW isem MR env cp sigs p r
+
+theorem IndRulesCorrectTW.toT {p : Program} (h : IndRulesCorrectTW p) : IndRulesCorrectT p :=
+  fun F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi =>
+    (h F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi).toT
+
+/-- `LowerTermRuleOkT` over `CtxTW`. -/
+def LowerTermRuleOkTW (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ti]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOkT isem MR ctx t [] st st' ms
+
+/-- `LowerTermRulesCorrectT` over `CtxTW`. -/
+def LowerTermRulesCorrectTW (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT), Refines F isem → MRStable F MR →
+    ∀ r ∈ p.rulesOf TId.lower, termRootRule r = true → LowerTermRuleOkTW isem MR p r
+
+theorem LowerTermRulesCorrectTW.toT {p : Program} (h : LowerTermRulesCorrectTW p) :
+    LowerTermRulesCorrectT p :=
+  fun F isem MR hR hMR r hr ht f ctx hctx => h F isem MR hR hMR r hr ht f ctx hctx.toW
+
+/-- `TermUnmatchableT` over `CtxTW`. -/
+def TermUnmatchableTW (p : Program) : Prop :=
+  ∀ r ∈ p.rulesOf TId.lower, termRootRule r = false →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
+    (matchRule p (sem ctx) cfg m r [.inst ti]).run s ≠ .ok (some env', s1)
+
+theorem TermUnmatchableTW.toT {p : Program} (h : TermUnmatchableTW p) : TermUnmatchableT p :=
+  fun r hr ht f ctx hctx => h r hr ht f ctx hctx.toW
+
+/-- `BranchRuleOkT` over `CtxTW`. -/
+def BranchRuleOkTW (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t → TermIntPos ctx t →
+  TargetsLen t targets →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower_branch = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run (st, tr) =
+        .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run (st, tr) =
+      .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms
+
+/-- `BranchRulesCorrectT` over `CtxTW`. -/
+def BranchRulesCorrectTW (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT),
+    Refines F isem → MRStable F MR →
+    ∀ r ∈ p.rulesOf TId.lower_branch, closureRoot r = true → BranchRuleOkTW isem MR p r
+
+theorem BranchRulesCorrectTW.toT {p : Program} (h : BranchRulesCorrectTW p) :
+    BranchRulesCorrectT p :=
+  fun F isem MR hR hMR r hr hc f ctx hctx => h F isem MR hR hMR r hr hc f ctx hctx.toW
+
+/-- `BranchExcludedUnmatchableT` over `CtxTW`. -/
+def BranchExcludedUnmatchableTW (p : Program) : Prop :=
+  ∀ r ∈ p.rulesOf TId.lower_branch, closureRoot r = false →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), retOrTrap t = false →
+  termData t = .ok data → ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run s ≠ .ok (some env', s1)
+
+theorem BranchExcludedUnmatchableTW.toT {p : Program} (h : BranchExcludedUnmatchableTW p) :
+    BranchExcludedUnmatchableT p :=
+  fun r hr hc f ctx hctx => h r hr hc f ctx hctx.toW
+
+/-- `TryIndRuleOkT` over `CtxTW`. -/
+def TryIndRuleOkTW (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (sigs : List Clif.Signature) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
+  ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)
+    (sig : Clif.Signature) (items : List (Option Nat)) (targets : List Label) (info : TryInfo)
+    (lo st1 : LState),
+  tryCallData f (.tryCallIndirect callee args et) = .ok data →
+  TermIntPos ctx (.tryCallIndirect callee args et) →
+  exnTableOpnd f et = .ok (sig, items) → sig ∈ sigs →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → tryInfoOf sig items targets = some info →
+  tryRegsOf sig lo = some (ctx.tryRegs, st1) → ValsBelow ctx lo →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n →
+    st1.nextVreg ≤ st.nextVreg →
+    (∀ pre post, p.rulesOf TId.lower_branch = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run (st, tr) =
+        .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run (st, tr) =
+      .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
+      LowerTryOk isem MR env cp ctx (.callIndirect et.sig callee args) info st st' ms
+
+/-- `TryIndRulesCorrectT` over `CtxTW`. -/
+def TryIndRulesCorrectTW (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (sigs : List Clif.Signature) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
+    Refines F isem → MRStable F MR → MemRefines F sb syms isem → OutArgsOk F outB MR →
+    IndStack sigs outB → IndCallsRefine env sigs MR isem →
+    ∀ r ∈ p.rulesOf TId.lower_branch, tryIndRootRule r = true → TryIndRuleOkTW isem MR env cp sigs p r
+
+theorem TryIndRulesCorrectTW.toT {p : Program} (h : TryIndRulesCorrectTW p) :
+    TryIndRulesCorrectT p :=
+  fun F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi f ctx hctx =>
+    h F isem MR env cp sigs sb syms outB h1 h2 h3 h4 h5 h6 r hr hi f ctx hctx.toW
+
+/-- `TryIndUnmatchableT` over `CtxTW`. -/
+def TryIndUnmatchableTW (p : Program) : Prop :=
+  ∀ r ∈ p.rulesOf TId.lower_branch, tryIndRootRule r = false →
   ∀ (f : Clif.Function) (ctx : Ctx), CtxTW f ctx →
   ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)
     (targets : List Label),
@@ -611,6 +847,10 @@ def TryIndUnmatchableT (p : Program) : Prop :=
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
   ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
     (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run s ≠ .ok (some env', s1)
+
+theorem TryIndUnmatchableTW.toT {p : Program} (h : TryIndUnmatchableTW p) :
+    TryIndUnmatchableT p :=
+  fun r hr hi f ctx hctx => h r hr hi f ctx hctx.toW
 
 /-! ## From the typed rule families to every `lower`/`lower_branch` call -/
 
@@ -703,19 +943,19 @@ theorem lowerInstOk_of_rulesT (hrules : LowerRulesCorrectTI program)
       · cases hm : memRootRule r
         · cases hfm : floatMoveRootRule r
           · cases hfa : floatArithRootRule r
-            · exact hrules F isem MR env cp hR hMR r hr hroot hcall hind' hm hfm hfa f ctx hctx.toW ii
+            · exact hrules F isem MR env cp hR hMR r hr hroot hcall hind' hm hfm hfa f ctx hctx ii
                 info inst hi hc hE cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch
                 heval
             · exact har hfa
           · exact hmv hfm
         · cases hfmem : floatMemRootRule r
           · obtain ⟨ms, rss, h1, h2, h3⟩ := hmem (fun _ => True) F sb syms isem MR env cp hR hMR
-              (memRefinesR_of hMem) r hr hm hfmem f ctx hctx.toW hMRo ii info inst hi hc hE cfg hco m n
+              (memRefinesR_of hMem) r hr hm hfmem f ctx hctx hMRo ii info inst hi hc hE cfg hco m n
               st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
             exact ⟨ms, rss, h1, h2, h3.toOk⟩
           · exact hmF hfmem
       · exact hind F isem MR env cp sigs sb syms outB hR hMR hMem hout hIstk hicr r hr hind' f ctx
-          hctx.toW ii info inst hi hc hE hsig cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst
+          hctx ii info inst hi hc hE hsig cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst
           hmatch heval
     · exact hcalls F isem MR env cp exts sb syms outB hR hMR hMem hout hcr r hr hcall f ctx hctx
         hnorm ii info inst hi hc hE hstk cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst
@@ -767,7 +1007,7 @@ theorem lowerInstOk_runTermT (hrules : LowerRulesCorrectTI program)
 theorem lowerTermOk_of_rulesT {p : Program} (hp : Data p) (hrules : LowerTermRulesCorrectT p)
     (hun : TermUnmatchableT p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxTW f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} (hrt : retOrTrap t = true)
+    (hctx : CtxT f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} (hrt : retOrTrap t = true)
     (hd : termData t = .ok data) (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
@@ -798,7 +1038,7 @@ theorem lowerTermOk_of_rulesT {p : Program} (hp : Data p) (hrules : LowerTermRul
 theorem branchOk_of_rulesT {p : Program} (hp : Data p) (hrules : BranchRulesCorrectT p)
     (hex : BranchExcludedUnmatchableT p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxTW f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
+    (hctx : CtxT f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
     (hip : TermIntPos ctx t)
@@ -835,7 +1075,7 @@ set_option maxRecDepth 20000 in
 theorem lowerTermOk_runTermT (hrules : LowerTermRulesCorrectT program)
     (hun : TermUnmatchableT program) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxTW f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} (hrt : retOrTrap t = true)
+    (hctx : CtxT f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} (hrt : retOrTrap t = true)
     (hd : termData t = .ok data) (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ti] st = .ok (some out, st', tr)) :
@@ -867,7 +1107,7 @@ set_option maxRecDepth 20000 in
 theorem branchOk_runTermT (hrules : BranchRulesCorrectT program)
     (hex : BranchExcludedUnmatchableT program) {F : BitVec 64 → Prop} {isem : Sem}
     {MR : MemRelT} (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxTW f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
+    (hctx : CtxT f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
     (hip : TermIntPos ctx t)
@@ -987,7 +1227,7 @@ theorem tryIndOk_of_rulesT {p : Program} (hp : Data p) (hrules : TryIndRulesCorr
     (hR : Refines F isem) (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
     (hIstk : IndStack sigs outB) (hcr : IndCallsRefine env sigs MR isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxTW f ctx) {ti callee : Nat} {args : List Nat}
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ti callee : Nat} {args : List Nat}
     {et : Clif.ExnTable} {data : V} {sig : Clif.Signature} {items : List (Option Nat)}
     {targets : List Label} {info : TryInfo} {lo st1 : LState}
     (hd : tryCallData f (.tryCallIndirect callee args et) = .ok data)
@@ -1034,7 +1274,7 @@ theorem tryIndOk_runTermT (hrules : TryIndRulesCorrectT program) (hun : TryIndUn
     {sigs : List Clif.Signature} (hR : Refines F isem) (hMR : MRStable F MR) {sb : Nat}
     {syms : String → Option Nat} (hMem : MemRefines F sb syms isem) {outB : Nat}
     (hout : OutArgsOk F outB MR) (hIstk : IndStack sigs outB)
-    (hcr : IndCallsRefine env sigs MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxTW f ctx)
+    (hcr : IndCallsRefine env sigs MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx)
     {ti callee : Nat} {args : List Nat} {et : Clif.ExnTable} {data : V} {sig : Clif.Signature}
     {items : List (Option Nat)} {targets : List Label} {info : TryInfo} {lo st1 : LState}
     (hd : tryCallData f (.tryCallIndirect callee args et) = .ok data)
@@ -1265,9 +1505,9 @@ theorem termCallsT_of_rules (hlt : LowerTermRulesCorrectT Isle.Aarch64.program)
     (hbr : BranchRulesCorrectT Isle.Aarch64.program)
     (hbex : BranchExcludedUnmatchableT Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
     {MR : MemRelT} (hR : Refines F sem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxTW f ctx) : TermCallsT ctx sem MR := by
+    (hctx : CtxT f ctx) : TermCallsT ctx sem MR := by
   intro ti t data targets out st st' tr hbt hip htl hph hvb hd hemp hrun
-  have hctx' := ctxTW_termCtx hctx hph data
+  have hctx' := ctxT_termCtx hctx hph data
   have hi := termCtx_insts_self hph data
   have hvb' : ValsBelow (termCtx ctx ti data) st := hvb
   have key : ∀ ms : List MInst, st'.emitted = st.emitted ++ ms.toArray → ms = st'.emitted.toList := by
@@ -1317,10 +1557,10 @@ theorem tryIndCallsT_of_rules (htr : TryIndRulesCorrectT Isle.Aarch64.program)
     (hR : Refines F sem) (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) {outB : Nat} (hout : OutArgsOk F outB MR)
     (hIstk : IndStack sigs outB) (hcr : IndCallsRefine env sigs MR sem)
-    (hctx : CtxTW f ctx) : TryIndCallsT f ctx sem MR env p sigs := by
+    (hctx : CtxT f ctx) : TryIndCallsT f ctx sem MR env p sigs := by
   intro ti callee args et data sig items targets info trs lo st1 out st' tr hd hip he hsig
     hph hinfo hregs hvb hrun
-  have hctx' := ctxTW_tryRegs (ctxTW_termCtx hctx hph data) trs
+  have hctx' := ctxT_tryRegs (ctxT_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
   have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs

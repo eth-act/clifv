@@ -352,7 +352,7 @@ theorem tryDefsExactTF : TryDefsExactTF := by
       fun hr => hctx'.valueReg_int hr (hip callee List.mem_cons_self)
     cases hroot : tryIndRootRule rl with
     | false =>
-      exact absurd hmatch (tryIndUnmatchableT_program rl hrl' hroot f _ hctxT'.toW ti callee args et
+      exact absurd hmatch (tryIndUnmatchableT_program rl hrl' hroot f _ hctxT' ti callee args et
         data targets hd hi {} m _ env _)
     | true =>
       simp only [tryIndRootRule, beq_iff_eq] at hroot

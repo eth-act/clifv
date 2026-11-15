@@ -4,6 +4,7 @@ import FV.Backend.Proof.IselNonETF
 import FV.Backend.Proof.IselLowerCvtT
 import FV.Backend.Proof.LowerContractTFW
 import FV.Backend.Proof.IselCtlCallTI
+import FV.E2E.TypedRulesW
 
 /-!
 # The typed final theorem with the proven float operations (S11f, #35) and float calls (S11g)
@@ -166,15 +167,16 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     shape := hshape
     cert := hcert
     dsem := (hds s').toDriverSemG
-    insts := instCallsTFW_of_rules hrules hrulesF hrulesA hrulesC hrulesFC
-      nonEUnmatchableTFW_program callRulesCorrectTFP_program indRulesCorrectTP_program hmemRules
-      hmemF
+    insts := instCallsTFW_of_rules lowerRulesCorrectTIW_program hrulesF hrulesA hrulesC hrulesFC
+      nonEUnmatchableTFW_program callRulesCorrectTFP_program typedRulesW_program.ind
+      memRulesCorrectRTIW_program hmemF
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)
       (indStack_mono (indStackTCF_of_check hlow) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
-    terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
+    terms := termCallsTW_of_rules typedRulesW_program.term typedRulesW_program.termUn
+      typedRulesW_program.branch typedRulesW_program.branchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetTCF hsub
@@ -187,7 +189,8 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') hshape.ctxInvT,
       tryStack_mono (tryStackTCF_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
-    tryInd := tryIndCallsT_of_rules htryIndRules htryIndUn (hRef s')
+    tryInd := tryIndCallsTW_of_rules typedRulesW_program.tryIndT typedRulesW_program.tryIndUn
+      (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (indStack_mono (indStackTCF_of_check hlow) houtB) (hicalls s') hctxT
