@@ -67,7 +67,7 @@ macro "mem_rootTI " hctx:ident hi:ident hic:ident : tactic => `(tactic| (
   have $(Lean.mkIdent `hA64) := fun x => CtxInvT.addr64 $hctx _ _ _ x $hi $hic
   have hRT := CtxInvT.resTys $hctx _ _ _ $hi $hic
   have $(Lean.mkIdent `hRE) := fun hcx =>
-    CtxTW.resTysE $(Lean.mkIdent `hctxT) $hi $hic $(Lean.mkIdent `hE) hcx
+    CtxTW.resTysE (CtxT.toW $(Lean.mkIdent `hctxT)) $hi $hic $(Lean.mkIdent `hE) hcx
   simp only [$hi:ident, Option.some.injEq] at *
   isel_destruct; subst_vars
   have hdat := data_trans hdat0 ‹_›
