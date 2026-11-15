@@ -2,6 +2,7 @@ import FV.Backend
 import FV.Backend.Lowering.StockReplay
 import FV.Backend.MemorySinkExtNIProduction
 import FV.Opt.Legalize128Pass
+import FV.Opt.ConstPhiSelect
 import FVTest.Backend.CraneliftInput
 
 /-!
@@ -12,9 +13,10 @@ raw selected VCode, fired rules, cleanup output and the default regalloc2 input.
 emit code and does not change the compiler's lowering/checking path. Give it the
 stock-effective Lean input from a settings-matched comparison to inspect that case.
 
-The input is legalized exactly as in `lean-backend`; the report records this fact and
-the legalization validator's results. These are structural diagnostics, not a
-semantic-equivalence verdict or a replacement for the stock configuration receipt.
+The input is legalized and then has its constant phis removed (`Opt.ConstPhi.selectFile`, #990)
+exactly as in `lean-backend`; the report records the legalization validator's results. These are
+structural diagnostics, not a semantic-equivalence verdict or a replacement for the stock
+configuration receipt.
 -/
 
 namespace LoweringTrace
@@ -141,8 +143,10 @@ def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := t
 def run (input output : String) (stockSchedule : Bool := false) (deadCleanup : Bool := true) : IO UInt32 := do
   let source ← IO.FS.readFile input
   let legalized := Opt.Legalize128.parsedFile128 (Clif.parseFile source)
-  let routes := !(legalized.file.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))
-  let rows := legalized.file.funcs.map fun parsed =>
+  -- constant-phi removal after the legalisation, as `lean-backend` does (#990)
+  let file := Opt.ConstPhi.selectFile (Link.clifHeader source) legalized.file
+  let routes := !(file.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))
+  let rows := file.funcs.map fun parsed =>
     let result := match parsed.func with
       | .ok f =>
         let verify := ((unverifiedReason? f).isSome ||

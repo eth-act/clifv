@@ -6,6 +6,7 @@ import FV.Link.DeadCleanupCompile
 import FV.Link.DeadCleanupCompileT3
 import FV.Link.TailCompile
 import FV.Link.OptCompile
+import FV.Link.ConstPhiCompile
 import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
 import FV.Front.Read
@@ -100,6 +101,12 @@ also prints the functions failing a per-function condition (`exclusions`, the li
 failing `fnScopeTB` or the output checks `outChksT`): `cargo fv` then links
 the executable again with those functions' cg_clif code (left out of the region, outside code
 like a fallback) and runs `lean-link` again (T3c).
+
+**Constant-phi removal** (#990): the compiler's input is `Link.LinkSpec.cp` of the bundle's spec,
+each function after `Opt.ConstPhi.run` when `Opt.ConstPhi.keeps` holds (`FnInput.cp`: the function
+`lean-backend` compiled, so its register allocations apply); every theorem named below is about
+that input, and `Link.cp_lift` lifts each to the bundle's program (`constant-phi removal:` line).
+The source domain `SrcScopeB` is decided on both.
 
 **`--opt`**: the optimising executable compiler — `Link.DeadCleanup.compileExeOpt` (default) or
 `Link.compileExeOpt` (`--no-dead-cleanup`): `compileExe` on the input whose functions the
@@ -382,6 +389,13 @@ def main (args0 : List String) : IO UInt32 := do
   let S ← match Front.buildSpec { b0 with sizes := b0.markers.map fun (n, _) => (n, 0) } with
     | .ok S => pure S
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
+  -- constant-phi removal (#990): the input `lean-backend` compiled (`FnInput.cp`, its decision
+  -- `Opt.ConstPhi.keeps`); the theorems below are about `S0.cp`, `Link.cp_lift` lifts them to
+  -- `S0`'s program
+  let S0 := S
+  let S := S0.cp
+  let cpN := S0.cpChanged
+  IO.println s!"lean-link: {exe}: constant-phi removal: {cpN.length} of {S0.funcs.length} function(s) {cpN.take 5}, cpFallbacks: {S0.cpFallbacks.length}; the theorems below are about Link.LinkSpec.cp (lean-backend's input), lifted to the input's program by Link.cp_lift"
   -- the compiler's input: the optimised one under `--opt` (`compileExeOpt S = compileExe S.opt`),
   -- the self tail calls as loops when a function has one (`compileExeTail S = compileExe S.tail`),
   -- with the Lean compiler's layout (`placedPar = placed`: the totality theorems' layout)
@@ -408,7 +422,7 @@ def main (args0 : List String) : IO UInt32 := do
   -- the source domain (`SrcScopeB` reads the parsed functions only, so `S.input0`'s is the
   -- compiler's input's)
   let I := S.input0
-  let srcOk := SrcScopeB I
+  let srcOk := SrcScopeB I && SrcScopeB S0.input0
   -- the typed scope under `--verified` (S11e6): the cleanup compiler `compileExeT`
   let typedOk := deadCleanup && !opt && !tailOn
   if verified && !srcOk then
