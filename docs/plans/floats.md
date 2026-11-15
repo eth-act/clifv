@@ -1013,13 +1013,13 @@ cleanup), and two-way coverage `Driver.formsCovered2_completeT` / `formsCovered2
 (`FV/E2E/PoolFreeT.lean`). `spillSizeOkB_of_sizeOkBT`/`emitConds_lowerT`/`emitCondsB_of_T2` and
 their cleanup and float-scope forms have their pre-#565 statements again (no `hpool`), and
 `fnScopeInTB3`/`fnScopeInTB3F` no run-time conjunct (`poolReachInB` is gone). A pooled
-`f64const` stays outside the verified scope (#1002 part 2: `f64const_okT` is stated for
-`F64PoolFreeInst`); when it enters, `poolReachB` becomes a size condition there. A function
+`f64const` entered the verified scope with #1002 part 2 (below, after S11g: the scope with float
+calls `Compile.functionETCF`); the decider-free scopes stay pool-free. A function
 over 1 MiB with a pool load falls back to cg_clif's code, where Cranelift emits a constant
 island (#744). Witnesses `FVTest/E2E/PoolLoadWitness.lean` (`%litpool`: covered, `csem`, the
-literal line and the entry's data words, `near_lit`; outside the typed scopes, `fLit_outside`),
-`E2E.formsCovered2_complete_witness`, `EmitCondsTWitness.fW_poolReach` (a typed function with an
-`f64const`).
+literal line and the entry's data words, `near_lit`; outside the typed scopes without the
+literal pool, `fLit_outside`), `E2E.formsCovered2_complete_witness`,
+`EmitCondsTWitness.fW_poolReach` (a typed function with an `f64const`).
 
 **S11g (#1015): plain `call`s with float signatures verified.** Measured first (#1039, exact
 reasons): of deps' 115 functions outside the typed scope, all fail `callsE` (a `call` whose
@@ -1093,9 +1093,50 @@ through `fnScopeInTCB` (so without a totality claim; lean-link's coverage line p
 140/117/65/113; binary check 4 of 4, SAME 16; cargo fv: 21,005 of the 21,023 verified functions
 inside the regions, 18 left out; fv-demo and survey unchanged (1,372 inside of 1,372; 3,249 of
 3,251, 2 left out). Witness `FloatPlainCallsTWitness.admitted_tcb`. Still out: a pooled
-`f64const` (#1002 part 2); float `call_indirect`/`try_call_indirect` (`sigIntB`); the
+`f64const` (#1002 part 2, below); float `call_indirect`/`try_call_indirect` (`sigIntB`); the
 decider-free totality scopes (`InScopeInT3`, `fnScopeInTB3F`: integer extern signatures), so
 float calls are admitted through the run-time deciders (`lowerCheckTCF`, `okRWithTS`) only.
+
+**#1002 part 2: the literal-pool `f64const` verified.** `constant_f64`'s last rule loads a bit
+pattern none of its other rules builds from the function's constant pool (`ldr d, <entry>`,
+`fpuLoad .size64 _ (.const n) trustedFlags`, emitted byte-identically since #955; one entry per
+value, as `VCodeConstants`). Compiler side (statement rule (a)): `Compile.instETFL := instETF ||
+f64ConstET` (any `f64const`); `functionETCF` (the verdict scope) and the validator's
+supported-instruction check (`shapeOkTF`, so `lowerCheckTCF`: `instScopeOkFL`) use it;
+`typedScopeFails` names failures by it under the label `instETF:`. Proof side: no existing
+predicate or structure changes (`MemRefinesFP`, `LowerShapeTC`, `CtxT`, `CtxTW`, `InstScopeTF`,
+`DriverHypTC` keep their text). The typed chain is stated once over an abstract instruction
+scope `S : InstScope` (`ShapeS.lean`: a context predicate kept by `termCtx` and the `try_call`
+vregs; instances `InstScope.tf` = `InstScopeTF`, `InstScope.tfl` = `InstScopeTFL`): `CtxTS S`,
+`LowerShapeTCS S`, `DriverHypTCS S`, the families `…S` and `TypedRulesS S`. Their proofs are
+the `CtxTW` ones transported (`scopeS_transport`, `ScopeTransport.lean`: the proof terms with
+every scope-carrying constant replaced and abstracted over `S`, kernel-checked; as
+`ctxW_transport` for S11g): `typedRulesS_program`, `lowerRulesCorrectTIS_program`,
+`memRulesCorrectRTIS_program`, `termCallsTS_of_rules`, `tryIndCallsTS_of_rules`, the simulation
+`driver_correctTCS`/`entry_step2TCS`/`sim_runTCS`, `iselSim_of_driverTCS` and the paired
+`…_pairTS`/`…_pair_valueTS` lemmas. The three proofs that read the scope are by hand over `S`
+inside `InstScopeTFL`: the exclusion `lower_nonroot_nomatchTFCL` and the non-E unmatchability
+`nonEUnmatchableTFS_program` (`IselPoolTFL.lean`: an `f64const` of any bits has the
+`f64const` opcode, so the kernel decisions `exclOkTFC_program`/`nonEOkFC_program` cover it), and
+the `f64const` root over every bit pattern, `f64const_okTL`/`lowerRulesCorrectTL_program`
+(`IselFloatConstPool.lean`: `constant_f64_okL`, its fifth rule by `fpu_load64_ok` and
+`fconst_pool`), under `PoolRefinesFP F isem` (the pool load gives the entry's value): a premise
+of its own on the new dispatchers (`LowerContractTFS.lean`: `lowerInstOkP_of_rulesTFS`,
+`instCallsTFS_of_rules`), discharged at `csem`, `csemGF`, `valueSem`, `valueSemGF` by new
+lemmas (`PoolRefinesFP.lean`, `PoolRefinesFPV.lean`; `memRefinesFP_*` unchanged). Semantics
+(rule (c)): `fspec` and `GuardFP` (the guarded semantics `csemGF`) gain the pool-load clause,
+an input on which `csemGF` was undefined; every other input is unchanged (`fspec_fpuLoad_ne`,
+`guardFP_fpuLoad_ne`). Statements changed, each shown false in its old form: `shapeOkTF_eq_S`
+(`PoolConstFinalTCF.shapeOkTF_eq_S_old_false`), `lowerShapeTC_of_okF` and
+`loweringTCF_of_check` (they give `LowerShapeTCS InstScope.tfl`; `…_old_false`),
+`guardFP_fpuLoad` (premise `am ≠ .const`; `GuardedFPWitness.guardFP_fpuLoad_needs_ne`), and
+`iselSimTCF_of_rules`/`backend_correct_of_rules_exTCF` (stated for any VCode semantics: premise
+`hpool`, since a semantics undefined on the pool load meets all other premises). The final
+theorems (`backend_correct_finalTCF`, the world/NI theorems, `attemptT_correct`, the binary
+theorems) keep their text; they cover the pooled constant through `functionETCF` and
+`lowerCheckTCF`. `f32const` is never pooled (`constant_f32`: `mov w; fmov s, w`). Witnesses
+`FVTest/E2E/PoolConstFinalTCF.lean` (`fLit`: `backend_correct_finalTCF_lit`; `fDup`: two literal
+loads of one entry, as Cranelift; `fF32`: no pool load), `GuardedFPWitness.csemGF_pool_defined`.
 
 ## 4. Known hazards
 
