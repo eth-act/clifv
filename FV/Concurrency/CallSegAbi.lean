@@ -27,12 +27,12 @@ open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VC
 
 /-- **The checker's entry values after the prologue** are the ABI entry's on the registers the
 prologue pushes (it keeps the callee-saved registers): `rets_alloc`'s `hr₀`. -/
-theorem hr₀_init {RA : RL} (hR : RA.Wf) {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
+theorem hr₀_init {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
     {m₀ : Loc → CV} {w₀ : ArmState}
     (hq : Q RA (iterN RA.step (prologueSteps RA.af.saves RA.af.frameSize RA.af.isCaller) RA.s0)
       (MConf.init RA.rf m₀ w₀)) :
     ∀ r ∈ RA.af.saves, ckeep r (m₀ (.reg r)) = ckeep r (regVal RA.s0 r) := by
-  obtain ⟨-, -, -, hsv, -⟩ := RL.frame_facts hR
+  obtain ⟨-, -, hsv, -⟩ := RL.alloc_facts hR
   intro r hr
   have hcs := hsv.1 r hr
   simp only [MConf.init] at hq
@@ -40,26 +40,26 @@ theorem hr₀_init {RA : RL} (hR : RA.Wf) {ra : BitVec 64} (hent : AbiCall RA.fb
   rw [hst.store (.reg r) (fun r' e => by cases e; exact CallResumeL.calleeSaved_allocatable r hcs)
     trivial]
   simp only [locVal]
-  rw [regVal_calleeSaved_congrX (fun f h1 h2 h3 h4 h5 h6 h7 => prologue_fields hR hent f h1 h3 h5 h2 h6 h7)
+  rw [regVal_calleeSaved_congrX (fun f h1 h2 h3 h4 h5 h6 h7 => prologue_fields hR hframe hent f h1 h3 h5 h2 h6 h7)
     r hcs]
 
 /-- **The prologue on an agreeing machine**: through the prologue's lines a precise run of `g`
 under `OkPriv` is the single-core path, its events private plain writes. (#581: `hpf`
 (`ProbeF`) is new: the stack probes' writes are private only when the probed bytes are in
 `RA.F`.) -/
-theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+theorem prun_prologueG {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA) {mon : Mon}
     {L : List Lab}
     {t1 : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1)
     (hL : L.length ≤ (prologueSteps RA.af.saves RA.af.frameSize RA.af.isCaller)) :
     t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
       ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := by
-  have hlat := prologue_linesAt hR hent
-  have hpe := prologue_evs hR hent hpf hlat
-  have hnr := CallSeg.prologue_nonRet hR hent hlat
+  have hlat := prologue_linesAt hR hframe hent
+  have hpe := prologue_evs hR hframe hent hpf hlat
+  have hnr := CallSeg.prologue_nonRet hR hframe hent hlat
   obtain ⟨h1, hev, -⟩ := CallSeg.prun_privF hr fun i hi =>
     ⟨fun e he => ((hpe i (by omega)).1 e he).1, (hpe i (by omega)).2,
-      hg _ (prologue_program hR hent hlat i (by omega)) (hnr i (by omega))⟩
+      hg _ (prologue_program hR hframe hent hlat i (by omega)) (hnr i (by omega))⟩
   refine ⟨h1, ?_, ?_⟩
   · rw [hev]
     exact privW_segEvs (fun i hi e he => ((hpe i (by omega)).1 e he).1)
@@ -80,7 +80,7 @@ theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : 
 (module doc), the realized prefix exclusive-closed (the prologue has no `relXW`,
 `arm_isel_refines_entryCRNX`). (#581: `hpf` (`ProbeF`) is new: the prologue's stack probes
 refine no CLIF step only when the probed bytes are private.) -/
-theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
@@ -122,13 +122,13 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep (fun r => m₀ (.reg r)) cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (RA.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) := by
-  have hr₀ := hr₀_init hR hent hq
+  have hr₀ := hr₀_init hR hframe hent hq
   generalize hP : (prologueSteps RA.af.saves RA.af.frameSize RA.af.isCaller) = P at hq
   have hpp : ∀ {L : List Lab} {t1 : ArmState × Mon},
       PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1 → L.length ≤ P →
       t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
         ∀ p y, evAt (evTr L) p = some y → y.k = .plainW :=
-    fun h hL => prun_prologueG hR hg hent hpf h (hP ▸ hL)
+    fun h hL => prun_prologueG hR hframe hg hent hpf h (hP ▸ hL)
   by_cases hle : ls.length ≤ P
   · obtain ⟨-, hpw, hpk0⟩ := hpp hr hle
     refine ⟨ls.length, [], _, id, Nat.le_refl _, ?_, .nil, ?_, .inl rfl⟩
@@ -143,7 +143,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     obtain ⟨v1, vm⟩ := v
     simp only at hv1
     subst hv1
-    obtain ⟨k2, trS, t, ψ2, hk2, hx2, hrun, href, hend⟩ := arm_isel_refines_entryCRNX hR hsc hgv hg hent
+    obtain ⟨k2, trS, t, ψ2, hk2, hx2, hrun, href, hend⟩ := arm_isel_refines_entryCRNX hR hframe hsc hgv hg hent
       H hchk hMR hMRw hX hX0 hMem hMRs hreg H3 hm3 hc hm4 hB0 hcall hfunc hslots hbody hterm hregs
       hty hsig hmr hr₀ hargs hq hA hrest
     have e : ∀ n, evTr (ls.take (P + n)) = evTr (ls.take P) ++ evTr ((ls.drop P).take n) := by
@@ -169,7 +169,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
 (module doc; `arm_isel_refines_abiCRNX` without its exclusive-closed prefix). (#581: `hpf`
 (`ProbeF`) is new: the prologue's stack probes refine no CLIF step only when the probed bytes are
 private.) -/
-theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hframe : RA.af.frame = true) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
@@ -211,7 +211,7 @@ theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep (fun r => m₀ (.reg r)) cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (RA.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) := by
-  obtain ⟨k, trS, t, ψ, hk, -, h⟩ := arm_isel_refines_abiCRNX hR hsc hgv hg hent hpf H hchk hMR hMRw
+  obtain ⟨k, trS, t, ψ, hk, -, h⟩ := arm_isel_refines_abiCRNX hR hframe hsc hgv hg hent hpf H hchk hMR hMRw
     hX hX0 hMem hMRs hreg H3 hm3 hc hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs
     hq hA hr
   exact ⟨k, trS, t, ψ, hk, h⟩

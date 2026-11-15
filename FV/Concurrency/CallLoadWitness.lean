@@ -34,7 +34,8 @@ theorem wf_gen {vc : VCode} {rf : RFunc} {base : BitVec 64} {s0 : ArmState} {H :
     (hg : ∀ a, G a → ¬ StackBelow (frameDrop (act vc rf).af + 0) (E2E.spv s0) a) :
     ({ act vc rf with base := base, s0 := s0, H := H, G := G } : RL).Wf where
   check := allocChecked_of_checkAlloc hc
-  alloc := ArmAllocThread.Witness.ok_getD ha
+  alloc := AllocAF.of_lowerRFunc (ArmAllocThread.Witness.ok_getD ha)
+  leaf := noLeaf_of_lowerRFunc (ArmAllocThread.Witness.ok_getD ha)
   emit := by
     rw [show ({ act vc rf with base := base, s0 := s0, H := H, G := G } : RL).fa.k = 0 from hk]
     exact ArmAllocThread.Witness.ok_getD he
@@ -95,6 +96,9 @@ theorem wfRC : RC.Wf := by
   rw [show E2E.spv sC0 = 0x7000#64 from spv_RC] at h1
   simp only [BitVec.toNat_ofNat] at h1
   omega
+
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameRC : RC.af.frame = true := ArmAllocThread.Witness.frame_act factsC.2.1
 
 /-- The caller's frame gets no stack probes (#581). -/
 theorem probeF_RC : ProbeF RC :=
@@ -213,9 +217,9 @@ theorem prefixC : ∃ (n0 j : Nat) (m : Loc → CV),
     RC.fa.lines.toList[j]? = some (.ins (.bl "ld") none) ∧
     Arm.r .PC (iterN RC.step n0 RC.s0) = RC.pcOf j ∧ StRel RC (iterN RC.step n0 RC.s0) m w₀C ∧
     regVal (iterN RC.step n0 RC.s0) (.x 0) = 0 := by
-  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
-  have hpe := prologue_evs wfRC abiRC probeF_RC hlat
-  have hpr0 := prologue_program wfRC abiRC hlat
+  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC frameRC abiRC bodyRC
+  have hpe := prologue_evs wfRC frameRC abiRC probeF_RC hlat
+  have hpr0 := prologue_program wfRC frameRC abiRC hlat
   generalize hn0 : (prologueSteps RC.af.saves RC.af.frameSize RC.af.isCaller) = n0 at hpe hpr0 hq hA
   have hq0 := hq
   have hA0 := hA
@@ -322,6 +326,9 @@ theorem wfX (hS : StRel RC s m w₀C) : (RLx s).Wf := by
   rw [spv_enterL hS] at ha
   simp only [BitVec.toNat_ofNat] at ha
   omega
+
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameX (s : ArmState) : (RLx s).af.frame = true := ArmAllocThread.Witness.frame_act factsL.1
 
 theorem abiX (hS : StRel RC s m w₀C) :
     AbiCall (RLx s).fb (RLx s).base (Arm.r .PC s + 4#64) (RLx s).s0 where
@@ -472,8 +479,8 @@ theorem compiled_ofX (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) {s' :
 /-- **Every premise of `CompiledE`** for the callee entered from the caller's `bl`. -/
 theorem compiledEX (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : Clif.Env)
     (p : Clif.Program) : CompiledE env p (RLx s) csL := by
-  obtain ⟨-, hq, hA⟩ := q_init_lines (wfX hS) (abiX hS) (bodyX s)
-  exact ⟨wfX hS, memScopeLS_of_memScopeB (memScopeB_of_memScopeL (memScopeL_of_memScope (scopeX s))),
+  obtain ⟨-, hq, hA⟩ := q_init_lines (wfX hS) (frameX _) (abiX hS) (bodyX s)
+  exact ⟨wfX hS, frameX _, memScopeLS_of_memScopeB (memScopeB_of_memScopeL (memScopeL_of_memScope (scopeX s))),
     rfl, ⟨_, abiX hS⟩, (compiled_ofX hS hx0 hq hA env p).front, probeF_L rfl⟩
 
 theorem step_programX (s s' : ArmState) : ((RLx s).step s').program = s'.program :=

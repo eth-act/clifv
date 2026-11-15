@@ -296,7 +296,7 @@ open Arm ArmThread ArmAllocThread CallSeg ClifThread ArmInstFoot in
 end facts); every precise run of a machine `g` agreeing with `R` (`AgreesAt`) of fewer steps
 (before the `ret`, which the linked machine steps on its own) follows `R.step` and realizes
 every event-free CLIF run, with `R`'s private set. -/
-theorem realized_rets {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem realized_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {g : ArmState → ArmState} (hg : AgreesAt R g)
     {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
@@ -312,7 +312,7 @@ theorem realized_rets {R : RL} (hR : R.Wf) {ra : BitVec 64}
           {trS : List (List (Prog.Ev SKind BVal))}, (∀ x ∈ trS, x = []) →
           ClifCStepTerm.CRun env p c trS c' →
           CallCompose.Realized env p (PrivA R) L L.length c c' := by
-  obtain ⟨n, hpath, hpc, herr, hsp, hmem, hprog, -, hnr, hn0, -⟩ := rets_privP hR hent hq hvb hi
+  obtain ⟨n, hpath, hpc, herr, hsp, hmem, hprog, -, hnr, hn0, -⟩ := rets_privP hR hframe hent hq hvb hi
   refine ⟨n, hn0, hpc, herr, hsp, hmem, hprog, fun {L mon t'} hlt hr => ?_⟩
   have hstep : ∀ i < L.length, (∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧
       NoStx (iterN R.step i s) ∧ g (iterN R.step i s) = R.step (iterN R.step i s) := by

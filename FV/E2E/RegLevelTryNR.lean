@@ -39,7 +39,7 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
       Q R (iterN R.step n s) c'' ∧ (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
       ∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hcpc := callAt_of_q hR hq hvb hi tryCall_hcall
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins, hasgf,
     hsuccf, itx, hitx, hqx⟩

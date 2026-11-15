@@ -100,7 +100,7 @@ theorem rets_RC {y : ArmState} (hy : PostA sBF y) :
     (moves_noRet (R := RC) postMvC_noRet)
   obtain ⟨mt2, hq2⟩ := qa_q hqa2
   obtain ⟨n, hn0, hpc', -, -, -, -, hr⟩ :=
-    realized_rets wfRC abiRC (g := RC.step) (fun _ _ _ => rfl) hq2 vb0C instC2
+    realized_rets wfRC frameRC abiRC (g := RC.step) (fun _ _ _ => rfl) hq2 vb0C instC2
   exact ⟨_, n, hn0, hpc', fun hlt hp => (hr hlt hp).1⟩
 
 end Concurrency.CallRetResume.Witness

@@ -67,7 +67,7 @@ theorem succ_of_label {R : RL} (hR : R.Wf) {st b : Nat} {vs : VBlock} {items : A
     (hvs : R.vc.blocks[st]? = some vs) (hit : R.rf.blocks[st]? = some items)
     {p : Label × Array AInst} (hp : R.af.blocks[b + 1]? = some p) (hl : p.1 = vs.label) :
     st = b + 1 := by
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨code, -, haf⟩ := hbl st vs items hvs hit
   refine nodup_idx (af_nodup hR) (x := Lbl.block vs.label) ?_ ?_
   · simp [haf]

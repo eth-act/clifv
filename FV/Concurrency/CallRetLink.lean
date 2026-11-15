@@ -34,7 +34,7 @@ theorem stuck_outside {R : RL} (hR : R.Wf) {t : ArmState} (hprog : t.program = R
   rwa [runX_eq] at this
 
 /-- **`RetEnd` with the epilogue's steps** (module doc). -/
-theorem retEnd_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem retEnd_privP {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hra : ∀ k < R.fb.words.size, ra ≠ R.base + BitVec.ofNat 64 (4 * k))
     {env : Clif.Env} {p : Clif.Program} {MR : MemRelT} {slots : List (Clif.SlotId × Nat)}
     {r₀ : Reg → CV} {x : ArmState} {s' : Clif.State} (hret : RetEnd R ra env p MR slots r₀ x s') :
@@ -51,7 +51,7 @@ theorem retEnd_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     hpc1, herr1, hsp1, hmem1, ⟨hprog1, hfp1⟩, hcs1, -⟩ := hret
   obtain ⟨mt, hqt⟩ := qa_q hq
   obtain ⟨n2, hpath, hpc2, herr2, -, hmem2, hprog2, -, hnr, hn0, hjret⟩ :=
-    rets_privP hR hent hqt hvb hi
+    rets_privP hR hframe hent hqt hvb hi
   have hxp : x.program = R.fb.program R.base := (q_stRel hqt).prog
   -- the two step counts agree
   have hn : n1 = n2 := by
@@ -78,7 +78,7 @@ local notation "RB" => Link.act L FB s0 K G
 
 /-- **The return end on the linked machine** (module doc). -/
 theorem ret_end (hL : L.Ok) {nB : String} (hB : (nB, FB) ∈ L.fns)
-    (hRB : (L.act FB s0 K G).Wf) {ra : BitVec 64}
+    (hRB : (L.act FB s0 K G).Wf) (hframeB : (L.act FB s0 K G).af.frame = true) {ra : BitVec 64}
     (hent : AbiCall FB.fb FB.base ra s0)
     (hra : ∀ k < FB.fb.words.size, ra ≠ FB.base + BitVec.ofNat 64 (4 * k))
     {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns) (hrA : FA.InRange ra)
@@ -97,7 +97,7 @@ theorem ret_end (hL : L.Ok) {nB : String} (hB : (nB, FB) ∈ L.fns)
           evTr (ls.take n) = segEvs (L.act FB s0 K G).step n x ∧
           PrivW (PrivA (L.act FB s0 K G)) (evTr (ls.take n)) ∧
           ∀ l ∈ ls.take n, ∀ e ∈ l.evs, e.k ≠ .relXW) := by
-  obtain ⟨n, hpath, hRC, hmem, -, hnr, hn0, ⟨j, t, hj, hpcj⟩, -⟩ := retEnd_privP hRB hent hra hret
+  obtain ⟨n, hpath, hRC, hmem, -, hnr, hn0, ⟨j, t, hj, hpcj⟩, -⟩ := retEnd_privP hRB hframeB hent hra hret
   have hag : ∀ i, i + 1 < n → L.M (iterN (RB).step i x) = (RB).step (iterN (RB).step i x) :=
     fun i hi => agreesAt_M hL hB s0 K G _ (hpath i (by omega)).2.1 (hnr i hi)
   refine ⟨n, hn0, hRC, hmem, fun {mon ls t'} hr => ⟨fun hlt => ?_, fun hle => ?_⟩⟩

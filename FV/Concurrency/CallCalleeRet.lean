@@ -53,7 +53,8 @@ theorem retC_of_retEnd {R : RL} {ra : BitVec 64} {env : Clif.Env} {p : Clif.Prog
 /-- **The caller's resume premises from the callee's return contract** (module doc): the state
 `y` after the callee's return satisfies the premises of `CallRetResume.resume_layersR` other
 than the program (which the linked machine restores). -/
-theorem resume_premises_of_retC {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) {ra : BitVec 64}
+theorem resume_premises_of_retC {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf)
+    (hframe : RB.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall RB.fb RB.base ra RB.s0) {r₀ : Reg → CV} {y : ArmState}
     (hy : RetC RB ra r₀ y) {x : ArmState} {m : Loc → CV} {w : ArmState} (hst : StRel RA x m w)
     (hfx : ∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f RB.s0 = Arm.r f x)
@@ -72,7 +73,7 @@ theorem resume_premises_of_retC {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) {ra : B
         ckeep c (regVal y c) = ckeep c (regVal x c)) ∧
       xreg 29 y = xreg 29 x := by
   obtain ⟨hpc, herr, hsp, hmem, hx29, hcs⟩ := hy
-  obtain ⟨he, hsp0, hra⟩ := entry_premises hRB hent hfx hlr
+  obtain ⟨he, hsp0, hra⟩ := entry_premises hRB hframe hent hfx hlr
   have hcs' : ∀ r ∈ calleeSaved, ckeep r (regVal y r) = ckeep r (regVal x r) :=
     fun r hr => (hcs r hr).trans ((hr₀ r hr).trans (he r hr))
   have hsp' : spOf y = spOf x := hsp.trans hsp0

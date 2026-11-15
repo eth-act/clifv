@@ -40,6 +40,7 @@ theorem stackRCK : StackAvail 0x100 RCK.af RCK.s0 := by
 theorem wfRCK : RCK.Wf where
   check := wfRC.check
   alloc := wfRC.alloc
+  leaf := wfRC.leaf
   emit := wfRC.emit
   layout := wfRC.layout
   lm := wfRC.lm

@@ -82,6 +82,7 @@ The pair invariant is `PairOf pairFst pairSnd`; `hK` derives the pair facts from
 theorem RL.twoRunC_pair {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI XI' : ExtSemI}
     (hRn : ∀ n, ({ R with X := XI.at n } : RL).Wf)
     (hRn' : ∀ n, ({ R with s0 := t0, G := G', X := XI'.at n } : RL).Wf)
+    (hframe : R.af.frame = true)
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hcheck : CheckedAt R.vc R.rf cc ins a0) (ρ₀ : Nat → CV)
     (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ ρ₀ (fun r => m₀ (.reg r)))
@@ -179,7 +180,7 @@ theorem RL.twoRunC_pair {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {
         (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
         (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + R.retLen) t0) = ra' :=
-  RL.twoRunC hRn hRn' hcheck ρ₀ hsel hent hent' hbe hbe' OkG OkG' hC hT hTls hC' hT' hTls' hcov
+  RL.twoRunC hRn hRn' hframe hcheck ρ₀ hsel hent hent' hbe hbe' OkG OkG' hC hT hTls hC' hT' hTls' hcov
     K LB OkS OkS' hG hG' Lk hLpc hstart hstep hend hK hpro (pstar_of_proj hp₁ hp₂ hrun)
     ⟨VConf.init ρ₀ ((w₀, w₀'), 0), rfl, rfl⟩ ⟨x, rfl, rfl⟩ (pstep_of_proj hp₁ hp₂ hlast)
 

@@ -272,7 +272,7 @@ theorem ret_lt {R : RL} (hR : R.Wf) {ra : BitVec 64}
 (module doc). The relation at the `rets` pause is `RetEnd`'s `QA` (in a return tail after the
 callee restores, which emit no code, the store differs from the machine at the restored
 registers). -/
-theorem retEnd_n {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem retEnd_n {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hra : ∀ k < R.fb.words.size, ra ≠ R.base + BitVec.ofNat 64 (4 * k))
     {env : Clif.Env} {p : Clif.Program} {MR : MemRelT} {slots : List (Clif.SlotId × Nat)}
     {r₀ : Reg → CV} {x : ArmState} {s' : Clif.State} (hret : RetEnd R ra env p MR slots r₀ x s')
@@ -285,7 +285,7 @@ theorem retEnd_n {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.ba
       cm = (s'.mem.free (slots.map (·.2))).leave ∧ (iterN R.step n x).mem = x.mem ∧
       ∀ (j : Nat) (v q : Reg) (y : CV), us[j]? = some (v, q) → (vuses ops ρ)[j]? = some y →
         regVal (iterN R.step n x) q = y := by
-  obtain ⟨n2, hpath, hRC2, -, hprog2, -, -, -, hret⟩ := retEnd_privP hR hent hra hret
+  obtain ⟨n2, hpath, hRC2, -, hprog2, -, -, -, hret⟩ := retEnd_privP hR hframe hent hra hret
   obtain ⟨b, k, allocs, its, m, w, vb, us, ops, ρ, vals, cm, n1, hq, hvb, hi, hops, hdone, hpre,
     hMR, hcm, -, hpc1, herr1, -, hmem1, ⟨hprog1, -⟩, -, hus⟩ := hret
   have hxp : x.program = R.fb.program R.base := (q_stRel (qa_q hq).choose_spec).prog
@@ -301,7 +301,7 @@ theorem retEnd_n {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.ba
     hcm, hmem1, hus⟩
 
 /-- **The caller resumed after its callee's return** (module doc). -/
-theorem resume_ret {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _ _ => False)
+theorem resume_ret {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hframeB : RB.af.frame = true) (hgv : RA.gv = fun _ _ => False)
     (hX0 : NoCall RA.X) {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
     {Γ : E2E.Rel} {c : BitVec 64} {env : Clif.Env} {p : Clif.Program}
@@ -356,7 +356,7 @@ theorem resume_ret {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _
       Q RA (set_program (iterN RB.step n xB) (RA.fb.program RA.base)) (.run cM'') ∧
       AInv RA (.run cM'') := by
   obtain ⟨b, k, allocs, its, m, w, vb, us, ops, ρ, vals', cm, hqaB, hvb, hi, -, hdone', hpre, hMR,
-    hcm, hmem, hus⟩ := retEnd_n hRB hent hra hret hy.1 hy.2.1
+    hcm, hmem, hus⟩ := retEnd_n hRB hframeB hent hra hret hy.1 hy.2.1
   obtain ⟨mtB, hqB⟩ := qa_q hqaB
   rw [hdone] at hdone'
   cases hdone'
@@ -368,7 +368,7 @@ theorem resume_ret {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _
     · show Arm.r _ _ = _; rw [r_set_program]; exact h3
     · show Arm.r _ _ = _; rw [r_set_program]; exact h29
     · intro r hr; rw [regVal_set_program]; exact h5 r hr
-  obtain ⟨vV'', vP'', cM'', h1, h2, h3, h4, h5⟩ := CallArity.resume_allA hRA hRB hgv hX0 H hchk
+  obtain ⟨vV'', vP'', cM'', h1, h2, h3, h4, h5⟩ := CallArity.resume_allA hRA hRB hframeB hgv hX0 H hchk
     har hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq hA hP hat hm2 hm3 hm4 hent hy' hfx
     hlr hm0 hG hr₀B (by rw [program_set_program, hxp]) (usB := us) (ysB := vuses ops ρ)
     (fun j v q u h1 h2 => by rw [regVal_set_program]; exact hus j v q u h1 h2) hpre

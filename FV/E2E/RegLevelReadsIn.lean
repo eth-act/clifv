@@ -149,7 +149,7 @@ theorem RL.GoodXNR.goodX {R : RL} {u : Arm.ArmState} (h : R.GoodXNR u) : R.GoodX
 theorem RL.frameRd_slot {R : RL} (hR : R.Wf) {o : Nat} (ho : o < R.fr.size) :
     R.FrameRd false (R.spB + BitVec.ofNat 64 o) := by
   refine ⟨o, Nat.lt_of_lt_of_le ho (RL.size_le_drop hR), .inl ?_, rfl⟩
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   by_cases h0 : R.fr.total = 0
   · simp only [RL.fr] at h0 hle ho; omega
