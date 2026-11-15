@@ -127,8 +127,11 @@ stock's decision `Backend.frameRequired`, `FV/Backend/Frameless.lean`).
   not by an `_unwind_any` form.
 
 `RL.Wf` admits frameless activations (`alloc : AllocAF`, `leaf`); the lemmas about the prologue,
-the epilogue's frame pair and the unwinding take `hframe : R.af.frame = true`. The old theorems
-are unchanged and proved through the `L` forms (`CompiledCleanupA.toL`). Witness:
+the epilogue's frame pair and the unwinding take `hframe : R.af.frame = true`. The old backend
+theorems are unchanged and proved through the `L` forms (`CompiledCleanupA.toL`). The
+concurrency theorems over an activation's `R.Wf` take `hframe` beside it (`StatOk.frame`,
+`CompiledE.frame`): `R.Wf ∧ hframe` is the former `R.Wf`, whose allocation was `lowerRFunc`'s
+output; the witnesses discharge it by `lowerRFunc_frame` (`ArmAllocThread.Witness.frame_act`). Witness:
 `DeadCleanupLeafWitness.compiledL_exists` (a compiled function without a frame inhabits
 `CompiledCleanupL`, with `FormsCovered` and `InSubset`).
 
