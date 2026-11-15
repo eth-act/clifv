@@ -26,6 +26,9 @@ cd "$root"
 # 2. float-spec on its own toolchain and .lake.
 cd "$root/float-spec"
 unset LAKE_ARTIFACT_CACHE LAKE_RESTORE_ARTIFACTS LAKE_CACHE_DIR FV_LAKE_CACHE
+# The cache unpacker opens files on every core at once: at a soft open-files limit of 1024
+# (Debian 13's default; 96 cores) nearly every file fails with EMFILE, "os error 24" (#1037).
+ulimit -Sn "$(ulimit -Hn)" 2> /dev/null || true
 "$mc" lake exe cache get 2>&1 | tail -n 2   # Mathlib's olean cache: a no-op once unpacked.
 "$mc" lake build 2>&1 | grep -vE '^(✔|⣿|trace)' | grep -E 'error|Build completed|failed' || true
 "$mc" lake build > /dev/null 2>&1 || { echo "float-spec: build failed" >&2; exit 1; }
