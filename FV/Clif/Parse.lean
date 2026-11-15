@@ -586,14 +586,18 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     return .inst (.store s (← ctrl sfx x) flags x p off)
   -- float operations (`Inst.float`): `fcmp cc x, y` and the `FOp.plain` opcodes; the
   -- controlling type is the operand's for the same-type operations and `fcmp`, the explicit
-  -- suffix (the result type) for the conversions
+  -- suffix (the result type) for the conversions. `f16` values are only moved (loads, stores,
+  -- `bitcast`, `select`, constants, arguments): an operation on an `f16` operand or with an
+  -- `f16` result is outside S
   if op == "fcmp" then
     let w ← anyWord
     let cc ← match FloatCC.ofName? w with
       | some cc => pure cc
       | none => malformed s!"unknown float condition code '{w}'"
     let x ← value; expectPunct ','; let y ← value
-    return .inst (.float (.fcmp cc) (← ctrl sfx x) [x, y])
+    let t ← ctrl sfx x
+    if t == .f16 then unsupported s!"fcmp at f16 (f16 values are only moved)"
+    return .inst (.float (.fcmp cc) t [x, y])
   if let some f := FOp.ofName? op then
     let x ← value
     let mut args := #[x]
@@ -605,6 +609,9 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     -- interpreter (the only oracle) clamps `fcvt_to_*.i128` to the i128 range
     if !f.ctrlIsOperand && (t == .i128 || (← typeOf x) == .i128) then
       unsupported s!"{op} with an i128 operand or result"
+    if t == .f16 then unsupported s!"{op} at f16 (f16 values are only moved)"
+    if !f.ctrlIsOperand then
+      if (← typeOf x) == .f16 then unsupported s!"{op} of an f16 (f16 values are only moved)"
     return .inst (.float f t args.toList)
   match op with
   | "iconst" =>
