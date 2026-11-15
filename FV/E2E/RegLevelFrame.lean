@@ -743,7 +743,7 @@ theorem q_init_framed {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : Bi
   obtain ⟨herr', hprog'⟩ := hsteps.err
   refine ⟨prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
     hgx (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits)), ?_⟩
-  have hsP : R.sP = s' := hiter
+  have hsP : R.sP = s' := by rw [RL.sP, if_pos hframe]; exact hiter
   rw [hiter]
   have hspB : spOf s' = R.spB := by
     rw [hsp', RL.spB, hdrop0, ← hfs]; exact sp_sub16 _ _
@@ -1153,7 +1153,7 @@ theorem RL.sP_steps {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitV
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
   obtain ⟨hiter, -, -, -, -⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
-  exact ⟨s', hsteps, hiter, h16, hsl⟩
+  exact ⟨s', hsteps, by rw [RL.sP, if_pos hframe]; exact hiter, h16, hsl⟩
 
 /-- The top of the frame (fp/lr and the clobber area) holds no kept address. -/
 theorem RL.top_notG {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) : ∀ k < R.topN, ¬ R.G (R.topB + BitVec.ofNat 64 k) := by

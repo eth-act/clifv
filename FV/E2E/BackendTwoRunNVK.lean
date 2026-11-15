@@ -131,9 +131,9 @@ theorem backend_twoRunLWNpPVK (hc : CompiledCleanup f k vc vcp rf af fa fb)
     obtain ⟨a0, hat, hle⟩ := hck.at
     have hW0 : ({ actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp) with
         X := (XI.upTo N).at 0 } : RL).Wf :=
-      ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
+      ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
         by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
-        he.abi.program, he.gfree⟩
+        he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
     exact stEqOutX_prologueZ_entry hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag
       hx29 hx30 (fun _ h => by exact h)
   have hwi0 : ∀ (m₀ m₀' : Loc → CV), MConf.WIn (fun b => F b ∨ D b)

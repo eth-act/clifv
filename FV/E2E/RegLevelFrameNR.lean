@@ -108,7 +108,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {Y : BitVec 6
   obtain ⟨herr', hprog'⟩ := hsteps.err
   refine ⟨prologueSteps R.af.saves R.af.frameSize R.af.isCaller, rfl,
     hgx (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits)), ?_⟩
-  have hsP : R.sP = s' := hiter
+  have hsP : R.sP = s' := by rw [RL.sP, if_pos hframe]; exact hiter
   rw [hiter]
   have hspB : spOf s' = R.spB := by
     rw [hsp', RL.spB, hdrop0, ← hfs]; exact sp_sub16 _ _
@@ -250,7 +250,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {Y : BitVec 6
 (store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
 field but the pc, x16, x17, x29, `sp` and the flags is as at entry. (#581: x17 and the flags are
 new exceptions, as in `q_init`.) -/
-theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+theorem q_initNR {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
     ∃ n, (∀ i < n, R.GoodXNY Y (iterN R.step i R.s0)) ∧
@@ -258,7 +258,7 @@ theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
         (∀ fl, f ≠ .FLAG fl) → Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 :=
-  let ⟨n, _, hg, hq, hA, hf⟩ := q_initNA (Y := Y) hR hent hbe
+  let ⟨n, _, hg, hq, hA, hf⟩ := q_initNA (Y := Y) hR hframe hent hbe
   ⟨n, hg, hq.q, hA, hf⟩
 
 /-- **The number of machine steps of the epilogue and `ret`** (a function of the code only):
@@ -675,7 +675,7 @@ theorem ret_machineNA {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {Y : Bit
     rfl
 
 /-- **The return on the machine** (Cranelift's epilogue): `ret_machineNA` without the length. -/
-theorem ret_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+theorem ret_machineNR {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0)
     {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : Arm.ArmState} (hqa : QA R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
@@ -691,7 +691,7 @@ theorem ret_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
       ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
         ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
         regVal (iterN R.step n s) p = x :=
-  let ⟨n, _, h⟩ := ret_machineNA (Y := Y) hR hent hqa hvb hi
+  let ⟨n, _, h⟩ := ret_machineNA (Y := Y) hR hframe hent hqa hvb hi
   ⟨n, h⟩
 
 end Backend.Proof

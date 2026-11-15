@@ -78,10 +78,10 @@ theorem regLevelCorrect_worldUT_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   have hR : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩, XR, U, T⟩ : RLU).Wf :=
-    ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
+    ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
-      hent.program, hG⟩
-  obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUT hR hent hat hU hgot (hRz lm p.ps _ rfl hR) hrets
+      hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
+  obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUT hR (lowerRFunc_frame halloc) hent hat hU hgot (hRz lm p.ps _ rfl hR) hrets
     hhalt (lsda_cases hsites hlsda) (siteAt_any hR) hrows hcie hfde hsaved hbe
     (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
   refine ⟨fun us vals w hret => ?_, h2, fun obj w hu => ?_⟩
@@ -188,9 +188,9 @@ theorem regLevelCorrect_worldUTG_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   have hR : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩, XR, U, T⟩ : RLU).Wf :=
-    ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
+    ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
-      hent.program, hG⟩
+      hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUTP hR hent hat hU hgot (fun _ h => .inl h)
     (fun _ h => .inr h) (hRz lm p.ps _ rfl hR) hrets
     hhalt (lsda_cases hsites hlsda) (siteAt_any hR) hrows hcie hfde hsaved hbe
@@ -198,12 +198,12 @@ theorem regLevelCorrect_worldUTG_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
   refine ⟨fun us vals w hret => ?_, fun c htc => ?_, fun obj w hu => ?_⟩
   · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hnot⟩ := h1 us vals w hret
     exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU fun i hi => (htr i hi).goodXU, hnot,
-      fun i hi => actGoodXU_of hR hU hrows hcie hfde hsaved (htr i hi)⟩
+      fun i hi => actGoodXU_of hR (lowerRFunc_frame halloc) hU hrows hcie hfde hsaved (htr i hi)⟩
   · obtain ⟨n, htrap, htr, hst⟩ := h2 c htc
-    exact ⟨n, htrap, fun i hi => actGoodXU_of hR hU hrows hcie hfde hsaved (htr i hi), hst⟩
+    exact ⟨n, htrap, fun i hi => actGoodXU_of hR (lowerRFunc_frame halloc) hU hrows hcie hfde hsaved (htr i hi), hst⟩
   · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hn, hx⟩ := h3 obj w hu
     exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU fun i hi => (htr i hi).goodXU, hn, hx,
-      fun i hi => actGoodXU_of hR hU hrows hcie hfde hsaved (htr i hi)⟩
+      fun i hi => actGoodXU_of hR (lowerRFunc_frame halloc) hU hrows hcie hfde hsaved (htr i hi)⟩
 
 /-- `regLevelCorrect_worldUTG_any` under the check `lastCallsOk` (statement kept for its
 callers). -/

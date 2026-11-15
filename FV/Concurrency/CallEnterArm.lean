@@ -45,8 +45,12 @@ lines are not hooked, and from the ABI entry both machines make the prologue's r
 theorem _root_.Backend.Proof.RL.sP_hooks {R : RL} (hR : R.Wf) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (H : ArmHooks) : ({ R with H := H } : RL).sP = R.sP := by
   have hR' : ({ R with H := H } : RL).Wf :=
-    ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree⟩
-  exact ProRun.det (prologue_linesAt hR' hent) (prologue_linesAt hR hent)
+    ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree,
+      hR.leaf⟩
+  cases hframe : R.af.frame
+  · dsimp only [RL.sP]; simp only [hframe, Bool.false_eq_true, ↓reduceIte]
+  · dsimp only [RL.sP]; simp only [hframe, ↓reduceIte]
+    exact ProRun.det (prologue_linesAt hR' hframe hent) (prologue_linesAt hR hframe hent)
 
 /-- `StRel` does not depend on the activation's hooks, given that the state after the prologue
 does not (`RL.sP_hooks`; `StRel.fplr` compares with the prologue's image `R.topImg`, read after
@@ -96,7 +100,8 @@ variable {L : Link}
 theorem act_wf {F : LFn} (hF : F.Static) {s0 : ArmState} {K : Nat} {G : BitVec 64 → Prop}
     (hst : StackAvail K F.af s0) (hp : s0.program = F.fb.program F.base)
     (hg : ∀ a, G a → ¬ StackBelow (frameDrop F.af + K) (spv s0) a) : (L.act F s0 K G).Wf :=
-  ⟨hF.check, hF.alloc, hF.emit, hF.layout, hF.lm, hF.fit, hst, hF.psF, hp, hg⟩
+  ⟨hF.check, AllocAF.of_lowerRFunc hF.alloc, hF.emit, hF.layout, hF.lm, hF.fit, hst, hF.psF, hp, hg,
+    noLeaf_of_lowerRFunc hF.alloc⟩
 
 /-- **The step at a direct `call` item is the `bl` into the callee** (module doc). -/
 theorem step_call (hL : L.Ok) {nA nB : String} {FA FB : LFn} (hA : (nA, FA) ∈ L.fns)

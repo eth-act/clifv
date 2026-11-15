@@ -587,7 +587,7 @@ theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) (hframe : R.af.frame = tru
         obtain ⟨mt, hq2'⟩ := qa_q hq2
         have hst := q_stRel hq2'
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machine hR hent hq2 hvb hi (RL.leafRegs3 hR ht0 ht1 ht2)
+          ret_machine hR hent hq2 hvb hi (fun h => by rw [hframe] at h; cases h)
         have e3 := RLU.iterN_stepU hR hU n3 _ ht3
         have ht3U : ∀ i < n3, P (iterN R.stepU i
             (iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0)))) := fun i hi => by
@@ -932,7 +932,7 @@ theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) (hframe : R.af.frame = tru
 /-- **`regLevelCorrect_coreU` keeping the trace**: every state of the run before a return or an
 exceptional end satisfies the trace predicate `RLU.GoodXU`; an exceptional end also keeps the
 addresses `G` and the program, and its last step leaves the frame by unwinding (`UnwExit`). -/
-theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
+theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
@@ -971,7 +971,7 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
           Arm.r f (E2E.runX R.stepU n R.s0) = Arm.r f w) ∧
         (∀ i < n, R.GoodXU (E2E.runX R.stepU i R.s0)) ∧ 0 < n ∧
         UnwExit R.U R.T R.fa (E2E.runX R.stepU (n - 1) R.s0)) := by
-  obtain ⟨m₀, h1, h2, h3⟩ := regLevelCorrect_coreUTP hR hent hcheck hU hgot (fun _ h => .inl h)
+  obtain ⟨m₀, h1, h2, h3⟩ := regLevelCorrect_coreUTP hR hframe hent hcheck hU hgot (fun _ h => .inl h)
     (fun _ h => .inr h.toRaiseX) hRz hrets hhalt hlsda hsite hrows hcie hfde hsaved hbe ρsel hsel
   exact ⟨m₀, h1, fun c hc => (h2 c hc).imp fun _ h => h.1, h3⟩
 
@@ -1136,7 +1136,7 @@ def actGoodXU (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) 
 
 /-- `actGoodXU` from the trace predicate `RLU.GoodXUF`, the raising callees' contract, the
 emitted tables and the save-slot check. -/
-theorem actGoodXU_of {R : RLU} (hR : R.Wf)
+theorem actGoodXU_of {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     {rows : List (Nat × Cfi)} (hrows : unwindRows R.af R.fa = .ok rows)
     (hcie : R.T.cie = UnwindTables.cieInsns) (hfde : R.T.fde = UnwindTables.insnsFrom 0 rows)
@@ -1146,6 +1146,6 @@ theorem actGoodXU_of {R : RLU} (hR : R.Wf)
   rcases h with g | g
   · exact .inl ⟨g.act, RLU.noRaise_desc hR hU g⟩
   · exact .inr ⟨⟨⟨g.good, g.err, g.prog, g.sp, g.raise⟩, g.next, g.exit, g.tsp, g.tfp, g.blr, g.pre⟩,
-      frameOkU_of hR hrows hcie hfde hsaved g⟩
+      frameOkU_of hR hframe hrows hcie hfde hsaved g⟩
 
 end E2E

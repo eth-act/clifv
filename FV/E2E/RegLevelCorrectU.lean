@@ -258,7 +258,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true)
         obtain ⟨mt, hq2'⟩ := qa_q hq2
         have hst := q_stRel hq2'
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machine hR hent hq2 hvb hi (RL.leafRegs3 hR ht0 ht1 ht2)
+          ret_machine hR hent hq2 hvb hi (fun h => by rw [hframe] at h; cases h)
         have e3 := RLU.iterN_stepU hR hU n3 _ ht3
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 R.s0) (.reg r) =
             regVal (iterN R.step n0 R.s0) r := fun _ => rfl
@@ -545,10 +545,10 @@ theorem regLevelCorrect_world_atXU_any {vcp : VCode} {rf : RFunc} {af : AFunc} {
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   have hR : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩, XR, U, T⟩ : RLU).Wf :=
-    ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
+    ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
-      hent.program, hG⟩
-  exact regLevelCorrect_coreU hR hent hcheck hU hgot (hRz lm p.ps _ rfl hR) hrets hhalt hlsda
+      hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
+  exact regLevelCorrect_coreU hR (lowerRFunc_frame halloc) hent hcheck hU hgot (hRz lm p.ps _ rfl hR) hrets hhalt hlsda
     (siteAt_any hR) hrows hcie hfde hsaved hbe ρsel hsel
 
 /-- **`regLevelCorrect_world_atX` with unwinding, generic in the semantics**: the core for the

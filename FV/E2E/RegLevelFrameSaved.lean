@@ -560,7 +560,7 @@ theorem frameSaved_of_stRel {R : RL} (hR : R.Wf) {ra : BitVec 64}
   have hcbl := hsv.clobber_le
   have hreg : ∀ r ∈ calleeSaved, m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e' => by cases e'; exact calleeSaved_allocatable hr) trivial
-  obtain ⟨h29, h30, hsl⟩ := RL.top_bytes hR hframe hent (hst.fplr hf)
+  obtain ⟨h29, h30, hsl⟩ := RL.top_bytes hR hf hent (hst.fplr hf)
   have hns : ∀ r ∈ calleeSaved, r ∉ R.af.saves → r ∉ R.rf.saveRegs := fun r _ hn hm =>
     hn (hsav ▸ saveRegs_saved hR hm)
   have hunsaved : ∀ r ∈ calleeSaved, ∀ d, r.dwarf? = some d →

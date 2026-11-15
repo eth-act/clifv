@@ -129,13 +129,18 @@ are not hooked, and from the ABI entry both machines run them (`iterN_proRun`). 
 theorem RL.sP_withX {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (X : ExtSem) : ({ R with X := X } : RL).sP = R.sP := by
   have hR' : ({ R with X := X } : RL).Wf :=
-    ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree⟩
+    ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree,
+      hR.leaf⟩
+  cases hframe : R.af.frame
+  · dsimp only [RL.sP]; simp only [hframe, Bool.false_eq_true, ↓reduceIte]
+  dsimp only [RL.sP]; simp only [hframe, ↓reduceIte]
   obtain ⟨hfs, -, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0, hdrop,
     -, -⟩ := entry_block hR
   subst hpl0
+  rw [RL.proLines, if_pos hframe] at hdrop
   obtain ⟨s', hsteps, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
@@ -277,8 +282,8 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
   subst hk
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
-  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
+  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   have hR : R.Wf := hRn 0
   have hck := (hR.alloc.ok).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe
@@ -337,7 +342,7 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         obtain ⟨mt, hq2''⟩ := qa_q hq2'
         have hst := q_stRel hq2''
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machine hR hent hq2' hvb hi (RL.leafRegs3 hR ht0 ht1 ht2)
+          ret_machine hR hent hq2' hvb hi (noLeaf_of_lowerRFunc halloc)
         have htr : ∀ i < n0 + n1 + n2 + n3, R.Good (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
           intro i hi
           rw [runX_eq]

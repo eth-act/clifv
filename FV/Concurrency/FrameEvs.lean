@@ -783,7 +783,7 @@ theorem epilogue_evsIn (env : Env) {saves : List Reg} {size : Nat} (hs : size < 
 run is `prologueSteps` steps and x17 and the flags are new exceptions, which Cranelift's
 stack-probe loop sets; the former statement, `prologueLines`' length steps keeping every field
 but the pc, x29, `sp` and x16, became false for a probed stack of 16 KiB or more.) -/
-theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem prologue_fields {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) :
     ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
       (∀ fl, f ≠ .FLAG fl) →
@@ -795,6 +795,7 @@ theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
   obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,
     hdrop, hx, hsc⟩ := entry_block hR
   subst hpl0
+  rw [RL.proLines, if_pos hframe] at hdrop
   obtain ⟨s', hsteps, -, -, ho', -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by

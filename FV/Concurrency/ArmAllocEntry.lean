@@ -68,7 +68,7 @@ theorem q_init_lines {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : Bit
     simp [lineOffset, Line.size]
   obtain ⟨hiter, hpc', -, -, -⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  have hsP : R.sP = s' := hiter
+  have hsP : R.sP = s' := by rw [RL.sP, if_pos hframe]; exact hiter
   rw [hiter]
   refine ⟨hsteps, ?_⟩
   have hspB : spOf s' = R.spB := by

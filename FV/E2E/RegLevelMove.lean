@@ -663,6 +663,23 @@ theorem Insn.not_call_of_hooked {x : Insn} (h : x.hooked = false) :
     (∀ n, x ≠ .bl n) ∧ (∀ r, x ≠ .blr r) :=
   ⟨fun n e => by subst e; simp [Insn.hooked] at h, fun r e => by subst e; simp [Insn.hooked] at h⟩
 
+/-- **A function with a call line has its frame** (#1028): a frameless leaf passes
+`FnAsm.leafKeep` (`RL.Wf.leaf`), and `bl`/`blr` write `x30`. -/
+theorem RL.frame_of_callPc {R : RL} (hR : R.Wf) {pc : BitVec 64} (h : CallPc R.fa R.base pc) :
+    R.af.frame = true := by
+  cases hf : R.af.frame
+  · obtain ⟨j, x, t, hj, hx, -⟩ := h
+    have hk := hR.leaf hf
+    simp only [FnAsm.leafKeep, Bool.and_eq_true] at hk
+    have := gprKeep_line hk.2 hj
+    rcases hx with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;>
+      simp [Insn.gprKeep, Insn.hooked, Insn.hookedGprKeep] at this
+  · rfl
+
+theorem RL.frame_of_callAt {R : RL} (hR : R.Wf) {pc : BitVec 64} {i' : MInst}
+    (h : CallAt R.fa R.base pc i') : R.af.frame = true :=
+  RL.frame_of_callPc hR h.callPc
+
 theorem execLines_ins : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState},
     execLines env ls s = some s' → ∀ ln ∈ ls, ∃ x t, ln = .ins x t
   | _, [], _, _, _, _, h => by simp at h

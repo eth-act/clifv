@@ -129,18 +129,18 @@ theorem backend_twoRunLERWZNpWPK (hc : Compiled f k vc vcp rf af fa fb)
     subst hk
     obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
     obtain ⟨a0, hat, hle⟩ := hck.at
-    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
+    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack,
-      hpsF, he.abi.program, he.gfree⟩
+      hpsF, he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
   have hW0' : ({ actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp) with
       s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).Wf := by
     obtain ⟨-, -, -, hk⟩ := emitFunc_ok hc.emit
     subst hk
     obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
     obtain ⟨a0, hat, hle⟩ := hck.at
-    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
+    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack,
-      hpsF, he'.abi.program, he'.gfree⟩
+      hpsF, he'.abi.program, he'.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
   have hPe : (prologueSteps (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.saves (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.frameSize (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G

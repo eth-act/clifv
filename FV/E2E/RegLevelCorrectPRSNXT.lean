@@ -62,8 +62,8 @@ theorem regLevelCorrect_world_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFunc} {f
   subst hk
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
-  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
+  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   have hR : R.Wf := hRn 0
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR (lowerRFunc_frame halloc) hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
@@ -223,8 +223,8 @@ theorem regLevelCorrect_world_value_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFu
   subst hk
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
-  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
+  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
   have hR : R.Wf := hRn 0
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR (lowerRFunc_frame halloc) hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=

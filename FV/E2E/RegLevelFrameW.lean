@@ -247,6 +247,7 @@ theorem q_initW {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 6
   obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl, hj0, hdrop,
     hx, hsc⟩ := entry_block hR
   subst hpl
+  rw [RL.proLines, if_pos hframe] at hdrop
   obtain ⟨s', hsteps, hsp', hfp', ho', hfl', hm', -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
@@ -273,7 +274,7 @@ theorem q_initW {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 6
       cases hp)
   refine ⟨prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
     hgxw (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits)), ?_⟩
-  have hsP : R.sP = s' := hiter
+  have hsP : R.sP = s' := by rw [RL.sP, if_pos hframe]; exact hiter
   rw [hiter]
   have hspB : spOf s' = R.spB := by
     rw [hsp', RL.spB, hdrop0, ← hfs]; exact sp_sub16 _ _

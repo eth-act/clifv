@@ -96,7 +96,7 @@ theorem q_initN {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 6
   obtain ⟨herr', hprog'⟩ := hsteps.err
   refine ⟨prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
     hgx (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits)), ?_⟩
-  have hsP : R.sP = s' := hiter
+  have hsP : R.sP = s' := by rw [RL.sP, if_pos hframe]; exact hiter
   rw [hiter]
   have hspB : spOf s' = R.spB := by
     rw [hsp', RL.spB, hdrop0, ← hfs]; exact sp_sub16 _ _

@@ -342,6 +342,8 @@ not depend on the run. -/
 structure StatOk (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) : Prop where
   mem : (g.nm, g.F) ∈ L.fns
   wf : (g.RL L).Wf
+  /-- the activation's function has its frame (`lowerRFunc`'s output) -/
+  frame : (g.RL L).af.frame = true
   scope : MemScopeLSC (g.RL L)
   abi : AbiCall g.F.fb g.F.base g.ra g.s0
   H : DriverHypT g.f g.vc g.ctx g.st0 g.R g.gn g.bl g.A
@@ -468,7 +470,7 @@ theorem chainP_entry (hS : StatOk L env p g) {cs : Clif.State} {B0 : Clif.Block}
     (hq : Q (g.RL L) (iterN (g.RL L).step (prologueSteps g.F.af.saves g.F.af.frameSize g.F.af.isCaller) g.s0)
       (MConf.init g.F.rf m₀ w₀)) (hA : AInv (g.RL L) (MConf.init g.F.rf m₀ w₀)) {mon : Mon} :
     ChainP L env p g (fun r => m₀ (.reg r)) (g.s0, mon) cs := fun ls t' hr => by
-  obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refines_abiCRNX hS.wf hS.scope rfl
+  obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refines_abiCRNX hS.wf hS.frame hS.scope rfl
     (agreesAt_M hS.ok hS.mem _ _ _) hS.abi hS.probe hS.H hS.chk (hS.ΓF ▸ memRelOk_relW g.Γ g.f g.c)
     (IselRefines.Witness.relW_wf hS.align) hS.tls hS.noCall
     (memRefines_csem _ _ _ hS.slot (fun n b h => hS.sym n b h))

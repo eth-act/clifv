@@ -124,9 +124,9 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
   obtain ⟨a0, hat, hle⟩ := hck.at
   have hW0 : ({ actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp) with X := XI.at 0 } :
       RL).Wf :=
-    ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
+    ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
-      he.abi.program, he.gfree⟩
+      he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
   have hr1 : ∃ ms, e = .run ms := by
     obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre; exact ⟨_, rfl⟩
   have hr2 : ∃ ms, e' = .run ms := by

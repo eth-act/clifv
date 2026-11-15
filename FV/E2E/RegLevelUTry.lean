@@ -379,7 +379,7 @@ raises, the personality installs the first handler's landing pad, and the machin
 landing-pad edge block with the payload in the call's defs, the raising-call state `RaiseXF`
 (`RealizesTryRaiseP … R.GoodXUF`), for any semantics with `csemU`'s raising-`tryCall` clause
 (`TryRaiseSem`: `R.semU`, `csemU`, the dead-cleanup chain's value semantics). -/
-theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true) {semU : Sem}
+theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU)
     (hT : LsdaAt R) (hpad : PadsNonzero R.af R.fa) (hsite : SiteAt R.toRL) :
@@ -659,7 +659,7 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) (hframe : R.af.frame = tr
       obtain rfl := hdesc x d hx hd
       rw [hUr] at hr'
       cases hr'
-      exact hFK.2.2.trans (hst.fp hframe)
+      exact hFK.2.2.trans (hst.fp (RL.frame_of_callAt hR (hcpc regs i' rfl hasg)))
     exact .inr ⟨hRX, hnext, hexit, htsp, htfp, fun x hx => ⟨hxzr x hx, hst.code⟩,
       ⟨.tryCall info ti, info, hsite0, .inr ⟨ti, rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
         fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
