@@ -32,8 +32,9 @@ instructions of a mixed context; the float families already proven over `CtxInvT
   `lowerInstOk_of_rulesT`, `lowerInstOk_runTermT`, `instCallsT_of_rules`) take `InstScopeT ctx`
   explicitly, so their meaning is unchanged; the dispatchers over `InstScopeTF` are
   `LowerContractTF.lean`'s.
-* `CtxTW f ctx`: `CtxInvT f ctx ∧ InstScopeTF ctx` (S11g), the context of the typed scope with
-  float `call`s (`Compile.functionETCF`). The families that never read the call facts have
+* `CtxTW f ctx`: `CtxInvT f ctx ∧ InstScopeTFL ctx` (S11g; #1002 part 2: `InstScopeTFL`, an
+  `f64const` from the literal pool among the instructions, it was `InstScopeTF`), the context of
+  the typed scope with float `call`s (`Compile.functionETCF`). The families that never read the call facts have
   `…W` forms over it (`LowerRuleOkTXW`, `MemRuleOkRTXW`, `IndRuleOkTW`, `LowerTermRuleOkTW`,
   `TermUnmatchableTW`, `BranchRuleOkTW`, `BranchExcludedUnmatchableTW`, `TryIndRuleOkTW`,
   `TryIndUnmatchableTW` and their `…RulesCorrect…W`), each giving the `CtxT` form (`….toT`,

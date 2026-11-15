@@ -180,6 +180,34 @@ theorem csemG_csemGF_witness (ctx : FnCtx) (w : Arm.ArmState) :
   obtain ⟨e, he⟩ := hs
   exact ⟨e, he, seqRun_ext (fun _ _ _ _ h => csemG_csemGF h) _ _ _ _ he⟩
 
+/-! ## The literal-pool load (#1002 part 2) -/
+
+/-- **The guarded semantics defines the literal-pool load**: on every world, `csemGF` gives
+`ldr d0, <entry>` the entry's value (`GuardFP` admits it, `fspec`'s pool clause;
+`memRefinesFP_csemGF`'s `PoolRefinesFP`). -/
+theorem csemGF_pool_defined (ctx : FnCtx) (w : Arm.ArmState) :
+    ∃ w', csemGF (fun _ => False) ctx xNone' (fun _ => True) (fun _ => none) [] [] 0
+        (fun _ _ _ _ => False) (.fpuLoad .size64 (.vreg 0 .float) (.const 0x3ff7b8bac710cb29) fl0)
+        [] w = some ([(BitVec.ofNat 64 0x3ff7b8bac710cb29).setWidth 128], w', .next) := by
+  obtain ⟨w', h, -⟩ := (memRefinesFP_csemGF (F := fun _ => False) (ctx := ctx) (X := xNone')
+    (Rd := fun _ => True) (syms := fun _ => none) (exts := []) (sigs := []) (sp0 := 0)
+    (Pc := fun _ _ _ _ => False) rfl).2.2 .size64 0 0x3ff7b8bac710cb29 fl0 w (.inr rfl)
+  exact ⟨w', h⟩
+
+/-- **`guardFP_fpuLoad` needs `am ≠ .const`**: `GuardFP` admits the literal-pool load
+`ldr d0, <entry>` (#1002 part 2), which has no address, so the statement without the premise
+(its form before #1002 part 2) is false. -/
+theorem guardFP_fpuLoad_needs_ne (w : Arm.ArmState) :
+    ¬ ∀ (sb : Nat) (sz : ScalarSize) (rd : Reg) (am : AMode) (fl : Clif.MemFlags) (us : List CV),
+      GuardFP (fun _ => False) (fun _ => True) sb (.fpuLoad sz rd am fl) us w →
+      ∃ d, rd = .vreg d .float ∧ (sz = .size32 ∨ sz = .size64) ∧
+        ∃ a, amodeAddr sb am sz.bytes us w = some a ∧ Avoids (fun _ => False) sz.bytes a ∧
+          ∀ k < sz.bytes, (fun _ => True) (a + BitVec.ofNat 64 k) := by
+  intro h
+  obtain ⟨-, -, -, a, ha, -⟩ :=
+    h 0 .size64 (.vreg 0 .float) (.const 0) fl0 [] (by simp only [GuardFP]; exact .inr rfl)
+  simp [amodeAddr] at ha
+
 /-! The `…_viaF` theorems have exactly the statements of the theorems they re-derive through the
 composition with the float accesses (which `vcode_ni`/`vcode_ni_value` consume). -/
 

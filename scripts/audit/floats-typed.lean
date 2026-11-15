@@ -48,6 +48,9 @@ import FVTest.Backend.FloatCallF
 import FVTest.Backend.CallArgsIntW
 import FV.E2E.DeadCleanupPairTC
 import FV.E2E.LinkScopeTotalTF
+import FV.Backend.Proof.IselFloatConstPool
+import FV.E2E.GuardedFPWitness
+import FVTest.E2E.PoolConstFinalTCF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -418,3 +421,32 @@ import FV.E2E.LinkScopeTotalTF
 #print axioms E2E.LinkCheck.driverInTCB_of_driverInB
 #print axioms E2E.LinkCheck.fnScopeInTCB_of_T3F
 #print axioms E2E.FloatPlainCallsTWitness.admitted_tcb -- witness: native_decide
+-- #1002 part 2: `f64const` from the literal pool in the typed scope with float calls
+#print axioms Backend.Proof.fconst_pool
+#print axioms Backend.Proof.fpu_load64_ok
+#print axioms Backend.Proof.constant_f64_okL
+#print axioms Backend.Proof.f64const_okTL
+#print axioms Backend.Proof.lowerRulesCorrectTL_program
+#print axioms Backend.Proof.inst_splitFCL
+#print axioms Backend.Proof.lower_nonroot_nomatchTFCL
+#print axioms Backend.Proof.nonE_splitFL
+#print axioms Backend.Proof.rootNEFCL_sound
+#print axioms Backend.Proof.nonEUnmatchableTFW_program
+#print axioms Backend.Proof.lowerInstOkP_of_rulesTFW
+#print axioms Backend.Proof.Driver.instScopeOkFL_sound
+#print axioms Backend.Proof.Driver.shapeOkTF_eq_S
+#print axioms Backend.Proof.Driver.lowerShapeTC_of_okF
+#print axioms Backend.Proof.Driver.lowerCheckTCF_complete
+#print axioms E2E.poolRefinesFP_csem
+#print axioms E2E.memRefinesFP_csem
+#print axioms E2E.memRefinesFP_csemGF
+#print axioms E2E.memRefinesFP_valueSemGF
+#print axioms E2E.memRefinesFP_valueSem
+#print axioms E2E.guardFP_fpuLoad
+#print axioms E2E.csemGF_lockstep2
+#print axioms E2E.backend_correct_finalTCF
+#print axioms E2E.GuardedFPWitness.csemGF_pool_defined
+#print axioms E2E.GuardedFPWitness.guardFP_fpuLoad_needs_ne
+#print axioms PoolConstFinalTCF.verdict_lit -- witness: native_decide
+#print axioms PoolConstFinalTCF.backend_correct_finalTCF_lit -- witness: native_decide
+#print axioms PoolConstFinalTCF.shapeOkTF_eq_S_old_false -- witness: native_decide
