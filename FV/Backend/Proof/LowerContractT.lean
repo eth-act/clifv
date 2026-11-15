@@ -85,7 +85,9 @@ theorem CtxT.toW {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) : CtxTW f ctx 
 instance {f : Clif.Function} {ctx : Ctx} : CoeOut (CtxT f ctx) (CtxTW f ctx) := ⟨CtxT.toW⟩
 
 /-- A typed context of a function with integer externs (`Compile.functionET`) whose `call`
-arguments are integers (S11g: `hca`, which `CtxInvT` no longer gives). -/
+arguments are integers (S11g: `hca`, which `CtxInvT` no longer gives; without it the statement
+is false: `CallArgsIntW.ctxT_ofExterns_needs_callArgs` in FVTest/Backend/CallArgsIntW.lean, an
+`f64` passed to an `i64` parameter). -/
 theorem CtxT.ofExterns {f : Clif.Function} {ctx : Ctx} (hinv : CtxInvT f ctx)
     (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
     (hca : CallArgsInt ctx) : CtxT f ctx :=

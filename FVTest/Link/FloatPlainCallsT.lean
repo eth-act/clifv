@@ -1,3 +1,4 @@
+import FV.Backend
 import FV.Link.SemanticCompileT
 import FV.E2E.StockProductionFixtures
 import FV.Backend.Lowering.StockArithmeticNI

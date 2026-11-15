@@ -163,7 +163,8 @@ statements are of the typed scope (`instET`) or float operations that belong to 
 `famCover_of`'s proof, for the typed scope and the float scope (`famCover_ofF`). S11g: `hca`
 (the `call` arguments are integers), which `CtxInvT` gave until `intArgs` dropped a `call`'s
 arguments; without it the statement is false (a `call` passing a float value to an extern
-declared with integer parameters has no family: family 13 takes integer arguments). -/
+declared with integer parameters has no family: family 13 takes integer arguments; witness
+`CallArgsIntW.famCover_ofG_needs_callArgs`, FVTest/Backend/CallArgsIntW.lean). -/
 theorem famCover_ofG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
     (hctx : CtxInvT f ctx) (hca : CallArgsInt ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
     (hETs : ∀ B ∈ f.blocks, ∀ s ∈ B.body,
