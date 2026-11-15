@@ -28,6 +28,10 @@ on:
         description: Run id whose lake-full is the baseline (default, the newest of main or of this branch); for a branch stacked on another PR's head. Refused if a non-Lean build input differs from that run's commit
         type: string
         default: ''
+      std:
+        description: Also run the std line (fv-demo --build-std, the weekly run's extra job; about 2 to 4 hours)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -676,6 +680,106 @@ jobs:
           path: gate-logs
           retention-days: 14
 
+  cargo-fv-std:
+    # The std line (#1040): fv-demo with `--build-std`, so std, core and alloc are compiled by the
+    # Lean backend too (2026-11-15: 32,334 of 32,455 functions, two test executables of about
+    # 28,000 Lean-compiled functions each, typed Stock route with float functions in the region).
+    # Green as the cargo fv lines above (scripts/gate-line-check.py): SAME, lean-ld, the binary
+    # check N of N (no known-unverified entry) and the pinned counts of `fv-demo+std` in
+    # scripts/gate-expected-counts.txt, with --rise-ok: no PR runs this line, so a rise of the
+    # function counts is green and printed (a PR records it); a drop and a different executable
+    # count are red. It runs in the weekly run (and on request, input `std`) only: on the remote
+    # build machine it took 1 h 51 min with 16 jobs and 9.7 GiB at its peak, too long for the
+    # merge gate. Its 1 of 2 from #892 to #1040 went unseen for two weeks because no gate ran it.
+    name: cargo fv --lean-link --verified --build-std (fv-demo, weekly)
+    needs: [plan, assemble]
+    if: ${{ !cancelled() && needs.assemble.result == 'success' && (github.event_name == 'schedule' || inputs.std) }}
+    runs-on: ubuntu-24.04
+    # GitHub-hosted runners stop a job after 6 hours
+    timeout-minutes: 360
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/fv-lean
+        with:
+          swap-gb: '16'
+          stages: lake-full
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq qemu-user-static llvm-18
+          rustup toolchain install nightly-2026-09-26 --profile minimal \
+            --component rustc-dev --component rust-src --target aarch64-unknown-linux-musl
+          rustup target add aarch64-unknown-linux-musl
+      - name: Rust build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+            target/cg_clif
+          key: full-gate-rust-cargo-fv-${{ hashFiles('rust/rust-toolchain.toml', 'rust/**/Cargo.lock', 'scripts/build-cg-clif.sh', 'scripts/patches/cg-clif-extnames.patch') }}
+      - name: Build cg_clif and cargo fv
+        run: |
+          # build-cg-clif.sh also prepares target/cg_clif/std-src (rust-src with cg_clif's stdlib
+          # patches), the sources --build-std compiles
+          scripts/build-cg-clif.sh
+          (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
+          lake build lean-backend lean-link clif-decode link-check lean-ld 2>&1 | tail -n 1
+          for t in lean-backend lean-link clif-decode link-check lean-ld; do test -x ".lake/build/bin/$t"; done
+      - name: Run
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          mkdir -p gate-logs
+          rm -rf examples/fv-demo/target/fv
+          (while sleep 600; do date -u +%T; free -m | sed -n 2,3p; ps -eo pid,nlwp,pcpu,rss,etimes,comm --sort=-pcpu | awk 'NR <= 6' || true; done) \
+            > gate-logs/fv-demo-std.ps 2>&1 &
+          sampler=$!
+          start=$(date +%s)
+          rc=0
+          PATH="$PWD/rust/target/release:$PATH" FV_ROOT="$PWD" /usr/bin/time -v -o gate-logs/fv-demo-std.time \
+            examples/compare.sh examples/fv-demo --lean-link --verified --build-std > gate-logs/fv-demo-std.log 2>&1 || rc=$?
+          kill "$sampler" 2> /dev/null || true
+          logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' gate-logs/fv-demo-std.log | tail -n 1)
+          if [[ -n "$logs" && -f "$logs/fv.log" ]]; then cp "$logs/fv.log" gate-logs/fv-demo-std-cargo-fv.log; fi
+          base="$RUNNER_TEMP/expected-counts-base.txt"
+          python3 scripts/gate-line-check.py base-pins "$base" --before "$BEFORE" || true
+          ok=0
+          verdict=$(python3 scripts/gate-line-check.py cargo-fv fv-demo+std --lean-link --rise-ok --base "$base" \
+            --summary "$GITHUB_STEP_SUMMARY" gate-logs/fv-demo-std.log gate-logs/fv-demo-std-cargo-fv.log) || ok=$?
+          if [[ $rc == 0 && $ok != 0 ]]; then rc=1; fi
+          echo "cargo fv --lean-link --verified --build-std fv-demo rc=$rc $(( $(date +%s) - start )) s: $verdict" | tee gate-logs/summary.txt
+          grep -E 'Maximum resident|Elapsed|User time|System time' gate-logs/fv-demo-std.time || true
+          tail -n 15 gate-logs/fv-demo-std.log
+          exit $rc
+      - name: Binary check details
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          n=0
+          while read -r exe; do
+            n=$((n + 1))
+            mode=$(sed -E 's#.*/target/fv/([^/]+)/.*#\1#' <<< "$exe")
+            (cd examples/fv-demo && PATH="$GITHUB_WORKSPACE/rust/target/release:$PATH" FV_ROOT="$GITHUB_WORKSPACE" \
+              cargo fv link-proof --exe "$exe" --out "$RUNNER_TEMP/bin-check-$n" --prune --mode "$mode") \
+              > "gate-logs/fv-demo-std-binary-check-$n.log" 2>&1 || true
+            echo "== $exe"
+            grep -E -A1 '^ *FAIL ' "gate-logs/fv-demo-std-binary-check-$n.log" | head -n 40 || true
+          done < <(sed -n -E 's/^cargo fv: binary ([^ ]+): not (verified|checked).*/\1/p' gate-logs/fv-demo-std.log)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: gate-cargo-fv-std-fv-demo
+          path: gate-logs
+          retention-days: 14
+
   crate-proofs-fresh:
     # #994: the committed generated crate proofs are exactly what scripts/regen-crate-proofs.sh
     # writes from this tree. Their statements quote the compiler's output (CLIF, register
@@ -849,7 +953,7 @@ jobs:
 
   report:
     name: Report
-    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, crate-proofs-fresh, e2e, runtime, cargo-fv, float-spec, unused-imports]
+    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, crate-proofs-fresh, e2e, runtime, cargo-fv, cargo-fv-std, float-spec, unused-imports]
     if: ${{ always() && needs.plan.result != 'skipped' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
