@@ -434,6 +434,7 @@ theorem fnOk_CX {env : Clif.Env} (henv : env.extern "ld" = none) :
   exact {
     mem := mem_callerX
     wf := hwf
+    frame := Backend.lowerRFunc_frame static_C.alloc
     scope := scope_C rfl
     abi := habi
     H := driverHypT_mk (Γ := ⟨(linkX.act callerF s0 K G).F, fun _ => none,

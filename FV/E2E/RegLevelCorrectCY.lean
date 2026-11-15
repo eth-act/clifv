@@ -204,7 +204,7 @@ theorem realizes_stepCY {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
   have fin1T := fin1 (fun _ => True) (fun _ _ => trivial) (.inl fun _ => trivial)
   have nil : ∀ i < 0, R.GoodXNY (fun _ => True) (iterN R.step i s) :=
     fun _ h => absurd h (Nat.not_lt_zero _)
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases hG with
   | move =>
     obtain ⟨n, hn, ht⟩ := realizes_moveNR (Y := fun _ => True) hR hq (hns _ _ _ _ _ _ rfl)

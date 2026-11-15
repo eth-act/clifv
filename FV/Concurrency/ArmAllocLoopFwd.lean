@@ -175,7 +175,7 @@ theorem rmw_lines {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs : Arra
         rmwLoopBody ty.bits op fl ++ (.ins (.cbz true true (.x 24) (.loop n)) none :: T) ∧
       R.L[j0]? = some (.label (.loop n)) ∧ s.program = R.fb.program R.base ∧
       Arm.r .PC s = R.pcOf j0 ∧ Arm.r .ERR s = .None ∧ StRel R s m w := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
   obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok
@@ -346,7 +346,7 @@ theorem cas_lines {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs : Arra
     ∃ j0 n X, R.L.drop j0 = casLoopLines ty.bits fl (.loop n) (.loop (n + 1)) ++ X ∧
       s.program = R.fb.program R.base ∧ Arm.r .PC s = R.pcOf j0 ∧ Arm.r .ERR s = .None ∧
       StRel R s m w := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
   obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok

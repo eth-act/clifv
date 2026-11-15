@@ -284,7 +284,7 @@ theorem qs_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RIt
     {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState} {jl : Nat}
     (hjl : R.L[jl]? = some (.label (.block vb.label))) (hpc : Arm.r .PC s = R.pcOf jl)
     (hst : StRel R s m w) : Qs R s t items.toList m w := by
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨code, hcode, haf⟩ := hbl t vb items hvb hit
   obtain ⟨p, hp, hL, hseg⟩ := emit_seg hR.emit
   obtain ⟨i, sg, o, -, ps1, psm, ps2, hs, ho', hidx, hlab, -, -, -, e1, e2, hpre, -⟩ :=

@@ -93,6 +93,9 @@ theorem wfRL : RAL.Wf := by
   exact ArmAllocThread.Witness.wf_ofAt (by decide) (by decide) (by decide) (by decide) allocL h1 h2
     h3 h4 h5 h6 h7 h8 h9
 
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameRL : RAL.af.frame = true := ArmAllocThread.Witness.frame_act factsL.1
+
 theorem codeRL : ∀ k < RAL.fb.words.size,
     Arm.read_mem_bytes 4 (0x20000#64 + BitVec.ofNat 64 (4 * k)) RAL.s0 = RAL.fb.words[k]! := by
   native_decide

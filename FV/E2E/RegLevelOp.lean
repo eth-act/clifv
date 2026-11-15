@@ -50,7 +50,7 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
 /-- The fp/lr slot and the clobber area lie in the frame addresses. -/
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < R.topN, R.FK (R.topB + BitVec.ofNat 64 k) := by
-  obtain ⟨-, hfs, -, -, -, hcb, -, hst, hd⟩ := RL.frame_facts hR
+  obtain ⟨-, hfs, -, -, -, hcb, -, hst, hd⟩ := RL.frame_facts hR hframe
   intro k hk
   refine .inl ?_
   simp only [frameF, hd, RL.topB, RL.topN] at hk ⊢

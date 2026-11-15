@@ -34,7 +34,7 @@ theorem regLevelCorrect_worldX_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
         ∀ m, Arm.r .ERR (E2E.runX (ArmStepX X H fa) (n + m + 1) s) ≠ .None) := by
   obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hc.at
-  obtain ⟨_, h⟩ := regLevelCorrect_world_atX_value hat (entryOk_of_le hle) halloc hemit hlayout hcov hent
+  obtain ⟨_, h⟩ := regLevelCorrect_world_atX_value hat (entryOk_of_le hle) (AllocAF.of_lowerRFunc halloc) (noLeaf_of_lowerRFunc halloc) hemit hlayout hcov hent
     hres hG hC hCT hTls hbe (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
   exact h
 

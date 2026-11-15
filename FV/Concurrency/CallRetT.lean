@@ -43,7 +43,7 @@ variable {L : Link} {FB : LFn} {s0 : ArmState} {K : Nat} {G : BitVec 64 → Prop
 
 /-- **The return end realized** (module doc). -/
 theorem realizedT_ret (hL : L.Ok) {nB : String} (hB : (nB, FB) ∈ L.fns)
-    (hRB : (L.act FB s0 K G).Wf) {ra : BitVec 64} (hent : AbiCall FB.fb FB.base ra s0)
+    (hRB : (L.act FB s0 K G).Wf) (hframeB : (L.act FB s0 K G).af.frame = true) {ra : BitVec 64} (hent : AbiCall FB.fb FB.base ra s0)
     (hra : ∀ k < FB.fb.words.size, ra ≠ FB.base + BitVec.ofNat 64 (4 * k))
     {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns) (hrA : FA.InRange ra)
     {MR : MemRelT} {slots : List (Clif.SlotId × Nat)} {r₀ : Reg → CV} {x : ArmState}
@@ -69,7 +69,7 @@ theorem realizedT_ret (hL : L.Ok) {nB : String} (hB : (nB, FB) ∈ L.fns)
             D (fun a => D a ∨ PrivA (L.act FB s0 K G) a)) := by
   have hret0 := hret
   obtain ⟨-, -, -, -, -, -, -, -, -, -, vals, cm, -, -, -, -, -, hdone, -⟩ := hret0
-  obtain ⟨n, hn0, hRC, hmem, hrun⟩ := ret_end hL hB hRB hent hra hA hrA hret
+  obtain ⟨n, hn0, hRC, hmem, hrun⟩ := ret_end hL hB hRB hframeB hent hra hA hrA hret
   refine ⟨n, vals, cm, hn0, hdone, hRC, hmem, fun {caller results cs regs} hr U D {mon ls t'} hr' =>
     ⟨fun hlt => ?_, fun hle => ?_⟩⟩
   · obtain ⟨-, -, hW, hk⟩ := (hrun hr').1 hlt

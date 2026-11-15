@@ -25,7 +25,7 @@ open Arm ArmFoot ArmThread ArmInstFoot VCodeThread Backend Backend.Proof AllocTh
 /-- **The callee's entry premises of the caller's resume** (module doc): a callee `RB` whose ABI
 entry state agrees with the caller's state `x` at its call but in the pc and `x30`, which holds
 the address after the call. -/
-theorem entry_premises {RB : RL} (hRB : RB.Wf) {ra : BitVec 64}
+theorem entry_premises {RB : RL} (hRB : RB.Wf) (hframe : RB.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall RB.fb RB.base ra RB.s0) {x : ArmState}
     (hfx : ∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f RB.s0 = Arm.r f x)
     (hlr : xreg 30 RB.s0 = Arm.r .PC x + 4#64) :
@@ -37,7 +37,7 @@ theorem entry_premises {RB : RL} (hRB : RB.Wf) {ra : BitVec 64}
   have e := regVal_calleeSaved_congrX
     (s := iterN RB.step (prologueSteps RB.af.saves RB.af.frameSize RB.af.isCaller) RB.s0)
     (t := x) (fun f h1 h2 h3 h4 h5 h6 h7 =>
-      (prologue_fields hRB hent f h1 h3 h5 h2 h6 h7).trans (hfx f h1 h4)) r hr
+      (prologue_fields hRB hframe hent f h1 h3 h5 h2 h6 h7).trans (hfx f h1 h4)) r hr
   simp only [locVal]
   rw [e]
 

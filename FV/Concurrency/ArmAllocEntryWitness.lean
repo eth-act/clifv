@@ -48,12 +48,12 @@ theorem run_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
     PRun Policy.arm RAL.step (OkPriv RAL) (RAL.s0, none) (lsP ++ [⟨[e], false⟩]) t' ∧
     e.k = .acqR ∧ e.n = 8 ∧ e.addr = 0 ∧
     (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAL e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) := by
-  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRL abiRL bodyRL
-  have hpe := prologue_evs wfRL abiRL probeF_RL hlat
+  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRL frameRL abiRL bodyRL
+  have hpe := prologue_evs wfRL frameRL abiRL probeF_RL hlat
   -- the prologue
   obtain ⟨t0, r0, ht0⟩ := prun_fwdN wfRL (prologueSteps RAL.af.saves RAL.af.frameSize RAL.af.isCaller)
     RAL.s0 (fun i hi => by
-      obtain ⟨k, x, -, hj, -, hxh, hprog, hpck, herr⟩ := (prologue_states wfRL abiRL hlat).2 i hi
+      obtain ⟨k, x, -, hj, -, hxh, hprog, hpck, herr⟩ := (prologue_states wfRL frameRL abiRL hlat).2 i hi
       exact ⟨1 + k, x, none, hj, hxh, hprog, hpck, herr, (hpe i hi).2⟩) none
   have hev0 : ∀ l ∈ (segEvs RAL.step (prologueSteps RAL.af.saves RAL.af.frameSize RAL.af.isCaller) RAL.s0).map
       (fun e => (⟨e, false⟩ : Lab)), ∀ e' ∈ l.evs, PrivA RAL e'.addr.toNat ∧ e'.k = .plainW := by
@@ -117,6 +117,6 @@ theorem refines_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon
       (n = (lsP ++ [(⟨[e], false⟩ : Lab)]).length ∨ Done RAL cE) := by
   obtain ⟨lsP, e, t', -, hr, hk, hn, -, -⟩ := run_load_entry
   obtain ⟨hR, hsc, hent, hbe, hpf⟩ := entry_premises
-  exact ⟨lsP, e, t', hr, hk, hn, arm_alloc_refines_entry hR hsc hent hpf hbe hr⟩
+  exact ⟨lsP, e, t', hr, hk, hn, arm_alloc_refines_entry hR frameRL hsc hent hpf hbe hr⟩
 
 end Concurrency.RealizeCompiled.WitnessL

@@ -106,7 +106,7 @@ theorem realizes_stepCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
   have nil : ∀ i < 0, R.GoodXNY (fun _ => True) (iterN R.step i s) :=
     fun _ h => absurd h (Nat.not_lt_zero _)
   have z := RL.frFree_zero R s
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases hG with
   | move =>
     obtain ⟨n, hq', ht, hs, hf⟩ := realizes_moveNAF (Y := fun _ => True) hR hq (hns _ _ _ _ _ _ rfl)

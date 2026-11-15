@@ -748,7 +748,7 @@ theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   cases hs0 with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops0 hevs0 hfoot0 hst0 =>
   obtain ⟨ty, op, fl, ra, ro, rd, r1, r2, rfl⟩ := hform vb i hvb hi
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
   obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok
@@ -1466,7 +1466,7 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   cases hs0 with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops0 hevs0 hfoot0 hst0 =>
   obtain ⟨ty, fl, ra, re, rx, rd, r1, rfl⟩ := hform vb i hvb hi
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
   obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok

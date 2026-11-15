@@ -87,6 +87,9 @@ theorem wfRS : RAS.Wf := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := factsS
   exact ArmAllocThread.Witness.wf_of allocS h1 h2 h3 h4 h5 h6 h7 h8 h9
 
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameRS : RAS.af.frame = true := ArmAllocThread.Witness.frame_act factsS.1
+
 theorem codeRS : ∀ k < RAS.fb.words.size,
     Arm.read_mem_bytes 4 (0x10000#64 + BitVec.ofNat 64 (4 * k)) RAS.s0 = RAS.fb.words[k]! := by
   native_decide

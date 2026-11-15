@@ -30,6 +30,8 @@ open Arm ArmThread Prog ClifThread ProgE2E Backend Backend.Proof Backend.Proof.D
 /-- **A compiled activation entered at its ABI entry** (module doc). -/
 structure CompiledE (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.State) : Prop where
   wf : RA.Wf
+  /-- the activation's function has its frame (`lowerRFunc`'s output) -/
+  frame : RA.af.frame = true
   scope : MemScopeLS RA
   gv : RA.gv = fun _ _ => False
   abi : ∃ ra, AbiCall RA.fb RA.base ra RA.s0
@@ -58,7 +60,7 @@ theorem thread_compiled_entry {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs 
     hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
     hsig, hmr, hargs, hq, hA⟩ := hc.front
   obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ :=
-    arm_alloc_refines_entryQ hc.wf hc.scope hent hc.probe hq hA hr
+    arm_alloc_refines_entryQ hc.wf hc.frame hc.scope hent hc.probe hq hA hr
   obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk⟩ :=
     arm_isel_refinesE' (E := Done RA cE) hc.gv H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0
       hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr hM hAr hend hnA

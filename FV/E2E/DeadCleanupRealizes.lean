@@ -47,7 +47,7 @@ private theorem q_world_change {R : RL} {s : Arm.ArmState} {b : Nat} {its : List
 private theorem aInv_step_sem {R : RL} {sem : Sem} (hR : R.Wf)
     {s : Arm.ArmState} {c c' : MConf CV Arm.ArmState}
     (hq : Q R s c) (hA : AInv R c) (h : MStep R.vc sem ckeep R.rf c c') : AInv R c' := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases h with
   | @move b src dst its m w =>
     intro hb hop

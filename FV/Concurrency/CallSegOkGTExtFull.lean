@@ -35,7 +35,7 @@ abbrev RAX : RL := linkX.act callerF sC0 0x200 GL
 
 theorem wf_RAX : RAX.Wf :=
   ⟨wf_RA5.check, wf_RA5.alloc, wf_RA5.emit, wf_RA5.layout, wf_RA5.lm, wf_RA5.fit, wf_RA5.stack,
-    wf_RA5.psF, wf_RA5.prog0, wf_RA5.gfree⟩
+    wf_RA5.psF, wf_RA5.prog0, wf_RA5.gfree, wf_RA5.leaf⟩
 
 /-- **The linked code is kept by the caller**: its own code, and the external's one word at
 `retBase`, which is the compiled `atomic_load`'s last word in the caller's kept addresses. -/
@@ -125,7 +125,7 @@ theorem ent_X : ∃ g : Act, Ent linkX Clif.Env.empty pX (PrivA RAX) (.run csO) 
     fnOk_CX (env := Clif.Env.empty) rfl
   have hS := hF sC0 0x200 GL 0x4000#64 (E2E.spv w₀C) [] [] callerF [] (fun _ => False) [] wf_RAX
     abiRC checksO.2.2.2.2.2.2.2.2
-  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RAX abiRC body_RAX
+  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RAX frameRC abiRC body_RAX
   refine ⟨⟨"f", callerF, sC0, 0x200, GL, 0x4000#64, fC, vc, ctx, st0, R, gn, bl, A,
     ⟨RAX.F, fun _ => none, RAX.ctx.slotBase, 0⟩, E2E.spv w₀C, Lp, ss, ss', cc, ins, a0, [], [],
     callerF, [], fun _ => False, []⟩, rfl, csO, fun _ => False, rfl, ?_, ?_, func_fCX⟩

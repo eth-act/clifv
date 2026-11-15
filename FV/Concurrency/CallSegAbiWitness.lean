@@ -47,10 +47,10 @@ theorem arm_abiCRN_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitV
   obtain ⟨L, ss, ss', H3, hm3⟩ := CallLayers.prep_init (vc := vcC) (vcp := RC.vc)
     CallResumeL.Witness.prepC
   obtain ⟨cc, ins, a0, hat, hm4⟩ := CallLayers.alloc_init (vc := RC.vc) (rf := RC.rf) allocC ckeep
-  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
+  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC frameRC abiRC bodyRC
   refine ⟨ctx, st0, R, gn, bl, A, L, ss', cc, ins, H, fun slots cs B0 args mon ls t' hB0 hcall hfunc
     hslots hbody hterm hregs hty hsig hmr hargs hr => ?_⟩
-  exact arm_isel_refines_abiCRN wfRC scopeRC rfl agreesAt_MC2 abiRC probeF_RC H hchk
+  exact arm_isel_refines_abiCRN wfRC frameRC scopeRC rfl agreesAt_MC2 abiRC probeF_RC H hchk
     (memRelOk_relW ΓC fC c) (relW_wf hc) VCodeThread.Witness.X0_tls (fun _ _ _ => rfl)
     (memRefines_csem RC.F RC.ctx _ rfl (fun _ _ h => by cases h)) (mrStable_relW ΓC fC c) fC_reg
     H3 (hm3 _ _) hat hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hq hA hr
@@ -76,10 +76,10 @@ theorem arm_abiCRNX_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : Bit
   obtain ⟨L, ss, ss', H3, hm3⟩ := CallLayers.prep_init (vc := vcC) (vcp := RC.vc)
     CallResumeL.Witness.prepC
   obtain ⟨cc, ins, a0, hat, hm4⟩ := CallLayers.alloc_init (vc := RC.vc) (rf := RC.rf) allocC ckeep
-  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
+  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC frameRC abiRC bodyRC
   refine ⟨ctx, st0, R, gn, bl, A, H, fun slots cs B0 args mon ls t' hB0 hcall hfunc
     hslots hbody hterm hregs hty hsig hmr hargs hr => ?_⟩
-  obtain ⟨k, trS, t, -, hk, hx, hrun, -⟩ := arm_isel_refines_abiCRNX wfRC scopeRC rfl agreesAt_MC2
+  obtain ⟨k, trS, t, -, hk, hx, hrun, -⟩ := arm_isel_refines_abiCRNX wfRC frameRC scopeRC rfl agreesAt_MC2
     abiRC probeF_RC H hchk (memRelOk_relW ΓC fC c) (relW_wf hc) VCodeThread.Witness.X0_tls
     (fun _ _ _ => rfl)
     (memRefines_csem RC.F RC.ctx _ rfl (fun _ _ h => by cases h)) (mrStable_relW ΓC fC c) fC_reg
