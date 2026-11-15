@@ -6,8 +6,8 @@ import FV.Backend.Proof.IselCtlCallF
 
 `LowerContractTF.lean`'s / `LowerContractTPF.lean`'s statement dispatchers over contexts whose
 `call` statements may take and return `f32`/`f64` (`CtxTW`: no condition on the callees of the
-`call`s and on the classes of their arguments; the scope `Compile.functionETCF` gives it,
-`ctxT_of_functionETCF`). The first matching root of `lower` is
+`call`s and on the classes of their arguments; for the scope `Compile.functionETCF` it is the
+validated shape's `CtxInvT` and `InstScopeTF`). The first matching root of `lower` is
 
 * a non-closure root: never matches (`lower_nonroot_nomatchTFC`: the exclusion checker over
   `floatOpsFC`, in which a `call` of a callee returning a float has a float result);
@@ -23,8 +23,8 @@ import FV.Backend.Proof.IselCtlCallF
 Generated code is unchanged: these are the proofs of the shipped lowering.
 
 * `lowerInstOkP_of_rulesTFW`, `lowerInstOkP_runTermTFW` (pinned obligations, `LowerInstOkP`);
-* `lowerInstOk_of_rulesTFW`, `lowerInstOk_runTermTFW`, `instCallsTFW_of_rules` (unpinned, from
-  the pinned ones at `Rd = Pc = True`).
+* `lowerInstOk_runTermTFW`, `instCallsTFW_of_rules` (unpinned, from the pinned ones at
+  `Rd = Pc = True`).
 -/
 
 namespace Backend.Proof

@@ -177,7 +177,7 @@ theorem tryIndCalls_pairT (hIstk : IndStack (indSigs f) (RAFrame.compute vcp rf)
       (mrStable_relW Γ f c) (memRefinesR_csemGF (ctx := ⟨fa.k, af.slotBase⟩) rfl hsym)
       (outArgsOk_relW Γ f c)
       hIstk (indCallsRefineP_csemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
-      hctx' hd hip' he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
+      hctx'.toW hd hip' he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]

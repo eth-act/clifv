@@ -379,7 +379,7 @@ theorem tryIndCalls_pair_valueT (hIstk : IndStack (indSigs f) (RAFrame.compute v
       (outArgsOk_relW Γ f c)
       hIstk
       (indCallsRefineP_valueSemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
-      hctx' hd hip' he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
+      hctx'.toW hd hip' he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]

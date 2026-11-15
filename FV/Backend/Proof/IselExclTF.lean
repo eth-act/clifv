@@ -362,6 +362,7 @@ theorem callNamesFC_idx : [("Call", "Call")].all (fun pr =>
     | _, _ => false) = true := by
   decide +kernel
 
+set_option maxRecDepth 20000 in
 /-- The data of a `call`: the opcode `call` (`floatOpsFC`). -/
 theorem instData_callFC {f : Clif.Function} {fn : Clif.FnRef} {args : List Nat} {d : V}
     (h : instData f (.call fn args) = .ok d) :
