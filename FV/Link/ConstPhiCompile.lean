@@ -1,5 +1,4 @@
 import FV.Link.OptCompile
-import FV.Opt.ConstPhiSelect
 
 /-! # Constant-phi removal in the linked compiler's input: the definition (#990)
 
