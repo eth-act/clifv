@@ -20,6 +20,6 @@
 # `--lean-link --verified`: an unverified function keeps cg_clif's code, so LEAN = VERIFIED
 fv-demo          2   1372   1372
 survey          18   3251   3251
-deps             4  20910  20910
+deps             4  21023  21023
 # plain cargo fv: `big` (lib and test crate) is Lean-compiled and unverified
 bigframe-unwind  1    103    101

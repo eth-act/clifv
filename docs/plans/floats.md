@@ -1051,10 +1051,26 @@ dispatchers `LowerContractTFW.lean` (`lowerInstOkP_of_rulesTFW`, `lowerInstOkP_r
 `callsE_of_functionETCF`/`ctxT_of_functionETCF` are false), `FVTest/Link/FloatPlainCallsT.lean`
 (`%f` calling `f32`/`f64` program functions by `bl` and an outside `f64` callee through the GOT,
 `%h` both program functions through the GOT; `okBTS`, `attemptT`, `attemptT_correct`),
-`FVTest/Backend/FloatCallF.lean` (`ctxInvT_fCallF`). Still out: a pooled `f64const` (#1002
-part 2); float `call_indirect`/`try_call_indirect` (`sigIntB`); the decider-free totality scopes
-(`InScopeInT3`, `fnScopeInTB3F`: integer extern signatures), so float calls are admitted through
-the run-time deciders (`lowerCheckTCF`, `okRWithTS`) only.
+`FVTest/Backend/FloatCallF.lean` (`ctxInvT_fCallF`), `FVTest/Backend/CallArgsIntW.lean` (an `f64`
+passed to an `i64` parameter: `CtxT.ofExterns` and `CovT.famCover_ofG` are false without their
+new premise `CallArgsInt`, and so is the FVTest helper `FloatCtlRulesT.ctxT_of` without its
+`buildCtx` premise). `CallOutOkT`/`callOut_runTermT` keep their statements (their proofs read the
+arguments' registers by class: `mapM_valueRegInvT`, `ctor_gen_call_args_genV`).
+
+Measured (`cargo fv --lean-link --verified`, remote): deps 20,910 → **21,023 of 21,037**
+verified (the 113 of the histogram), binary check 4 of 4, SAME 16; fv-demo 1,372 of 1,378 and
+survey 3,251 of 3,251 unchanged (2 of 2, 18 of 18); generated code unchanged (encode-check 1,473
+identical, crate proofs regenerate to the same files). deps' 14 left: 2 pooled `f64const`
+(#1002 part 2), 9 SIMD types (`i32x4`/`i64x2`: sha2 8, zmij 1), 3 over the validation budget
+(sha2 2, tiny_keccak 1). **The 113 do not reach the executables yet (#1048):** `lean-link
+--verified` requires `InScopeInT`, whose `fnScopeInTCB` keeps the driver's decider-free totality
+condition `driverInTCB`/`stmtInB` (`sigIntB` of a `call`'s callee), so they are left out of the
+region with their cg_clif code (per executable 17/12/9/12 → 126/105/59/101 left out; Lean-compiled
+functions in the binary check unchanged, 19,900/17,134/15,222/16,726). Still out: a pooled
+`f64const` (#1002 part 2); float `call_indirect`/`try_call_indirect` (`sigIntB`); the decider-free
+totality scopes (`InScopeInT3`, `fnScopeInTB3F`, and `stmtInB` behind `InScopeInT`: integer extern
+signatures), so float calls are admitted through the run-time deciders (`lowerCheckTCF`,
+`okRWithTS`) only, and in executables not before #1048.
 
 ## 4. Known hazards
 
