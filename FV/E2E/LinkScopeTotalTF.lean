@@ -104,7 +104,7 @@ theorem functionETCF_of_functionETF {f : Clif.Function} (h : Compile.functionETF
 theorem driverInTCB_of_driverInB {g : Clif.Function} (h : driverInB g = true) :
     driverInTCB g = true := by
   simp only [driverInB, driverInTCB, Bool.and_eq_true, List.all_eq_true] at h ⊢
-  exact ⟨h.1, fun B hB => (h.2 B hB).1⟩
+  exact ⟨h.1, fun B hB s hs => by simp [stmtInTCB, (h.2 B hB).1 s hs]⟩
 
 /-- **The run-time decider `lowersTCB` holds on `fnScopeInTB3F`**: `lowerFunction` succeeds
 (`lowerFunction_ok_inT3F`) and its output passes the float validator `lowerCheckTCF`
