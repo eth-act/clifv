@@ -344,6 +344,20 @@ class PinnedCounts(unittest.TestCase):
                       "(`survey  8  3251  3251` in scripts/gate-expected-counts.txt)", line)
         self.assertFalse(fv(survey(bad=()), True, pinned=(8, 3000, 3000))[0])
 
+    def test_rise_ok(self):
+        # the weekly std line (#1040): no PR runs it, so a rise is green and printed; a drop and
+        # a different executable count stay red
+        ok, line = gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, (8, 3251, 3200), rise_ok=True)
+        self.assertTrue(ok, line)
+        self.assertIn("rise (record it): `survey  8  3251  3251` in scripts/gate-expected-counts.txt", line)
+        ok, line = gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, PINNED, rise_ok=True)
+        self.assertTrue(ok, line)
+        self.assertNotIn("rise", line)
+        self.assertFalse(gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, (8, 3251, 3260), rise_ok=True)[0])
+        self.assertFalse(gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, (7, 3251, 3251), rise_ok=True)[0])
+        md = gc.summary("survey", survey(bad=()), [], (8, 3251, 3200), {}, rise_ok=True)
+        self.assertIn("| verified functions | 3200 | 3251 | **+51: record the rise (a PR changes", md)
+
     def test_lean_and_verified_are_two_pins(self):
         # plain cargo fv links unverified Lean code: 103 Lean-compiled, 101 verified
         for pinned, ok in (((1, 103, 101), True), ((1, 103, 100), False), ((1, 103, 102), False),
@@ -371,7 +385,7 @@ class PinnedCounts(unittest.TestCase):
     def test_checked_in_file(self):
         # every gate line's example has its pins, and the file parses
         text = (HERE / "gate-expected-counts.txt").read_text()
-        for e in ("fv-demo", "survey", "deps", "bigframe-unwind"):
+        for e in ("fv-demo", "survey", "deps", "bigframe-unwind", "fv-demo+std"):
             pinned, errors = gc.read_expected(text, e)
             self.assertEqual(errors, [])
             self.assertTrue(pinned and pinned[0] > 0 and pinned[1] >= pinned[2] > 0, e)

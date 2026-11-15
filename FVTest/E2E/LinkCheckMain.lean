@@ -10,6 +10,7 @@ import FV.E2E.BinCheckFast
 import FV.Link.Image
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.SemanticPipelineCheckT
+import FVTest.E2E.TypedRouteChoice
 import FV.Link.ConstPhiCompile
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
@@ -84,8 +85,10 @@ def main (args : List String) : IO UInt32 := do
         else none
       (Link.parMap route I0.funcs).filterMap id
   let actualLower := Stock.VoidCall.NI.lowerWithRoutes choices
-  let lowerName := "(Backend.Stock.VoidCall.NI.lowerWithRoutes [" ++
-    ", ".intercalate (choices.map fun (name,idx) => "(" ++ leanStr name ++ ", " ++ toString idx ++ ")") ++ "])"
+  let lowerNameOf (cs : List (String × Nat)) : String :=
+    "(Backend.Stock.VoidCall.NI.lowerWithRoutes [" ++
+      ", ".intercalate (cs.map fun (name,idx) => "(" ++ leanStr name ++ ", " ++ toString idx ++ ")") ++ "])"
+  let lowerName := lowerNameOf choices
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
     let mut tot : Array (Nat × String × Nat × Nat × Nat) := #[]
@@ -119,19 +122,49 @@ def main (args : List String) : IO UInt32 := do
   -- `staticChksWithTS` (the checker `okRWithTS`: the Stock validator on an integer function, the
   -- typed validators on `lowerFunction`'s output); used when they accept every function the
   -- integer validators reject and the executable holds `R0I`'s code wherever it is not
-  -- `lowerFunction`'s; theorem `E2E.SemanticExecBytes.binary_correct_exec_provenTS`
-  let stockTS : Option (List (String × List (String × Bool))) :=
+  -- `lowerFunction`'s; theorem `E2E.SemanticExecBytes.binary_correct_exec_provenTS`.
+  -- #1040: the route recovery above takes the ABI-aware Stock routes first, so where one of them
+  -- gives the same bytes as the route the compiler's typed route `attemptT` took (an `sret` copy:
+  -- the Stock sret-copy route and `lowerFunction` emit the same code), the recovered artifact is
+  -- the Stock one, which `lowerOkTSB` rejects. Such a function takes, for the typed checker, the
+  -- first route in the compiler's order with the same bytes that passes `lowerOkTSB`
+  -- (`typedRoute?`); the proof files then name that route list.
+  let stockTS : Option (Res × String × List (String × List (String × Bool)) × Nat) :=
     if !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
-      let statS := Link.parMap (fun e => (e.1.name, staticChksWithTS (productionStage o.deadCleanup)
+      let statS0 := Link.parMap (fun e => (e.1.name, staticChksWithTS (productionStage o.deadCleanup)
         { I0 with D := D0 } e.1 e.2)) R0I
+      let choiceM : Std.HashMap String Nat := choices.foldl (fun m p => m.insert p.1 p.2) {}
+      let reroute : List (String × Nat) := match phdrs (fileRd file) with
+        | none => []
+        | some phs => (Link.parMap (fun (p : FnInput × String × List (String × Bool)) =>
+            match choiceM[p.2.1]? with
+            | some i => if (bad p.2.2).isEmpty then none else
+                match typedRoute? I0 o.deadCleanup (artB I0 (fileRd file) phs) p.1 with
+                | some j => if j != i then some (p.2.1, j) else none
+                | none => none
+            | none => none) (I0.funcs.zip statS0)).filterMap id
+      let rerouteM : Std.HashMap String Nat := reroute.foldl (fun m p => m.insert p.1 p.2) {}
+      let choicesS := choices.map fun (n, i) => (n, (rerouteM[n]?).getD i)
+      let lowerS := Stock.VoidCall.NI.lowerWithRoutes choicesS
+      let R0S : Res := if reroute.isEmpty then R0I else
+        Link.parMap (fun (p : FnInput × Clif.Function × Except String Art) =>
+          if rerouteM.contains p.2.1.name then (p.2.1, I0.pipeProductionWith lowerS o.deadCleanup p.1)
+          else p.2) (I0.funcs.zip R0I)
+      let D0S := (R0S.map fun e => frameDrop (getOk e.2).af).foldl max 0
+      let statS := if reroute.isEmpty then statS0 else
+        Link.parMap (fun (p : (String × List (String × Bool)) × Clif.Function × Except String Art) =>
+          if D0S != D0 || rerouteM.contains p.1.1 then
+            (p.1.1, staticChksWithTS (productionStage o.deadCleanup) { I0 with D := D0S } p.2.1 p.2.2)
+          else p.1) (statS0.zip R0S)
       let fixedS := (statS.filter fun e => failSet.contains e.1 && (bad e.2).isEmpty).length
       let bytesS := match phdrs (fileRd file) with
         | none => false
         | some phs => (Link.parMap (fun e => match e.2 with
             | .ok a => artB I0 (fileRd file) phs a || lowersToB e.1 a.vc
-            | .error _ => true) R0I).all id
-      if fixedS == failI.length && bytesS then some statS else none
+            | .error _ => true) R0S).all id
+      if fixedS == failI.length && bytesS then some (R0S, lowerNameOf choicesS, statS, reroute.length)
+      else none
     else none
   -- the typed checker (S11e6, #615): when integer validators reject functions, the cleanup
   -- results `I.resultsCleanup` with the typed checks `chksWithT cleanupStage` (the checker
@@ -139,12 +172,13 @@ def main (args : List String) : IO UInt32 := do
   -- typed `--verified`); used when the typed validators accept some of the rejected functions;
   -- theorem `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`. The integer results are
   -- dropped before the typed ones are computed (one result set at a time).
-  let (typed, typedS, R0, stat, note) :
-      Bool × Bool × Res × List (String × List (String × Bool)) × String :=
+  let (typed, typedS, R0, stat, note, lowerNameS) :
+      Bool × Bool × Res × List (String × List (String × Bool)) × String × String :=
     match stockTS with
-    | some statS =>
-      (true, true, R0I, statS,
-        s!"  typed checks: the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's); the typed Stock checker is used")
+    | some (R0S, nameS, statS, nRe) =>
+      (true, true, R0S, statS,
+        s!"  typed checks: the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's){if nRe == 0 then "" else s!", {nRe} function(s) on the typed route with the same bytes (#1040)"}; the typed Stock checker is used",
+        nameS)
     | none => if o.deadCleanup && !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let probe := Link.parMap (fun (fi : FnInput) =>
@@ -156,9 +190,9 @@ def main (args : List String) : IO UInt32 := do
         let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
         let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
         (true, false, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT cleanupStage { I0 with D := DT } e.1 e.2)) R0T,
-          s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used")
-      else (false, false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones")
-    else (false, false, R0I, statI, "")
+          s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used", lowerName)
+      else (false, false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones", lowerName)
+    else (false, false, R0I, statI, "", lowerName)
   let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
   if !note.isEmpty then IO.println note
   IO.println s!"  checker: {if typedS then "typed Stock (okRWithTS)" else if typed then "typed (okBCleanupT)" else "integer"}"
@@ -435,7 +469,7 @@ def main (args : List String) : IO UInt32 := do
       else none
     let proofFiles := if typed then
         FVTest.E2E.TypedLinkProofWith.leanFilesTypedWith
-          (if typedS then lowerName else "Backend.lowerFunction") I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockVoidCallNI")
+          (if typedS then lowerNameS else "Backend.lowerFunction") I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockVoidCallNI")
       else FVTest.E2E.ReturnPinLinkProofWith.leanFilesReturnPinWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockVoidCallNI")
     for (p, t) in proofFiles do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
