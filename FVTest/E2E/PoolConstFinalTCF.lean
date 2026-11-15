@@ -3,6 +3,7 @@ import FVTest.E2E.FloatFinalT
 import FVTest.Backend.FloatArithCtxT
 import FV.E2E.LinkCheck
 import FV.Backend.Proof.LowerCompleteTCF
+import FV.E2E.EmitSize
 
 /-!
 Non-vacuity of the literal-pool `f64const` in the typed final theorem (#1002 part 2).

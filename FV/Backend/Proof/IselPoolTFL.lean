@@ -41,7 +41,7 @@ theorem f64const_resTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j
   have : tys = [.f64] := by simpa [Clif.Inst.resultTypes] using htys.symm
   subst this
   rw [hres]
-  decide
+  simp [fTys, CTy.ofClif]
 
 /-- An instruction of `Compile.instETFL` outside `Compile.instETF` is an `f64const`. -/
 theorem f64const_of_instETFL {c : Clif.Inst} (hL : Compile.instETFL c = true)

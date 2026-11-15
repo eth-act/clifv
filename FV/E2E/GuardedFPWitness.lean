@@ -189,7 +189,8 @@ theorem csemG_csemGF_witness (ctx : FnCtx) (w : Arm.ArmState) :
 address). -/
 theorem csemGF_pool_defined (ctx : FnCtx) (w : Arm.ArmState) :
     ∃ w', csemGF (fun _ => False) ctx xNone' (fun _ => True) (fun _ => none) [] [] 0
-        (fun _ _ _ _ => False) (.fpuLoad .size64 (.vreg 0 .float) (.const 0x3ff7b8bac710cb29) fl0)
+        (fun _ _ _ _ => False)
+        (.fpuLoad .size64 (.vreg 0 .float) (.const (0x3ff7b8bac710cb29 : Nat)) fl0)
         [] w = some ([(BitVec.ofNat 64 0x3ff7b8bac710cb29).setWidth 128], w', .next) := by
   obtain ⟨w', h, -⟩ := poolRefinesFP_csemGF (F := fun _ => False) (ctx := ctx) (X := xNone')
     (Rd := fun _ => True) (syms := fun _ => none) (exts := []) (sigs := []) (sp0 := 0)
@@ -207,7 +208,7 @@ theorem guardFP_fpuLoad_needs_ne (w : Arm.ArmState) :
           ∀ k < sz.bytes, (fun _ => True) (a + BitVec.ofNat 64 k) := by
   intro h
   obtain ⟨-, -, -, a, ha, -⟩ :=
-    h 0 .size64 (.vreg 0 .float) (.const 0) fl0 [] (by simp only [GuardFP]; exact .inr rfl)
+    h 0 .size64 (.vreg 0 .float) (.const (0 : Nat)) fl0 [] (by simp [GuardFP])
   simp [amodeAddr] at ha
 
 /-! The `…_viaF` theorems have exactly the statements of the theorems they re-derive through the
