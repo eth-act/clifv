@@ -477,7 +477,8 @@ theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
     CtlSinceT ctx.valDef.size { st1 with emitted := #[] } s' := by
   have hti : ti < ctx.insts.size := (Array.getElem?_eq_some_iff.mp hph).1
   have h' := ctxT_termCtx hctx hph data
-  have hctx' : CtxT f (tryCtx ctx ti data trs) := ⟨{ h'.inv with }, h'.scope, h'.calls⟩
+  have hctx' : CtxT f (tryCtx ctx ti data trs) :=
+    ⟨{ h'.inv with }, h'.scope, h'.calls, h'.callArgs⟩
   have hst := (tryRegsOf_mono htr).1
   obtain ⟨i, F, hF, hok⟩ := htf
   exact branch_shpT hctx' (clean_tryCtx hcl hd ti trs)
@@ -504,7 +505,8 @@ theorem iselCtlHypT : IselCtlHypT := by
   intro f ctx ranges st0 hdom hs hst hsel ha hb hsr
   have hx := externsE_of hs.subsetT
   have hctx : CtxT f ctx :=
-    ⟨ctxInvT_of hs hb, (buildCtx_typed hs hb).2.2.toTF, callsE_of_externs hx ctx⟩
+    ⟨ctxInvT_of hs hb, (buildCtx_typed hs hb).2.2.toTF, callsE_of_externs hx ctx,
+      (ctxSpec_of hb).callArgs_of hs.subsetT⟩
   have hcl : Clean ctx := Cov.clean_of_build hb
   have hfam := famCover_of hs hdom hst hsel hb
   refine ⟨fun ii info inst s out s' tr hi hc hN h => ?_,

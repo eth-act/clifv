@@ -99,6 +99,15 @@ theorem CtxSpec.callArgs_ofF (sp : CtxSpec f ctx ranges st0) (hT : Compile.funct
   fun ii info fn args hi hc x hx =>
     sp.intOpsF_of hT ii info _ hi hc x (by simpa [Compile.intOperandsF, Compile.intOperands] using hx)
 
+/-- `CtxSpec.intOps_ofF` with a `call`'s arguments (`intArgsE`). -/
+theorem CtxSpec.intOpsE_ofF (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionETF f = true) :
+    ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+      info.clif = some inst → ∀ x ∈ intArgsE inst, IntPos ctx x := by
+  intro ii info inst hi hc x hx
+  cases inst with
+  | call fn args => exact sp.callArgs_ofF hT ii info fn args hi hc x hx
+  | _ => exact sp.intOps_ofF hT ii info _ hi hc x hx
+
 /-- The instructions of `buildCtx`'s context of a float-scope function are in the scope. -/
 theorem CtxSpec.instScopeTF (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionETF f = true) :
     InstScopeTF ctx := by

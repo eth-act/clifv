@@ -246,7 +246,7 @@ theorem instCalls_pair_valueT (hc : CompiledCleanupT f k vc vcp rf af fa fb) (hT
 
 /-- **The typed terminator calls on pairs of worlds, value semantics.** -/
 theorem termCalls_pair_valueT {f₀ : Clif.Function} (Γ : Rel) (hΓ : Γ.F = F) (hTls : XTls F X)
-    (ctx' : FnCtx) (hT : TypedRules) {ctx : Ctx} (hctx : CtxT f₀ ctx) :
+    (ctx' : FnCtx) (hT : TypedRules) {ctx : Ctx} (hctx : CtxTW f₀ ctx) :
     TermCallsT ctx (pairSem (valueSem F ctx' X)) (MRP Γ f₀ c D) := by
   intro ti t data targets out st st' tr hbt hip htl hph hvb hd hemp hrun
   have key : ∀ (Rd : BitVec 64 → Prop), LowerTermOkT
@@ -429,7 +429,7 @@ theorem vcode_ni_valueT (hsub : InSubsetT p f) (hc : CompiledCleanupT f k vc vcp
     cert := hcert
     dsem := driverSemG_pair_value F ⟨fa.k, af.slotBase⟩ X
     insts := instCalls_pair_valueT hc hT hX hXI hsym hslot hNI hTls hctxT hshape.scope hstT
-    terms := termCalls_pair_valueT Γ rfl hTls ⟨fa.k, af.slotBase⟩ hT hctxT
+    terms := termCalls_pair_valueT Γ rfl hTls ⟨fa.k, af.slotBase⟩ hT hctxT.toW
     ext := H.ext
     indSig := H.indSig
     subET := H.subET

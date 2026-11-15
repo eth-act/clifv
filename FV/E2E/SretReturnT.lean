@@ -199,7 +199,7 @@ theorem iselSimTAbi_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (indStack_mono (indStackT_of_check hlow) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hshape.scope hstT
     terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT.toW
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetT hsub
     subET := hsub.subsetET
@@ -214,7 +214,7 @@ theorem iselSimTAbi_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     tryInd := tryIndCallsT_of_rules htryIndRules htryIndUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
-      (indStack_mono (indStackT_of_check hlow) houtB) (hicalls s') hctxT
+      (indStack_mono (indStackT_of_check hlow) houtB) (hicalls s') hctxT.toW
     tryIndSig := tryIndSig_of_subsetT hsub
     cfg := hcfg }
 

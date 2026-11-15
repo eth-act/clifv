@@ -119,7 +119,7 @@ theorem pinv_buildT (hdom : dominatedB f = true) (hs : LowerScopeT f)
   -- intArgsOf
   · intro c hc x hx
     obtain ⟨j, info, hi, hcl⟩ := hinst c hc
-    exact hctx.intOps j info c hi hcl x hx
+    exact sp.intOpsE_of hET j info c hi hcl x hx
   -- argsTyped
   · intro c hc x hx
     obtain ⟨bi, B, j, stm, hB, hj, rfl⟩ := instOf_idx hc
