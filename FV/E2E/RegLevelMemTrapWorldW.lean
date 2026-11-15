@@ -58,9 +58,9 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨p, hp, rfl⟩, hent.program, hG⟩
-  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initW hR hent hbe
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+    ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
+  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initW hR (lowerRFunc_frame halloc) hent hbe
   have hRz0 := realizes_value_allW hR hC hCT hTls hcov
   have hmk : ∀ (n1 n23 : Nat), (∀ i < n1 + n23, R.GoodXW (iterN R.step i (iterN R.step n0 s))) →
       ∀ i < n0 + (n1 + n23), actGoodXW vcp rf af fa fb base s X H K G gv
@@ -73,7 +73,7 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
     intro n1 n2 n3; rw [runX_eq]; simp only [iterN_add]; rfl
   refine ⟨locVal R.fr (iterN R.step n0 s), fun c htr => ?_, fun c A hA hmt => ?_⟩
   · -- an explicit trap
-    have hck := (lowerRFunc_ok hR.alloc).2.2
+    have hck := (hR.alloc.ok).2.2
     obtain ⟨Rl, hSim, hinit, -⟩ :=
       checkedAt_sound R.vc R.rf R.valueSem ckeep hcheck (locVal R.fr (iterN R.step n0 s))
         (ρsel (locVal R.fr (iterN R.step n0 s))) w₀ (hsel _)

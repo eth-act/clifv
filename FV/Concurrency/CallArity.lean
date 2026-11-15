@@ -192,7 +192,7 @@ theorem resume_allAX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
 
 /-- **`resume_all` with `habi` from checks** (module doc): the def registers by
 `CallDefsRet` for the callee's `rets` registers, the arity by `callArityBl`. -/
-theorem resume_allA {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _ _ => False)
+theorem resume_allA {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hframe : RB.af.frame = true) (hgv : RA.gv = fun _ _ => False)
     (hX0 : NoCall RA.X) {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
     {Γ : E2E.Rel} {c : BitVec 64} {env : Clif.Env} {p : Clif.Program}
@@ -243,7 +243,7 @@ theorem resume_allA {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
       PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV'') (.run vP'') ∧
       MatchRun cc ins ckeep r₀ cM'' vP'' ∧ Q RA y (.run cM'') ∧ AInv RA (.run cM'') := by
   obtain ⟨hpc, herr, hsp, hmem, hx29, hcs⟩ := hy
-  obtain ⟨he, hsp0, hra⟩ := ArmAllocThread.entry_premises hRB hent hfx hlr
+  obtain ⟨he, hsp0, hra⟩ := ArmAllocThread.entry_premises hRB hframe hent hfx hlr
   exact resume_allAX hRA hgv hX0 H hchk har hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
     hA hP hat hm2 hm3 hm4 (hpc.trans hra) herr (hsp.trans hsp0)
     (fun a ha => (hmem a (hG a ha)).trans (hm0 a ha))

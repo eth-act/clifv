@@ -90,6 +90,9 @@ theorem wfRC : RAC.Wf := by
   exact ArmAllocThread.Witness.wf_ofAt (by decide) (by decide) (by decide) (by decide) allocC h1 h2
     h3 h4 h5 h6 h7 h8 h9
 
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameRC : RAC.af.frame = true := ArmAllocThread.Witness.frame_act factsC.1
+
 theorem codeRC : ∀ k < RAC.fb.words.size,
     Arm.read_mem_bytes 4 (0x20000#64 + BitVec.ofNat 64 (4 * k)) RAC.s0 = RAC.fb.words[k]! := by
   native_decide

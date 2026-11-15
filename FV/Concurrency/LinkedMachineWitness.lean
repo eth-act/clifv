@@ -29,6 +29,12 @@ def callerF : LFn := { LFn.of (act vcpC rfC) with base := 0x30000#64 }
 /-- **The link of the two functions.** -/
 def link2 : Link := ⟨[("ld", ldF), ("f", callerF)]⟩
 
+/-- The compiled `atomic_load` has its frame (`lowerRFunc`'s output). -/
+theorem frame_ld : ldF.af.frame = true := ArmAllocThread.Witness.frame_act factsL.1
+
+/-- The compiled caller has its frame (`lowerRFunc`'s output). -/
+theorem frame_callerF : callerF.af.frame = true := ArmAllocThread.Witness.frame_act factsC.2.1
+
 theorem facts2 : (act vcpL rfL).fa.layout.toBool = true ∧
     (labelOffsets (act vcpL rfL).fa.lines).toBool = true ∧
     (act vcpC rfC).fa.layout.toBool = true ∧

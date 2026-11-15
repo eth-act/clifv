@@ -65,6 +65,11 @@ def act (vc : VCode) (rf : RFunc) : RL :=
     G := fun _ => False
     gv := fun _ _ => False }
 
+/-- `act`'s function has its frame (`lowerRFunc`'s output). -/
+theorem frame_act {vc : VCode} {rf : RFunc} (ha : (lowerRFunc vc rf).toBool = true) :
+    (act vc rf).af.frame = true :=
+  lowerRFunc_frame (ok_getD ha)
+
 /-- `args; rets`. -/
 def vcN : VCode :=
   { name := "w", blocks := #[{ label := 0, insts := #[.args [], .rets []] }], classes := #[],
@@ -120,7 +125,8 @@ theorem wf_of {vc : VCode} {rf : RFunc}
     (hps : (emitPlan (act vc rf).fa.k (act vc rf).af).toBool = true) :
     (act vc rf).Wf where
   check := allocChecked_of_checkAlloc hc
-  alloc := ok_getD ha
+  alloc := AllocAF.of_lowerRFunc (ok_getD ha)
+  leaf := noLeaf_of_lowerRFunc (ok_getD ha)
   emit := by rw [hk]; exact ok_getD he
   layout := ok_getD hl
   lm := ok_getD hm
@@ -214,7 +220,8 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
     (hps : (emitPlan (act vc rf).fa.k (act vc rf).af).toBool = true) :
     (actAt sp base vc rf).Wf where
   check := allocChecked_of_checkAlloc hc
-  alloc := ok_getD ha
+  alloc := AllocAF.of_lowerRFunc (ok_getD ha)
+  leaf := noLeaf_of_lowerRFunc (ok_getD ha)
   emit := by rw [show (actAt sp base vc rf).fa.k = 0 from hk]; exact ok_getD he
   layout := ok_getD hl
   lm := ok_getD hm

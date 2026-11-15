@@ -110,7 +110,7 @@ theorem trap_trapIf_stop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodX (iterN R.step i s)) ∧
       (∀ m, Arm.r .ERR (iterN R.step (n + m + 1) s) ≠ .None) ∧
       spOf (iterN R.step n s) = R.spB ∧ (iterN R.step n s).program = R.fb.program R.base := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left
@@ -429,9 +429,9 @@ theorem regLevel_trapStop_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, GotV vcp⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨p, hp, rfl⟩,
-    he.abi.program, he.gfree⟩
+    he.abi.program, he.gfree, noLeaf_of_lowerRFunc halloc⟩
   have hF : R.F = F := he.hF
   have hreal := realizes_value_all hR (by rw [hF]; exact he.calls)
     (fun h => by rw [show R.vc = vcp from rfl, hnt] at h; cases h)

@@ -50,7 +50,7 @@ theorem resume_premises_RX :
         ckeep c (regVal yX c) = ckeep c (regVal sBF c)) ∧ xreg 29 yX = xreg 29 sBF := by
   obtain ⟨m, -, hq, -⟩ := prefixF
   have hS := q_stRel hq
-  exact resume_premises_of_retC wfRC (wfX hS) (abiX hS) retC_RX hS
+  exact resume_premises_of_retC wfRC (wfX hS) (frameX _) (abiX hS) retC_RX hS
     (fun f h1 h2 => r_enterL h1 h2 sBF) (xreg30_enterL sBF)
     (fun a _ => by show (enterL sBF).mem a = _; rw [mem_enterL])
     (fun a ha => show RC.F a from RL.FK_F ha)

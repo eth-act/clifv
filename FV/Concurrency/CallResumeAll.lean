@@ -236,7 +236,7 @@ registers `usB`, which are the call's def registers; its memory relation `MemRel
 memory) and `y` are related by all the relations at the item after the call: the premises of
 `arm_isel_refinesCRN` for the caller's next segment. `habi` is asked only at the paused call
 instruction (`vP'`'s); `resume_all` asks it at every call. -/
-theorem resume_allP {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _ _ => False)
+theorem resume_allP {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hframe : RB.af.frame = true) (hgv : RA.gv = fun _ _ => False)
     (hX0 : NoCall RA.X) {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
     {Γ : E2E.Rel} {c : BitVec 64} {env : Clif.Env} {p : Clif.Program}
@@ -292,7 +292,7 @@ theorem resume_allP {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
       PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV'') (.run vP'') ∧
       MatchRun cc ins ckeep r₀ cM'' vP'' ∧ Q RA y (.run cM'') ∧ AInv RA (.run cM'') := by
   obtain ⟨hpc, herr, hsp, hmem, hx29, hcs⟩ := hy
-  obtain ⟨he, hsp0, hra⟩ := entry_premises hRB hent hfx hlr
+  obtain ⟨he, hsp0, hra⟩ := entry_premises hRB hframe hent hfx hlr
   exact resume_allX hRA hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq hA hP
     hat hm2 hm3 hm4 (hpc.trans hra) herr (hsp.trans hsp0)
     (fun a ha => (hmem a (hG a ha)).trans (hm0 a ha))
@@ -303,7 +303,7 @@ theorem resume_allP {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
 open CallRetResume CallResumeL IselResume in
 /-- **The caller resumed at every layer after a compiled callee's return** (module doc):
 `resume_allP` with `habi` at every call instruction. -/
-theorem resume_all {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _ _ => False)
+theorem resume_all {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hframe : RB.af.frame = true) (hgv : RA.gv = fun _ _ => False)
     (hX0 : NoCall RA.X) {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
     {Γ : E2E.Rel} {c : BitVec 64} {env : Clif.Env} {p : Clif.Program}
@@ -358,7 +358,7 @@ theorem resume_all {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _
         vV'' ∧
       PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV'') (.run vP'') ∧
       MatchRun cc ins ckeep r₀ cM'' vP'' ∧ Q RA y (.run cM'') ∧ AInv RA (.run cM'') :=
-  resume_allP hRA hRB hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq hA hP
+  resume_allP hRA hRB hframe hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq hA hP
     hat hm2 hm3 hm4 hent hy hfx hlr hm0 hG hr₀B hprog hus hpreB hB hval hmemB hbody hcl hext
     huniq hvals htys hrty hregs (fun vb info => habi _ vb _ info)
 

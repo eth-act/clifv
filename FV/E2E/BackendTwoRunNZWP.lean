@@ -27,7 +27,7 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
 
 /-- **A single run's facts at its return from a `rets` configuration**: the frame record holds
 the entry `x30`/`x29`, the kept bytes are the entry's, no error, the entry `sp` and `x29`. -/
-theorem _root_.Backend.Proof.RL.retFacts_rets {R : RL} (hR : R.Wf) {ra : BitVec 64}
+theorem _root_.Backend.Proof.RL.retFacts_rets {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {u : Arm.ArmState} {e : MConf CV Arm.ArmState}
     (hqa : QA R u e) (hre : R.RetsAt e) :
     Arm.read_mem_bytes 16 (spv R.s0 - 16#64) (iterN R.step R.retLen u) =
@@ -39,16 +39,15 @@ theorem _root_.Backend.Proof.RL.retFacts_rets {R : RL} (hR : R.Wf) {ra : BitVec 
   obtain ⟨mt, hqt⟩ := qa_q hqa
   have hst := q_stRel hqt
   obtain ⟨n3, hn3, -, -, herr, hsp, h29, -, -, hmem, -⟩ :=
-    ret_machineNA (Y := fun _ => True) hR hent hqa hvb hi
+    ret_machineNA (Y := fun _ => True) hR hframe hent hqa hvb hi
   subst hn3
-  have hframe := lowerRFunc_frame hR.alloc
   refine ⟨?_, fun a ha => ?_, herr, hsp, h29⟩
   · rw [show Arm.read_mem_bytes 16 (spv R.s0 - 16#64) (iterN R.step R.retLen u) =
         Arm.read_mem_bytes 16 (spv R.s0 - 16#64) u from
       read_mem_bytes_congr _ _ (fun k _ => by rw [hmem])]
     -- the frame record is the top 16 bytes of what the prologue left above the clobber area
     have hbytes := read_mem_bytes_bytes R.topN R.topB u R.sP (hst.fplr hframe)
-    obtain ⟨sP, -, hsP, hP16, -⟩ := RL.sP_steps hR hent
+    obtain ⟨sP, -, hsP, hP16, -⟩ := RL.sP_steps hR hframe hent
     rw [hsP] at hbytes
     have htopcb : R.topB + BitVec.ofNat 64 (clobberBytes R.af.saves) = spv R.s0 - 16#64 := by
       rw [RL.topB, RL.topN, BitVec.ofNat_add]; bv_omega
@@ -166,18 +165,18 @@ theorem backend_twoRunLERWZNpWP (hc : Compiled f k vc vcp rf af fa fb)
     subst hk
     obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
     obtain ⟨a0, hat, hle⟩ := hck.at
-    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
+    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack,
-      hpsF, he.abi.program, he.gfree⟩
+      hpsF, he.abi.program, he.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
   have hW0' : ({ actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp) with
       s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).Wf := by
     obtain ⟨-, -, -, hk⟩ := emitFunc_ok hc.emit
     subst hk
     obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
     obtain ⟨a0, hat, hle⟩ := hck.at
-    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
+    exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, AllocAF.of_lowerRFunc hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack,
-      hpsF, he'.abi.program, he'.gfree⟩
+      hpsF, he'.abi.program, he'.gfree, noLeaf_of_lowerRFunc hc.alloc⟩
   have hPe : (prologueSteps (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.saves (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.frameSize (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
@@ -191,8 +190,8 @@ theorem backend_twoRunLERWZNpWP (hc : Compiled f k vc vcp rf af fa fb)
         X := (XI.upTo N).at 0 } : RL).step i s) := fun i hi => by
     have hF := he.hF
     subst hF
-    exact ⟨_, _, stEqOutX_prologueZ_le hW0 he.abi hx30
-      (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
+    exact ⟨_, _, stEqOutX_prologueZ_le hW0 (lowerRFunc_frame hc.alloc) he.abi hx30
+      (fun k h8 h16 => RL.lrWord_Zc hW0 (lowerRFunc_frame hc.alloc) _ _ h8 h16)
       (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
         (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
         (fun _ h => h)).symm i hi⟩
@@ -211,11 +210,11 @@ theorem backend_twoRunLERWZNpWP (hc : Compiled f k vc vcp rf af fa fb)
       obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre; exact ⟨_, rfl⟩
     have hr2 : ∃ ms, e' = .run ms := by
       obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre'; exact ⟨_, rfl⟩
-    obtain ⟨hra, -, hm, hepi⟩ := RL.retLock_rets hW0 he.abi hx30
+    obtain ⟨hra, -, hm, hepi⟩ := RL.retLock_rets hW0 (lowerRFunc_frame hc.alloc) he.abi hx30
       (QWA.qaX hqA hW0 he.abi) hre hLB.1.symm
-    obtain ⟨f1, g1, -, -, -⟩ := RL.retFacts_rets hW0 he.abi
+    obtain ⟨f1, g1, -, -, -⟩ := RL.retFacts_rets hW0 (lowerRFunc_frame hc.alloc) he.abi
       (QWA.qaX hqA hW0 he.abi) hre
-    obtain ⟨f2, g2, e2, sp2, x2⟩ := RL.retFacts_rets hW0' he'.abi
+    obtain ⟨f2, g2, e2, sp2, x2⟩ := RL.retFacts_rets hW0' (lowerRFunc_frame hc.alloc) he'.abi
       (QWA.qaX hqB hW0' he'.abi) hre'
     refine ⟨by rw [hs, hs]; exact hra, fun a hFa hDa => ?_, by rw [hs]; exact f1,
       by rw [hs]; exact f2, fun a ha => by rw [hs]; exact g1 a ha,

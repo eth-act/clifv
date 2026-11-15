@@ -24,11 +24,11 @@ theorem ra_in : callerF.InRange (RC.pcOf 15 + 4#64) := by
 /-- **The callee's return on the linked machine** (module doc). -/
 theorem ret_end_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program} {MR : MemRelT}
     {slots : List (Clif.SlotId × Nat)} {r₀ : Reg → CV} {x : ArmState} {s' : Clif.State}
-    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
+    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hframeB : (link2.act ldF s0 0 RC.F).af.frame = true) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
     (hret : RetEnd (link2.act ldF s0 0 RC.F) (RC.pcOf 15 + 4#64) env p MR slots r₀ x s') :
     ∃ n, 0 < n ∧ RetC (link2.act ldF s0 0 RC.F) (RC.pcOf 15 + 4#64) r₀
       (iterN (link2.act ldF s0 0 RC.F).step n x) := by
-  obtain ⟨n, hn, hRC, -⟩ := Link.ret_end ok2 (nB := "ld") (by simp [link2]) hRB hent ra_out
+  obtain ⟨n, hn, hRC, -⟩ := Link.ret_end ok2 (nB := "ld") (by simp [link2]) hRB hframeB hent ra_out
     (nA := "f") (by simp [link2]) ra_in hret
   exact ⟨n, hn, hRC⟩
 

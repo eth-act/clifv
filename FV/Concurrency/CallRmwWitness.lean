@@ -82,6 +82,9 @@ theorem wfRC : RC.Wf := by
   simp only [BitVec.toNat_ofNat] at h1
   omega
 
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameRC : RC.af.frame = true := ArmAllocThread.Witness.frame_act factsC.2.1
+
 /-- The caller's frame gets no stack probes (#581). -/
 theorem probeF_RC : ProbeF RC :=
   ProbeF.of_small (show (act vcpC rfC).af.frameSize + 16 < 4096 by
@@ -203,9 +206,9 @@ theorem prefixC : ∃ (n0 j : Nat) (m : Loc → CV),
     Arm.r .PC (iterN RC.step n0 RC.s0) = RC.pcOf j ∧ StRel RC (iterN RC.step n0 RC.s0) m w₀C ∧
     regVal (iterN RC.step n0 RC.s0) (.x 0) = 0 ∧
     regVal (iterN RC.step n0 RC.s0) (.x 1) = 0 := by
-  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
-  have hpe := prologue_evs wfRC abiRC probeF_RC hlat
-  have hpr0 := prologue_program wfRC abiRC hlat
+  obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC frameRC abiRC bodyRC
+  have hpe := prologue_evs wfRC frameRC abiRC probeF_RC hlat
+  have hpr0 := prologue_program wfRC frameRC abiRC hlat
   generalize hn0 : (prologueSteps RC.af.saves RC.af.frameSize RC.af.isCaller) = n0 at hpe hpr0 hq hA
   have hq0 := hq
   have hA0 := hA
@@ -448,6 +451,9 @@ theorem wfX (hS : StRel RC s m w₀C) : (RLx s).Wf := by
   simp only [BitVec.toNat_ofNat] at ha
   omega
 
+/-- The activation's function has its frame (`lowerRFunc`'s output). -/
+theorem frameX (s : ArmState) : (RLx s).af.frame = true := ArmAllocThread.Witness.frame_act factsR.1
+
 theorem abiX (hS : StRel RC s m w₀C) :
     AbiCall (RLx s).fb (RLx s).base (Arm.r .PC s + 4#64) (RLx s).s0 where
   program := enterR_program s
@@ -608,8 +614,8 @@ theorem compiled_ofX (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0)
 theorem compiledEX (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0)
     (hx1 : regVal s (.x 1) = 0) (env : Clif.Env) (p : Clif.Program) :
     CompiledE env p (RLx s) csR := by
-  obtain ⟨-, hq, hA⟩ := q_init_lines (wfX hS) (abiX hS) (bodyX s)
-  exact ⟨wfX hS, memScopeLS_of_memScopeB (memScopeB_of_memScopeL (scopeX s)), rfl, ⟨_, abiX hS⟩,
+  obtain ⟨-, hq, hA⟩ := q_init_lines (wfX hS) (frameX _) (abiX hS) (bodyX s)
+  exact ⟨wfX hS, frameX _, memScopeLS_of_memScopeB (memScopeB_of_memScopeL (scopeX s)), rfl, ⟨_, abiX hS⟩,
     (compiled_ofX hS hx0 hx1 hq hA env p).front, probeF_R rfl⟩
 
 theorem step_programX (s s' : ArmState) : ((RLx s).step s').program = s'.program :=
