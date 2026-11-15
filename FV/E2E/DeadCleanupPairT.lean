@@ -353,13 +353,13 @@ theorem tryIndCalls_pair_valueT (hIstk : IndStack (indSigs f) (RAFrame.compute v
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
-    {ctx : Ctx} (hctx : CtxT f ctx) :
+    {ctx : Ctx} (hctx : CtxTW f ctx) :
     TryIndCallsT f ctx (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p (indSigs f) := by
   intro ti callee args et data sig items targets info trs lo st1 out st' tr hd hip he hsig
     hph hinfo hregs hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
-  have hctx' := ctxT_tryRegs (ctxT_termCtx hctx hph data) trs
+  have hctx' := ctxTW_tryRegs (ctxTW_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
   have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
@@ -379,7 +379,7 @@ theorem tryIndCalls_pair_valueT (hIstk : IndStack (indSigs f) (RAFrame.compute v
       (outArgsOk_relW Γ f c)
       hIstk
       (indCallsRefineP_valueSemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
-      hctx'.toW hd hip' he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
+      hctx' hd hip' he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
@@ -441,7 +441,7 @@ theorem vcode_ni_valueT (hsub : InSubsetT p f) (hc : CompiledCleanupT f k vc vcp
     tryExt := H.tryExt
     tryInd := tryIndCalls_pair_valueT
       (indStack_mono (indStackT_of_check hc.lowerOk) (outgoing_le_intBaseCleanupAT hc.toA))
-      hT hXI hsym hNI hTls hctxT
+      hT hXI hsym hNI hTls hctxT.toW
     tryIndSig := H.tryIndSig
     cfg := H.cfg }
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry

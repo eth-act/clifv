@@ -4410,6 +4410,18 @@ Since #754 the typed Stock route's exclusion list is the typed failures alone (`
 `only`: `attemptT_correct` has no per-function input premise). `indBC`'s at most 8 parameters
 excludes nothing on either example.
 
+**Plain `call`s with float signatures (S11g, #1015).** `Compile.functionETCF` no longer requires
+integer callee signatures for `call` statements (`callsE` dropped) and does not count a `call`'s
+arguments as integer positions (`intOperandsFC`); `lowerCheckTCF`'s context check accepts float
+`call` arguments (`intArgs`, `CtxInvT`). Such functions are reported verified
+(`unverifiedReason? = none`) and covered by `backend_correct_finalTCF` and, at link level, by the
+typed checks `okRWithTS` (`attemptT_correct`): program callees by class (#742 above) and callees
+outside the program alike. The decider-free scopes (`InScopeInT3`, `fnScopeInTB3F`) keep integer
+extern signatures. Witnesses `FVTest/E2E/FloatCallFinalTCF.lean` (`backend_correct_finalTCF_fCallP`)
+and `FVTest/Link/FloatPlainCallsT.lean` (`%f`/`%h` passing `f32`/`f64` by `bl` and by `blr`
+through the GOT, an outside `f64` callee; `okBTS`, `attemptT`, `correct_spec`). Generated code
+is unchanged. `docs/plans/floats.md` (S11g) lists the statement changes.
+
 ## Contract changes taken (byte-identical)
 
 `FrameTyped` conjunct of `DFGCons` (M4AluA f55011e), `ValsBelow` premise + `Refines` over every

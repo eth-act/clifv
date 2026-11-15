@@ -41,6 +41,10 @@ import FV.Link.SemanticExeSourceT
 import FVTest.Link.FloatStockCompileT
 import FVTest.Link.FloatLinkCallsT
 import FV.E2E.LinkGoodT
+import FV.Backend.Proof.LowerContractTFW
+import FVTest.E2E.FloatCallFinalTCF
+import FVTest.Link.FloatPlainCallsT
+import FVTest.Backend.FloatCallF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -348,3 +352,30 @@ import FV.E2E.LinkGoodT
 #print axioms E2E.LinkCheck.indFactsRWithTS
 #print axioms E2E.FloatLinkCallsTWitness.checks_true -- witness: native_decide
 #print axioms E2E.FloatLinkCallsTWitness.parts -- witness: native_decide
+
+-- S11g (#1015): plain `call`s with float signatures in the typed scope
+#print axioms Backend.Proof.exclOkTFC_program
+#print axioms Backend.Proof.inst_splitFC
+#print axioms Backend.Proof.lower_nonroot_nomatchTFC
+#print axioms Backend.Proof.nonEOkFC_program
+#print axioms Backend.Proof.nonEUnmatchableTFW_program
+#print axioms Backend.Proof.lowerInstOkP_of_rulesTFW
+#print axioms Backend.Proof.lowerInstOkP_runTermTFW
+#print axioms Backend.Proof.lowerInstOk_runTermTFW
+#print axioms Backend.Proof.instCallsTFW_of_rules
+#print axioms Backend.Proof.CtxT.toW
+#print axioms Backend.Proof.ctxT_of_functionET
+#print axioms Backend.Proof.Driver.callArgsInt_of_functionETC
+#print axioms Backend.Proof.Driver.ctxT_of_functionETC
+#print axioms E2E.iselSimTCF_of_rules
+#print axioms E2E.backend_correct_finalTCF
+#print axioms E2E.instCalls_pairTCF
+#print axioms E2E.instCalls_pair_valueTCF
+#print axioms FloatCallFinalTCF.inSubsetTCF_p -- witness: native_decide
+#print axioms FloatCallFinalTCF.compiledTCF_p -- witness: native_decide
+#print axioms FloatCallFinalTCF.verdict_p -- witness: native_decide
+#print axioms FloatCallFinalTCF.backend_correct_finalTCF_fCallP -- witness: native_decide
+#print axioms E2E.FloatPlainCallsTWitness.checks_true -- witness: native_decide
+#print axioms E2E.FloatPlainCallsTWitness.parts -- witness: native_decide
+#print axioms E2E.FloatPlainCallsTWitness.correct_spec -- witness: native_decide
+#print axioms FloatCallF.ctxInvT_fCallF -- witness: native_decide

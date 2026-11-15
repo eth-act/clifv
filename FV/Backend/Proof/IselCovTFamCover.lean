@@ -160,9 +160,12 @@ theorem res0 {info : IInfo} (hres : info.resTys = []) {F : Fam} (hr : CTy.invali
 set_option maxHeartbeats 4000000 in
 /-- **Every statement belongs to an instruction family**, for a float-capable context whose
 statements are of the typed scope (`instET`) or float operations that belong to a family (`hF`):
-`famCover_of`'s proof, for the typed scope and the float scope (`famCover_ofF`). -/
+`famCover_of`'s proof, for the typed scope and the float scope (`famCover_ofF`). S11g: `hca`
+(the `call` arguments are integers), which `CtxInvT` gave until `intArgs` dropped a `call`'s
+arguments; without it the statement is false (a `call` passing a float value to an extern
+declared with integer parameters has no family: family 13 takes integer arguments). -/
 theorem famCover_ofG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (hctx : CtxInvT f ctx) (hca : CallArgsInt ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
     (hETs : ∀ B ∈ f.blocks, ∀ s ∈ B.body,
       Compile.instET s.inst = true ∨ ∃ op ty args, s.inst = .float op ty args)
     (hF : ∀ (j : Nat) info op ty args, ctx.insts[j]? = some info →
@@ -526,7 +529,8 @@ theorem famCover_ofG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
       | cons t ts => simp [famTab, hrE t (by rw [hr]; simp)]
     · rw [← hdata]
       exact γ_idata (by decide) ⟨γ_opAlts (by decide),
-        γ_valsAll fun x hx => valIn_E (hint x (by simpa [intArgs] using hx)), γ_c0V rfl rfl, trivial⟩
+        γ_valsAll fun x hx => valIn_E (hca j info fn args hj hc x (by simpa using hx)),
+        γ_c0V rfl rfl, trivial⟩
   | callIndirect sig callee args =>
     simp only [instData] at hdata
     split at hdata
@@ -645,7 +649,8 @@ theorem famCover_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
     (hs : LowerScopeT f) (hdom : dominatedB f = true) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0)) :
     FamCover ctx := by
-  refine famCover_ofG (ctxInvT_of hs hb) (externsE_of hs.subsetT) (fun B hB s hsB => ?_)
+  refine famCover_ofG (ctxInvT_of hs hb) ((ctxSpec_of hb).callArgs_of hs.subsetT)
+    (externsE_of hs.subsetT) (fun B hB s hsB => ?_)
     (fun j info op ty args hj hc => ?_) hdom hst hsel hb
   · have h := hs.subsetT
     simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at h
