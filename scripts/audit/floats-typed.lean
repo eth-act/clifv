@@ -413,3 +413,7 @@ import FV.E2E.DeadCleanupPairTC
 #print axioms E2E.vcode_niTCF
 #print axioms E2E.vcode_ni_valueTCF
 #print axioms E2E.driverHypTCF_relW_of
+-- #1048: float `call`s admitted into the `--verified` regions (`fnScopeInTCB`'s `stmtInTCB`)
+#print axioms E2E.LinkCheck.driverInTCB_of_driverInB
+#print axioms E2E.LinkCheck.fnScopeInTCB_of_T3F
+#print axioms E2E.FloatPlainCallsTWitness.admitted_tcb -- witness: native_decide

@@ -3,6 +3,8 @@ import FV.Link.SemanticCompileT
 import FV.E2E.StockProductionFixtures
 import FV.Backend.Lowering.StockArithmeticNI
 import FV.Clif.Print
+import FV.E2E.LinkScopeInputDefsT
+import FV.E2E.LinkScopeInputDefsTC
 import FVTest.Link.DeadCleanupWitness
 
 /-! Non-vacuity of plain `call`s with float signatures in the typed scope (S11g, #1015, #35).
@@ -146,5 +148,13 @@ theorem attemptT_eq : SemanticCompilerWith.attemptT lower spec file0 = .ok file 
 theorem correct_spec :
     type_of% (@SemanticCompilerWith.attemptT_correct lower spec file0 file attemptT_eq) :=
   @SemanticCompilerWith.attemptT_correct lower spec file0 file attemptT_eq
+
+/-- **`lean-link --verified` admits `%f` and `%h` into an executable's region** (#1048): they
+meet the admission predicate `fnScopeInTCB` (until #1048 its `driverInTCB` asked `stmtInB`'s
+`sigIntB` of every `call`'s callee, so both were left out with cg_clif's code), and only it
+(outside `fnScopeInTB`, so under no totality theorem). -/
+theorem admitted_tcb : fnScopeInTCB fF.func = true ∧ fnScopeInTCB fH.func = true ∧
+    fnScopeInTB fF.func = false ∧ fnScopeInTB fH.func = false := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> native_decide
 
 end E2E.FloatPlainCallsTWitness
