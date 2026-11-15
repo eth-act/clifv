@@ -359,8 +359,13 @@ Settings the proved compiler does not implement reject the request (exit 3), as 
 the table above); such a function stays compiled, because its callers' code does not depend on
 it. `preserve_frame_pointers` is compiler input: without it, a leaf that needs no frame is
 compiled without one (`Backend.frameless`, stock's decision `Backend.frameRequired`,
-`isa/aarch64/abi.rs:1265`); no end-to-end theorem covers a frameless leaf yet (#1028), so such a
-function is reported unverified. The receipt's `functions` gives per function
+`isa/aarch64/abi.rs:1265`). Such a function is covered by `E2E.backend_correct_final_cleanup_leaf`
+(#1028) when its compiled code passes `FnAsm.leafChk` (no line but `ret` names `x29`/`x30`, so it
+makes no call) and every argument is in a register (`E2E.regArgsB`), with dead cleanup and without
+`i128` legalisation; it has no call, so the theorem's normal-return form covers it. `lean-backend`
+says so on stderr (`frameless leaf, backend_correct_final_cleanup_leaf (normal-return form: …)`)
+and in the receipt (`theorem`, `frameless_leaf`); a leaf outside the theorem is reported
+unverified with the failed check. The receipt's `functions` gives per function
 `setting_rejection`, `unsupported`, or `backend_correct` (with `unverified`/`unvalidated`: why
 not). `--opt`, `--regalloc`, `--personality`, `--pipeline-t` and `--stock-config` are refused.
 
