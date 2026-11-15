@@ -116,14 +116,23 @@ theorem call_results_lengthC {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f 
   simp only [Clif.Inst.resultTypes, hext, Option.map_some, Option.some.injEq] at htys
   rw [hl, ← htys, List.length_map]
 
+/-- Restated for `f16` (#35): `CTy.ofClif .f16 = .float 16` is of float class
+(`valClass_ofClif_float_old_false`). -/
 theorem valClass_ofClif_float {t : Clif.Ty} (h : (CTy.ofClif t).valClass = .float) :
-    t = .f32 ∨ t = .f64 := by
+    t = .f32 ∨ t = .f64 ∨ t = .f16 := by
   cases t <;> simp_all [CTy.ofClif, CTy.valClass, CTy.regClass?]
 
-/-- A value of float class in a typed frame has a float type. -/
+/-- The statement of `valClass_ofClif_float` before `f16` is false: `f16`. -/
+theorem valClass_ofClif_float_old_false :
+    ¬ ∀ t : Clif.Ty, (CTy.ofClif t).valClass = .float → t = .f32 ∨ t = .f64 := fun h => by
+  rcases h .f16 rfl with h | h <;> cases h
+
+/-- A value of float class in a typed frame has a float type. Restated for `f16` (#35): the old
+conclusion `v.ty = .f32 ∨ v.ty = .f64` is false for a frame value `v : f16` at `x` with
+`ctx.valueType? x = some (.float 16)` (`valClass_ofClif_float_old_false`). -/
 theorem float_of_valClassOf {ctx : Ctx} {fr : Clif.Frame} (hft : FrameTyped ctx fr) {x : Nat}
     {v : Clif.Val} (hx : fr.regs x = some v) (hc : valClassOf ctx x = .float) :
-    v.ty = .f32 ∨ v.ty = .f64 := by
+    v.ty = .f32 ∨ v.ty = .f64 ∨ v.ty = .f16 := by
   unfold valClassOf at hc
   cases ht : ctx.valueType? x with
   | none => rw [ht] at hc; cases hc
@@ -684,13 +693,33 @@ theorem argsAt_after_storesC {Rd F : BitVec 64 → Prop} {isem : Sem} {MR : MemR
     exact hvx
 
 /-- The frame's typing makes the classes of a call's argument vregs those of their values: a
-float-class argument holds a float value. -/
+float-class argument holds a float value. Restated for `f16` (#35), as `float_of_valClassOf`. -/
 theorem argClasses_of_frame {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr) {args : List Nat}
     {vals : List Clif.Val} (hvals : fr.getMany args = .ok vals) :
     ∀ (j : Nat) (v : Clif.Val) (x : Nat), vals[j]? = some v → args[j]? = some x →
-      valClassOf ctx x = .float → v.ty = .f32 ∨ v.ty = .f64 := by
+      valClassOf ctx x = .float → v.ty = .f32 ∨ v.ty = .f64 ∨ v.ty = .f16 := by
   intro j v x hv hx hc
   exact float_of_valClassOf hdfg.2 ((getMany_ok hvals).2 j x v hx hv) hc
+
+/-- `argClasses_of_frame` for the arguments of a call of a signature with a well-formed stack
+layout (`stackLayoutOk`, which rejects `f16` parameters): a float-class argument is an `f32` or
+an `f64`. -/
+theorem argClasses_of_frame_sig {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr)
+    {args : List Nat} {vals : List Clif.Val} (hvals : fr.getMany args = .ok vals)
+    {s : Clif.Signature} (hty : vals.map (·.ty) = Clif.AbiParam.tys s.params)
+    (hlay : stackLayoutOk s = true) :
+    ∀ (j : Nat) (v : Clif.Val) (x : Nat), vals[j]? = some v → args[j]? = some x →
+      valClassOf ctx x = .float → v.ty = .f32 ∨ v.ty = .f64 := by
+  intro j v x hv hx hc
+  rcases argClasses_of_frame hdfg hvals j v x hv hx hc with h | h | h
+  · exact .inl h
+  · exact .inr h
+  · exfalso
+    have hmem : v.ty ∈ Clif.AbiParam.tys s.params := by
+      rw [← hty]; exact List.mem_map.mpr ⟨v, List.mem_of_getElem? hv, rfl⟩
+    obtain ⟨p, hp, hpt⟩ : ∃ p ∈ s.params, p.ty = v.ty := by
+      simpa [Clif.AbiParam.tys] using hmem
+    exact params_ne_f16_of_stackLayoutOk hlay hp (hpt.trans h)
 
 /-! ## `bl` and GOT + `blr` with typed arguments and returns -/
 
@@ -740,7 +769,7 @@ theorem call_sym_lowerInstOkTF {Rd F : BitVec 64 → Prop}
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
       obtain ⟨w1, hrun1, hmr1, hargs⟩ := argsAt_after_storesC hMR hMem hFP hout hso hb hl hty
         hlen.symm (valClassOf ctx) (fun j v x hv hx => hvh x v (hvx j x v hx hv))
-        (argClasses_of_frame hdfg hvals) hmr
+        (argClasses_of_frame_sig hdfg hvals hty hso.2) hmr
       obtain ⟨sym, -, hcall, -⟩ := hCR
       have hdl : (callDefsC (outDefsC st.nextVreg ps (ext.sig.returns.map retClass))).length =
           ext.sig.returns.length := by
@@ -817,7 +846,7 @@ theorem call_got_lowerInstOkTF {Rd F : BitVec 64 → Prop}
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
       obtain ⟨w1, hrun1, hmr1, hargsAt⟩ := argsAt_after_storesC hMR hMem hFP hout hso hb hl hty
         hlen.symm (valClassOf ctx) (fun j v x hv hx => hvh x v (hvx j x v hx hv))
-        (argClasses_of_frame hdfg hvals) hmr
+        (argClasses_of_frame_sig hdfg hvals hty hso.2) hmr
       obtain ⟨sym, hgot, hcall, -⟩ := hCR
       obtain ⟨w2, hw2, hsw⟩ := hgot (.vreg (st.nextVreg + ext.sig.returns.length) .int) ext.name w1
       have hmr2 := hMR _ _ _ _ hsw hmr1

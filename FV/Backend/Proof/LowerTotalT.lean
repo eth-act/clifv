@@ -44,7 +44,9 @@ theorem tyM_ne_i128 {t : Clif.Ty} (h : Compile.tyM t = true) : t ≠ .i128 := by
 theorem valTyOk_of_tyE {ty : Clif.Ty} (h : Compile.tyE ty = true) : valTyOk ty = true := by
   cases ty <;> simp_all [valTyOk, eTy, Compile.tyE]
 
-theorem valTyOk_of_isFloat {ty : Clif.Ty} (h : ty.isFloat = true) : valTyOk ty = true := by
+/-- Restated for `f16` (#35): `valTyOk` admits the arithmetic float types (the old hypothesis
+`ty.isFloat = true` admits `f16`, and `valTyOk .f16 = false`). -/
+theorem valTyOk_of_isFloat {ty : Clif.Ty} (h : ty.isArithFloat = true) : valTyOk ty = true := by
   cases ty <;> simp_all [valTyOk, eTy, Compile.tyE]
 
 /-! ## `instData` on the typed scope -/

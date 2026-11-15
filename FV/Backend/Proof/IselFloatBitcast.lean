@@ -273,9 +273,26 @@ end Terms
 
 /-! ## Facts of the types -/
 
+/-- Restated for `f16` (#35): `CTy.ofClif .f16 = .float 16` is a float type too
+(`ofClif_float_or_vec_old_false`). -/
 theorem ofClif_float_or_vec {ty : Clif.Ty}
-    (h : ((CTy.ofClif ty).isFloat || (CTy.ofClif ty).isVector) = true) : ty = .f32 ∨ ty = .f64 := by
+    (h : ((CTy.ofClif ty).isFloat || (CTy.ofClif ty).isVector) = true) (h16 : ty ≠ .f16) :
+    ty = .f32 ∨ ty = .f64 := by
   cases ty <;> simp_all [CTy.ofClif, CTy.isFloat, CTy.isVector]
+
+/-- The statement of `ofClif_float_or_vec` before `f16` is false: `f16`. -/
+theorem ofClif_float_or_vec_old_false :
+    ¬ ∀ ty : Clif.Ty, ((CTy.ofClif ty).isFloat || (CTy.ofClif ty).isVector) = true →
+      ty = .f32 ∨ ty = .f64 := fun h => by
+  rcases h .f16 (by decide) with h | h <;> cases h
+
+/-- An instruction `bitcast` that `CtxInvT` admits (`instData`'s `valTyOk`) is not at `f16`. -/
+theorem bitcast_ne_f16 {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ii : Nat}
+    {info : IInfo} {ty : Clif.Ty} {fl : Clif.MemFlags} {x : Nat} (hi : ctx.insts[ii]? = some info)
+    (hic : info.clif = some (.bitcast ty fl x)) : ty ≠ .f16 := by
+  rintro rfl
+  have hd := hctx.data ii _ _ hi hic
+  simp [instData, valTyOk, eTy] at hd
 
 theorem ofClif_int_le64 {ty : Clif.Ty}
     (h : (decide ((CTy.ofClif ty).bits ≤ 64) && !(CTy.ofClif ty).isFloat &&
@@ -537,7 +554,7 @@ theorem bitcast_gpr_fp_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} 
       subst hmi
       simp only [vu_movToFpu, List.mem_cons, List.mem_nil_iff, or_false] at hu
       exact .inr (by simp [hu])
-    rcases ofClif_float_or_vec hfv with rfl | rfl
+    rcases ofClif_float_or_vec hfv (bitcast_ne_f16 hctx hi hic) with rfl | rfl
     · have hw32 : w = 32 := by rw [← hat, hwa]; rfl
       subst hw32
       obtain rfl := hsz2 (by rcases hk' with h | ⟨h, -⟩ <;> simp [szIdxOf] at h <;> omega)

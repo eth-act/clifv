@@ -88,7 +88,7 @@ theorem famFloat_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
             cases op <;> simp only [Backend.fUnaryOpcode, reduceCtorEq] at hn <;>
               simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys <;> exact htys.symm
           rw [hres, this]; rfl
-        have hfty : ty.isFloat = true := by
+        have hfty : ty.isArithFloat = true := by
           cases op <;> simp_all [Backend.fTyOk, Backend.fUnaryOpcode] <;> (subst hty; rfl)
         obtain ⟨hR1, hR2⟩ := resIn1 hres1 (F := famTab[32])
           (by simpa [famTab] using ofClif_fCTys hfty) (by simpa [famTab] using ofClif_fCTys hfty)
@@ -112,7 +112,7 @@ theorem famFloat_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
             simp only [List.map_cons, List.map_nil] at hres)
           all_goals first
             -- `fcvt_from_uint`, `fcvt_from_sint`: an integer operand, a float result
-            | (have hfty : ty.isFloat = true := by simpa [Backend.fCvtTyOk] using hty
+            | (have hfty : ty.isArithFloat = true := by simpa [Backend.fCvtTyOk] using hty
                have hx := valIn_E (hint x (by simp [Compile.intOperandsF]))
                obtain ⟨hR1, hR2⟩ := resIn1 hres (F := famTab[33])
                  (by simpa [famTab] using ofClif_fCTys hfty) (by simpa [famTab] using ofClif_fCTys hfty)
@@ -146,7 +146,7 @@ theorem famFloat_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
             cases op <;> simp only [Backend.fBinaryOpcode, reduceCtorEq] at hn <;>
               simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys <;> exact htys.symm
           rw [hres, this]; rfl
-        have hfty : ty.isFloat = true := by
+        have hfty : ty.isArithFloat = true := by
           cases op <;> simp_all [Backend.fTyOk, Backend.fBinaryOpcode]
         obtain ⟨hR1, hR2⟩ := resIn1 hres1 (F := famTab[31])
           (by simpa [famTab] using ofClif_fCTys hfty) (by simpa [famTab] using ofClif_fCTys hfty)

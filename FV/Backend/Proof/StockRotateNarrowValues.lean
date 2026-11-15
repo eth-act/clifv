@@ -139,7 +139,11 @@ theorem stock_rotate_selected_narrow_immediate_values {f : Clif.Function} {ctx :
   simp only [rotateImmediateEnv,narrow,ite_true] at rhs
   change (evalExpr program (Stock.sem ctx) {} (999859+140) (rotateNarrowRule left true).rhs
     (env4 (.ty (.int ty.width)) (.value x) (.int c) (.op (.immShift count)))).run (st,#[]) = .ok (some out,next,selected.rhsTrace) at rhs
-  obtain ⟨typed,safe,rx,mapped⟩ := stock_rotate_narrow_immediate_requests data_program ctx left narrow dfg rfl getX rhs
+  have h16 : ty ≠ .f16 := by
+    rintro rfl
+    have accepted := inv.instE i info _ source clif
+    cases left <;> simp [rotateOp,Compile.instE,Compile.binaryE,Compile.tyE] at accepted
+  obtain ⟨typed,safe,rx,mapped⟩ := stock_rotate_narrow_immediate_requests data_program ctx left narrow dfg rfl h16 getX rhs
   obtain ⟨nx,rfl⟩ := inv.valueReg x rx mapped
   obtain ⟨trace,forward⟩ := stock_rotate_narrow_imm_rhs data_program ctx left narrow countBound c mapped typed st safe #[] 999859
   rw [forward] at rhs

@@ -1354,6 +1354,11 @@ contracts imply the `CtxInv` ones (`LowerRuleOkT.toOk`, `MemRuleOkRT.toR`). S11e
 /-- The value types of the float-capable lowering: E's integers, `f32` and `f64`. -/
 def mCTys : List CTy := eCTys ++ [.float 32, .float 64]
 
+/-- A float type `instData` accepts (`valTyOk`) is an arithmetic one (not `f16`). -/
+theorem isArithFloat_of_valTyOk {ty : Clif.Ty} (h : ty.isFloat = true) (hv : valTyOk ty = true) :
+    ty.isArithFloat = true := by
+  cases ty <;> simp_all [valTyOk, eTy]
+
 /-- The register class of value `x`: its type's (`CTy.valClass`), `.int` for an untyped
 value (as `buildCtx`'s value map, S11e3). -/
 def valClassOf (ctx : Ctx) (x : Nat) : RegClass := ((ctx.valueType? x).map CTy.valClass).getD .int

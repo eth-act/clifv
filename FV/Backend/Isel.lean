@@ -520,13 +520,19 @@ def slotsOk : List (Nat × Nat) → Nat → Nat → Bool
   | [], _, _ => true
   | (off, b) :: rest, lo, S => decide (lo ≤ off ∧ off + b ≤ S) && slotsOk rest (off + b) S
 
+/-- No parameter of `s` is an `f16` (#35, interim: the lowering of an `f16` call argument is not
+proven yet; `stackArgStore` has no 2-byte float store). -/
+def sigNoF16 (s : Clif.Signature) : Bool :=
+  s.params.all (·.ty != .f16)
+
 /-- The stack-argument layout of `s` (`sigArgLocs`) is well formed: the stack-passed parameters
 occupy non-overlapping byte ranges of the stack-argument area, in parameter order (a
-translation-validation check of `argLocs`; `lowerCheck` checks it for every call). -/
+translation-validation check of `argLocs`; `lowerCheck` checks it for every call); and no
+parameter is an `f16` (`sigNoF16`). -/
 def stackLayoutOk (s : Clif.Signature) : Bool :=
-  match sigArgLocs s, sigArgs s with
-  | .ok (locs, S), .ok bytes => slotsOk (stackSlots locs bytes) 0 S
-  | _, _ => false
+  (match sigArgLocs s, sigArgs s with
+    | .ok (locs, S), .ok bytes => slotsOk (stackSlots locs bytes) 0 S
+    | _, _ => false) && sigNoF16 s
 
 /-- The returns of a signature as the ABI sees them (`from_func_sig` /
 `ensure_struct_return_ptr_is_returned`, which is `keep in sync` in Cranelift's abi.rs): a
