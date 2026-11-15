@@ -7,12 +7,15 @@ usage: full-gate-report.py REPORT_DIR      (env NEEDS: toJSON(needs) of the repo
 REPORT_DIR holds the downloaded artifacts: gate-*/summary.txt (one line per gate),
 shard-logs-w<W>-<S>/sched/sched.log (scheduler logs) and ci-plan/ci-plan.json.
 The first line is `**Result: GREEN …` iff every build and gate job succeeded (or was skipped
-because there was nothing to build).
+because there was nothing to build), and the std line (`cargo-fv-std`, #1040: the weekly run and
+runs dispatched with `std`) succeeded or did not run.
 """
 import importlib.util, json, os, pathlib, re, sys
 
 GATES = ["assemble", "audit", "crate-proofs", "crate-proofs-fresh", "float-spec", "e2e", "runtime", "cargo-fv"]
 BUILD = ["plan", "wave1", "wave2", "wave3"]
+# runs only in the weekly run and on request (full-gate.yml, input `std`): skipped otherwise
+WEEKLY = ["cargo-fv-std"]
 
 
 def main():
@@ -20,14 +23,15 @@ def main():
     needs = json.loads(os.environ.get("NEEDS", "{}"))
     res = {k: v.get("result", "?") for k, v in needs.items()}
     green = all(res.get(k) in ("success", "skipped") for k in BUILD) and \
-        all(res.get(k) == "success" for k in GATES)
+        all(res.get(k) == "success" for k in GATES) and \
+        all(res.get(k, "skipped") in ("success", "skipped") for k in WEEKLY)
     sha = os.environ.get("GITHUB_SHA", "?")
     run = (f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}"
            f"/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}")
     out = [f"**Result: {'GREEN' if green else 'RED'}** — full gate (CI) on `{sha[:8]}` "
            f"({os.environ.get('GITHUB_EVENT_NAME', '?')}, {os.environ.get('GITHUB_REF_NAME', '?')}): {run}",
            "", "| job | result |", "|---|---|"]
-    out += [f"| {k} | {res.get(k, '-')} |" for k in BUILD + GATES]
+    out += [f"| {k} | {res.get(k, '-')} |" for k in BUILD + GATES + WEEKLY]
     out += ["", "Gate lines:", "```"]
     for f in sorted(rep.glob("gate-*/summary.txt")):
         out += [l for l in f.read_text().splitlines() if l.strip()]

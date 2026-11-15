@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The verdict of a gate line whose exit status alone does not say that the check ran (#998).
 
-usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--known FILE] [--expected FILE] [--base FILE] [--summary FILE] COMPARE_LOG FV_LOG
+usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--rise-ok] [--known FILE] [--expected FILE] [--base FILE] [--summary FILE] COMPARE_LOG FV_LOG
        gate-line-check.py base-pins OUT (--before SHA | --local REV)
        gate-line-check.py arm-fault-cosim LOG
 
@@ -9,7 +9,8 @@ Exit status 0 iff the log is that of a green line; prints one line: the lines th
 read from, then `FAIL: <reason>` for every failed condition. The caller also requires the exit
 status 0 of the gate's own command.
 
-cargo-fv (EXAMPLE: the directory name under examples/; COMPARE_LOG: the output of
+cargo-fv (EXAMPLE: the directory name under examples/, or `<directory>+std` for the line run with
+`--build-std` (#1040: the weekly std line of the CI full gate); COMPARE_LOG: the output of
 examples/compare.sh; FV_LOG: cargo fv's own output, the fv.log in the directory compare.sh names
 in its `(logs: DIR)`):
   - compare.sh's `SAME: N test outcomes identical` line with N > 0 and no `DIFFERENT …` line, and
@@ -41,6 +42,9 @@ in its `(logs: DIR)`):
     fetches) no pin of EXAMPLE is below the base revision's: a PR records rises, it cannot make
     a drop green by lowering the pin in the same change (LEARNINGS.md, "Untrusted input never
     widens the policy"); a deliberate drop is a parent decision, merged with this line red;
+    With --rise-ok (a line no PR runs, so no PR can record a rise: the weekly std line) a rise
+    of LEAN or VERIFIED is green and printed as `rise (record it): …`; a drop stays red and the
+    executables stay exact;
   - with --lean-link (the lines that link with lean-ld): at least one `linked by lean-ld` line
     and no `linked by rust-lld` line in FV_LOG.
   --summary FILE appends the counts (pinned and measured) and the known-unverified executables
@@ -140,12 +144,23 @@ def measured(lines):
     return exes, lean, verified
 
 
-def pin_fails(example, got, pinned):
+def new_line(example, got, pinned):
+    """The expected-counts line that records the measured counts `got` (a pin where a count is
+    missing)."""
+    return "  ".join([example] + [str(p if g is None else g) for g, p in zip(got, pinned)])
+
+
+def rises(got, pinned):
+    """The function counts (not the executables, which are exact) above their pins."""
+    return pinned is not None and any(g is not None and g > p for g, p in list(zip(got, pinned))[1:])
+
+
+def pin_fails(example, got, pinned, rise_ok=False):
     """The failed conditions of the pinned counts. A count the log lacks (None) fails its own
-    condition elsewhere."""
+    condition elsewhere. `rise_ok`: a function count above its pin is no failure (--rise-ok)."""
     if pinned is None:
         return [f"no pinned counts for {example} (scripts/gate-expected-counts.txt)"]
-    new = "  ".join([example] + [str(p if g is None else g) for g, p in zip(got, pinned)])
+    new = new_line(example, got, pinned)
     fails = []
     for i, (what, g, p) in enumerate(zip(PINS, got, pinned)):
         if g is None or g == p:
@@ -155,7 +170,7 @@ def pin_fails(example, got, pinned):
                          "scripts/gate-expected-counts.txt in the same PR)")
         elif g < p:
             fails.append(f"{what}: {g} is below the pinned {p} (a regression)")
-        else:
+        elif not rise_ok:
             fails.append(f"{what}: {g} is above the pinned {p}: record the rise in the same PR "
                          f"(`{new}` in scripts/gate-expected-counts.txt)")
     return fails
@@ -211,11 +226,12 @@ def fallback_fails(fv_log, lean_ld):
     return fails
 
 
-def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=None):
+def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=None, rise_ok=False):
     """(ok, one-line summary) for the text of a compare.sh log and of cargo fv's own log;
     `lean_link`: a --lean-link line; `known`: the known-unverified entries [(executable, issue)]
     of the example; `pinned`: its expected (executables, Lean-compiled, verified) counts; `base`:
-    the base revision's (None: not compared)."""
+    the base revision's (None: not compared); `rise_ok`: a rise of the function counts is green
+    (--rise-ok)."""
     lines = text.splitlines()
     same = [l for l in lines if l.startswith("SAME")]
     different = [l for l in lines if l.startswith("DIFFERENT")]
@@ -235,7 +251,8 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=No
         fails.append("no function compiled by the Lean backend")
     fails += fallback_fails(fv_log, lean_link)
     fails += binary_fails(lines, list(known))
-    fails += pin_fails(example, measured(lines), pinned)
+    got = measured(lines)
+    fails += pin_fails(example, got, pinned, rise_ok)
     fails += base_fails(pinned, base)
     shown = [l for l in lines if l.startswith("cargo fv: binary check:")] + same + different
     shown += [m[0].removeprefix("cargo fv: ") for m in funcs]
@@ -245,13 +262,15 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=No
     if known:
         shown.append("known unverified (scripts/gate-known-unverified.txt): "
                      + ", ".join(f"{e} {i}" for e, i in known))
+    if rise_ok and rises(got, pinned):
+        shown.append(f"rise (record it): `{new_line(example, got, pinned)}` in scripts/gate-expected-counts.txt")
     return not fails, " ".join(shown + [f"FAIL: {f}" for f in fails])
 
 
-def summary(example, text, known, pinned, env=os.environ, base=None):
+def summary(example, text, known, pinned, env=os.environ, base=None, rise_ok=False):
     """Markdown for the CI job summary: the pinned and the measured counts of the line, and the
     known-unverified executables with their issue and cargo fv's reason; `base`: the base
-    revision's pins, named when they differ."""
+    revision's pins, named when they differ; `rise_ok`: --rise-ok."""
     lines = text.splitlines()
     got = measured(lines)
     out = [f"### cargo fv counts: {example}", "",
@@ -265,10 +284,12 @@ def summary(example, text, known, pinned, env=os.environ, base=None):
         elif i == 0:
             note = f"**{g - p:+d}: must be equal**"
         else:
-            note = f"**{g - p:+d}: a regression**" if g < p else f"**{g - p:+d}: record the rise in this PR**"
+            rise = "record the rise (a PR changes scripts/gate-expected-counts.txt)" if rise_ok else "record the rise in this PR"
+            note = f"**{g - p:+d}: a regression**" if g < p else f"**{g - p:+d}: {rise}**"
         out.append(f"| {what} | {'none' if p is None else p} | {'none' if g is None else g} | {note} |")
     out += ["", "The executables must be equal. A function count below its pin is a regression; one above it is "
-            "recorded by changing the file in the same PR."]
+            + ("green on this line (no PR runs it) and recorded by a PR that changes the file."
+               if rise_ok else "recorded by changing the file in the same PR.")]
     if None not in got and pinned is not None and got != pinned:
         out += ["", "This run's line: `" + "  ".join([example] + [str(g) for g in got]) + "`"]
     if base is not None and pinned is not None and base != pinned:
@@ -384,7 +405,7 @@ def main(argv):
         a = rest.pop(0)
         if a in ("--known", "--expected", "--base", "--summary") and kind == "cargo-fv" and rest and a not in opts:
             opts[a] = rest.pop(0)
-        elif a == "--lean-link" and kind == "cargo-fv" and a not in opts:
+        elif a in ("--lean-link", "--rise-ok") and kind == "cargo-fv" and a not in opts:
             opts[a] = True
         elif a.startswith("-"):
             return usage()
@@ -407,12 +428,13 @@ def main(argv):
             if "--base" in opts:
                 base, errors3 = read_expected(pathlib.Path(opts["--base"]).read_text(), example)
                 errors3 = [f"base revision: {e}" for e in errors3]
-            ok, line = cargo_fv(example, text, "--lean-link" in opts, known, fv_log, pinned, base)
+            ok, line = cargo_fv(example, text, "--lean-link" in opts, known, fv_log, pinned, base,
+                                "--rise-ok" in opts)
             if errors + errors2 + errors3:
                 ok, line = False, " ".join([line] + [f"FAIL: {e}" for e in errors + errors2 + errors3])
             if "--summary" in opts:
                 with open(opts["--summary"], "a") as f:
-                    f.write(summary(example, text, known, pinned, base=base))
+                    f.write(summary(example, text, known, pinned, base=base, rise_ok="--rise-ok" in opts))
     except OSError as e:
         print(f"FAIL: {e}")
         return 1
