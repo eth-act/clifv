@@ -42,3 +42,8 @@ deps     deps-demo/crates  126
 deps     deps-demo/deps_demo  105
 deps     deps-demo/deps_demo  59
 deps     deps-demo/deps_demo  101
+# `--build-std` (the weekly std line, #1040; --rise-ok: no PR runs it, so a drop is green and
+# printed `drop (record it)`, a rise is red): #753's 10 functions per test executable
+# (`callRegs/blrRegs`; measured on #1051's head, 2026-11-15)
+fv-demo+std  fv-demo/fv_demo  10
+fv-demo+std  fv-demo/fv_demo  10

@@ -610,10 +610,33 @@ class LeftOut(unittest.TestCase):
         ok, line = gc.cargo_fv("survey", GREEN, False, leftout=self.pins())
         self.assertNotIn("left out", line)
 
+    def test_rise_ok_drop(self):
+        # the weekly std line (#1040, #1042): no PR runs it, so a drop is green and printed; a
+        # rise and a different number of executables stay red
+        drop = gc.measured_leftout(self.LOG.replace("; 3 function(s)", "; 1 function(s)").splitlines())
+        self.assertEqual(gc.leftout_fails("survey", drop, self.pins(), rise_ok=True), [])
+        rise = gc.measured_leftout(self.LOG.replace("; 3 function(s)", "; 4 function(s)").splitlines())
+        self.assertTrue(gc.leftout_fails("survey", rise, self.pins(), rise_ok=True))
+        fewer = gc.measured_leftout(covered("a", "a", 0).splitlines())
+        self.assertTrue(gc.leftout_fails("survey", fewer, self.pins(), rise_ok=True))
+        log = GREEN + self.LOG.replace("; 3 function(s)", "; 1 function(s)")
+        pinned = tuple(0 if c is None else c for c in gc.measured(log.splitlines()))
+        ok, line = gc.cargo_fv("survey", log, True, (), LEAN_LD, pinned, rise_ok=True, leftout=self.pins())
+        self.assertTrue(ok, line)
+        self.assertIn("drop (record it): ", line)
+        self.assertIn("`survey  a/values  1`", line)
+        self.assertFalse(gc.cargo_fv("survey", log, True, (), LEAN_LD, pinned, leftout=self.pins())[0])
+        ok, line = gc.cargo_fv("survey", GREEN + self.LOG, True, (), LEAN_LD, pinned, rise_ok=True,
+                               leftout=self.pins())
+        self.assertTrue(ok, line)
+        self.assertNotIn("drop (record it)", line)
+
     def test_checked_in_file(self):
         text = (HERE / "gate-expected-leftout.txt").read_text()
         self.assertEqual(gc.read_leftout(text, "deps")[1], [])
         self.assertIsNotNone(gc.read_leftout(text, "deps")[0])
+        # the weekly std line (#1042): #753's 10 functions per test executable
+        self.assertEqual(gc.read_leftout(text, "fv-demo+std")[0], {"fv-demo/fv_demo": [10, 10]})
 
 class CommandLine(unittest.TestCase):
     def run_script(self, *a):
