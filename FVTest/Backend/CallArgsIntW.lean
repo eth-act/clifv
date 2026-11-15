@@ -17,6 +17,10 @@ integer externs and every other premise of `famCover_ofG`, but
 * its `call` belongs to no instruction family (family 13 takes integer arguments,
   `not_famCover_fMis`): `famCover_ofG` without `hca` is false (`famCover_ofG_needs_callArgs`).
 
+The same context over `fInt` (the same function with an `i64` argument, in `Compile.functionET`)
+passes `ctxOkT` and the scope check, so the witness helper `FloatCtlRulesT.ctxT_of` without its
+new `buildCtx` premise is false too (`ctxT_of_needs_buildCtx`).
+
 `lake build FVTest.Backend.CallArgsIntW`.
 -/
 
@@ -81,6 +85,33 @@ theorem ctxT_ofExterns_needs_callArgs :
     ¬ ∀ (f : Clif.Function) (ctx : Ctx), CtxInvT f ctx → InstScopeT ctx →
       f.externs.all (Compile.sigE ·.2.sig) = true → CtxT f ctx := fun H =>
   not_callArgsInt_fMis (H fMis ctxM ctxInvT_fMis instScopeT_fMis (by native_decide)).callArgs
+
+/-- `fMis` with an `i64` argument: in the typed scope (`Compile.functionET`). -/
+def fInt : Clif.Function := fnOfText
+  "function %m(i64) -> i64 {
+    fn0 = %g(i64) -> i64
+block0(v0: i64):
+    v1 = call fn0(v0)
+    return v1
+}
+"
+
+/-- `fMis`'s context over `fInt`: `ctxOkT` and the scope check accept it (they do not tie the
+context's value types to `fInt`'s definitions), and its `call` argument is an `f64`. -/
+abbrev ctxI : Ctx := { ctxM with func := fInt }
+
+#guard ctxOkT fInt ctxI && scopeOkB ctxI && Compile.functionET fInt
+
+theorem not_callArgsInt_ctxI : ¬ CallArgsInt ctxI := fun h =>
+  not_callArgsInt_fMis fun ii info fn args hi hc => h ii info fn args hi hc
+
+/-- **`FloatCtlRulesT.ctxT_of` without its `buildCtx` premise is false** (S11g: it concluded
+`CtxT` from `ctxOkT`, `scopeOkB` and `Compile.functionET` for any context). -/
+theorem ctxT_of_needs_buildCtx :
+    ¬ ∀ (f : Clif.Function) (ctx : Ctx), ctxOkT f ctx = true → scopeOkB ctx = true →
+      Compile.functionET f = true → CtxT f ctx := fun H =>
+  not_callArgsInt_ctxI
+    (H fInt ctxI (by native_decide) (by native_decide) (by native_decide)).callArgs
 
 /-- **`fMis`'s `call` belongs to no instruction family.** -/
 theorem not_famCover_fMis : ¬ FamCover ctxM := by

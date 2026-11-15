@@ -45,6 +45,7 @@ import FV.Backend.Proof.LowerContractTFW
 import FVTest.E2E.FloatCallFinalTCF
 import FVTest.Link.FloatPlainCallsT
 import FVTest.Backend.FloatCallF
+import FVTest.Backend.CallArgsIntW
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -379,3 +380,13 @@ import FVTest.Backend.FloatCallF
 #print axioms E2E.FloatPlainCallsTWitness.parts -- witness: native_decide
 #print axioms E2E.FloatPlainCallsTWitness.correct_spec -- witness: native_decide
 #print axioms FloatCallF.ctxInvT_fCallF -- witness: native_decide
+#print axioms Backend.Proof.call_bl_outT
+#print axioms Backend.Proof.call_got_outT
+#print axioms Backend.Proof.callOut_runTermT
+#print axioms Backend.Proof.CtxT.ofExterns
+#print axioms Backend.Proof.CovT.famCover_ofG
+#print axioms CallArgsIntW.not_callArgsInt_fMis -- witness: native_decide
+#print axioms CallArgsIntW.ctxT_ofExterns_needs_callArgs -- witness: native_decide
+#print axioms CallArgsIntW.not_famCover_fMis -- witness: native_decide
+#print axioms CallArgsIntW.famCover_ofG_needs_callArgs -- witness: native_decide
+#print axioms CallArgsIntW.ctxT_of_needs_buildCtx -- witness: native_decide

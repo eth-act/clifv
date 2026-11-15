@@ -59,7 +59,8 @@ theorem instScopeT_of {ctx : Ctx} (h : scopeOkB ctx = true) : InstScopeT ctx := 
   exact hm
 
 /-- A typed context from the decided checks (`buildCtx`'s context of a typed-scope function;
-S11g: its `call` arguments are integers by `ctxT_of_functionET`). -/
+S11g: its `call` arguments are integers by `ctxT_of_functionET`; without the `buildCtx` premise
+the statement is false, `CallArgsIntW.ctxT_of_needs_buildCtx`). -/
 theorem ctxT_of {f : Clif.Function} (hb : (buildCtx f).toBool = true)
     (h1 : ctxOkT f (ctxStOf f).1 = true) (h2 : scopeOkB (ctxStOf f).1 = true)
     (h3 : Compile.functionET f = true) : CtxT f (ctxStOf f).1 := by
