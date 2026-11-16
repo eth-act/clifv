@@ -44,8 +44,12 @@ theorem MappedCtxInv.identityView {f : Clif.Function} {ctx : Ctx} (h : MappedCtx
 theorem DFGViewEq.externExtract {ctx original : Ctx} (h : DFGViewEq ctx original)
     (t : Term) (v : V) (st : LState) :
     Backend.externExtract ctx t v st = Backend.externExtract original t v st := by
-  simp only [Backend.externExtract, Ctx.defInst?, Ctx.valueType?, Ctx.defClif?,
-    h.func, h.insts, h.valTy, h.valDef]
+  obtain ⟨_, _, _, _, _, _, _⟩ := ctx
+  obtain ⟨_, _, _, _, _, _, _⟩ := original
+  obtain ⟨hf, hi, hvt, hvd, -⟩ := h
+  dsimp only at hf hi hvt hvd
+  subst hf hi hvt hvd
+  rfl
 
 /-- Stock pattern matching transports to any equal source view, including the
 canonical proof view, without a condition on the scheduling state. -/
