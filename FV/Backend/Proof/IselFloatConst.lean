@@ -475,6 +475,7 @@ theorem instData_f32const_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
       simp [instData, eTy, pure, Except.pure, instDataV_UnaryIeee32, opcodeV_F32const] at h
       first | exact h | exact h.symm
     · simp [instData, eTy, pure, Except.pure, instDataV_UnaryIeee64, opcodeV_F64const] at h
+    · simp [instData, eTy, throw, throwThe, MonadExceptOf.throw] at h
 
 /-- The instruction with `UnaryIeee64`/`F64const` data: an `f64const`, its field the bits. -/
 theorem instData_f64const_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
@@ -490,6 +491,7 @@ theorem instData_f64const_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
     · refine ⟨imm, rfl, ?_⟩
       simp [instData, eTy, pure, Except.pure, instDataV_UnaryIeee64, opcodeV_F64const] at h
       first | exact h | exact h.symm
+    · simp [instData, eTy, throw, throwThe, MonadExceptOf.throw] at h
 
 /-- The matched data's literal is the instruction's (`inst_data_value` returned `info`). -/
 theorem fconst_data_eq {ctx : Ctx} {ii : Nat} {info info' : IInfo} {k o c : Nat} {w1 : V}

@@ -292,7 +292,7 @@ theorem instData_fcmp_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
         simp only [List.cons.injEq] at h3
         obtain ⟨-, hfs⟩ := h3
         simp only [mkVariant_floatcc] at hfs
-        exact ⟨cc, ty, x, y, rfl, hf.1, hf.2, hfs⟩
+        exact ⟨cc, ty, x, y, rfl, by revert hf; cases ty <;> simp, hf.2, hfs⟩
       · simp only [reduceCtorEq] at h
     all_goals
       first
