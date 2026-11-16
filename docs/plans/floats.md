@@ -1137,6 +1137,14 @@ theorems) keep their text; they cover the pooled constant through `functionETCF`
 `lowerCheckTCF`. `f32const` is never pooled (`constant_f32`: `mov w; fmov s, w`). Witnesses
 `FVTest/E2E/PoolConstFinalTCF.lean` (`fLit`: `backend_correct_finalTCF_lit`; `fDup`: two literal
 loads of one entry, as Cranelift; `fF32`: no pool load), `GuardedFPWitness.csemGF_pool_defined`.
+Measured (remote gate on the head merged with main 9f3d0cd9c, green): deps 21,023 → **21,025** of
+21,037 verified (`crates::numbers_and_bytes#1`, serde_json's `f64_from_parts`), binary check 4 of
+4, every executable on the typed route with 0 left out; fv-demo 1,372 and survey 3,251 unchanged;
+`--build-std` 32,414 of 32,455 verified (pin 32,334 recorded before #1050), binary check 2 of 2,
+left out 10 + 10 (the pins); encode-check 1,473 identical; crate proofs unchanged. Linking needed
+#1059: an 8-aligned (pooled) function object made `ld -r` pad the program part off `Link.offs`, so
+`symsOkB` failed and the executable left the typed route (`crates`: 197 left out, std 220/219);
+`cargo fv` now word-aligns such objects (function bytes unchanged).
 
 ## 4. Known hazards
 
