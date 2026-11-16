@@ -316,7 +316,7 @@ theorem blockC_ofT {f : Clif.Function} (hET : Compile.functionET f = true)
 theorem buildCtx_okC {f : Clif.Function} (hC : ∀ B ∈ f.blocks, BlockC f B)
     (hssa : (valueDefs f).Nodup) (hst : ∀ B ∈ f.blocks, ∀ s ∈ B.body, stmtInB f s = true) :
     ∃ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) := by
-  unfold buildCtx
+  unfold buildCtx buildCtxWith
   simp only [bind, Except.bind, pure, Except.pure, forIn_okYield]
   rw [forIn_eq_fold (blockStepM f) f.blocks _ ?blk]
   · dsimp only

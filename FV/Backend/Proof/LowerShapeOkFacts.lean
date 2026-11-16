@@ -27,7 +27,7 @@ theorem forIn_ok_yield {α : Type} (l : List α) (g : α → Nat → Nat) (m : N
 /-- `buildCtx`'s first fresh vreg (its `maxV`) is `Function.freshValue`. -/
 theorem buildCtx_fresh {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
     {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) : st0.nextVreg = f.freshValue := by
-  unfold buildCtx at hb
+  unfold buildCtx buildCtxWith at hb
   simp only [bind, Except.bind, pure, Except.pure, forIn_ok_yield] at hb
   split at hb
   · cases hb

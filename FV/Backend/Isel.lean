@@ -986,9 +986,7 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.exception_sig, .op (.exnTable s _) => .ok [.op (.sig s)]
   -- S11e4 float constants. `u32_from_ieee32`/`u64_from_ieee64` (isle_prelude.rs:724-730,
   -- `Ieee32::bits`/`Ieee64::bits`): the literal's bit pattern, which `instData` stores as the
-  -- `UnaryIeee32`/`UnaryIeee64` field; `u16_from_ieee16` (`Ieee16::bits`) the same for
-  -- `instDataH`'s `UnaryIeee16` (#35 layer 2).
-  | TId.u16_from_ieee16, .int i => .ok [.int i]
+  -- `UnaryIeee32`/`UnaryIeee64` field.
   | TId.u32_from_ieee32, .int i => .ok [.int i]
   | TId.u64_from_ieee64, .int i => .ok [.int i]
   -- the generated fallible numeric extractors `u16_from_u32`/`u32_from_u64`
@@ -997,6 +995,9 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.u32_from_u64, .int i => if 0 ≤ i ∧ i < 2 ^ 32 then .ok [.int i] else .fail
   -- `u64_low32_bits_unset` (aarch64/lower/isle.rs:860-866): `val & 0xffffffff == 0`
   | TId.u64_low32_bits_unset, .int i => if u64 i % 2 ^ 32 = 0 then .ok [.int i] else .fail
+  -- `u16_from_ieee16` (`Ieee16::bits`): the bit pattern of an `f16const` (`UnaryIeee16`, #35
+  -- layer 2); the last arm, so the dispatch of every earlier extractor is unchanged
+  | TId.u16_from_ieee16, .int i => .ok [.int i]
   | _, v => .unmodeled s!"extractor {t.name} on {(repr v).pretty.take 60}"
 
 /-- `ASIMDFPModImm::value16` (aarch64/inst/imms.rs:830-838): the 16-bit value of an 8-bit

@@ -118,7 +118,7 @@ theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
     st0 = { nextVreg := maxVOf f, classes := (Array.range (maxVOf f)).map fun v =>
               ((((ctxModel f (maxVOf f)).1[v]?).join).map CTy.valClass).getD .int } ∧
     ∀ B ∈ f.blocks, BlockC f B := by
-  unfold buildCtx at hb
+  unfold buildCtx buildCtxWith at hb
   simp only [bind, Except.bind, pure, Except.pure] at hb
   split at hb
   · cases hb

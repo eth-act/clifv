@@ -234,7 +234,8 @@ def eAtomic : List AW → Bool
 def eFpuMoveFPImm : List AW → Bool
   | [_, _, s] => s.enumAll fun k => k == VIdx.ScalarSize.Size32 || k == VIdx.ScalarSize.Size64
   | _ => false
-/-- Never accepted: `VecDupImm`, whose immediate the domain does not describe (S11e1). -/
+/-- Never accepted: `VecDupImm`, whose immediate the domain does not describe (S11e1), and the
+16-bit `FpuLoad16`/`FpuStore16` of the move-only `f16` (#35 layer 2), outside `emitOk`. -/
 def eNever (_ : List AW) : Bool := false
 /-- The single/double precision sizes (`fpFtype`). -/
 def fpSzOk (k : Nat) : Bool := k == VIdx.ScalarSize.Size32 || k == VIdx.ScalarSize.Size64
@@ -268,7 +269,8 @@ def emTab : List (Nat × (List AW → Bool)) :=
    (VIdx.MInst.CallInd, eCall), (VIdx.MInst.AtomicRMWLoop, eAtomic),
    (VIdx.MInst.AtomicCASLoop, eAtomic), (VIdx.MInst.FpuMoveFPImm, eFpuMoveFPImm),
    (VIdx.MInst.VecDupImm, eNever), (VIdx.MInst.FpuRR, eFpuRR), (VIdx.MInst.FpuRRR, eFpuOpSz),
-   (VIdx.MInst.FpuRRRR, eFpuOpSz), (VIdx.MInst.FpuCmp, eFpuCmp)]
+   (VIdx.MInst.FpuRRRR, eFpuOpSz), (VIdx.MInst.FpuCmp, eFpuCmp),
+   (VIdx.MInst.FpuLoad16, eNever), (VIdx.MInst.FpuStore16, eNever)]
 
 /-- The branch variants (instructions with targets). -/
 def branchKs : List Nat :=
