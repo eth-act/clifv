@@ -3,8 +3,10 @@ import FV.Backend.Proof.StockD0Dispatch
 
 namespace Backend.Stock.D0.Compiler
 
+/-- `Backend.lowerChecked` with `lowerFunction` in place of the D0 dispatcher (also in the
+unverified route, `lowerUnverifiedWith`, #35 layer 2). -/
 def legacyLowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
-  let vc ← lowerFunction f
+  let vc ← if verify then lowerFunction f else Backend.lowerUnverifiedWith lowerFunction f
   if verify && !Backend.lowerCheckFor f vc then
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
@@ -15,7 +17,8 @@ def legacyLowerForAllocation (f : Clif.Function) (verify deadCleanup : Bool) : E
 
 theorem lowerChecked_eq_legacy (f : Clif.Function) (verify : Bool) :
     Backend.lowerChecked f verify = legacyLowerChecked f verify := by
-  simp only [Backend.lowerChecked, defaultLower_eq_legacy, legacyLowerChecked]
+  simp only [Backend.lowerChecked, Backend.lowerUnverified, Backend.lowerUnverifiedWith,
+    defaultLower_eq_legacy, legacyLowerChecked]
 
 theorem lowerForAllocation_eq_legacy (f : Clif.Function) (verify cleanup : Bool) :
     Backend.lowerForAllocation f verify cleanup = legacyLowerForAllocation f verify cleanup := by

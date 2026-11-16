@@ -97,13 +97,28 @@ and scalar comparisons), float stores storing float values. -/
 def verifiableTCF (f : Clif.Function) : Bool :=
   Compile.functionETCF f && Compile.storeTypedB f && abiSigs f && indSigsAbiOk f
 
+/-- The lowering of a function outside the theorems (#35 layer 2): `lower f`, and where it fails
+`lowerFunctionH f`, the lowering with Cranelift's code for the move-only `f16` values. On a
+function without `f16` values `lowerFunctionH` runs `lowerFunction`'s code (`instDataH`,
+`valTyOkH` and `buildCtxH` differ from `instData`, `valTyOk` and `buildCtx` at `f16` only), so it
+compiles no function that the default lowering does not. -/
+def lowerUnverifiedWith (lower : Clif.Function → Except String VCode) (f : Clif.Function) :
+    Except String VCode :=
+  match lower f with
+  | .ok vc => .ok vc
+  | .error _ => lowerFunctionH f
+
+/-- `lowerUnverifiedWith` the default lowering (`Stock.D0.defaultLower`). -/
+def lowerUnverified (f : Clif.Function) : Except String VCode :=
+  lowerUnverifiedWith Stock.D0.defaultLower f
+
 /-- The proved D0 Stock dispatcher with legacy fallback, then (if `verify`) the lowering validator
 (`lowerCheckFor`: `lowerCheck`, or `lowerCheckT` outside subset E, whose acceptance the
 end-to-end theorems assume, `docs/contracts/e2e.md`); a rejection is a compile error.
 Functions outside the theorems (`unverifiedReason?`) are not validated (they are reported as
-unverified instead). -/
+unverified instead) and are lowered by `lowerUnverified` (with the `f16` moves of #35). -/
 def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
-  let vc ← Stock.D0.defaultLower f
+  let vc ← if verify then Stock.D0.defaultLower f else lowerUnverified f
   if verify && !lowerCheckFor f vc then
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
@@ -120,6 +135,7 @@ theorem lowerChecked_lowerCheck {f : Clif.Function} {vc : VCode}
     (h : lowerChecked f true = .ok vc) (hE : Compile.functionE f = true) :
     Proof.Driver.lowerCheck f vc = true := by
   unfold lowerChecked at h
+  simp only [↓reduceIte] at h
   cases h0 : Stock.D0.defaultLower f with
   | error e => simp [h0, bind, Except.bind] at h
   | ok v =>

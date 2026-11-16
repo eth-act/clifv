@@ -141,6 +141,7 @@ theorem lowerChecked_spec {f : Clif.Function} {vc : VCode}
     lowerFunction f = .ok vc ∧ lowerCheckT f vc = true ∧
       (Compile.functionE f = true → lowerCheck f vc = true) := by
   unfold Backend.lowerChecked at h
+  simp only [↓reduceIte] at h
   rw [Stock.D0.defaultLower_eq_legacy] at h
   cases hl : lowerFunction f with
   | error e => rw [hl] at h; cases h
@@ -171,6 +172,7 @@ theorem lowerChecked_specTC {f : Clif.Function} {vc : VCode}
     (hT : Compile.functionET f = false) (hTC : Compile.functionETC f = true) :
     lowerFunction f = .ok vc ∧ lowerCheckTC f vc = true := by
   unfold Backend.lowerChecked at h
+  simp only [↓reduceIte] at h
   rw [Stock.D0.defaultLower_eq_legacy] at h
   cases hl : lowerFunction f with
   | error e => rw [hl] at h; cases h
@@ -207,6 +209,7 @@ theorem lowerChecked_specTCF {f : Clif.Function} {vc : VCode}
     (hT : Compile.functionET f = false) (hTC : Compile.functionETC f = false) :
     lowerFunction f = .ok vc ∧ lowerCheckTCF f vc = true := by
   unfold Backend.lowerChecked at h
+  simp only [↓reduceIte] at h
   rw [Stock.D0.defaultLower_eq_legacy] at h
   cases hl : lowerFunction f with
   | error e => rw [hl] at h; cases h

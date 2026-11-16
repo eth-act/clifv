@@ -368,6 +368,30 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     | _ => throw s!"`{op.name}` is not in the lowering"
   | i => throw s!"`{instText i}` is not in E"
 
+/-- The value types of the lowering with the move-only `f16` (#35 layer 2): `valTyOk`'s and
+`f16` (in a V register, as Cranelift's `F16` without FEAT_FP16). Only `buildCtxH` uses it;
+`valTyOk`, `buildCtx` and every verified scope keep their meaning. -/
+def valTyOkH (ty : Clif.Ty) : Bool := valTyOk ty || ty == .f16
+
+/-- `instData` with the `f16` moves Cranelift lowers without FEAT_FP16 (#35 layer 2):
+`f16const` (`UnaryIeee16` with the literal's bit pattern; `u16_from_ieee16`, then
+`constant_f16`'s `constant_f32` of it: `movz w, #bits` + `fmov s, w`), `load.f16`/`store.f16`
+(`FpuLoad16`/`FpuStore16`: `ldr h`/`str h`) and `bitcast.f16` of an `i16` (`mov_to_fpu` at
+`Size16`, promoted to `Size32`: `fmov s, w`). `bitcast.i16` of an `f16` (`mov_from_vec` at
+`Size16`: `umov w, v.h[0]`) is `instData`'s own. Only `buildCtxH` uses it: the functions it
+admits are compiled, outside every verified scope (`lowerFunctionH`). -/
+def instDataH (f : Clif.Function) : Clif.Inst → Except String V
+  | .iconst .f16 imm => pure (instDataV "UnaryIeee16" [opcodeV "F16const", .int imm.toNat])
+  | .load .load .f16 flags p off =>
+    if flags.endianness == some .big then throw "big-endian load"
+    else pure (instDataV "Load" [opcodeV "Load", .value p, .op (.memFlags flags), .int off])
+  | .store .store .f16 flags x p off =>
+    if flags.endianness == some .big then throw "big-endian store"
+    else pure (instDataV "Store" [opcodeV "Store", .values [x, p], .op (.memFlags flags), .int off])
+  | .bitcast .f16 flags x =>
+    pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
+  | i => instData f i
+
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)
 
 Typed placement: an integer value goes in the next of x0..x7, an `f32`/`f64` value in the next
@@ -524,6 +548,12 @@ def slotsOk : List (Nat × Nat) → Nat → Nat → Bool
 proven yet; `stackArgStore` has no 2-byte float store). -/
 def sigNoF16 (s : Clif.Signature) : Bool :=
   s.params.all (·.ty != .f16)
+
+/-- An `f16` parameter of `s` is passed on the stack (#35 layer 2: `stackArgLoad`/
+`stackArgStore` have no 2-byte float access, Cranelift's `ldr h`/`str h`, so `buildCtxH`
+rejects such a signature; std has none). -/
+def sigF16Stack (s : Clif.Signature) : Bool :=
+  (s.params.zip (locsOf s)).any fun q => q.1.ty == .f16 && q.2 matches .stack _
 
 /-- The stack-argument layout of `s` (`sigArgLocs`) is well formed: the stack-passed parameters
 occupy non-overlapping byte ranges of the stack-argument area, in parameter order (a
@@ -956,7 +986,9 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.exception_sig, .op (.exnTable s _) => .ok [.op (.sig s)]
   -- S11e4 float constants. `u32_from_ieee32`/`u64_from_ieee64` (isle_prelude.rs:724-730,
   -- `Ieee32::bits`/`Ieee64::bits`): the literal's bit pattern, which `instData` stores as the
-  -- `UnaryIeee32`/`UnaryIeee64` field.
+  -- `UnaryIeee32`/`UnaryIeee64` field; `u16_from_ieee16` (`Ieee16::bits`) the same for
+  -- `instDataH`'s `UnaryIeee16` (#35 layer 2).
+  | TId.u16_from_ieee16, .int i => .ok [.int i]
   | TId.u32_from_ieee32, .int i => .ok [.int i]
   | TId.u64_from_ieee64, .int i => .ok [.int i]
   -- the generated fallible numeric extractors `u16_from_u32`/`u32_from_u64`
@@ -1333,8 +1365,9 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | TId.u64_wrapping_sub, [.int a, .int b] => ok (.int (u64 (a - b)))
   | TId.u64_wrapping_shl, [.int a, .int b] => ok (.int (u64 (a * 2 ^ (b.toNat % 64))))
   | TId.u64_is_odd, [.int a] => ok (.bool (a % 2 == 1))
-  | TId.u8_into_u32, [.int a] | TId.u8_into_u64, [.int a] | TId.u16_into_u64, [.int a]
-  | TId.i32_into_i64, [.int a] | TId.u32_into_u64, [.int a] => ok (.int a)
+  | TId.u8_into_u32, [.int a] | TId.u8_into_u64, [.int a] | TId.u16_into_u32, [.int a]
+  | TId.u16_into_u64, [.int a] | TId.i32_into_i64, [.int a] | TId.u32_into_u64, [.int a] =>
+    ok (.int a)
   | TId.i64_cast_unsigned, [.int a] => ok (.int (u64 a))
   -- clif_lower.isle
   | TId.value_array_2, [.value a, .value b] => ok (.values [a, b])
@@ -1422,8 +1455,11 @@ def slotLayout (slots : List (Nat × Clif.StackSlot)) : List (Nat × Nat) × Nat
 
 /-- Build the lowering context of a function: instruction table (statements, then the
 terminator, block by block), value types/definitions, and one vreg per value, of the class of
-its type (`CTy.regClass?`: `.int` for `i8..i64`, `.float` for `f32`/`f64`). -/
-def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) := do
+its type (`CTy.regClass?`: `.int` for `i8..i64`, `.float` for `f32`/`f64`), with the
+instruction data `dataOf` and the value types `tyOk` (`buildCtx`: `instData`/`valTyOk`;
+`buildCtxH`: with the `f16` moves). -/
+def buildCtxWith (dataOf : Clif.Function → Clif.Inst → Except String V) (tyOk : Clif.Ty → Bool)
+    (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) := do
   let sigOf (r : Nat) : Option Clif.Signature := (f.extern? r).map (·.sig)
   -- value ids and types
   let mut maxV := 0
@@ -1438,16 +1474,16 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
   let mut ranges : Array (Nat × Nat) := #[]
   for b in f.blocks do
     for (v, ty) in b.params do
-      if !valTyOk ty then throw s!"block parameter v{v} is {ty.name}"
+      if !tyOk ty then throw s!"block parameter v{v} is {ty.name}"
       valTy := valTy.set! v (some (CTy.ofClif ty))
     let start := insts.size
     for s in b.body do
-      let data ← instData f s.inst
+      let data ← dataOf f s.inst
       let some tys := s.inst.resultTypes sigOf (f.sigDecls.lookup ·) |
         throw "ill-typed instruction"
       if tys.length != s.results.length then throw "result count mismatch"
       for (r, ty) in s.results.zip tys do
-        if !valTyOk ty then throw s!"value v{r} is {ty.name}"
+        if !tyOk ty then throw s!"value v{r} is {ty.name}"
         valTy := valTy.set! r (some (CTy.ofClif ty))
         valDef := valDef.set! r (some insts.size)
       insts := insts.push ⟨data, s.results, tys.map CTy.ofClif, some s.inst⟩
@@ -1470,6 +1506,19 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
   let st : LState := { nextVreg := maxV,
                        classes := (Array.range maxV).map fun v => (((valTy[v]?).join).map CTy.valClass).getD .int }
   pure (ctx, ranges, st)
+
+/-- The lowering context of the verified scopes: `buildCtxWith instData valTyOk` (E's integers,
+`f32`/`f64`). -/
+def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) :=
+  buildCtxWith instData valTyOk f
+
+/-- The lowering context with the move-only `f16` (#35 layer 2; `instDataH`, `valTyOkH`): the
+context of `lowerFunctionH`, which compiles functions outside every verified scope. A signature
+with an `f16` parameter on the stack (own or an extern's, `sigF16Stack`) is rejected. -/
+def buildCtxH (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) :=
+  if sigF16Stack f.sig || f.externs.any (sigF16Stack ·.2.sig) then
+    throw "f16 parameter passed on the stack"
+  else buildCtxWith instDataH valTyOkH f
 
 /-- Run the ISLE term `term` on `args`. -/
 def runTerm (ctx : Ctx) (term : String) (args : List V) (st : LState) :
@@ -1526,8 +1575,21 @@ def loweredCold (f : Clif.Function) (bs : Array VBlock) : Array Bool :=
       | some (.jump t) => clifCold f t
       | _ => false
 
-/-- Lower one function to VCode. -/
-def lowerFunction (f : Clif.Function) : Except String VCode := do
+/-- Resolve the vreg aliases `alias` (`set_vreg_alias`) in `r`, following at most `fuel` links
+(chains are acyclic: an alias target is defined by the instruction that defines the aliased
+value, which only reads earlier values). -/
+def lowerFunction.resolve (alias : Array (Option Nat)) (fuel : Nat) (r : Reg) : Reg :=
+  match fuel, r with
+  | 0, _ => r
+  | fuel + 1, .vreg n c => match (alias[n]?).join with
+    | some o => lowerFunction.resolve alias fuel (.vreg o c)
+    | none => r
+  | _, _ => r
+
+/-- Lower one function to VCode, in the lowering context `bc f` (`lowerFunction`: `buildCtx`;
+`lowerFunctionH`: `buildCtxH`). -/
+def lowerFunctionWith (bc : Clif.Function → Except String (Ctx × Array (Nat × Nat) × LState))
+    (f : Clif.Function) : Except String VCode := do
   if !aapcsConv f.sig.callConv then
     throw s!"calling convention {repr f.sig.callConv}"
   let paramBytes ← sigParamBytes f.sig
@@ -1535,7 +1597,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
   if f.sig.params.any (·.purpose == .sret) && !f.sig.returns.isEmpty then
     throw "sret parameter together with return values (Cranelift rejects this)"
   if (abiRetRegs f.sig).isNone then throw "more than 8 return values of a register class"
-  let (ctx, ranges, st0) ← buildCtx f
+  let (ctx, ranges, st0) ← bc f
   let blockIdx (b : Nat) : Except String Nat :=
     match f.blocks.findIdx? (·.id == b) with
     | some i => pure i
@@ -1672,23 +1734,26 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
         | none => throw s!"unknown value v{v}"
     d := { d with st := { st with emitted := #[] }, rules := d.rules ++ n.toArray,
                   blocks := d.blocks.push { label := bi, insts := code, params, branchArgs := jumpArgs } }
-  -- resolve aliases (chains are acyclic: an alias target is defined by the instruction that
-  -- defines the aliased value, which only reads earlier values)
+  -- resolve aliases (`lowerFunction.resolve`)
   let alias := d.alias
-  let rec resolve (fuel : Nat) (r : Reg) : Reg :=
-    match fuel, r with
-    | 0, _ => r
-    | fuel + 1, .vreg n c => match (alias[n]?).join with
-      | some o => resolve fuel (.vreg o c)
-      | none => r
-    | _, _ => r
   let fuel := alias.size + 1
   let fixBlock (vb : VBlock) : VBlock :=
-    { vb with insts := vb.insts.map (MInst.mapRegs (resolve fuel)),
-              branchArgs := vb.branchArgs.map (resolve fuel) }
+    { vb with insts := vb.insts.map (MInst.mapRegs (lowerFunction.resolve alias fuel)),
+              branchArgs := vb.branchArgs.map (lowerFunction.resolve alias fuel) }
   let (_, slotBytes) := slotLayout f.slots
   pure { name := f.name, blocks := (d.blocks ++ d.edges).map fixBlock, classes := d.st.classes,
          slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules,
          cold := loweredCold f (d.blocks ++ d.edges), edgeFrom := if d.edges.isEmpty then none else some f.blocks.length }
+
+/-- Lower one function to VCode (`lowerFunctionWith buildCtx`): the lowering of the verified
+scopes. -/
+def lowerFunction (f : Clif.Function) : Except String VCode :=
+  lowerFunctionWith buildCtx f
+
+/-- Lower a function with the move-only `f16` values (#35 layer 2; `lowerFunctionWith
+buildCtxH`): Cranelift's code for the `f16` moves (`instDataH`), compiled outside every verified
+scope (`lowerChecked` uses it for unverified functions only, `lowerUnverified`). -/
+def lowerFunctionH (f : Clif.Function) : Except String VCode :=
+  lowerFunctionWith buildCtxH f
 
 end Backend
