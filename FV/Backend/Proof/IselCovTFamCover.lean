@@ -117,8 +117,9 @@ theorem ofClif_fCTys {ty : Clif.Ty} (h : ty.isArithFloat = true) : CTy.ofClif ty
 
 /-- The statement of `ofClif_fCTys` before `f16` is false: `CTy.ofClif .f16 = .float 16`. -/
 theorem ofClif_fCTys_old_false :
-    ¬ ∀ ty : Clif.Ty, ty.isFloat = true → CTy.ofClif ty ∈ fCTys := fun h =>
-  absurd (h .f16 rfl) (by decide)
+    ¬ ∀ ty : Clif.Ty, ty.isFloat = true → CTy.ofClif ty ∈ fCTys := fun h => by
+  have := h .f16 rfl
+  simp [CTy.ofClif, fCTys] at this
 
 theorem valClass_ofClif_float {ty : Clif.Ty} (h : ty.isFloat = true) :
     (CTy.ofClif ty).valClass = .float := by

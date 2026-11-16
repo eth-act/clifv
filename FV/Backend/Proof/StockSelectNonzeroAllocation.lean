@@ -12,7 +12,7 @@ set_option maxHeartbeats 4000000
 so retained availability can establish scratch separation without circularity. -/
 theorem stock_select_nonzero_actual_allocation {f : Clif.Function} {ctx : Ctx}
     (inv : MappedCtxInv f ctx) {cty ty : Clif.Ty}
-    (conditionWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64)
+    (conditionWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64) (h16 : cty ≠ .f16)
     (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
     {c x y emitFuel selectFuel : Nat} (typed : ctx.valueType? c = some (.int cty.width))
     (enoughEmit : 220 ≤ emitFuel) (enoughSelect : 319 ≤ selectFuel)
@@ -38,7 +38,7 @@ theorem stock_select_nonzero_actual_allocation {f : Clif.Function} {ctx : Ctx}
     · rw [finish]; exact Nat.le_refl _
     · rw [complete,finish]; rfl
     · rw [complete]; rfl
-  case i16 | f16 =>
+  case i16 =>
     obtain ⟨_,_,_,producer,finish⟩ := stock_select_nonzero16_emitter_observed inv enoughEmit typed emitter
     rw [producer] at consumer
     obtain ⟨_,_,_,_,_,_,output,complete⟩ := stock_select_zero_observed data_program ctx rfl enoughSelect width
@@ -66,4 +66,5 @@ theorem stock_select_nonzero_actual_allocation {f : Clif.Function} {ctx : Ctx}
     · rw [complete,finish]; rfl
     · rw [complete]; rfl
   case i128 => simp [Clif.Ty.width] at conditionWidth
+  case f16 => exact absurd rfl h16
 end Backend.Stock.Proof.ScalarSelect
