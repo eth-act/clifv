@@ -22,6 +22,13 @@ conversion and `fcmp` roots, no `InstScopeT` premise), `vcode_niTCF`,
 `backend_correct_world_niTCF` for the scope with the proven float operations (`InSubsetTCF`,
 `CompiledTCF`); `vcode_niTC` and `backend_correct_world_niTC` are their corollaries, statements
 unchanged.
+
+#1002 part 2: the validated shape is `LowerShapeTCS InstScope.tfl` (an `f64const` from the
+literal pool among the instructions). `instCalls_pairTCFS` (the statement calls from
+`lowerInstOkP_runTermTFS` at `csemGF`, `poolRefinesFP_csemGF`), `tryCalls_pairTCS`,
+`termCalls_pairTS`, `tryIndCalls_pairTS` (the `CtxTW` forms transported to `CtxTS S`,
+`ScopeTransport.lean`) give `vcode_niTCF`'s paired driver hypothesis (`DriverHypTCS`), its
+statement unchanged.
 -/
 
 namespace Backend.Proof
@@ -254,6 +261,46 @@ theorem instCalls_pairTCFW (hc : CompiledTCF f k vc vcp rf af fa fb) (hT : Typed
   rw [hem, List.toList_toArray]
   exact hok
 
+/-- **`instCalls_pairTCFW` over a scope inside `InstScopeTFL`** (#1002 part 2: over `CtxTS S`, an
+`f64const` from the literal pool among the instructions; `lowerInstOkP_runTermTFS`, the guarded
+semantics' literal-pool load `poolRefinesFP_csemGF`). -/
+theorem instCalls_pairTCFS {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeTFL ctx)
+    (hc : CompiledTCF f k vc vcp rf af fa fb) (hT : TypedRulesS S)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {ctx : Ctx} (hctx : CtxTS S f ctx) (hst : StoresTyped ctx) :
+    InstCallsT f ctx (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
+      (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
+  intro ii info inst st rss st' tr hmem hi hcl hsig hemp hvb hrun
+  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
+  have hstk := callsStack_mono (callsStackTCF_of_check hc.lowerOk)
+    (outgoing_le_intBaseATCF hc.toA)
+  refine lowerInstOk_pairF hNI hTls (Γ := Γ) rfl hctx.inv.func hsig fun Rd Pc => ?_
+  obtain ⟨B, hB, stm, hstm, hst'⟩ := hmem
+  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermTFS hS (lowerRulesCorrectTIS_program S)
+    lowerRulesCorrectT_program lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program
+    lowerRulesCorrectFC_program (nonEUnmatchableTFS_program hS) callRulesCorrectTFP_program
+    hT.ind (memRulesCorrectRTIS_program S) memRulesCorrectRT_program refines_csemGF
+    (mrStable_relW Γ f c)
+    (callsRefineP_csemGF hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (indCallsRefineP_csemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (memRefinesR_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
+    (memRefinesFP_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot) poolRefinesFP_csemGF
+    hctx (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    (indStack_mono (indStackTCF_of_check hc.lowerOk) (outgoing_le_intBaseATCF hc.toA))
+    (hst ii info inst hi hcl)
+    (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
+  cases hov
+  rw [hemp, Array.empty_append] at hem
+  rw [hem, List.toList_toArray]
+  exact hok
+
 /-- **The typed `try_call` calls on pairs of worlds** (`TryCallsTC` of `pairSem`): the typed
 rule contracts with pinned calls at the guarded semantics with the float accesses `csemGF`,
 paired (`lowerTryOkC_pairF`). -/
@@ -298,6 +345,11 @@ ctxW_transport tryCalls_pairTC => tryCalls_pairTCW
 ctxW_transport termCalls_pairT => termCalls_pairTW
 ctxW_transport tryIndCalls_pairT => tryIndCalls_pairTW
 
+-- **The same over `CtxTS S`** (#1002 part 2; `ScopeTransport.lean`).
+scopeS_transport tryCalls_pairTCW => tryCalls_pairTCS
+scopeS_transport termCalls_pairTW => termCalls_pairTS
+scopeS_transport tryIndCalls_pairTW => tryIndCalls_pairTS
+
 /-- **Non-interference of a compiled function's VCode run, with the proven float operations**
 (`vcode_ni` for the scope with the proven float operations): two body-entry worlds related to
 the same CLIF entry, that agree outside `F ∪ D`, with the same argument registers and
@@ -331,31 +383,34 @@ theorem vcode_niTCF (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf af 
         SameWorld (fun b => F b ∨ D b) w w' := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hc.lowerOk
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
-  have H := driverHypTCF_relW (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
-  have hctxT : CtxTW f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
+  have hS : ∀ ctx, InstScope.tfl.P ctx → InstScopeTFL ctx := fun _ h => h
+  have H := driverHypTCFS_relW (S := InstScope.tfl) hS (c := c) hsub hc hX hXI hsym hslot hshape
+    hcert hbr
+  have hctxT : CtxTS InstScope.tfl f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   have hmem : MemRefines F slotOff syms (csem F ⟨fa.k, af.slotBase⟩ X) :=
     memRefines_csem _ _ X hslot hsym
   have houtB := outgoing_le_intBaseATCF hc.toA
-  have HP : DriverHypTC f vc ctx st0 R gn bl A (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
-      (MRP Γ f c D) env p := {
+  have hTS := typedRulesS_program InstScope.tfl
+  have HP : DriverHypTCS InstScope.tfl f vc ctx st0 R gn bl A
+      (pairSem (csem F ⟨fa.k, af.slotBase⟩ X)) (MRP Γ f c D) env p := {
     shape := hshape
     cert := hcert
     dsem := driverSemG_pair F ⟨fa.k, af.slotBase⟩ X
-    insts := instCalls_pairTCFW hc typedRulesW_program hX hXI hsym hslot hNI hTls hctxT hstT
-    terms := termCalls_pairTW Γ rfl hTls ⟨fa.k, af.slotBase⟩ typedRulesW_program hctxT
+    insts := instCalls_pairTCFS hS hc hTS hX hXI hsym hslot hNI hTls hctxT hstT
+    terms := termCalls_pairTS _ Γ rfl hTls ⟨fa.k, af.slotBase⟩ hTS hctxT
     ext := H.ext
     indSig := H.indSig
     subETC := H.subETC
     entryLocs := H.entryLocs
     brIdx := H.brIdx
     noTail := H.noTail
-    tries := ⟨_, tryCalls_pairTCW typedRulesW_program hX hsym hslot hNI hTls hctxT,
+    tries := ⟨_, tryCalls_pairTCS _ hTS hX hsym hslot hNI hTls hctxT,
       tryStack_mono (tryStackTCF_of_check hc.lowerOk) houtB⟩
     tryExt := H.tryExt
-    tryInd := tryIndCalls_pairTW
+    tryInd := tryIndCalls_pairTS _
       (indStack_mono (indStackTCF_of_check hc.lowerOk) houtB)
-      typedRulesW_program hXI hsym hNI hTls hctxT
+      hTS hXI hsym hNI hTls hctxT
     tryIndSig := H.tryIndSig
     cfg := H.cfg }
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
@@ -363,7 +418,7 @@ theorem vcode_niTCF (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf af 
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
   have hP := runPrem_of_traps hce htr
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2TC H
+  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2TCS _ H
     (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hmem
     (memRefinesFP_csem (fun _ => True) F _ X hslot) (mrStable_relW Γ f c) hB0 hce.callers
     hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
@@ -375,7 +430,7 @@ theorem vcode_niTCF (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf af 
         (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
     exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
   intro vals cm hrun
-  have hR := sim_runTC HP hP fuel cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ (.refl _) hmP
+  have hR := sim_runTCS _ HP hP fuel cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ (.refl _) hmP
   rw [hrun] at hR
   obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -, -⟩ := hR
   obtain ⟨h1, h2⟩ := vRetFrom_pair hret

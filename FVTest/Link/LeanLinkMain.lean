@@ -299,6 +299,68 @@ def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP 
       linkChksWithTS C P e.1 e.2).filter (!·.2)).map (·.1))) R
   (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
 
+/-- The error of the linkers when `outsideOkB` fails (`Link.leanLink`, `Link.leanLinkWithResults`). -/
+def outsideOkMsg : String :=
+  "rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)"
+
+/-- On a link failing `outsideOkB` (`outsideOkMsg`): which of its parts fail and on what (at
+most `k` entries per part, with the number failing). Decided on rust-lld's output `file0` before
+the region is written, with the link map of `I`: `hdrB` and `symsOkB` read no byte of the region
+(`regionOkB`: the headers lie before it; the symbol table is in no `PT_LOAD` segment), and a data
+object with a byte in the region `[R, R + n)` is named as such (its bytes there are the
+region's, not checked here). -/
+def outsideFails (I : LinkInput) (D : List Clif.DataObject) (file0 : ByteArray) (R n : Nat)
+    (k : Nat := 10) : List String :=
+  let ex : Excerpt := [(0, file0)]
+  let r := exRd ex
+  let hdr := if BinCheck.hdrB ex then [] else ["hdrB: not a static AArch64 executable (Static)"]
+  let data := match phdrs r with
+    | none => ["dataFastB: no program headers"]
+    | some phs =>
+      let am := addrMap I.addrs
+      let bad := D.filter fun o => !objFastB am I r phs o
+      let one (o : Clif.DataObject) : String :=
+        match am[o.name]? with
+        | none => s!"dataFastB: data object {o.name}: not in the link map"
+        | some a =>
+          let bs := (BinCheck.objBytes I o).toArray
+          let inR := decide (a < R + n) && decide (R < a + bs.size)
+          let at0 := BitVec.ofNat 64 a
+          let byteAt := (List.range bs.size).find? fun i =>
+            loadIn r phs (at0 + BitVec.ofNat 64 i).toNat != some (bs[i]?.getD 0)
+          let roAt := (List.range bs.size).find? fun i =>
+            let x := at0 + BitVec.ofNat 64 i
+            !(o.writable || BinCheck.roB phs x || BinCheck.relroB phs x)
+          let bytes := match byteAt with
+            | some i =>
+              let got : Option (BitVec 8) := loadIn r phs (at0 + BitVec.ofNat 64 i).toNat
+              let want : BitVec 8 := bs[i]?.getD 0
+              s!"byte {i} (at {hex (a + i)}) is {got.map BitVec.toNat} in the file, {want.toNat} resolved"
+            | none => "bytes as resolved"
+          let ro := match roAt with
+            | some i => s!"; read-only object, byte {i} in no read-only segment"
+            | none => ""
+          s!"dataFastB: data object {o.name} at {hex a}, {bs.size} byte(s){if inR then " (inside the region)" else ""}: {bytes}{ro}"
+      (if bad.isEmpty then [] else [s!"dataFastB: {bad.length} of {D.length} data object(s) fail"]) ++
+        (bad.take k).map one
+  let idx := symIndex file0
+  let fr := fileRd file0
+  let symBad := I.addrs.filter fun p => !((I.aliases.lookup p.1).isSome ||
+    match idx[(BinCheck.symName p.1, p.2)]? with
+    | some (s, i) => match symEntry fr s i with
+      | some (o, v) => v == p.2 && cstrB fr o (BinCheck.symName p.1)
+      | none => false
+    | none => false)
+  let symOne (p : String × Nat) : String :=
+    match idx[(BinCheck.symName p.1, p.2)]? with
+    | some _ => s!"symsOkB: {p.1} at {hex p.2}: the symbol entry does not read back"
+    | none =>
+      let other := idx.fold (fun acc (nm, v) _ => if nm == BinCheck.symName p.1 then v :: acc else acc) []
+      s!"symsOkB: {p.1} at {hex p.2}: no symbol of that name at that address (that name at: {other.map hex})"
+  let syms := (if symBad.isEmpty then [] else [s!"symsOkB: {symBad.length} of {I.addrs.length} link-map name(s) fail"]) ++
+    (symBad.take k).map symOne
+  hdr ++ data ++ syms
+
 /-- Print `exclusions` (the line `cargo fv` reads). -/
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := [])
     (only : Bool := false) : IO Unit :=
@@ -558,6 +620,9 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT): {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}"
         for (n, fs) in bad.take 50 do
           IO.eprintln s!"lean-link:   {n}: {fs}"
+        if e == outsideOkMsg then
+          for l in outsideFails SP.input0 SP.data file0 SP.R SP.size do
+            IO.eprintln s!"lean-link:   {l}"
         -- leave out only the functions failing the typed checks when that set is the smallest
         -- (only those: `attemptT_correct` has no per-function input premise, #754)
         let badFns := (bad.filter (·.1 != "<global>")).map (·.1)

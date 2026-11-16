@@ -5,6 +5,9 @@ import FV.Backend.Proof.IselLowerCvtT
 import FV.Backend.Proof.LowerContractTFW
 import FV.Backend.Proof.IselCtlCallTI
 import FV.E2E.TypedRulesW
+import FV.Backend.Proof.LowerSimTCS
+import FV.Backend.Proof.LowerContractTFS
+import FV.E2E.PoolRefinesFP
 
 /-!
 # The typed final theorem with the proven float operations (S11f, #35) and float calls (S11g)
@@ -26,6 +29,18 @@ final theorems take no rule-family premise; `iselSimTCF_of_rules`'s rule-family 
 `CtxT` (`hrules`, `hnE`, `hcallRules`, `hindRules`, `hmemRules`, `htermRules`, `htermUn`,
 `hbranch`, `hbranchEx`, `htryIndRules`, `htryIndUn`) are no longer used: its statement is
 unchanged, and the proven `CtxTW` families replace them.
+
+#1002 part 2: the validator `lowerCheckTCF` and the scope `Compile.functionETCF` admit an
+`f64const` from the literal pool (`Compile.instETFL`). The validated shape is
+`LowerShapeTCS InstScope.tfl` (`loweringTCF_of_check`), the driver hypothesis `DriverHypTCS`
+(`LowerSimTCS.lean`, the simulation transported to the abstract scope, `iselSim_of_driverTCS`),
+the statements come from `instCallsTFS_of_rules` (`LowerContractTFS.lean`: the families over
+`CtxTS InstScope.tfl`, the literal-pool `f64const` root under `PoolRefinesFP`). So
+`iselSimTCF_of_rules` and `backend_correct_of_rules_exTCF`, stated for any VCode semantics, take
+`hpool : ∀ s, PoolRefinesFP (F s) (sem s)`: without it their statements are false for a function
+with a literal-pool `f64const` (a semantics undefined on `ldr d, <entry>` satisfies every other
+premise, and the VCode run stops there). `backend_correct_m4_exTCF` and the final theorems are
+unchanged: at `csem` the premise holds (`poolRefinesFP_csem`).
 
 * `InSubsetTCF`, `InSubsetTC.toTCF`, `CompiledTCF`, `CompiledATCF`, `CompiledTC.toTCF`,
   `CompiledTCF.toA`;
@@ -124,12 +139,17 @@ theorem CompiledTCF.toA {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFu
   ⟨hc.lower, hc.lowerOk, hc.prepare, hc.prepOk, allocChecked_of_checkAlloc hc.check, hc.alloc,
     hc.emit, hc.layout⟩
 
+-- **`iselSim_of_driverTC` over `DriverHypTCS S`** (#1002 part 2; `LowerSimTCS.lean`).
+scopeS_transport iselSim_of_driverTC => iselSim_of_driverTCS
+
 /-- **CLIF → VCode for the scope with the float operations, from the rule families**: the
 driver hypothesis of `buildCtx`'s context (`loweringTCF_of_check`), the statement calls from the
 typed families with the conversion and `fcmp` roots and `NonEUnmatchableTF`
 (`instCallsTF_of_rules`), the terminator calls from the typed families, the direct `try_call`s
 from the proven `tryRulesCorrectTFP_program` (`tryCallsTC_of_rules`), the `try_call_indirect`s
-from the integer typed families. -/
+from the integer typed families. #1002 part 2: `hpool` (the literal-pool load of `sem`), since
+`lowerCheckTCF` admits an `f64const` from the literal pool; the statement calls from
+`instCallsTFS_of_rules` over `CtxTS InstScope.tfl`, the simulation `iselSim_of_driverTCS`. -/
 theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (hsub : InSubsetTCF p f) (hlow : lowerCheckTCF f vc = true)
     (hcfg : ∃ ss ps, vc.cfg = .ok (ss, ps))
@@ -158,29 +178,31 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
     (hFP : ∀ s, MemRefinesFP (fun _ => True) (F s) slotOff (sem s))
+    (hpool : ∀ s, PoolRefinesFP (F s) (sem s))
     (houtB : vc.outgoing ≤ out) :
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hlow
-  have hctxT : CtxTW f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
+  have hS : ∀ ctx, InstScope.tfl.P ctx → InstScopeTFL ctx := fun _ h => h
+  have hctxT : CtxTS InstScope.tfl f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx :=
     storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
+  have hTS := typedRulesS_program InstScope.tfl
   intro s'
-  refine iselSim_of_driverTC (ctx := ctx) (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_
-    (hds s') (hmem s') (hFP s')
+  refine iselSim_of_driverTCS InstScope.tfl (ctx := ctx) (st0 := st0) (R := R) (gn := gn)
+    (bl := bl) (A := A) ?_ (hds s') (hmem s') (hFP s')
   exact {
     shape := hshape
     cert := hcert
     dsem := (hds s').toDriverSemG
-    insts := instCallsTFW_of_rules lowerRulesCorrectTIW_program hrulesF hrulesA hrulesC hrulesFC
-      nonEUnmatchableTFW_program callRulesCorrectTFP_program typedRulesW_program.ind
-      memRulesCorrectRTIW_program hmemF
+    insts := instCallsTFS_of_rules hS (lowerRulesCorrectTIS_program _) hrulesF hrulesA hrulesC
+      hrulesFC (nonEUnmatchableTFS_program hS) callRulesCorrectTFP_program hTS.ind
+      (memRulesCorrectRTIS_program _) hmemF
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
-      (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (hFP s') (hpool s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)
       (indStack_mono (indStackTCF_of_check hlow) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
-    terms := termCallsTW_of_rules typedRulesW_program.term typedRulesW_program.termUn
-      typedRulesW_program.branch typedRulesW_program.branchEx (hRef s')
+    terms := termCallsTS_of_rules _ hTS.term hTS.termUn hTS.branch hTS.branchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetTCF hsub
@@ -193,7 +215,7 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') hshape.ctxInvT,
       tryStack_mono (tryStackTCF_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
-    tryInd := tryIndCallsTW_of_rules typedRulesW_program.tryIndT typedRulesW_program.tryIndUn
+    tryInd := tryIndCallsTS_of_rules _ (TypedRulesS.tryIndT _ hTS) hTS.tryIndUn
       (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
@@ -203,7 +225,7 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
 
 /-- **`backend_correct` for the scope with the float operations, from the rule families**
 (`backend_correct_of_rules_exTC` with `InSubsetTCF`, `CompiledATCF`, the conversion and `fcmp`
-families and `NonEUnmatchableTF`). -/
+families and `NonEUnmatchableTF`; #1002 part 2: `hpool`, as `iselSimTCF_of_rules`). -/
 theorem backend_correct_of_rules_exTCF {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubsetTCF p f) (hc : CompiledATCF f k vc vcp rf af fa fb)
@@ -234,6 +256,7 @@ theorem backend_correct_of_rules_exTCF {p : Clif.Program} {f : Clif.Function} {k
       (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
     (hFP : ∀ s, MemRefinesFP (fun _ => True) (F s) slotOff (sem s))
+    (hpool : ∀ s, PoolRefinesFP (F s) (sem s))
     (houtB : vc.outgoing ≤ out)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
@@ -247,7 +270,7 @@ theorem backend_correct_of_rules_exTCF {p : Clif.Program} {f : Clif.Function} {k
       hrulesC hrulesFC hnE
       hcallRules hindRules hmemRules hmemF
       htermRules htermUn hbranch hbranchEx htryIndRules htryIndUn hRef hds hcalls
-      hicalls hmem hFP houtB)
+      hicalls hmem hFP hpool houtB)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsTCF_of_check hc.lowerOk) hbe hargs hargF hres)
@@ -356,7 +379,8 @@ theorem backend_correct_m4_exTCF {p : Clif.Program} {f : Clif.Function} {k : Nat
     hM6 hRef (fun s' => driverSem_csem (F s') (ctx s') (X s'))
     (fun s' => callsRefine_csem (hX s'))
     (fun s' => indCallsRefine_csem (hXI s') (hsym s') (fun _ _ _ h => h.1.symbols)) hmem
-    (fun s' => memRefinesFP_csem _ (F s') (ctx s') (X s') (hslotB s')) houtB
+    (fun s' => memRefinesFP_csem _ (F s') (ctx s') (X s') (hslotB s'))
+    (fun s' => poolRefinesFP_csem (F s') (ctx s') (X s')) houtB
     hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- **The typed final theorem with the float operations, `AllocChecked` allocation**
