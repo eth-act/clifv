@@ -325,7 +325,10 @@ def outsideFails (I : LinkInput) (D : List Clif.DataObject) (file0 : ByteArray) 
             let x := at0 + BitVec.ofNat 64 i
             !(o.writable || BinCheck.roB phs x || BinCheck.relroB phs x)
           let bytes := match byteAt with
-            | some i => s!"byte {i} (at {hex (a + i)}) is {(loadIn r phs (at0 + BitVec.ofNat 64 i).toNat).map (·.toNat)} in the file, {(bs[i]?.getD 0).toNat} resolved"
+            | some i =>
+              let got : Option (BitVec 8) := loadIn r phs (at0 + BitVec.ofNat 64 i).toNat
+              let want : BitVec 8 := bs[i]?.getD 0
+              s!"byte {i} (at {hex (a + i)}) is {got.map BitVec.toNat} in the file, {want.toNat} resolved"
             | none => "bytes as resolved"
           let ro := match roAt with
             | some i => s!"; read-only object, byte {i} in no read-only segment"
