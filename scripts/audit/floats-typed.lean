@@ -47,6 +47,7 @@ import FVTest.Link.FloatPlainCallsT
 import FVTest.Backend.FloatCallF
 import FVTest.Backend.CallArgsIntW
 import FV.E2E.DeadCleanupPairTC
+import FV.E2E.LinkScopeTotalTF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -413,3 +414,7 @@ import FV.E2E.DeadCleanupPairTC
 #print axioms E2E.vcode_niTCF
 #print axioms E2E.vcode_ni_valueTCF
 #print axioms E2E.driverHypTCF_relW_of
+-- #1048: float `call`s admitted into the `--verified` regions (`fnScopeInTCB`'s `stmtInTCB`)
+#print axioms E2E.LinkCheck.driverInTCB_of_driverInB
+#print axioms E2E.LinkCheck.fnScopeInTCB_of_T3F
+#print axioms E2E.FloatPlainCallsTWitness.admitted_tcb -- witness: native_decide

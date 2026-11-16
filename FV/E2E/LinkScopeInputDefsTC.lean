@@ -30,6 +30,17 @@ S11f (#35): widened in place to the scope with the proven float operations
 `lowerCheckTC` in `lowersTCB`, as `staticChksWithT`'s lowering check): `compileExeT`'s third
 branch accepts such functions (`okBCleanupT`), so the input conditions admit them.
 
+S11g (#1048): `driverInTCB`'s statement conditions are `stmtInTCB` (it was `stmtInB`): a
+`call`'s callee may have any signature (`stmtInB` asks `sigIntB`, the condition of the driver's
+decider-free totality for integer calls; under S11e6/S11f `Compile.functionETCF`'s `callsE`
+already required integer callee signatures, so the condition was not chosen for this
+predicate). Since S11g `functionETCF` admits `call`s with
+`f32`/`f64` signatures, which `lowersTCB` decides and the typed checks (`okRWithTS`, the
+correctness premise of `Link.SemanticCompilerWith.attemptT_correct`) accept; `stmtInB`
+excluded them from every executable's region. `fnScopeInTCB` is under no totality theorem: the
+totality theorems are over `InScopeIn`, `InScopeInT` (`fnScopeInTB`) and `InScopeInT3F`, and
+`lean-link` prints how many functions it admits only through `fnScopeInTCB`.
+
 `fnScopeInFailsTC`: the conjuncts a function fails, by name (the analogue of `fnScopeInFailsT`;
 the shared conjuncts keep `fnScopeInFailsT`'s names). Kept free of proofs, like
 `LinkScopeInputDefs(T)`.
@@ -48,12 +59,28 @@ def lowersTCB (g : Clif.Function) : Bool :=
   | .ok vc => lowerCheckTCF g vc
   | .error _ => false
 
+/-- **The statement conditions of the typed-try_call scope's admission predicate** (S11g,
+#1048): `stmtInB`, or a `call` whose callee is declared with an AAPCS64 calling convention, with
+any signature, whose number of results is the callee's number of returns (`stmtInB` also asks
+`sigIntB` of the callee). -/
+def stmtInTCB (f : Clif.Function) (s : Clif.Stmt) : Bool :=
+  stmtInB f s || match s.inst with
+    | .call fn _ =>
+      (match s.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
+        | some tys => tys.length == s.results.length
+        | none => false) &&
+      (match f.extern? fn with
+        | some e => aapcsConv e.sig.callConv
+        | none => false)
+    | _ => false
+
 /-- **The driver's input conditions for the typed-try_call scope**: `driverInB`
 (`LowerTotal.lean`) without `termInB` (which rejects a float-`try_call` by construction:
-`tryInB`'s `sigIntB`); the terminator conditions are covered by `lowersTCB`. -/
+`tryInB`'s `sigIntB`), with `stmtInTCB` for `stmtInB` (S11g: a `call` of any signature); the
+terminator conditions are covered by `lowersTCB`. -/
 def driverInTCB (g : Clif.Function) : Bool :=
   aapcsConv g.sig.callConv && decide (g.sig.returns.length ≤ 8) &&
-  g.blocks.all fun B => B.body.all (stmtInB g)
+  g.blocks.all fun B => B.body.all (stmtInTCB g)
 
 /-- **The typed-try_call per-function input conditions**: `fnScopeInTB`'s structural conjuncts
 with `Compile.functionETCF` (S11f; it was `Compile.functionETC`) for `Compile.functionET`,

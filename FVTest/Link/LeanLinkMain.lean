@@ -453,6 +453,9 @@ def main (args0 : List String) : IO UInt32 := do
   -- (`InScopeInT`'s) is compiled by `compileExeT` (`typedV`)
   let mut typedV := false
   let mut typedN := 0
+  -- the functions admitted only through the admission predicate `fnScopeInTCB` (outside
+  -- `fnScopeInTB`): under no totality theorem (#1048)
+  let mut tcbN := 0
   if verified then
     let P := SC.input0.prog
     let sy := assocMap SC.input0.syms
@@ -463,18 +466,24 @@ def main (args0 : List String) : IO UInt32 := do
     let bad := P.funcs.filterMap fun g => match fnScopeInFails g with
       | [] => none
       | fs => some (g.name, fs)
+    -- per function: the `fnScopeInTB` causes it fails when it fails `fnScopeInTCB` too, and
+    -- whether it is admitted only through `fnScopeInTCB`
+    let tFails := if typedOk && !bad.isEmpty then
+        P.funcs.zip (parMap (fun g => match fnScopeInFailsT g with
+            | [] => ([], false)
+            | fs => if fnScopeInFailsTC g = [] then ([], true) else (fs, false)) P.funcs)
+      else []
     let badT := if typedOk && !bad.isEmpty then
-        (P.funcs.zip (parMap (fun g => match fnScopeInFailsT g with
-            | [] => []
-            | fs => if fnScopeInFailsTC g = [] then [] else fs) P.funcs)).filterMap fun (g, fs) =>
+        tFails.filterMap fun (g, fs, _) =>
           match fs with
           | [] => none
           | fs => some (g.name, fs)
       else bad
+    tcbN := (tFails.filter (·.2.2)).length
     if !bad.isEmpty && typedOk && badT.isEmpty then
       typedV := true
       typedN := bad.length
-      IO.println s!"lean-link: {exe}: --verified: typed scope (InScopeInT): {bad.length} function(s) outside fnScopeInB meet fnScopeInTB/fnScopeInTCB {(bad.take 3).map (·.1)}"
+      IO.println s!"lean-link: {exe}: --verified: typed scope (InScopeInT): {bad.length} function(s) outside fnScopeInB meet fnScopeInTB/fnScopeInTCB, {tcbN} of them only fnScopeInTCB {(bad.take 3).map (·.1)}"
     else if !badT.isEmpty then
       let scopeN := if typedOk then "fnScopeInTB/fnScopeInTCB" else "fnScopeInB"
       let causes := (badT.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(badT.filter (·.2.contains c)).length}"
@@ -541,7 +550,7 @@ def main (args0 : List String) : IO UInt32 := do
           match ← ldCheck SP file0 f with
           | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
           | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
-        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class); about the legalised program; input in InScopeInT (typed scope; totality proven on InScopeIn only) (--verified)"
+        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
         return 0
       if let .error e := att then
         let bad := typedStockFails routes[0]! SP
@@ -565,7 +574,7 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok file =>
       IO.FS.writeBinFile exe file
       IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
-      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the original (pre-i128-legalisation) program, in SrcScopeB: Link.DeadCleanup.compileExeT_correct_source, Link.DeadCleanup.compileExeT_correct_source_peak; cg_clif's program: Front.bundle_correct_rawT, Front.bundle_correct_raw_peakT; input in InScopeInT (typed scope; totality proven on InScopeIn only) (--verified)"
+      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the original (pre-i128-legalisation) program, in SrcScopeB: Link.DeadCleanup.compileExeT_correct_source, Link.DeadCleanup.compileExeT_correct_source_peak; cg_clif's program: Front.bundle_correct_rawT, Front.bundle_correct_raw_peakT; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
       IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
       return 0
