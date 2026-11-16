@@ -16,7 +16,8 @@ module gives `lean-regalloc` the prepared VCode `vcp` of a function lowered by t
   `try_call` at its terminator: `Lower::new`), then numbers the temporaries as its backward pass
   allocates them: lowered blocks last to first, in each the terminator first, then the
   instructions last to first (`Lower::lower`, `lower_clif_block`). `lowerFunction` numbers
-  values by id and temporaries forward; the lowering replay `Proof.Driver.lowBlocks` gives the
+  values by id and temporaries forward; the lowering replay `Proof.Driver.lowBlocksC` (the typed
+  `try_call` helpers `lowerFunction` uses, #1067) gives the
   temporaries of every instruction, so `numbering` renames each to Cranelift's number;
 * **`args`**: Cranelift's `gen_arg_setup` skips the entry parameters without IR uses
   (`ValueUseState::Unused`) and `take_args` emits no `args` when none is left; `lowerFunction`
@@ -65,7 +66,7 @@ def replay (f : Clif.Function) :
       st := { st' with emitted := #[] }
       ii := ii + 1
     let tst : LState := { st with emitted := #[] }
-    let some (_, _, tl, tst', nl') := lowTerm f (termCallF ctx) (tryCallF ctx) ii B.term tst nl
+    let some (_, _, tl, tst', nl') := lowTermC f (termCallF ctx) (tryCallF ctx) ii B.term tst nl
       | throw s!"no lowering of terminator {ii}"
     out := out.push { stmts := sr, term := ((tl.map (·.st1.nextVreg)).getD tst.nextVreg, tst'.nextVreg),
                       tryRegs := tl.map (·.regs) }
@@ -74,6 +75,23 @@ def replay (f : Clif.Function) :
     ii := ii + 1
   pure (ctx, ranges, out, st0.nextVreg)
 
+/-- Cranelift's value vreg requests in layout order (`Lower::new`), as
+`Stock.allocationRequests`, with the counts of a `try_call`'s return and payload vregs read
+from the typed table `exnTableOpndC` (`lowerFunction`'s, #1067): the callee may take and return
+`f32`/`f64`. Only the counts matter here (`numbering`); the classes are `lowerFunction`'s. -/
+def allocationRequestsC (f : Clif.Function) (ranges : Array (Nat × Nat)) :
+    Except String (List Stock.AllocationRequest) := do
+  let chunks ← f.blocks.zipIdx.mapM fun (b, bi) => do
+    let extra ← match b.term with
+      | .tryCall _ _ et | .tryCallIndirect _ _ et => do
+        let (sig, _) ← exnTableOpndC f et
+        if sig.returns.any (·.ty == .i128) then throw "try_call returning i128"
+        pure [Stock.AllocationRequest.exception (ranges[bi]!.2 - 1) sig.returns.length
+          (payloadRegs sig.callConv).length]
+      | _ => pure []
+    pure ((Stock.blockValues b).map Stock.AllocationRequest.value ++ extra)
+  pure chunks.flatten
+
 /-- Cranelift's vreg number of every vreg number `lowerFunction f` uses (values by id,
 temporaries from `firstTemp` on; `bvs`, `ranges` from `replay f`), and the number of vregs.
 `drop b j`: statement `j` of block `b` was skipped (`skipDead`), so, as in Cranelift, which never
@@ -81,7 +99,7 @@ lowers it, its temporaries get no number. -/
 def numbering (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat))
     (bvs : Array BlockVregs) (firstTemp : Nat) (drop : Nat → Nat → Bool) :
     Except String (Std.HashMap Nat Nat × Nat) := do
-  let reqs ← Stock.allocationRequests f ranges
+  let reqs ← allocationRequestsC f ranges
   let alloc := Stock.allocateRequests ctx.valTy.size ctx.insts.size reqs
   let mut m : Std.HashMap Nat Nat := {}
   for v in [0:firstTemp] do
