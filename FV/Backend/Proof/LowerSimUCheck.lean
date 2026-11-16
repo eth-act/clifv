@@ -154,6 +154,79 @@ def unwCheck (f : Clif.Function) (vc : VCode) : Bool :=
       let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
       unwOk f vc ctx gn bl (inFix f ctx gn)
 
+/-! ### `unwCheck` in linear memory (#1057)
+
+`unwCheck` over the records of `lowBlocksLite` (`DriverCheck.lean`, "The validator in linear
+memory"): the exceptional-edge checks do not read a recorded state's class array either. -/
+
+theorem tryExnB_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (gn : Nat → Nat)
+    (bla : Array BLow) (In : Array (List Clif.ValueId)) (bi : Nat) (B : Clif.Block) (L : BLow)
+    (et : Clif.ExnTable) :
+    tryExnB f vc ctx gn (bla.map liteBL) In bi B (liteBL L) et = tryExnB f vc ctx gn bla In bi B L et := by
+  unfold tryExnB
+  simp only [edgeOk_lite, avail_of_lite]
+  simp only [liteBL, liteSt]
+  cases L.tl with
+  | none => rfl
+  | some T =>
+    simp only [Option.map_some]
+    generalize et.items = its
+    generalize L.tst'.emitted.toList.getLast? = gl
+    cases its with
+    | nil => cases gl <;> rfl
+    | cons it rest =>
+      cases gl with
+      | none => cases it <;> rfl
+      | some m => cases it <;> cases m <;> rfl
+
+theorem unwBlockB_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (gn : Nat → Nat)
+    (bla : Array BLow) (In : Array (List Clif.ValueId)) (bi : Nat) (B : Clif.Block) (L : BLow) :
+    unwBlockB f vc ctx gn (bla.map liteBL) In bi B (liteBL L) = unwBlockB f vc ctx gn bla In bi B L := by
+  unfold unwBlockB
+  simp only [tryExnB_lite]
+  refine and_congr_lite (congrArg _ (funext fun j => ?_)) rfl
+  simp only [liteBL, List.getElem?_map]
+  cases B.body[j]? <;> cases L.sl[j]? <;> rfl
+
+theorem unwOk_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (gn : Nat → Nat) (bl : List BLow)
+    (In : Array (List Clif.ValueId)) : unwOk f vc ctx gn (bl.map liteBL) In = unwOk f vc ctx gn bl In := by
+  unfold unwOk
+  simp only [← List.map_toArray]
+  refine congrArg _ (funext fun bi => ?_)
+  rw [List.getElem?_map]
+  cases f.blocks[bi]? with
+  | none => cases bl[bi]? <;> rfl
+  | some B =>
+    cases bl[bi]? with
+    | none => rfl
+    | some L => exact unwBlockB_lite f vc ctx gn _ In bi B L
+
+/-- `unwCheck` over `lowBlocksLite` (`unwCheck_eq_lite`). -/
+def unwCheckLite (f : Clif.Function) (vc : VCode) : Bool :=
+  match buildCtx f with
+  | .error _ => false
+  | .ok (ctx, _, st0) =>
+    match lowBlocksLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => false
+    | some bl =>
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
+      unwOk f vc ctx gn bl (inFix f ctx gn)
+
+/-- The compiler runs `unwCheckLite` in place of `unwCheck`. -/
+@[csimp] theorem unwCheck_eq_lite : @unwCheck = @unwCheckLite := by
+  funext f vc
+  unfold unwCheck unwCheckLite
+  cases buildCtx f with
+  | error _ => rfl
+  | ok r =>
+    obtain ⟨ctx, _, st0⟩ := r
+    simp only [lowBlocksLite_eq]
+    cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length with
+    | none => rfl
+    | some bl => simp only [Option.map_some, aliasOf_lite, unwOk_lite]
+
 /-- **The lowering validator with the exceptional edges.** -/
 def lowerCheckU (f : Clif.Function) (vc : VCode) : Bool := lowerCheck f vc && unwCheck f vc
 

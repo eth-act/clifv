@@ -49,4 +49,42 @@ def lowerCheckTCF (f : Clif.Function) (vc : VCode) : Bool :=
         ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
         (callsStackOkB f vc.outgoing && entryOkBT f)
 
+/-! ## `lowerCheckTCF` in linear memory (#1057) -/
+
+theorem shapeOkTF_lite (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
+    (gn : Nat → Nat) (bl : List BLow) :
+    shapeOkTF f vc ctx st0 gn (bl.map liteBL) = shapeOkTF f vc ctx st0 gn bl := by
+  unfold shapeOkTF
+  erw [all_congr_lite _ (blocksOkT_lite f vc ctx st0 gn bl)]
+  simp only [List.length_map]
+  try rfl
+
+/-- **`lowerCheckTCF` in linear memory** (`lowerCheckTCF_eq_lite`). -/
+def lowerCheckTCFLite (f : Clif.Function) (vc : VCode) : Bool :=
+  match buildCtx f with
+  | .error _ => false
+  | .ok (ctx, _, st0) =>
+    match lowBlocksCLite f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => false
+    | some bl =>
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
+      shapeOkTF f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
+        ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
+        (callsStackOkB f vc.outgoing && entryOkBT f)
+
+/-- The compiler runs `lowerCheckTCFLite` in place of `lowerCheckTCF`. -/
+@[csimp] theorem lowerCheckTCF_eq_lite : @lowerCheckTCF = @lowerCheckTCFLite := by
+  funext f vc
+  unfold lowerCheckTCF lowerCheckTCFLite
+  cases buildCtx f with
+  | error _ => rfl
+  | ok r =>
+    obtain ⟨ctx, _, st0⟩ := r
+    simp only [lowBlocksCLite_eq]
+    cases lowBlocksC f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length with
+    | none => rfl
+    | some bl => simp only [Option.map_some, aliasOf_lite, shapeOkTF_lite, certOk_lite]
+
 end Backend.Proof.Driver

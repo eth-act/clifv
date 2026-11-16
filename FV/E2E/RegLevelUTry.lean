@@ -698,6 +698,19 @@ def padsNonzeroB (af : AFunc) (fa : FnAsm) : Bool :=
     | some _, some e => e.pad != 0
     | _, _ => true
 
+/-- `padsNonzeroB` as the compiler runs it (`padsNonzeroB_eq_fast`, `@[csimp]`, #1057): the line
+scan and the alias-extended labels computed once, not once per call (`siteLabs fa` under the
+`all`) and once per alias (`siteLabs`'s scan under its `filterMap`): calls × aliases × lines,
+20 min on `proc_macro::quote::quote`. -/
+def padsNonzeroBFast (af : AFunc) (fa : FnAsm) : Bool :=
+  let r := scanLines fa.lines.toList 0 [] []
+  let labs := fa.alias.filterMap (fun l => (r.1.lookup l.2).map fun x => (l.1, x)) ++ r.1
+  (af.calls.zip r.2).all fun p => match p.1, entryFor labs p with
+    | some _, some e => e.pad != 0
+    | _, _ => true
+
+@[csimp] theorem padsNonzeroB_eq_fast : @padsNonzeroB = @padsNonzeroBFast := rfl
+
 theorem padsNonzero_of_check {af : AFunc} {fa : FnAsm} (h : padsNonzeroB af fa = true) :
     PadsNonzero af fa := by
   intro ti ret e hm he

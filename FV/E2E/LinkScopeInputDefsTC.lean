@@ -6,6 +6,7 @@ import FV.E2E.SizeDefs
 import FV.Backend.Proof.LowerTotalCtx
 import FV.Backend.Proof.SpillClassesT
 import FV.Backend.Proof.DriverCheckCF
+import FV.E2E.EmitSize
 
 /-! # The typed-try_call input conditions (S11e6, #419): the definitions
 
@@ -40,6 +41,12 @@ correctness premise of `Link.SemanticCompilerWith.attemptT_correct`) accept; `st
 excluded them from every executable's region. `fnScopeInTCB` is under no totality theorem: the
 totality theorems are over `InScopeIn`, `InScopeInT` (`fnScopeInTB`) and `InScopeInT3F`, and
 `lean-link` prints how many functions it admits only through `fnScopeInTCB`.
+
+#1057: the size condition is `sizeOkB g || sizeOutB g`: `sizeOkB` is the totality proofs'
+input-side over-approximation of `spillSizeOkB` (1,200 words per statement), which fails on
+every function of more than about 12,900 statements; `sizeOutB` decides `spillSizeOkB` itself on
+`prepare (lowerFunction g)`, as `lowersTCB` decides the lowering. `sizeOkB`, `fnScopeInTB` and
+every totality theorem are unchanged (`fnScopeInTCB_of_T3F`: statement unchanged).
 
 `fnScopeInFailsTC`: the conjuncts a function fails, by name (the analogue of `fnScopeInFailsT`;
 the shared conjuncts keep `fnScopeInFailsT`'s names). Kept free of proofs, like
@@ -82,18 +89,32 @@ def driverInTCB (g : Clif.Function) : Bool :=
   aapcsConv g.sig.callConv && decide (g.sig.returns.length ≤ 8) &&
   g.blocks.all fun B => B.body.all (stmtInTCB g)
 
+/-- **The run-time size decider of the typed-try_call scope's admission predicate** (#1057):
+`lowerFunction` succeeds and the prepared code meets the size condition `spillSizeOkB` (the
+spill allocation's code below `2 ^ 24` words, its literal loads in reach), decided on the
+output. `sizeOkB` decides an input-side over-approximation of it (`spillSizeOkB_of_sizeOkBT`:
+1,200 words per statement and 101 per result, so it fails on any function of more than about
+12,900 statements, however small its code). -/
+def sizeOutB (g : Clif.Function) : Bool :=
+  match lowerFunction g with
+  | .ok vc => match prepare vc with
+    | .ok vcp => spillSizeOkB vcp
+    | .error _ => false
+  | .error _ => false
+
 /-- **The typed-try_call per-function input conditions**: `fnScopeInTB`'s structural conjuncts
 with `Compile.functionETCF` (S11f; it was `Compile.functionETC`) for `Compile.functionET`,
 without `Compile.tryArgClassOk`, `lowerScopeTB`, `Prg.iselInB` and `driverInB`'s terminator half
 (all reject such functions by construction), with `driverInTCB` for `driverInB` and `lowersTCB`
-in the `functionE` disjunct's output checks (in place of `lowerOutTB`). -/
+in the `functionE` disjunct's output checks (in place of `lowerOutTB`); the size condition is
+`sizeOkB` or, decided on the output, `sizeOutB` (#1057). -/
 def fnScopeInTCB (g : Clif.Function) : Bool :=
   Compile.functionETCF g && Compile.storeTypedB g &&
   (sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)) && indSigsOk g &&
   decide (regLocs g.sig).Nodup && (regLocs g.sig).all (·.isArgReg) &&
   g.sig.params.all (fun p => decide (p.ty.width ≤ 64)) && linkFreeB g &&
   dominatedB g && Spill.arityOkB g &&
-  (extendsWidenB g && sizeOkB g && driverInTCB g) && Spill.entryParamsB g &&
+  (extendsWidenB g && (sizeOkB g || sizeOutB g) && driverInTCB g) && Spill.entryParamsB g &&
   (Compile.functionE g || (Spill.resClassOkB g && lowersTCB g))
 
 /-- The typed-try_call per-function input conditions `g` fails (the conjuncts of
@@ -107,7 +128,8 @@ def fnScopeInFailsTC (g : Clif.Function) : List String :=
   c (decide (regLocs g.sig).Nodup && (regLocs g.sig).all (·.isArgReg) &&
     g.sig.params.all (fun p => decide (p.ty.width ≤ 64))) "regParams" ++
   c (linkFreeB g) "linkFreeB" ++ c (dominatedB g) "dominatedB" ++
-  c (Spill.arityOkB g) "arityOkB" ++ c (extendsWidenB g) "extendsWidenB" ++ c (sizeOkB g) "sizeOkB" ++
+  c (Spill.arityOkB g) "arityOkB" ++ c (extendsWidenB g) "extendsWidenB" ++
+  c (sizeOkB g || sizeOutB g) "sizeOkB/sizeOutB" ++
   c (driverInTCB g) "driverInTCB" ++ c (Spill.entryParamsB g) "entryParamsB" ++
   c (outE || Spill.resClassOkB g) "resClassOkB" ++
   (if outE then [] else match lowerFunction g with

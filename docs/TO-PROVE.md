@@ -1104,9 +1104,9 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   check (`binary check: N of N`, N > 0; on every line since #1008, also the plain one); the counts are
   the pinned ones; and on the `--lean-link` lines every executable is linked by `lean-ld`.
   **Known-unverified list:** the only exception to N of N is `scripts/gate-known-unverified.txt`
-  (executable + issue; today bigframe-unwind's test executable, #1009: plain cargo fv links its
-  unverified `big`, and `link-check` stops at an unverified function; the survey's `values` test
-  executables of `b_slices` and `e_option_result` left it with #1003's fix). It is exact, not a floor:
+  (executable + issue; empty today: bigframe-unwind's test executable (#1009, `big` over the
+  validation budget) left it with #1057's budget, the survey's `values` test executables of
+  `b_slices` and `e_option_result` with #1003's fix). It is exact, not a floor:
   the line is green only if the set of unverified
   executables EQUALS the list for that example. One more unverified executable is red (a regression);
   a listed one that verifies again is red too ("remove the entry"), so the list cannot go stale and the

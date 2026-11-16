@@ -4360,7 +4360,9 @@ certificate 16 ms, the rest re-running isel and the shape check); on the corpus 
 runtests (1105 functions) the new validator computes the same alias resolution and entry
 values and accepts exactly the same functions as the old one. `lean-backend` does not run it on
 functions over the validation budget (`Backend.validationBudget`: instructions × values above
-25000000, 7.6 times the largest function of `examples/`), which it compiles and reports as
+1000000000; 25000000 until #1057, when the validator's memory became linear: its re-run of the
+lowering records the states without their vreg class arrays, `lowerCheck_eq_lite`, and so do
+the typed validators and `skipDead`), which it compiles and reports as
 `compiled, unverified (validation budget)`.
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
@@ -4482,6 +4484,19 @@ the literal-pool load's semantics `PoolRefinesFP` as a separate premise, dischar
 The guarded semantics `csemGF` defines the pool load (`fspec`/`GuardFP` gain that clause; other
 inputs unchanged). A function whose pool load is over 1 MiB from its entry still falls back
 (#744). `docs/plans/floats.md` (#1002 part 2) lists the statement changes.
+
+**Large functions inside the regions (#1057).** `fnScopeInTCB`'s size condition is
+`sizeOkB g || sizeOutB g`. `sizeOkB` is the totality proofs' input-side over-approximation of the
+emission size condition `spillSizeOkB` (1,200 words per statement plus 101 per result, against
+`2 ^ 24`), so it fails on every function of more than about 12,900 statements: sha2's
+`compress_block` (sha256 18,902 statements: bound 38.9 M words, actual `spillWordBound` 0.39 M;
+sha512 23,558: 48.5 M vs 0.48 M), `tiny_keccak::keccakf` (21.1 M vs 0.23 M) and std's
+`proc_macro::quote::quote` (77.8 M vs 0.83 M). `sizeOutB` decides `spillSizeOkB` itself on
+`prepare (lowerFunction g)`, as `lowersTCB` decides the lowering; such functions are admitted
+through `fnScopeInTCB` only (lean-link's coverage line counts them among the functions without a
+totality claim) and are under `attemptT_correct` and the link-time checks `okRWithTS` like every
+other function of the region. `sizeOkB`, `fnScopeInTB`, `InScopeInT` and every totality theorem
+are unchanged (`fnScopeInTCB_of_T3F`: statement unchanged).
 
 ## Contract changes taken (byte-identical)
 

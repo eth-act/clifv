@@ -132,7 +132,7 @@ theorem fnScopeInTCB_of_T3F {g : Clif.Function} (h : fnScopeInTB3F g = true) :
   have hE : Compile.functionETCF g = true :=
     functionETCF_of_functionETF (lowerScopeTF_of hs).subsetTF
   simp only [fnScopeInTCB, hE, hst, habi, hext, hind, h7, h8, h9, h10, hd, har, hw, hsz,
-    driverInTCB_of_driverInB hdrv, hent, hrc, hlow, Bool.and_self, Bool.or_true]
+    driverInTCB_of_driverInB hdrv, hent, hrc, hlow, Bool.and_self, Bool.or_true, Bool.true_or]
 
 /-- On subset E, `lowerScopeTFB` is `lowerScopeB` (they differ only in the first conjunct). -/
 theorem lowerScopeB_of_TF {g : Clif.Function} (hE : Compile.functionE g = true)
