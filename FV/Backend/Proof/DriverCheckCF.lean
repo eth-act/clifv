@@ -10,16 +10,20 @@ rounding, the saturating and `from` conversions, the scalar `fcmp`) in place of 
 (`shapeOkTF`).
 Executable only: the compiler runs it outside `Compile.functionETC` (`Backend.lowerCheckFor`);
 its soundness is `DriverCheckTCF.lean`'s.
+
+#1002 part 2: the supported-instruction check is `instScopeOkFL` (`Compile.instETFL`: an
+`f64const` from the literal pool also; it was `instScopeOkF`), the scope `Compile.functionETCF`
+admits.
 -/
 
 namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
 
-/-- `shapeOkT` with `instScopeOkF`. -/
+/-- `shapeOkT` with `instScopeOkFL` (#1002 part 2; it was `instScopeOkF`). -/
 def shapeOkTF (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
     (bl : List BLow) : Bool :=
-  (ctxOkT f ctx && instScopeOkF ctx) && decide (ctx.valReg.size ≤ st0.nextVreg) &&
+  (ctxOkT f ctx && instScopeOkFL ctx) && decide (ctx.valReg.size ≤ st0.nextVreg) &&
   f.blocks.all (fun B => B.params.all fun p => decide (gn p.1 = p.1)) &&
   decide (bl.length = f.blocks.length) && decide (f.blocks.length ≤ vc.blocks.size) &&
   (List.range vc.blocks.size).all (fun l => match vc.blocks[l]? with

@@ -20,9 +20,9 @@
 # `--lean-link --verified`: an unverified function keeps cg_clif's code, so LEAN = VERIFIED
 fv-demo          2   1372   1372
 survey          18   3251   3251
-deps             4  21023  21023
+deps             4  21025  21025
 # plain cargo fv: `big` (lib and test crate) is Lean-compiled and unverified
 bigframe-unwind  1    103    101
 # `--lean-link --verified --build-std` (std, core and alloc compiled too): the weekly std line of
 # the CI full gate (#1040), with --rise-ok: no PR runs it, so a rise is green until a PR records it
-fv-demo+std      2  32334  32334
+fv-demo+std      2  32414  32414

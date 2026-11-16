@@ -4471,6 +4471,18 @@ through the admission predicate `fnScopeInTCB` (#1048: its `driverInTCB` uses `s
 lean-link's coverage line states with the per-executable count of functions admitted only
 through `fnScopeInTCB`. `docs/plans/floats.md` (S11g) lists the statement changes.
 
+**Literal-pool `f64const` (#1002 part 2).** `Compile.functionETCF` and `lowerCheckTCF` admit an
+`f64const` of any bits (`Compile.instETFL`), including one Cranelift loads from the constant pool
+(`ldr d, <entry>`; one entry per value, byte-identical since #955). Such functions are reported
+verified and covered by `backend_correct_finalTCF` and by the typed link route
+(`attemptT_correct`); the decider-free scopes stay pool-free (`noPoolB_lowerTF`). The proofs go
+through the scope-generic chain (`CtxTS`, `LowerShapeTCS`, `DriverHypTCS`, `InstScope.tfl`) with
+the literal-pool load's semantics `PoolRefinesFP` as a separate premise, discharged at `csem`,
+`csemGF`, `valueSem` and `valueSemGF`; `MemRefinesFP` and the existing contexts are unchanged.
+The guarded semantics `csemGF` defines the pool load (`fspec`/`GuardFP` gain that clause; other
+inputs unchanged). A function whose pool load is over 1 MiB from its entry still falls back
+(#744). `docs/plans/floats.md` (#1002 part 2) lists the statement changes.
+
 ## Contract changes taken (byte-identical)
 
 `FrameTyped` conjunct of `DFGCons` (M4AluA f55011e), `ValsBelow` premise + `Refines` over every

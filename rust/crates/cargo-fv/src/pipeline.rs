@@ -643,6 +643,33 @@ fn gap_object(cfg: &Config, work: &Path) -> Result<PathBuf, String> {
     Ok(o)
 }
 
+/// The function object `o` with its `.text` word-aligned, for the `--lean-link` program part: a
+/// copy beside it when `lean-backend` gave the section a larger alignment (8: a function with a
+/// literal pool, as Cranelift's `MachBuffer` aligns its code to its constants'), else `o`. The
+/// Lean linker places the functions consecutively, each followed by one gap word (`Link.offs`,
+/// no alignment), so `ld -r` must not pad before such a function: it would move it and every
+/// later function off their placement (`symsOkB` then fails and the executable leaves the typed
+/// route, #1059). The function's bytes are unchanged (the pool's padding is relative to the
+/// function's start, `Backend.poolLines`); only its start may be 4 modulo 8, where an 8-byte
+/// `ldr (literal)` load is unaligned, which AArch64 permits for normal memory.
+fn word_aligned(cfg: &Config, o: &Path) -> Result<PathBuf, String> {
+    let data = fs::read(o).map_err(|e| format!("{}: {e}", o.display()))?;
+    let file = object::File::parse(&*data).map_err(|e| format!("{}: {e}", o.display()))?;
+    let wide = file.sections().any(|s| {
+        object::read::ObjectSection::name(&s) == Ok(".text") && object::read::ObjectSection::align(&s) > 4
+    });
+    if !wide {
+        return Ok(o.to_path_buf());
+    }
+    let out = o.with_extension("a4.o");
+    if !out.is_file() {
+        let tmp = o.with_extension(format!("a4-{}.o", std::process::id()));
+        run(Command::new(&cfg.objcopy).arg("--set-section-alignment=.text=4").arg(o).arg(&tmp))?;
+        fs::rename(&tmp, &out).map_err(|e| format!("{}: {e}", out.display()))?;
+    }
+    Ok(out)
+}
+
 /// The unit's Lean-compiled functions (`--lean-link`): one line `symbol<TAB>object` each, in
 /// placement order ([`lean_variant`]).
 pub const LEAN_FUNCS: &str = "lean-funcs.txt";
@@ -667,7 +694,7 @@ fn lean_object(
     if cfg.lean_link {
         let pad = gap_object(cfg, work)?;
         for (_, o) in fns {
-            inputs.push(o.clone());
+            inputs.push(word_aligned(cfg, o)?);
             inputs.push(pad.clone());
         }
     } else {

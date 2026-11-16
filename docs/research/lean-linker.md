@@ -187,7 +187,11 @@ those bytes too (design (b)).
 
 * Codegen units: cg_clif's object with our functions weak and the renamed symbols global (no
   merge); `lean.o` stays in the work directory, each function followed by a zero gap word
-  (`gap_object`), so `ld -r` lays it out as `Link.offs` does. Only verified functions enter the
+  (`gap_object`), so `ld -r` lays it out as `Link.offs` does. A function with a literal pool,
+  whose object `lean-backend` 8-aligns (as Cranelift), enters `ld -r` as a word-aligned copy
+  (`word_aligned`), else `ld -r` pads before it and every later function leaves its placement
+  (#1059: `symsOkB` failed and the executable left the typed route); its bytes are unchanged.
+  Only verified functions enter the
   region: an unverified one keeps cg_clif's code (fallback, reason "unverified (…): cg_clif's
   code kept under --lean-link"). Self-calls retain the function's original symbol, including
   when it takes its own address; the function-free activation contract needs no alias (#88).
