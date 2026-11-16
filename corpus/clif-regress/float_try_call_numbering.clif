@@ -1,0 +1,129 @@
+; Stock-parity regression (#1067): a function whose `try_call`s have f32/f64 callee signatures
+; (std's `_RNxC4core12H2zCkxUhsHm7` with `f16` replaced by `f32`, std's flags and target).
+; regalloc2 is given the code in Cranelift's vreg numbering (`FVTest/Backend/CraneliftInput.lean`:
+; `replay` with the typed terminator lowering `lowTermC`, `numbering` with the typed exception
+; counts `allocationRequestsC`); before #1067 the function kept the legacy numbering and
+; regalloc2 chose x19 where stock (Cranelift 0.135.0) chooses x20:
+;   stock and Lean: stp x20, x23, [sp, #-16]! ; mov w20, #1 ; ... (88 bytes, byte-identical)
+; Checked by `scripts/lean-backend-encode-check.sh` (corpus) and against stock Cranelift as in #1067.
+test compile
+set regalloc_algorithm=backtracking
+set opt_level=none
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+function %_RNxC4core12H2zCkxUhsHm7(f32) -> f32 system_v {
+    sig0 = (f32) -> i16 system_v
+    sig1 = () system_v
+    sig2 = (i16) -> i16 system_v
+    sig3 = (i16, i16) -> i16 system_v
+    sig4 = (i16) -> f32 system_v
+    sig5 = () system_v
+    fn0 = colocated %_RNxC4core12HbdJ0fgWxcJB(f32) -> i16 system_v
+    fn1 = colocated %_RNxC4core12H1qrfmRnxmRl() system_v
+    fn2 = colocated %_RNxC4core12HbxekqYqyJrq(i16) -> i16 system_v
+    fn3 = colocated %_RNxC4core12H6gZqjNeIyar(i16, i16) -> i16 system_v
+    fn4 = colocated %_RNxC4core12HjLk5lp7pAcr(i16) -> f32 system_v
+    fn5 = colocated %_RNxC4core12H1qrfmRnxmRl() system_v
+
+block0(v0: f32):
+    nop
+    jump block1
+
+block1:
+    nop
+    v1 = iconst.i8 0
+    v2 = iconst.i8 1
+    nop
+    try_call fn0(v0), sig0, block9(ret0), [ tag0: block10(exn0) ]
+
+block10(v4: i64) cold:
+    nop
+    call fn1()
+    trap user1
+
+block9(v5: i16):
+    nop
+    jump block2
+
+block2:
+    nop
+    v6 = iconst.i16 -32768
+    nop
+    try_call fn2(v6), sig2, block11(ret0), [ tag0: block12(exn0) ]
+
+block12(v7: i64) cold:
+    jump block8(v2)
+
+block11(v8: i16):
+    nop
+    jump block3
+
+block3:
+    nop
+    v9 = iconst.i8 0
+    nop
+    try_call fn3(v5, v8), sig3, block13(ret0), [ tag0: block14(exn0) ]
+
+block14(v12: i64) cold:
+    jump block8(v9)
+
+block13(v13: i16):
+    nop
+    jump block4
+
+block4:
+    nop
+    v14 = iconst.i8 0
+    nop
+    try_call fn4(v13), sig4, block15(ret0), [ tag0: block16(exn0) ]
+
+block16(v16: i64) cold:
+    jump block6
+
+block15(v17: f32):
+    nop
+    jump block5
+
+block5:
+    nop
+    return v17
+
+block6 cold:
+    nop
+    nop
+    call fn5()
+    trap user1
+
+block7 cold:
+    nop
+    jump block6
+
+block8(v19: i8) cold:
+    nop
+    brif.i8 v19, block7, block6
+}

@@ -16,7 +16,8 @@ module gives `lean-regalloc` the prepared VCode `vcp` of a function lowered by t
   `try_call` at its terminator: `Lower::new`), then numbers the temporaries as its backward pass
   allocates them: lowered blocks last to first, in each the terminator first, then the
   instructions last to first (`Lower::lower`, `lower_clif_block`). `lowerFunction` numbers
-  values by id and temporaries forward; the lowering replay `Proof.Driver.lowBlocks` gives the
+  values by id and temporaries forward; the lowering replay `Proof.Driver.lowBlocksC` (the typed
+  `try_call` helpers `lowerFunction` uses, #1067) gives the
   temporaries of every instruction, so `numbering` renames each to Cranelift's number;
 * **`args`**: Cranelift's `gen_arg_setup` skips the entry parameters without IR uses
   (`ValueUseState::Unused`) and `take_args` emits no `args` when none is left; `lowerFunction`

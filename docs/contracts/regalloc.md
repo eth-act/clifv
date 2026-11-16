@@ -256,9 +256,11 @@ hands to regalloc2 (`CraneliftInput.shape`):
   temporaries in the order of the backward pass (lowered blocks last to first; in each the
   terminator, then the instructions last to first; `Lower::lower`). The legacy lowering numbers
   values by id and temporaries forward; a replay of its lowering calls (`CraneliftInput.replay`,
-  the calls of `Proof.Driver.lowBlocks` keeping only the current state) gives every
+  the calls of `Proof.Driver.lowBlocksC` keeping only the current state: the typed `try_call`
+  helpers of `lowerFunction`, so a callee may take and return `f32`/`f64`, #1067) gives every
   instruction's temporaries, which are renamed to Cranelift's numbers (on identical code
-  regalloc2 otherwise chose e.g. `ldr x3`/`ldr x5` instead of `ldr x4`/`ldr x5`);
+  regalloc2 otherwise chose e.g. `ldr x3`/`ldr x5` instead of `ldr x4`/`ldr x5`; on a function
+  with a float-signature `try_call`, before #1067, `x19` instead of stock's `x20`);
 * **`args`** (#586): `gen_arg_setup` skips the entry parameters without IR uses
   (`ValueUseState::Unused`, `machinst/lower.rs:527`) and `take_args` emits no `args` when none
   is left (`machinst/abi.rs:2186`); `lowerFunction` lists every register-passed parameter and
