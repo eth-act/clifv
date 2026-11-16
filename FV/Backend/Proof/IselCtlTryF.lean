@@ -413,7 +413,7 @@ theorem try_sym_lowerTryOkTF {Rd F : BitVec 64 → Prop}
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
       obtain ⟨w1, hrun1, hmr1, hargs⟩ := argsAt_after_storesC hMR hMem hFP hout hso hb hl hty
         hlen.symm (valClassOf ctx) (fun j v x hv hx => hvh x v (hvx j x v hx hv))
-        (argClasses_of_frame hdfg hvals) hmr
+        (argClasses_of_frame_sig hdfg hvals hty hso.2) hmr
       obtain ⟨sym, -, -, htry⟩ := hCR
       have hdl : (callDefsC (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
           List.replicate fp.length .int))).length = ext.sig.returns.length + fp.length := by
@@ -500,7 +500,7 @@ theorem try_got_lowerTryOkTF {Rd F : BitVec 64 → Prop}
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
       obtain ⟨w1, hrun1, hmr1, hargsAt⟩ := argsAt_after_storesC hMR hMem hFP hout hso hb hl hty
         hlen.symm (valClassOf ctx) (fun j v x hv hx => hvh x v (hvx j x v hx hv))
-        (argClasses_of_frame hdfg hvals) hmr
+        (argClasses_of_frame_sig hdfg hvals hty hso.2) hmr
       obtain ⟨sym, hgot, -, htry⟩ := hCR
       obtain ⟨w2, hw2, hsw⟩ := hgot (.vreg st.nextVreg .int) ext.name w1
       have hmr2 := hMR _ _ _ _ hsw hmr1

@@ -298,7 +298,8 @@ private theorem fData_of (hP : PInvTB f ctx) {c : Clif.Inst} (hof : InstOf f c)
       refine ⟨γ_opcT (by rfl), ⟨[c, x, y], rfl, ?_, ?_, ?_, trivial⟩, trivial⟩
       · have hc : c ∈ intArgsE (.select ty c x y) := by
           show c ∈ (if ty.isFloat then [c] else [c, x, y])
-          rw [if_pos hfloat]; exact List.mem_singleton_self _
+          have hf' : ty.isFloat = true := by revert hfloat; cases ty <;> simp
+          rw [if_pos hf']; exact List.mem_singleton_self _
         exact γ_val_int (hargs c (by simp [Driver.instArgs])) (hint c hc)
       · exact γ_val_typedT hP (hargs x (by simp [Driver.instArgs]))
       · exact γ_val_typedT hP (hargs y (by simp [Driver.instArgs]))

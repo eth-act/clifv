@@ -17,12 +17,15 @@ Conventions:
 
 namespace Clif
 
-/-- CLIF scalar types: the integers and the IEEE 754 binary32/binary64 floats (`f32`/`f64`).
-A float value is its raw bit pattern (`Val.bits`); its arithmetic is in `FV/Float`. Vectors
-and `f16`/`f128` are outside the subset. -/
+/-- CLIF scalar types: the integers and the IEEE 754 binary16/binary32/binary64 floats
+(`f16`/`f32`/`f64`). A float value is its raw bit pattern (`Val.bits`); the arithmetic of
+`f32`/`f64` is in `FV/Float` (`isArithFloat`), `f16` values are only moved (loaded, stored,
+bitcast, passed and returned: cg_clif lowers f16 arithmetic to libcalls). Vectors and `f128`
+are outside the subset. -/
 inductive Ty where
   | i8 | i16 | i32 | i64 | i128
   | f32 | f64
+  | f16
   deriving DecidableEq, Repr, Inhabited, Hashable
 
 namespace Ty
@@ -30,6 +33,7 @@ namespace Ty
 /-- Bit width of a type. -/
 def width : Ty → Nat
   | i8 => 8 | i16 => 16 | i32 => 32 | i64 => 64 | i128 => 128 | f32 => 32 | f64 => 64
+  | f16 => 16
 
 /-- Byte width of a type. -/
 def bytes (t : Ty) : Nat := t.width / 8
@@ -37,19 +41,26 @@ def bytes (t : Ty) : Nat := t.width / 8
 /-- CLIF spelling of the type. -/
 def name : Ty → String
   | i8 => "i8" | i16 => "i16" | i32 => "i32" | i64 => "i64" | i128 => "i128"
-  | f32 => "f32" | f64 => "f64"
+  | f32 => "f32" | f64 => "f64" | f16 => "f16"
 
 def ofName? : String → Option Ty
   | "i8" => some i8 | "i16" => some i16 | "i32" => some i32 | "i64" => some i64
-  | "i128" => some i128 | "f32" => some f32 | "f64" => some f64 | _ => none
+  | "i128" => some i128 | "f32" => some f32 | "f64" => some f64 | "f16" => some f16 | _ => none
 
 /-- An integer type (`i8 … i128`). -/
 @[simp] def isInt : Ty → Bool
   | i8 | i16 | i32 | i64 | i128 => true
-  | f32 | f64 => false
+  | f32 | f64 | f16 => false
 
-/-- A float type (`f32`, `f64`). -/
+/-- A float type (`f16`, `f32`, `f64`; Cranelift's `Type::is_float`): a value of the float
+register class. -/
 @[simp] def isFloat (t : Ty) : Bool := !t.isInt
+
+/-- A float type whose arithmetic, comparisons, conversions and ABI uses the typed scopes admit:
+`f32`, `f64` (not the move-only `f16`). -/
+@[simp] def isArithFloat : Ty → Bool
+  | f32 | f64 => true
+  | _ => false
 
 /-- The integer type of a width. -/
 def ofWidth? : Nat → Option Ty
@@ -59,17 +70,17 @@ def ofWidth? : Nat → Option Ty
 /-- The integer type of twice the width (`iconcat` result), if any. -/
 def double? : Ty → Option Ty
   | i8 => some i16 | i16 => some i32 | i32 => some i64 | i64 => some i128 | i128 => none
-  | f32 | f64 => none
+  | f32 | f64 | f16 => none
 
 /-- The integer type of half the width (`isplit` results), if any. -/
 def half? : Ty → Option Ty
   | i8 => none | i16 => some i8 | i32 => some i16 | i64 => some i32 | i128 => some i64
-  | f32 | f64 => none
+  | f32 | f64 | f16 => none
 
 /-- The integer type of the same width as a float type (`bitcast` partner); integers map to
 themselves. -/
 def intOfWidth : Ty → Ty
-  | f32 => i32 | f64 => i64 | t => t
+  | f32 => i32 | f64 => i64 | f16 => i16 | t => t
 
 @[simp] theorem width_pos (t : Ty) : 0 < t.width := by cases t <;> decide
 

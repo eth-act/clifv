@@ -1,0 +1,127 @@
+; f16 is move-only in S (#35): the shapes of std's 33 f16 functions (core::f16 to_bits/from_bits/
+; abs/neg, flt2dec/dec2flt constants, Option<f16>/Result<f16> loads and multi-returns, calls with
+; f16 arguments and results, f16 block arguments)
+test interpret
+test run
+target aarch64
+
+function %to_bits(f16) -> i16 {
+block0(v0: f16):
+    v1 = bitcast.i16 little v0
+    return v1
+}
+; run: %to_bits(0x1.000p-14) == 1024
+; run: %to_bits(-0x1.8p1) == -15872
+; run: %to_bits(+Inf) == 31744
+; run: %to_bits(NaN:0x1) == 32257
+; run: %to_bits(-0.0) == -32768
+; run: %to_bits(0x1.a38p-14) == 1678
+
+function %from_bits(i16) -> f16 {
+block0(v0: i16):
+    v1 = bitcast.f16 little v0
+    return v1
+}
+; run: %from_bits(1024) == 0x1.000p-14
+; run: %from_bits(15360) == 0x1.000p0
+; run: %from_bits(31744) == +Inf
+; run: %from_bits(-1024) == -Inf
+
+function %abs(f16) -> f16 {
+block0(v0: f16):
+    v1 = bitcast.i16 v0
+    v2 = iconst.i16 0x7fff
+    v3 = band v1, v2
+    v4 = bitcast.f16 v3
+    return v4
+}
+; run: %abs(-0x1.8p1) == 0x1.8p1
+; run: %abs(0x1.8p1) == 0x1.8p1
+; run: %abs(-Inf) == +Inf
+; run: %abs(-0.0) == 0.0
+
+function %neg(f16) -> f16 {
+block0(v0: f16):
+    v1 = bitcast.i16 v0
+    v2 = iconst.i16 0x8000
+    v3 = bxor v1, v2
+    v4 = bitcast.f16 v3
+    return v4
+}
+; run: %neg(0x1.8p1) == -0x1.8p1
+; run: %neg(-0x1.8p1) == 0x1.8p1
+; run: %neg(0.0) == -0.0
+
+function %consts(i8) -> f16 {
+block0(v0: i8):
+    brif v0, block1, block2
+
+block1:
+    v1 = f16const 0x1.000p-14
+    jump block3(v1)
+
+block2:
+    v2 = f16const +NaN
+    jump block3(v2)
+
+block3(v3: f16):
+    return v3
+}
+; run: %consts(1) == 0x1.000p-14
+
+function %const_bits(i8) -> i16 {
+    fn0 = %consts(i8) -> f16
+    fn1 = %to_bits(f16) -> i16
+
+block0(v0: i8):
+    v1 = call fn0(v0)
+    v2 = call fn1(v1)
+    return v2
+}
+; run: %const_bits(1) == 1024
+; run: %const_bits(0) == 32256
+
+function %option_f16(i16, i16) -> i16, f16 {
+    ss0 = explicit_slot 4
+
+block0(v0: i16, v1: i16):
+    v2 = stack_addr.i64 ss0
+    store.i16 notrap v0, v2
+    v3 = stack_addr.i64 ss0+2
+    store.i16 notrap v1, v3
+    v4 = load.i16 notrap v2
+    v5 = load.f16 notrap v3
+    return v4, v5
+}
+; run: %option_f16(1, 15360) == [1, 0x1.000p0]
+; run: %option_f16(0, -1024) == [0, -Inf]
+
+function %store_load(f16) -> f16 {
+    ss0 = explicit_slot 2
+
+block0(v0: f16):
+    v1 = stack_addr.i64 ss0
+    store.f16 notrap v0, v1
+    v2 = load.f16 notrap v1
+    return v2
+}
+; run: %store_load(0x1.8p1) == 0x1.8p1
+; run: %store_load(-Inf) == -Inf
+; run: %store_load(-0.0) == -0.0
+
+function %call_f16(f16, i16) -> f16 {
+    fn0 = %neg(f16) -> f16
+    fn1 = %from_bits(i16) -> f16
+    fn2 = %abs(f16) -> f16
+
+block0(v0: f16, v1: i16):
+    v2 = call fn0(v0)
+    v3 = call fn1(v1)
+    v4 = call fn2(v2)
+    v7 = iconst.i16 0
+    v5 = icmp eq v1, v7
+    v6 = select v5, v4, v3
+    return v6
+}
+; run: %call_f16(0x1.8p1, 0) == 0x1.8p1
+; run: %call_f16(0x1.8p1, 15360) == 0x1.000p0

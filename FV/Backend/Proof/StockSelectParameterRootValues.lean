@@ -27,7 +27,7 @@ This parameter-condition variant leaves comparison look-through to its own
 source-provenance branch and adds no checker/input restriction. -/
 theorem stock_original_select_parameter_selected_allocation {f : Clif.Function} {ctx : Ctx}
     (inv : MappedCtxInv f ctx) {cty ty : Clif.Ty}
-    (conditionWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64)
+    (conditionWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64) (h16 : cty ≠ .f16)
     {i c x y : Nat} {info : IInfo} (source : ctx.insts[i]? = some info)
     (clif : info.clif = some (.select ty c x y))
     (typed : ctx.valueType? c = some (.int cty.width)) (parameter : ctx.defInst? c = none)
@@ -37,7 +37,7 @@ theorem stock_original_select_parameter_selected_allocation {f : Clif.Function} 
   obtain ⟨_,_,_,_,emitFuel,selectFuel,condition,middle,emitTrace,value,produced,selectTrace,
     enoughEmit,enoughSelect,emitter,consumer,output⟩ := stock_original_select_selected_calls inv source clif selected
   obtain ⟨helperFuel,helperTrace,enough,nonzero⟩ := stock_original_select_parameter_condition_calls inv enoughEmit parameter emitter
-  have allocation := stock_select_nonzero_actual_allocation inv conditionWidth (stock_original_select_source_data inv source clif).1
+  have allocation := stock_select_nonzero_actual_allocation inv conditionWidth h16 (stock_original_select_source_data inv source clif).1
     typed (by omega) enoughSelect nonzero consumer
   obtain ⟨valueEq,lower,frontier,upper⟩ := allocation
   rw [valueEq,stock_ctor_baseOnly ctx T.output _ produced (by decide)] at output
@@ -75,7 +75,11 @@ theorem stock_original_select_parameter_selected_source_values {f : Clif.Functio
     enoughEmit,enoughSelect,emitter,consumer,output⟩ := stock_original_select_selected_calls inv source clif selected
   obtain ⟨helperFuel,helperTrace,enough,nonzero⟩ := stock_original_select_parameter_condition_calls inv enoughEmit parameter emitter
   have width := (stock_original_select_source_data inv source clif).1
-  obtain ⟨valueEq,_,_,_⟩ := stock_select_nonzero_actual_allocation inv conditionWidth width typed (by omega) enoughSelect nonzero consumer
+  have h16 : cty ≠ .f16 := by
+    rintro rfl
+    have h := dfg.2 c _ ⟨.f16,test⟩ typed (getAs_ok getC)
+    exact absurd h (by simp [CTy.ofClif])
+  obtain ⟨valueEq,_,_,_⟩ := stock_select_nonzero_actual_allocation inv conditionWidth h16 width typed (by omega) enoughSelect nonzero consumer
   rw [valueEq,stock_ctor_baseOnly ctx T.output _ produced (by decide)] at output
   change ExtResult.ok (.regsVec [[.vreg middle.base.nextVreg .int]],produced) = .ok (out,next) at output
   have both := Prod.mk.inj (ExtResult.ok.inj output)

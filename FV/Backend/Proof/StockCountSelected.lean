@@ -48,7 +48,7 @@ private theorem root_rhs {ctx : Ctx} (trailing : Bool) {w x : Nat} (width : IW w
     · simpa [countResult,countAlloc,countBase,narrow,Nat.add_sub_assoc,Nat.add_assoc] using
         stock_count_wide_rhs data_program ctx true wide mapped st safe tr (n+40)
 private theorem root_requests {ctx : Ctx} (trailing : Bool) {w x n : Nat} (width : IW w)
-    {fr : Clif.Frame} (dfg : DFGCons ctx fr) {ty : Clif.Ty} (same : ty.width = w)
+    {fr : Clif.Frame} (dfg : DFGCons ctx fr) {ty : Clif.Ty} (same : ty.width = w) (h16 : ty ≠ .f16)
     {u : BitVec ty.width} (get : fr.getAs x ty = .ok u)
     {st next : State} {out : V} {trace : Array RuleId}
     (run : (evalExpr program (Stock.sem ctx) {} (n+80) (countRule trailing w).rhs (countEnv w x)).run (st,#[]) = .ok (some out,next,trace)) :
@@ -61,7 +61,7 @@ private theorem root_requests {ctx : Ctx} (trailing : Bool) {w x n : Nat} (width
       have eq : t = .int w := by
         have h := (dfg.2 x t ⟨ty,u⟩ typed (getAs_ok get)).symm
         exact h.trans (by simpa only [same] using
-          ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega)))
+          ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega) h16))
       rw [eq] at typed
       obtain ⟨safe,mapped⟩ := stock_count_clz_narrow_requests data_program ctx narrow typed run
       exact ⟨safe,mapped,fun _ _ => typed⟩
@@ -104,7 +104,11 @@ theorem stock_count_selected_values {f : Clif.Function} {ctx : Ctx} (inv : Mappe
   rw [chosen,← envEq,← stateEq,← traceEq] at rhs
   change (evalExpr program (Stock.sem ctx) {} (999919+80) (countRule trailing ty.width).rhs
     (countEnv ty.width x)).run (st,#[]) = .ok (some out,next,selected.rhsTrace) at rhs
-  obtain ⟨safe,⟨rx,mapped⟩,typed⟩ := root_requests trailing width dfg rfl get rhs
+  have h16 : ty ≠ .f16 := by
+    rintro rfl
+    have accepted := inv.instE i info _ source clif
+    cases trailing <;> simp [countOp,Compile.instE,Compile.unaryTyE,Compile.unaryE,Compile.tyE] at accepted
+  obtain ⟨safe,⟨rx,mapped⟩,typed⟩ := root_requests trailing width dfg rfl h16 get rhs
   obtain ⟨nx,rfl⟩ := inv.valueReg x rx mapped
   obtain ⟨trace,forward⟩ := root_rhs trailing width typed mapped st safe #[] 999919
   rw [forward] at rhs

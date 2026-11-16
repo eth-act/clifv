@@ -52,7 +52,7 @@ theorem stock_lower_cmp_actual_source_values {f : Clif.Function} {result : Resul
     exact stock_lower_cmp_wide_actual_source_values run scope dominated events records foundBlock foundStmt current
       source clif true rfl typeX typeY results statementResults mapped recorded emitted refines dfg getX getY held sourceStep
   | i128 => simp [Clif.Ty.width] at widths
-  | f32 | f64 =>
+  | f32 | f64 | f16 =>
     have accepted := inv.instE _ info _ source clif
     simp [Compile.instE, Compile.tyE] at accepted
 /-- Original source execution supplies both getters internally; the earlier

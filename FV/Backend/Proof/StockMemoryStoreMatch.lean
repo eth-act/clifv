@@ -74,12 +74,12 @@ theorem integer_store_source_data_offset (kind : Kind) {ty : Clif.Ty}
     flags.endianness ≠ some .big ∧ info.data = .data 152 22
       [.data 151 kind.opcodeIndex [],.values [value,pointer],.op (.memFlags flags),.int offset] := by
   have data := inv.data i info _ source clif
-  change (if (!eTy ty && !(ty.isFloat && kind.sourceOp == .store)) = true then
+  change (if (!eTy ty && !(ty.isArithFloat && kind.sourceOp == .store)) = true then
       Except.error s!"store.{ty.name}"
     else if (flags.endianness == some .big) = true then Except.error "big-endian store"
     else Except.ok (instDataV "Store" [opcodeV (storeOpcode kind.sourceOp),
       .values [value,pointer],.op (.memFlags flags),.int offset])) = Except.ok info.data at data
-  by_cases invalid : (!eTy ty && !(ty.isFloat && kind.sourceOp == .store)) = true
+  by_cases invalid : (!eTy ty && !(ty.isArithFloat && kind.sourceOp == .store)) = true
   · rw [if_pos invalid] at data
     cases data
   · rw [if_neg invalid] at data

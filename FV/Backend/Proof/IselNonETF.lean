@@ -135,7 +135,9 @@ theorem nonE_splitF {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : 
     · rcases instData_names hd with ⟨rest, hd'⟩ | ⟨ty', imm, he, -⟩
       · refine .inr ⟨?_, _, hTF, hd, data_of_names hd' ?_ (cvtFNames_neF sel)⟩
         · rw [float_resTy hctx (fun cc e => by rcases hop with rfl | rfl <;> cases e) hi hc]
-          revert hty; cases ty <;> simp [fTys, CTy.ofClif, Clif.Ty.isFloat]
+          have hA : ty.isArithFloat = true := by
+            rcases hop with rfl | rfl <;> simpa [Compile.fCvtET, fCvtTyOk, fCvtOpcode] using hV
+          revert hA; cases ty <;> simp [fTys, CTy.ofClif]
         · rcases hop with rfl | rfl <;> simp [instNames, fFmt, fOpc]
       · cases he
     · rcases instData_names hd with ⟨rest, hd'⟩ | ⟨ty', imm, he, -⟩

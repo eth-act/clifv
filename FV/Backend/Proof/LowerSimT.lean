@@ -1386,9 +1386,34 @@ theorem stackVal_congr {F : BitVec 64 → Prop} {s t : Arm.ArmState} (cls : RegC
     simp only [stackVal]
     rw [read_mem_bytes_congr _ a (fun k hk => h _ (hav k hk))]
 
-/-- A float-classed type is 4 or 8 bytes wide. -/
-theorem bytes_of_float {t : Clif.Ty} (h : tyClass t = .float) : t.bytes = 4 ∨ t.bytes = 8 := by
+/-- A float-classed type other than `f16` is 4 or 8 bytes wide. Restated for `f16` (#35):
+`f16` is a float-classed type of 2 bytes (`bytes_of_float_old_false`). -/
+theorem bytes_of_float {t : Clif.Ty} (h : tyClass t = .float) (h16 : t ≠ .f16) :
+    t.bytes = 4 ∨ t.bytes = 8 := by
   cases t <;> simp_all [tyClass, Clif.Ty.bytes, Clif.Ty.width]
+
+/-- The statement of `bytes_of_float` before `f16` is false: `f16`. -/
+theorem bytes_of_float_old_false :
+    ¬ ∀ t : Clif.Ty, tyClass t = .float → t.bytes = 4 ∨ t.bytes = 8 := fun h => by
+  rcases h .f16 rfl with h | h <;> exact absurd h (by decide)
+
+/-- An argument of a signature in the typed scope (`Compile.sigET`) is not an `f16`. -/
+theorem ne_f16_of_sigET {s : Clif.Signature} (h : Compile.sigET s = true) {args : List Clif.Val}
+    (hsig : args.map (·.ty) = s.params.map (·.ty)) {m : Nat} {v : Clif.Val}
+    (hv : args[m]? = some v) : v.ty ≠ .f16 := by
+  intro h16
+  have hmem : v.ty ∈ s.params.map (·.ty) := by
+    rw [← hsig]; exact List.mem_map.mpr ⟨v, List.mem_of_getElem? hv, rfl⟩
+  obtain ⟨p, hp, hpt⟩ := List.mem_map.mp hmem
+  have hM := List.all_eq_true.mp ((Bool.and_eq_true _ _).mp h).1 p hp
+  rw [hpt, h16] at hM
+  exact absurd hM (by decide)
+
+/-- The function's signature is in the typed scope (`Compile.functionET`). -/
+theorem sigET_of_functionET {f : Clif.Function} (h : Compile.functionET f = true) :
+    Compile.sigET f.sig = true := by
+  simp only [Compile.functionET, Bool.and_eq_true] at h
+  exact h.1.1.1.1.1
 
 /-- One float entry load: the parameter's vreg gets the loaded value. -/
 theorem seqRun_fpuLoad_cons {sem : Sem} {sz : ScalarSize} {x : Nat} {k : Int} {fl : Clif.MemFlags}
@@ -1666,7 +1691,7 @@ theorem entry_stepT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) (hds : 
       rw [hqb]
       refine ⟨hqb ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm), fun hf => ?_, hav⟩
       rw [hcls q hq m v hm hv] at hf
-      exact bytes_of_float hf) hmr
+      exact bytes_of_float hf (ne_f16_of_sigET (sigET_of_functionET H.subET) hsig hv)) hmr
   have hseq : seqRun sem (E.filterMap (entryLoadOfT ctx R)) ρ₁ w₀ = some (.fall ρ₂ w₂) := hrun
   have hsz : (preT f ctx R 0).length < vb.insts.size := by
     have h1 : vb.insts.size = vb.insts.toList.length := by simp
@@ -1935,7 +1960,7 @@ theorem entry_step2T (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) (hds :
     rw [hqb, hw]
     refine ⟨hqb ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm), fun hf => ?_, hav⟩
     rw [hcls q hq m v hm hv] at hf
-    exact bytes_of_float hf
+    exact bytes_of_float hf (ne_f16_of_sigET (sigET_of_functionET H.subET) hsig hv)
   obtain ⟨ρ₂, w₂, hrun, hmr₂, hfr, hreg2, hstk2, hsw2⟩ := entryLoads_runT hMem hFP hMR E ρ₁ slots
     cs.mem w₀ hRid (by rw [hEids]; exact hnd) (hloadsF w₀ rfl) hmr
   obtain ⟨ρ₂', w₂', hrun', hmr₂', hfr', hreg2', hstk2', hsw2'⟩ := entryLoads_runT hMem hFP hMR E ρ₁

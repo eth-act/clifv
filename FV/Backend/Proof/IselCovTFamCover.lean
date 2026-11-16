@@ -111,8 +111,15 @@ theorem ofClif_eCTys {ty : Clif.Ty} (h : Compile.tyE ty = true) : CTy.ofClif ty 
 theorem ofClif_eTy {ty : Clif.Ty} (h : eTy ty = true) : CTy.ofClif ty ∈ eCTys := by
   cases ty <;> simp_all [eTy, Clif.Ty.isInt, CTy.ofClif, eCTys]
 
-theorem ofClif_fCTys {ty : Clif.Ty} (h : ty.isFloat = true) : CTy.ofClif ty ∈ fCTys := by
-  cases ty <;> simp_all [Clif.Ty.isFloat, CTy.ofClif, fCTys]
+/-- Restated for `f16` (#35): `fCTys` are the arithmetic float types (`ofClif_fCTys_old_false`). -/
+theorem ofClif_fCTys {ty : Clif.Ty} (h : ty.isArithFloat = true) : CTy.ofClif ty ∈ fCTys := by
+  cases ty <;> simp_all [CTy.ofClif, fCTys]
+
+/-- The statement of `ofClif_fCTys` before `f16` is false: `CTy.ofClif .f16 = .float 16`. -/
+theorem ofClif_fCTys_old_false :
+    ¬ ∀ ty : Clif.Ty, ty.isFloat = true → CTy.ofClif ty ∈ fCTys := fun h => by
+  have := h .f16 rfl
+  simp [CTy.ofClif, fCTys] at this
 
 theorem valClass_ofClif_float {ty : Clif.Ty} (h : ty.isFloat = true) :
     (CTy.ofClif ty).valClass = .float := by
@@ -144,9 +151,11 @@ theorem resE1 {info : IInfo} {ty : Clif.Ty} (hres : info.resTys = [CTy.ofClif ty
   refine ⟨fun t ht => ?_, by simpa using hr (ofClif_eCTys h)⟩
   simp at ht; subst ht; exact ⟨hr (ofClif_eCTys h), ha (ofClif_eCTys h)⟩
 
-/-- `FamOk`'s result conjuncts for a single float result. -/
+/-- `FamOk`'s result conjuncts for a single float result. Restated for `f16` (#35):
+`isArithFloat`, as `ofClif_fCTys` (the old text is false at `info.resTys = [.float 16]`,
+`F.res = fCTys`). -/
 theorem resF1 {info : IInfo} {ty : Clif.Ty} (hres : info.resTys = [CTy.ofClif ty])
-    (h : ty.isFloat = true) {F : Fam} (hr : fCTys ⊆ F.res) (ha : fCTys ⊆ F.all) :
+    (h : ty.isArithFloat = true) {F : Fam} (hr : fCTys ⊆ F.res) (ha : fCTys ⊆ F.all) :
     (∀ t ∈ info.resTys, t ∈ F.res ∧ t ∈ F.all) ∧ info.resTys.head?.getD .invalid ∈ F.res := by
   rw [hres]
   refine ⟨fun t ht => ?_, by simpa using hr (ofClif_fCTys h)⟩
@@ -353,7 +362,7 @@ theorem famCover_ofG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
       rw [← hdata]
       refine γ_idata (by decide) ⟨?_, γ_val hp, hfl, γ_c0_int, trivial⟩
       cases op <;> exact γ_opAlts (by decide)
-    · have hf : ty.isFloat = true ∧ op = .load := by
+    · have hf : ty.isArithFloat = true ∧ op = .load := by
         simp only [Compile.instET, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq] at hET
         rcases hET.2 with h | h
         · exact absurd h he
@@ -415,7 +424,7 @@ theorem famCover_ofG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
         (fun t ht => (sp.class_of_argClassOk h1 hv t ht).trans (valClass_ofClif_float hF)) (hM x)
       have hy : ValIn ctx y fCTys := valIn_F (htyped y (by simp [instArgs]))
         (fun t ht => (sp.class_of_argClassOk h2 hv t ht).trans (valClass_ofClif_float hF)) (hM y)
-      obtain ⟨hR1, hR2⟩ := resF1 hres hF (F := famTab[9]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes])
+      obtain ⟨hR1, hR2⟩ := resF1 hres (isArithFloat_of_valTyOk hF hv) (F := famTab[9]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes])
       exact ⟨9, _, rfl, famOk_of hrv hlen hR1 hR2 (by
         rw [← hdata]
         exact γ_idata (by decide) ⟨γ_opAlts (by decide), γ_vals3 hc' hx hy, trivial⟩)⟩
@@ -440,7 +449,7 @@ theorem famCover_ofG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
     rename_i hv
     simp only [pure, Except.pure, throw, throwThe, MonadExceptOf.throw, Except.ok.injEq, reduceCtorEq] at hdata
     by_cases hF : ty.isFloat = true
-    · obtain ⟨hR1, hR2⟩ := resF1 hres hF (F := famTab[23]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes])
+    · obtain ⟨hR1, hR2⟩ := resF1 hres (isArithFloat_of_valTyOk hF hv) (F := famTab[23]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes]) (by simp only [List.subset_def]; intro t ht; simp_all [famTab, eCTys, fCTys, noRes])
       exact ⟨23, _, rfl, famOk_of hrv hlen hR1 hR2 (by
         rw [← hdata]
         exact γ_idata (by decide) ⟨γ_opAlts (by decide), hx, hfl, trivial⟩)⟩

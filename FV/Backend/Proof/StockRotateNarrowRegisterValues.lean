@@ -77,8 +77,12 @@ theorem stock_rotate_selected_narrow_register_state {f : Clif.Function} {ctx : C
   rw [envEq'] at rhs
   change (evalExpr program (Stock.sem ctx) {} (999839+160) (rotateNarrowRule left false).rhs
     (rotateNarrowEnv left ty.width x y)).run (st,#[]) = .ok (some out,next,selected.rhsTrace) at rhs
+  have h16 : ty ≠ .f16 := by
+    rintro rfl
+    have accepted := inv.instE i info _ source clif
+    cases left <;> simp [rotateOp,Compile.instE,Compile.binaryE,Compile.tyE] at accepted
   obtain ⟨typed,safeX,safeY,⟨rx,mapX⟩,ry,mapY⟩ := stock_rotate_narrow_register_requests
-    data_program ctx left supported dfg rfl getX rhs
+    data_program ctx left supported dfg rfl h16 getX rhs
   obtain ⟨nx,rfl⟩ := inv.valueReg x rx mapX
   obtain ⟨ny,rfl⟩ := inv.valueReg y ry mapY
   obtain ⟨trace,forward⟩ := stock_rotate_narrow_rhs data_program ctx left supported mapX mapY typed st safeX safeY #[] 999839

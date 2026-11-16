@@ -318,7 +318,7 @@ theorem bitcast_emitT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
   cases ht'
   refine emSince_push' hE (mi := .movToFpu (.vreg d0 .float) (.vreg x .int) sz)
     (by simp [LState.emit, LState.fresh]) ?_ rfl
-  rcases ofClif_float_or_vec hfv with rfl | rfl
+  rcases ofClif_float_or_vec hfv (bitcast_ne_f16 hctx hi hic) with rfl | rfl
   · have hw32 : w = 32 := by simpa [CTy.ofClif, CTy.bits] using hbits
     subst hw32
     obtain rfl := hsz2 (by rcases hk' with h | ⟨h, -⟩ <;> simp [szIdxOf] at h <;> omega)

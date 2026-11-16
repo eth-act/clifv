@@ -136,7 +136,7 @@ private theorem negate_raw (ctx : Ctx) (st : State) (w amount : Nat) :
 mapping through its actual extension call and original frame consistency. -/
 theorem stock_rotate_narrow_immediate_requests {p : Program} (hp : Data p) (ctx : Ctx) (left : Bool)
     {w x amount n : Nat} (width : w = 8 ∨ w = 16) {constant : Int}
-    {fr : Clif.Frame} (dfg : DFGCons ctx fr) {ty : Clif.Ty} (same : ty.width = w)
+    {fr : Clif.Frame} (dfg : DFGCons ctx fr) {ty : Clif.Ty} (same : ty.width = w) (h16 : ty ≠ .f16)
     {u : BitVec ty.width} (getX : fr.getAs x ty = .ok u)
     {st next : State} {tr trace : Array RuleId} {out : V}
     (run : (evalExpr p (Stock.sem ctx) {} (n+140) (rotateNarrowRule left true).rhs
@@ -154,7 +154,7 @@ theorem stock_rotate_narrow_immediate_requests {p : Program} (hp : Data p) (ctx 
     obtain ⟨t,typed,safe,rx,mapped,form⟩ := shape
     have typeEq : t = .int ty.width := by
       have h := (dfg.2 x t ⟨ty,u⟩ typed (getAs_ok getX)).symm
-      exact h.trans (ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega)))
+      exact h.trans (ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega) h16))
     rw [typeEq] at typed
     exact ⟨typed,safe,rx,mapped⟩
 end Backend.Stock.Proof.ScalarRotate
