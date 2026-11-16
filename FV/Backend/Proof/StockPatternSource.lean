@@ -7,12 +7,15 @@ namespace Backend.Stock.Proof
 
 open Isle Isle.Interp Isle.Aarch64
 
-set_option maxHeartbeats 800000 in
 theorem DFGViewEq.externExtract_eq {ctx original : Ctx}
     (view : DFGViewEq ctx original) (t : Term) (v : V) (st : LState) :
     Backend.externExtract ctx t v st = Backend.externExtract original t v st := by
-  simp only [Backend.externExtract, Ctx.defInst?, Ctx.valueType?, Ctx.defClif?,
-    view.valDef, view.valTy, view.insts, view.func]
+  obtain ⟨_, _, _, _, _, _, _⟩ := ctx
+  obtain ⟨_, _, _, _, _, _, _⟩ := original
+  obtain ⟨hf, hi, hvt, hvd, -⟩ := view
+  dsimp only at hf hi hvt hvd
+  subst hf hi hvt hvd
+  rfl
 
 theorem stock_matchPat_source {ctx original : Ctx} (view : DFGViewEq ctx original)
     (p : Program) (st : State) (pat : Pattern) (v : V) (env : Isle.Interp.Env V) :
