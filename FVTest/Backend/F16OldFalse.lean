@@ -20,10 +20,12 @@ lowering semantics on a context whose value `v0` is an `f16` in a float-class re
 succeed, and the old conclusion `ctx.valueType? x = some (.int w)` is false.
 -/
 
-namespace FVTest.Backend.F16OldFalse
+open Backend Backend.Proof Backend.Proof.CovT Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+open Backend.Stock Backend.Stock.Proof Backend.Stock.Proof.ScalarCount
 
-open Backend Backend.Proof Backend.Proof.CovT Isle Isle.Interp Isle.Aarch64
-open Backend.Stock Backend.Stock.Proof
+set_option maxRecDepth 20000
+
+namespace F16OldFalse
 
 /-- A context of two values: `v0 : f16` (a float-class register), `v1 : i16`; no instructions. -/
 def ctx16 : Ctx :=
@@ -40,26 +42,15 @@ def frame16 : Clif.Frame :=
 
 theorem frameTyped16 : FrameTyped ctx16 frame16 := by
   intro x t v ht hv
-  match x with
-  | 0 =>
-    simp only [frame16, if_pos rfl, Option.some.injEq] at hv
-    subst hv
-    simp only [ctx16, Ctx.valueType?] at ht
-    cases ht; rfl
-  | 1 =>
-    simp only [frame16, Option.some.injEq] at hv
-    subst hv
-    simp only [ctx16, Ctx.valueType?] at ht
-    cases ht; rfl
-  | n + 2 => simp [frame16] at hv
+  rcases x with _ | _ | n
+  · cases hv; cases ht; rfl
+  · cases hv; cases ht; rfl
+  · first | cases hv | simp [frame16, show n + 1 + 1 ≠ 0 by omega, show n + 1 + 1 ≠ 1 by omega] at hv
 
 theorem dfgCons16 : DFGCons ctx16 frame16 := by
   refine ⟨fun x j info cl v hd => ?_, frameTyped16⟩
   exfalso
-  match x with
-  | 0 => simp [ctx16, Ctx.defInst?] at hd
-  | 1 => simp [ctx16, Ctx.defInst?] at hd
-  | n + 2 => simp [ctx16, Ctx.defInst?] at hd
+  rcases x with _ | _ | n <;> first | cases hd | simp [ctx16, Ctx.defInst?] at hd
 
 theorem valueType16 : ctx16.valueType? 0 = some (.float 16) := rfl
 
@@ -113,13 +104,11 @@ theorem ok_of_check {r : Except Err (Option V × State × Array RuleId)}
   revert h
   rcases r with _ | ⟨_ | out, next, trace⟩ <;> simp
 
-/-- Narrow `clz.i16` (`countRule false 16`) of the `f16` value `v0`. -/
-def runClz : Except Err (Option V × State × Array RuleId) :=
-  (evalExpr program (Stock.sem ctx16) {} (0+80) (countRule false 16).rhs (countEnv 16 0)).run
-    (st16, #[])
-
-theorem runClz_ok : (match runClz with | .ok (some _, _, _) => true | _ => false) = true := by
-  native_decide
+/-- Narrow `clz.i16` (`countRule false 16`) of the `f16` value `v0` runs (checked by evaluation). -/
+theorem runClz_ok : ∃ out next trace,
+    (evalExpr program (Stock.sem ctx16) {} (0+80) (countRule false 16).rhs (countEnv 16 0)).run
+      (st16, #[]) = .ok (some out, next, trace) :=
+  ok_of_check (by native_decide)
 
 /-- `StockCountSelected.root_requests` (private) before `f16` (without `h16 : ty ≠ .f16`) is
 false: `clz` at width 16 of the `f16` value `v0` runs, and `v0` is not of type `.int 16`. -/
@@ -132,21 +121,18 @@ theorem root_requests_old_false :
       DemandAllowed ctx st x ∧ (∃ rx,ctx.valueReg? x = some rx) ∧
         (¬ trailing → w = 8 ∨ w = 16 → ctx.valueType? x = some (.int w)) := by
   intro h
-  obtain ⟨out, next, trace, hrun⟩ := ok_of_check runClz_ok
+  obtain ⟨out, next, trace, hrun⟩ := runClz_ok
   have := (h ctx16 false 16 0 0 (.inr (.inl rfl)) frame16 dfgCons16 .f16 rfl 0 rfl st16 next out
     trace hrun).2.2 (by decide) (.inr rfl)
   rw [valueType16] at this
   simp at this
 
 /-- Narrow `rotl.i16` by a register (`rotateNarrowRule true false`) of the `f16` value `v0`
-by `v1`. -/
-def runRotlReg : Except Err (Option V × State × Array RuleId) :=
-  (evalExpr program (Stock.sem ctx16) {} (0+160) (ScalarRotate.rotateNarrowRule true false).rhs
-    (ScalarRotate.rotateNarrowEnv true 16 0 1)).run (st16, #[])
-
-theorem runRotlReg_ok :
-    (match runRotlReg with | .ok (some _, _, _) => true | _ => false) = true := by
-  native_decide
+by `v1` runs (checked by evaluation). -/
+theorem runRotlReg_ok : ∃ out next trace,
+    (evalExpr program (Stock.sem ctx16) {} (0+160) (ScalarRotate.rotateNarrowRule true false).rhs
+      (ScalarRotate.rotateNarrowEnv true 16 0 1)).run (st16, #[]) = .ok (some out, next, trace) :=
+  ok_of_check (by native_decide)
 
 /-- `stock_rotate_narrow_register_requests` before `f16` (without `h16 : ty ≠ .f16`) is false:
 `rotl` at width 16 of the `f16` value `v0` runs. -/
@@ -160,21 +146,19 @@ theorem stock_rotate_narrow_register_requests_old_false :
       ctx.valueType? x = some (.int w) ∧ DemandAllowed ctx st x ∧ DemandAllowed ctx st y ∧
         (∃ rx,ctx.valueReg? x = some rx) ∧ ∃ ry,ctx.valueReg? y = some ry := by
   intro h
-  obtain ⟨out, next, trace, hrun⟩ := ok_of_check runRotlReg_ok
+  obtain ⟨out, next, trace, hrun⟩ := runRotlReg_ok
   have := (h program data_program ctx16 true 16 0 1 0 (.inr rfl) frame16 dfgCons16 .f16 rfl 0 rfl
     st16 next #[] trace out hrun).1
   rw [valueType16] at this
   simp at this
 
-/-- Narrow `rotl.i16` by the immediate 3 (`rotateNarrowRule true true`) of the `f16` value
-`v0`. -/
-def runRotlImm : Except Err (Option V × State × Array RuleId) :=
-  (evalExpr program (Stock.sem ctx16) {} (0+140) (ScalarRotate.rotateNarrowRule true true).rhs
-    (env4 (.ty (.int 16)) (.value 0) (.int 3) (.op (.immShift 3)))).run (st16, #[])
-
-theorem runRotlImm_ok :
-    (match runRotlImm with | .ok (some _, _, _) => true | _ => false) = true := by
-  native_decide
+/-- Narrow `rotl.i16` by the immediate 3 (`rotateNarrowRule true true`) of the `f16` value `v0`
+runs (checked by evaluation). -/
+theorem runRotlImm_ok : ∃ out next trace,
+    (evalExpr program (Stock.sem ctx16) {} (0+140) (ScalarRotate.rotateNarrowRule true true).rhs
+      (env4 (.ty (.int 16)) (.value 0) (.int 3) (.op (.immShift 3)))).run (st16, #[]) =
+        .ok (some out, next, trace) :=
+  ok_of_check (by native_decide)
 
 /-- `stock_rotate_narrow_immediate_requests` before `f16` (without `h16 : ty ≠ .f16`) is false:
 `rotl` at width 16 by an immediate of the `f16` value `v0` runs. -/
@@ -189,7 +173,7 @@ theorem stock_rotate_narrow_immediate_requests_old_false :
       ctx.valueType? x = some (.int w) ∧ DemandAllowed ctx st x ∧
         ∃ rx,ctx.valueReg? x = some rx := by
   intro h
-  obtain ⟨out, next, trace, hrun⟩ := ok_of_check runRotlImm_ok
+  obtain ⟨out, next, trace, hrun⟩ := runRotlImm_ok
   have := (h program data_program ctx16 true 16 0 3 0 (.inr rfl) 3 frame16 dfgCons16 .f16 rfl 0
     rfl st16 next #[] trace out hrun).1
   rw [valueType16] at this
@@ -300,4 +284,4 @@ theorem stock_select_nonzero_actual_allocation_old_false :
   rw [if_pos rfl] at new
   omega
 
-end FVTest.Backend.F16OldFalse
+end F16OldFalse
