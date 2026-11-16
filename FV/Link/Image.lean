@@ -146,6 +146,21 @@ def parResultsT (I : LinkInput) : Res :=
 theorem parResultsT_eq (I : LinkInput) : parResultsT I = I.resultsT := by
   simp only [parResultsT, parMap_eq]; rfl
 
+/-- The region's bytes from offset `o`, the functions `T` at their aligned offsets (`offsA`,
+alignments `as`): before each function the zero bytes up to its offset (`udf #0` words, the
+filler rust-lld writes when it aligns a section), then its image (`artImage`: its resolved
+words and the gap word). -/
+def regionGo (I : LinkInput) (tp : Nat → Option Nat) : List Art → List Nat → Nat → List UInt8
+  | [], _, _ => []
+  | a :: T, as, o =>
+    List.replicate (alignW o (as.headD 4) - o) 0 ++ artImage I tp a ++
+      regionGo I tp T as.tail (alignW o (as.headD 4) + 4 * a.fb.words.size + 4)
+
+/-- **The region's bytes** (#1061): the placed functions' images, each at its aligned offset. -/
+def regionBytesA (I : LinkInput) (tp : Nat → Option Nat) (as : List Nat) (T : List Art) :
+    List UInt8 :=
+  regionGo I tp T as 0
+
 /-- **The Lean linker**: the executable `file0` (the outside part, linked around a placeholder
 of the region) with the program part written into the region. -/
 def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
@@ -166,7 +181,7 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
     else if !(T.all fun e => relocsOkB I tp e.2) then .error "a relocation fails the checks (relocsOkB)"
     else if !(codeMapB I T) then .error "the code map check fails (codeMapB)"
     else
-      let B := ByteArray.mk (regionBytes I tp ((T.take S.funcs.length).map (·.2))).toArray
+      let B := ByteArray.mk (regionBytesA I tp S.aligns ((T.take S.funcs.length).map (·.2))).toArray
       let off := offsetOf phs S.R
       if !regionOkB file0 S.R B.size off then
         .error "the region is not a read-only part of one PT_LOAD segment (regionOkB)"

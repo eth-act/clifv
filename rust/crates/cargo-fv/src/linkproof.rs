@@ -184,6 +184,20 @@ fn read_json(p: &Path) -> Result<serde_json::Value, String> {
     serde_json::from_str(&t).map_err(|e| format!("{}: {e}", p.display()))
 }
 
+/// Where `ld -r` starts a unit's region functions `fns` (final name, `.text` alignment, in
+/// placement order), as the Lean linker's placement takes it (`Link.LinkSpec.aligns`,
+/// `Link.offsA`; #1061): the unit's `lean.o` is one `.text` of its functions' largest alignment,
+/// so its first function starts at that alignment, every other one at its own. Only the
+/// functions beyond a word are listed (`Front.Bundle.aligns`).
+fn region_aligns(fns: &[(String, u64)]) -> Vec<(String, u64)> {
+    let unit = fns.iter().map(|(_, a)| *a).max().unwrap_or(4);
+    fns.iter()
+        .enumerate()
+        .map(|(k, (n, a))| (n.clone(), if k == 0 { unit.max(*a) } else { *a }))
+        .filter(|(_, a)| *a > 4)
+        .collect()
+}
+
 /// `cargo fv link-proof`; `target`: cargo's target directory, `root`: the repository.
 pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     let o = parse_opts(args, target)?;
@@ -252,6 +266,8 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     fs::create_dir_all(&o.out).map_err(|e| format!("{}: {e}", o.out.display()))?;
     let mut units = Vec::new();
     let mut markers: BTreeMap<String, u64> = BTreeMap::new();
+    // the region functions `ld -r` starts beyond a word (`Link.LinkSpec.aligns`, #1061)
+    let mut aligns: Vec<(String, u64)> = Vec::new();
     let mut skipped: Vec<(String, String)> = Vec::new();
     let mut nfuncs = 0;
     for (obj, j) in &cgus {
@@ -259,6 +275,8 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         let rec = dir.join(CGU_FILE);
         let tag = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         let mut functions = Vec::new();
+        // the unit's region functions in placement order: (final name, `.text` alignment)
+        let mut placed: Vec<(String, u64)> = Vec::new();
         for f in j["functions"].as_array().into_iter().flatten() {
             let fin = f["final"].as_str().unwrap_or_default().to_string();
             if excluded.contains(&fin) {
@@ -282,6 +300,14 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 }
             }
             markers.insert(fin.clone(), addr);
+            // `lean-backend`'s alignment of the function (an older record: a word)
+            let align = f["align"].as_u64().unwrap_or(4);
+            if align > 4 && addr % align != 0 {
+                return Err(format!(
+                    "{fin}: its Lean code at {addr:#x} in {exe} is not {align}-aligned (its object's `.text` alignment, #1061)"
+                ));
+            }
+            placed.push((fin.clone(), align));
             functions.push(serde_json::json!({
                 "name": f["symbol"],
                 "final": fin,
@@ -290,6 +316,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             }));
         }
         nfuncs += functions.len();
+        aligns.extend(region_aligns(&placed));
         let Some(locals) = j["locals"].as_array() else {
             return Err(format!("{}: no `locals` (written by an older cargo fv: rebuild)", rec.display()));
         };
@@ -333,6 +360,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         "units": units,
         "symbols": symbols.iter().map(|(n, a)| serde_json::json!([n, a])).collect::<Vec<_>>(),
         "markers": markers.iter().map(|(n, a)| serde_json::json!([n, a])).collect::<Vec<_>>(),
+        "aligns": aligns.iter().map(|(n, a)| serde_json::json!([n, a])).collect::<Vec<_>>(),
         "skipped": skipped,
     });
     let bp = o.out.join("bundle.json");
@@ -370,4 +398,29 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     }
     let st = cmd.status().map_err(|e| format!("{}: {e}", checker.display()))?;
     Ok(st.code().unwrap_or(1))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::region_aligns;
+
+    fn fns(l: &[(&str, u64)]) -> Vec<(String, u64)> {
+        l.iter().map(|(n, a)| (n.to_string(), *a)).collect()
+    }
+
+    #[test]
+    fn region_aligns_word_units_list_nothing() {
+        assert!(region_aligns(&fns(&[("a", 4), ("b", 4)])).is_empty());
+        assert!(region_aligns(&[]).is_empty());
+    }
+
+    #[test]
+    fn region_aligns_pooled_function_and_unit_start() {
+        // a pooled function (8) later in its unit: `ld -r` 8-aligns it and the unit's start
+        assert_eq!(region_aligns(&fns(&[("a", 4), ("p", 8), ("b", 4)])), fns(&[("a", 8), ("p", 8)]));
+        // first in its unit: listed once
+        assert_eq!(region_aligns(&fns(&[("p", 8), ("b", 4)])), fns(&[("p", 8)]));
+        // a 16-byte constant pool (SIMD) raises the unit's start to 16
+        assert_eq!(region_aligns(&fns(&[("a", 4), ("p", 8), ("q", 16)])), fns(&[("a", 16), ("p", 8), ("q", 16)]));
+    }
 }

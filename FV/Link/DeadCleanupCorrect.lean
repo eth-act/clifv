@@ -31,7 +31,7 @@ theorem leanLink_placed {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
   have hsz := placedArts_sizes hs
   have ha : (placedArts S)[i]? = some e.2 := by
     simp only [List.getElem?_map, List.getElem?_take, hi, ↓reduceIte, he, Option.map_some]
-  refine region_words hok ?_ ha ?_
+  refine region_wordsA hok ?_ ha ?_
   · rw [hsz]
     have := hP.fits
     simp only [LinkSpec.size] at this

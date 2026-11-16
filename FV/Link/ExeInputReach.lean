@@ -100,7 +100,7 @@ its function (`relocShapesB`). -/
 theorem pc_of_placed {P : LinkSpec} (hP : PlaceOk P) {T : List (Clif.Function × Art)}
     (hlen : T.length = P.funcs.length)
     (hT : ∀ i < P.funcs.length, ∃ e, T[i]? = some e ∧
-      e.2.base = BitVec.ofNat 64 (P.R + (offs P.sizes 0)[i]!) ∧ e.2.fb.words.size = P.sizes[i]!)
+      e.2.base = BitVec.ofNat 64 (P.R + (offsA P.sizes P.aligns 0)[i]!) ∧ e.2.fb.words.size = P.sizes[i]!)
     (hsh : ∀ e ∈ T, relocShapesB e.2 = true) :
     ∀ e ∈ T, ∀ r ∈ e.2.fb.relocs, P.R ≤ (wAt e.2 r.offset).toNat ∧
       (wAt e.2 r.offset).toNat < P.R + P.size ∧ (wAt e.2 r.offset).toNat % 4 = 0 := by
@@ -116,11 +116,12 @@ theorem pc_of_placed {P : LinkSpec} (hP : PlaceOk P) {T : List (Clif.Function ×
   simp only [relocShapeB, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hrs
   obtain ⟨⟨h4, hlt⟩, -⟩ := hrs
   have hend := off_end hP hil
-  have hmod := offs_mod4 (ns := P.sizes) (o := 0) rfl (i := i) (by rw [hP.sizesLen]; exact hil)
+  have hmod := offsA_mod4 (ns := P.sizes) (as := P.aligns) (o := 0) rfl (i := i)
+    (by rw [hP.sizesLen]; exact hil)
   have hfit := hP.fits
   have hal := hP.align
   rw [hw] at hlt
-  have hpc : (wAt e.2 r.offset).toNat = P.R + (offs P.sizes 0)[i]! + r.offset := by
+  have hpc : (wAt e.2 r.offset).toNat = P.R + (offsA P.sizes P.aligns 0)[i]! + r.offset := by
     unfold wAt
     rw [hb]
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]

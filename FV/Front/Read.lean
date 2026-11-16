@@ -7,7 +7,8 @@ import Lean.Data.Json
 `readBundle dir sizes`: the `Front.Bundle` of `dir/bundle.json` (format
 `clifv-frontend-bundle`, version 2): the files it names are read unchanged (each function's
 cg_clif dump and `lean-regalloc` output, each unit's `; data:` lines). Any missing field, file or
-malformed entry is an error. Everything the compiler's input is computed from them is computed
+malformed entry is an error, except `aligns` (#1061: the functions `ld -r` aligns beyond a word;
+absent: none). Everything the compiler's input is computed from them is computed
 by the pure `Front.buildSpec`/`Front.assemble`.
 -/
 
@@ -74,6 +75,9 @@ def readBundle (dir : System.FilePath) (sizes : List (String × Nat)) :
   let symbols ← liftE p.toString (do (← arr j "symbols").toList.mapM pairNat)
   let markers ← liftE p.toString (do (← arr j "markers").toList.mapM pairNat)
   let skipped ← liftE p.toString (do (← arr j "skipped").toList.mapM pairStr)
-  pure ({ units := units.toList, symbols, markers, sizes, skipped }, exe)
+  let aligns ← liftE p.toString (match j.getObjVal? "aligns" with
+    | .ok a => do (← a.getArr?).toList.mapM pairNat
+    | .error _ => pure [])
+  pure ({ units := units.toList, symbols, markers, sizes, skipped, aligns }, exe)
 
 end Front

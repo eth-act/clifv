@@ -1144,7 +1144,9 @@ Measured (remote gate on the head merged with main 9f3d0cd9c, green): deps 21,02
 left out 10 + 10 (the pins); encode-check 1,473 identical; crate proofs unchanged. Linking needed
 #1059: an 8-aligned (pooled) function object made `ld -r` pad the program part off `Link.offs`, so
 `symsOkB` failed and the executable left the typed route (`crates`: 197 left out, std 220/219);
-`cargo fv` now word-aligns such objects (function bytes unchanged).
+`cargo fv` then word-aligned such objects (function bytes unchanged). #1061 replaced that: the
+Lean linker's placement `Link.offsA` starts each function at its object's alignment, so a pooled
+function starts 8-aligned, as in a stock build.
 
 ## 4. Known hazards
 

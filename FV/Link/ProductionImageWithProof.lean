@@ -14,7 +14,7 @@ abbrev resultsFor (lower : ProductionLowering) (S : LinkSpec) (cleanup : Bool) :
 abbrev artsFor (lower : ProductionLowering) (S : LinkSpec) (cleanup : Bool) : List Art :=
   ((tabOf (resultsFor lower S cleanup)).take S.funcs.length).map (·.2)
 abbrev regionFor (lower : ProductionLowering) (S : LinkSpec) (cleanup : Bool) (tp : Nat → Option Nat) : ByteArray :=
-  ByteArray.mk (regionBytes (inputFor lower S cleanup) tp (artsFor lower S cleanup)).toArray
+  ByteArray.mk (regionBytesA (inputFor lower S cleanup) tp S.aligns (artsFor lower S cleanup)).toArray
 
 theorem spec {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray} (h : leanLinkProductionWith lower S file0 cleanup = .ok file) :
     ∃ phs, phdrs (fileRd file0) = some phs ∧ S.placeOkB = true ∧
@@ -98,7 +98,7 @@ theorem tab_placed {S : LinkSpec} {cleanup : Bool} (hp : S.placeOkB = true)
     (hn : S.namesOkB (tabOf (resultsFor lower S cleanup)) = true)
     (hs : S.sizesOkB (tabOf (resultsFor lower S cleanup)) = true) :
     ∀ i < S.funcs.length, ∃ e, (tabOf (resultsFor lower S cleanup))[i]? = some e ∧
-      e.2.base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) ∧
+      e.2.base = BitVec.ofNat 64 (S.R + (offsA S.sizes S.aligns 0)[i]!) ∧
       e.2.fb.words.size = S.sizes[i]! ∧ e.1.name = S.names[i]! ∧
       e.2.fa.layout = .ok e.2.fb := by
   intro i hi
@@ -142,7 +142,7 @@ theorem placed_words {S : LinkSpec} {cleanup : Bool} {file0 : ByteArray} {phs : 
   have hsz := arts_sizes hs
   have ha : (artsFor lower S cleanup)[i]? = some e.2 := by
     simp only [artsFor, List.getElem?_map, List.getElem?_take, hi, ↓reduceIte, he, Option.map_some]
-  refine region_words hok ?_ ha ?_
+  refine region_wordsA hok ?_ ha ?_
   · rw [hsz]
     have := hP.fits
     simp only [LinkSpec.size] at this
