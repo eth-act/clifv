@@ -64,7 +64,7 @@ rustc-literal-escaper 3 / 3, panic_abort 2 / 2. **99.2 % of std's functions are 
 | 33 | `type f16` (decode) | core | floats (`f16`) |
 | 31 | outside clif-subset-v2 E | core 10, test 10, gimli 7, proc_macro 4 | floats: `float_to_decimal_common_exact::<f32>`, `gimli::read::value::Value::{add, mul, div, …}` on f32/f64, `ParseFloatError` maps |
 | 22 + 7 + 4 + 1 + 1 | `fcmp`, `fcvt_from_uint`, `fcvt_to_uint_sat`, `fcvt_from_sint`, `floor` not in the lowering | core, test, gimli | floats |
-| 1 | validation budget (`proc_macro::quote::quote`, 4·10⁸ instructions × values) | proc_macro | budget |
+| 1 | validation budget (`proc_macro::quote::quote`, 4·10⁸ instructions × values; verified since #1057) | proc_macro | budget |
 
 So **228 of 229 std fallbacks are floats** (S11, Floats11 / `docs/plans/floats.md`), one is the
 validation budget. The other reasons the issue anticipated do not occur in std on this target:

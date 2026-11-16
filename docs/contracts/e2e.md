@@ -4360,7 +4360,9 @@ certificate 16 ms, the rest re-running isel and the shape check); on the corpus 
 runtests (1105 functions) the new validator computes the same alias resolution and entry
 values and accepts exactly the same functions as the old one. `lean-backend` does not run it on
 functions over the validation budget (`Backend.validationBudget`: instructions × values above
-25000000, 7.6 times the largest function of `examples/`), which it compiles and reports as
+1000000000; 25000000 until #1057, when the validator's memory became linear: its re-run of the
+lowering records the states without their vreg class arrays, `lowerCheck_eq_lite`, and so do
+the typed validators and `skipDead`), which it compiles and reports as
 `compiled, unverified (validation budget)`.
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside

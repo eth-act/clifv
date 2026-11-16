@@ -439,19 +439,19 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `E2E.backend_correct_final_witness`, `E2E.backend_correct_final_id`, and for functions with
   `try_call`s `E2E.backend_correct_final_try_witness`).
 * **Validation budget.** "verified" needs the lowering validator (`lowerCheck`, whose
-  acceptance the theorem assumes) to accept the function. Its cost is near-linear in practice
-  but grows, in the worst case, with the number of instructions times the number of values
-  (it records the lowering's state after every statement, and its dataflow keeps a
-  blocks × values table): the largest functions of `examples/` (about 2000 instructions and
-  1500 values) take about 0.2 s. As a guard against pathological inputs, `lean-backend` does
-  not run it on a function with more than 25000000 instructions × values
-  (`Backend.validationBudget`; at the budget the validator takes about 1.5 s and under 1 GB,
-  the largest function of `examples/` costs 3276540): such a function is compiled and
-  reported **compiled, unverified** with the reason `validation budget: N instructions × values
-  > 25000000, lowerCheck not run` (`lean-backend` prints `compiled, unverified (validation
-  budget): …`). In `examples/` only the fully unrolled SHA-256/SHA-512 round functions of
-  the `sha2` dependency (`sha2::sha{256,512}::soft::unroll::compress_block`, 52–604 M) reach
-  it (examples/deps).
+  acceptance the theorem assumes) to accept the function. Its time grows, in the worst case,
+  with the number of instructions times the number of values (its dataflow keeps a
+  blocks × values table of bytes); its memory is near-linear since #1057 (it re-runs the
+  lowering recording the states without their vreg class arrays, `lowerCheck_eq_lite`, and
+  earlier kept one copy of that array per statement: 13 GB on sha2's sha512 round function).
+  The largest functions of std and `examples/` (sha2's fully unrolled SHA-512 round function,
+  604 M instructions × values; `proc_macro::quote::quote`, 403 M) validate in 30-60 s at
+  0.5-1 GB. As a guard against pathological inputs, `lean-backend` does not run it on a
+  function with more than 1000000000 instructions × values (`Backend.validationBudget`):
+  such a function is compiled and reported **compiled, unverified** with the reason
+  `validation budget: N instructions × values > 1000000000, lowerCheck not run`
+  (`lean-backend` prints `compiled, unverified (validation budget): …`). No function of std or
+  `examples/` reaches it.
 * Not verified (trusted): rustc and cg_clif with its patch (Rust → CLIF and the dumps'
   external-name tables, docs/contracts/frontend.md), `clif-data-export` (the object's data
   objects), the object surgery above and the linker (both checked, for the
