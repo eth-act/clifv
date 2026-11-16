@@ -8,7 +8,7 @@ abbrev placedArts (S : LinkSpec) : List Art :=
 
 /-- The region's bytes the linker writes. -/
 abbrev regionOf (S : LinkSpec) (tp : Nat → Option Nat) : ByteArray :=
-  ByteArray.mk (regionBytes S.inputCleanup tp (placedArts S)).toArray
+  ByteArray.mk (regionBytesA S.inputCleanup tp S.aligns (placedArts S)).toArray
 
 /-- `leanLink`'s checks and result, unfolded (`S.inputCleanup` is the input `leanLink` builds from one
 run of the pipeline). -/

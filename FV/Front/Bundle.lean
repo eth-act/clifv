@@ -87,6 +87,9 @@ structure Bundle where
   sizes : List (String × Nat)
   /-- Functions of the region the reconstruction could not include (name, reason). -/
   skipped : List (String × String) := []
+  /-- Linked name → the alignment in bytes at which `ld -r` starts it in the region object, for
+  the functions aligned beyond a word (#1061; any other function: a word). -/
+  aligns : List (String × Nat) := []
   deriving Inhabited
 
 /-! ## Parsing -/
@@ -404,8 +407,10 @@ def buildSpec (b : Bundle) : Except String LinkSpec :=
         -- the symbol table once (built inside the `filterMap` it was rebuilt per name: a third of
         -- `lean-link`'s time on std, T3d)
         let t := symTable b
+        let al := firstMap b.aligns
         .ok { funcs := A.funcs, names := A.names, sizes,
               outside := A.refs.filterMap fun n => (addrOf t n).map (n, ·),
-              data := A.data, symNames := A.symNames, R }
+              data := A.data, symNames := A.symNames, R,
+              aligns := A.names.map fun n => al.getD n 4 }
 
 end Front

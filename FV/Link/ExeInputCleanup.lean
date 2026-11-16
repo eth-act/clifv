@@ -48,8 +48,8 @@ theorem regionOf_placed_size (S : LinkSpec) (tp : Nat → Option Nat) :
     (regionOf (placed S) tp).size = (placed S).size := by
   have hsz := sizes_of (S := placed S) rfl
   simp only [sizesOkB, decide_eq_true_eq] at hsz
-  show (regionBytes (placed S).inputCleanup tp (placedArts (placed S))).toArray.size = _
-  rw [List.size_toArray, regionBytes_length, placedArts]
+  show (regionBytesA (placed S).inputCleanup tp (placed S).aligns (placedArts (placed S))).toArray.size = _
+  rw [List.size_toArray, regionBytesA_length, placedArts]
   simp only [List.map_map, Function.comp_def] at hsz ⊢
   rw [hsz]
   rfl

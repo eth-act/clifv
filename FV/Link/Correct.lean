@@ -14,7 +14,7 @@ kinds. `S.input`'s pipeline is the compiler's (`fallback`), so its results are `
 * the linker's facts `linkerOkB S.input` (`LayoutProof.leanLink_linkerOk`): the link map is the
   placement, the functions do not overlap, and the return addresses satisfy the call boundary;
 * **`leanLink_code`**: every function of the compiler's table `tabOf S.input.resultsT` is in
-  `file` (`ArtOk`): a placed function from the region's bytes (`ImageProof.region_words`; its
+  `file` (`ArtOk`): a placed function from the region's bytes (`ImageProof.region_wordsA`; its
   name and size are the placement's by `namesOkB`, `sizesOkB`), with the relocation checks
   `relocsOkB` (`RelocProof.artOk_of_image`).
 
@@ -72,7 +72,7 @@ theorem leanLink_placed {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
   have hsz := placedArts_sizes hs
   have ha : (placedArts S)[i]? = some e.2 := by
     simp only [List.getElem?_map, List.getElem?_take, hi, ↓reduceIte, he, Option.map_some]
-  refine region_words hok ?_ ha ?_
+  refine region_wordsA hok ?_ ha ?_
   · rw [hsz]
     have := hP.fits
     simp only [LinkSpec.size] at this

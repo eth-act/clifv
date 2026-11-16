@@ -475,7 +475,7 @@ def main (args0 : List String) : IO UInt32 := do
   let names := SC.names
   let R := SC.R
   let file0 ← IO.FS.readBinFile exe
-  let summary := s!"{names.length} function(s), {SC.data.length} data object(s), region {hex R}..{hex (R + SC.size)} ({SC.size} bytes)"
+  let summary := s!"{names.length} function(s), {SC.data.length} data object(s), region {hex R}..{hex (R + SC.size)} ({SC.size} bytes), {(SC.aligns.filter (· > 4)).length} function(s) aligned beyond a word"
   let compile := if deadCleanup then Link.DeadCleanup.compileExe else Link.compileExe
   let link := if deadCleanup then Link.DeadCleanup.leanLink else Link.leanLink
   let thm (s : String) := (if deadCleanup then "Link.DeadCleanup." else "Link.") ++ s

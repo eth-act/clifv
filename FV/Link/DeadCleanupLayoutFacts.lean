@@ -61,7 +61,7 @@ theorem tab_placed {S : LinkSpec} (hp : S.placeOkB = true)
     (hn : S.namesOkB (tabOf S.inputCleanup.resultsCleanupT) = true)
     (hs : S.sizesOkB (tabOf S.inputCleanup.resultsCleanupT) = true) :
     ∀ i < S.funcs.length, ∃ e, (tabOf S.inputCleanup.resultsCleanupT)[i]? = some e ∧
-      e.2.base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) ∧
+      e.2.base = BitVec.ofNat 64 (S.R + (offsA S.sizes S.aligns 0)[i]!) ∧
       e.2.fb.words.size = S.sizes[i]! ∧ e.1.name = S.names[i]! ∧
       e.2.fa.layout = .ok e.2.fb := by
   intro i hi
