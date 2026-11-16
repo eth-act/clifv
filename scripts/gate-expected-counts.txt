@@ -25,4 +25,4 @@ deps             4  21028  21028
 bigframe-unwind  1    103    101
 # `--lean-link --verified --build-std` (std, core and alloc compiled too): the weekly std line of
 # the CI full gate (#1040), with --rise-ok: no PR runs it, so a rise is green until a PR records it
-fv-demo+std      2  32414  32414
+fv-demo+std      2  32415  32415
