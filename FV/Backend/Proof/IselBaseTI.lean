@@ -20,6 +20,9 @@ open Backend Isle Isle.Interp Isle.Aarch64
 /-- **Root rule correctness on the subset-E instructions of a typed context**. -/
 abbrev LowerRuleOkTI := LowerRuleOkTX (fun i => Compile.instE i = true)
 
+/-- `LowerRuleOkTI` over `CtxTW` (S11g). -/
+abbrev LowerRuleOkTIW := LowerRuleOkTXW (fun i => Compile.instE i = true)
+
 /-- A value with an E type is in an integer position. -/
 theorem intPos_of_valueType {ctx : Ctx} {x : Nat} {t : CTy} (h : ctx.valueType? x = some t)
     (ht : t ∈ eCTys) : IntPos ctx x := fun t' h' => by

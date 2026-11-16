@@ -37,10 +37,10 @@ def fOps : Clif.Function := fnOfTextA
 def fCallR : Clif.Function := fnOfTextA
   "function %r(f64) -> i8 {\n    fn0 = %g(f64) -> f64\nblock0(v0: f64):\n    v1 = call fn0(v0)\n    v2 = fcmp one v1, v0\n    return v2\n}\n"
 
--- the reason names every failing condition of the typed scope
-#guard unverifiedReason? fCallR == some ("outside clif-subset-v2 E and the typed scope: " ++
-  "callsE (a call whose callee signature has a float), instETF: fcmp.f64 one, " ++
-  "opsTypedTCF: a call argument is a float value")
+-- the reason names every failing condition of the typed scope: since S11g only the `fcmp one`
+-- (the float call is in the scope)
+#guard unverifiedReason? fCallR ==
+  some "outside clif-subset-v2 E and the typed scope: instETF: fcmp.f64 one"
 
 /-- **Witness**: `fOps` is in the scope with the float operations, in a program without
 functions. -/

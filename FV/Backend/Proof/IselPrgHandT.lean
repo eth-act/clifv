@@ -80,8 +80,8 @@ private theorem binary_operand_regT {f : Clif.Function} {ctx : Ctx} (hP : PInvTB
   have hz := hP.argsTyped _ hof z (by simp [Driver.instArgs])
   obtain ⟨tx, htx⟩ := Option.isSome_iff_exists.mp hx
   obtain ⟨tz, htz⟩ := Option.isSome_iff_exists.mp hz
-  have hix := hP.intArgsOf _ hof x (by simp [intArgs]) tx htx
-  have hiz := hP.intArgsOf _ hof z (by simp [intArgs]) tz htz
+  have hix := hP.intArgsOf _ hof x (by simp [intArgsE]) tx htx
+  have hiz := hP.intArgsOf _ hof z (by simp [intArgsE]) tz htz
   rw [hP.ctxInv.typedReg x tx htx, hP.ctxInv.typedReg z tz htz, valClass_of_eCTys hix,
     valClass_of_eCTys hiz]
   exact ⟨rfl, rfl⟩

@@ -291,7 +291,8 @@ theorem tryDefsExactTF : TryDefsExactTF := by
   intro f ctx ranges st0 _ hs _ hb ti t et data sig items lo trs st1 targets out s' tr _ hph het hBt
     hd he _ htr h
   have hcT : CtxT f ctx :=
-    ⟨ctxInvT_ofF hs hb, (ctxSpec_of hb).instScopeTF hs.subsetTF, callsE_of_externs hs.externsE ctx⟩
+    ⟨ctxInvT_ofF hs hb, (ctxSpec_of hb).instScopeTF hs.subsetTF, callsE_of_externs hs.externsE ctx,
+      (ctxSpec_of hb).callArgs_ofF hs.subsetTF⟩
   have hctxT' := ctxT_tryRegs (ctxT_termCtx hcT hph data) trs
   have hctx' : CtxInvT f (tryCtx ctx ti data trs) := hctxT'.inv
   have hip : TermIntPos ctx t := by

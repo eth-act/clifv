@@ -1,0 +1,44 @@
+# The pinned left-out counts of the `--lean-link --verified` gate lines (#1048): per executable,
+# the N of compare.sh's coverage line `cargo fv: lean-link <exe>: covered by …; N function(s)
+# outside the input conditions keep cg_clif's code (…)` (no such clause: 0). Those functions are
+# Lean-compiled (and may be verified per function) but lean-link --verified links cg_clif's code
+# for them, so the binary check does not cover them. Read by scripts/gate-line-check.py.
+#
+# - EXECUTABLE is named as in gate-known-unverified.txt: `<package>/<file without -<hash>>`. A
+#   package that links several executables with one name has the line repeated (compared as a
+#   multiset).
+# - Exact per executable: a rise is red (functions left the region), a drop is red until this
+#   file records it in the same PR (the verdict prints the new lines). Every executable of a
+#   pinned example needs its line; an example without lines is not checked.
+# - No pin may rise above the base revision's (main's) pin for the same executable: lowering a
+#   left-out count is free, raising one is a parent decision.
+# - Not a baseline of "intended" exclusions: deps' and survey's non-zero counts include the
+#   SrcScopeB `declSigB` exclusions that #1036 introduced (#1042 fixes them), and deps' include
+#   the 113 float-call functions that S11g verifies per function (#1048).
+#
+# Format: EXAMPLE  EXECUTABLE  LEFT_OUT
+
+fv-demo  fv-demo/fv_demo  0
+fv-demo  fv-demo/fv_demo  0
+survey   a_arith/a_arith  0
+survey   a_arith/values  0
+survey   b_slices/b_slices  0
+survey   b_slices/values  0
+survey   c_structs_enums/c_structs_enums  0
+survey   c_structs_enums/values  0
+survey   d_loops_iters/d_loops_iters  0
+survey   d_loops_iters/values  0
+survey   e_option_result/e_option_result  0
+survey   e_option_result/values  0
+survey   f_crypto/f_crypto  0
+survey   f_crypto/values  0
+survey   g_u128/g_u128  1
+survey   g_u128/values  1
+survey   h_dyn_generic/h_dyn_generic  0
+survey   h_dyn_generic/values  0
+survey   i_alloc/i_alloc  0
+survey   i_alloc/values  0
+deps     deps-demo/crates  126
+deps     deps-demo/deps_demo  105
+deps     deps-demo/deps_demo  59
+deps     deps-demo/deps_demo  101

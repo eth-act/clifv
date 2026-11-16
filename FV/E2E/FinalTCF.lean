@@ -2,19 +2,30 @@ import FV.E2E.FinalTC
 import FV.Backend.Proof.DriverCheckTCF
 import FV.Backend.Proof.IselNonETF
 import FV.Backend.Proof.IselLowerCvtT
+import FV.Backend.Proof.LowerContractTFW
+import FV.Backend.Proof.IselCtlCallTI
+import FV.E2E.TypedRulesW
 
 /-!
-# The typed final theorem with the proven float operations (S11f, #35)
+# The typed final theorem with the proven float operations (S11f, #35) and float calls (S11g)
 
 `backend_correct_final[_ex]TC` (`E2E/FinalTC.lean`) for functions whose statements may also be
 the S11f float operations whose `lower` roots are proven over float-capable contexts: the
 arithmetic, rounding, the saturating/`from` conversions and the scalar comparisons (`fcmp` of
-`f32`/`f64`). The scope is `InSubsetTCF` (`InSubsetTC` with `Compile.functionETCF`), the
-lowering validator `lowerCheckTCF` (`CompiledTCF`/`CompiledATCF`), the driver simulation
-`driver_correctTC` (`LowerSimTC.lean`, whose `DriverHypTC` takes the scope `functionETCF`), and
-the driver's statements come from `instCallsTF_of_rules` (the conversion roots
-`lowerRulesCorrectCvtT_program`, the `fcmp` roots `lowerRulesCorrectFC_program`, the non-E
-unmatchability `nonEUnmatchableTF_program`). The final theorems take no rule-family premise.
+`f32`/`f64`), and (S11g, #1015) `call`s whose callee takes or returns `f32`/`f64`. The scope is
+`InSubsetTCF` (`InSubsetTC` with `Compile.functionETCF`), the lowering validator `lowerCheckTCF`
+(`CompiledTCF`/`CompiledATCF`), the driver simulation `driver_correctTC` (`LowerSimTC.lean`,
+whose `DriverHypTC` takes the scope `functionETCF`), and the driver's statements come from
+`instCallsTFW_of_rules` (S11g; it was `instCallsTF_of_rules`, whose contexts have integer
+`call`s): the conversion roots `lowerRulesCorrectCvtT_program`, the `fcmp` roots
+`lowerRulesCorrectFC_program`, the non-E unmatchability `nonEUnmatchableTFW_program`, every
+`call` by the float family `callRulesCorrectTFP_program`, the other families over the contexts
+without integer-call facts (`CtxTW`: `lowerRulesCorrectTIW_program`, `memRulesCorrectRTIW_program`,
+`typedRulesW_program`, `termCallsTW_of_rules`, `tryIndCallsTW_of_rules`, `TypedRulesW.lean`). The
+final theorems take no rule-family premise; `iselSimTCF_of_rules`'s rule-family premises over
+`CtxT` (`hrules`, `hnE`, `hcallRules`, `hindRules`, `hmemRules`, `htermRules`, `htermUn`,
+`hbranch`, `hbranchEx`, `htryIndRules`, `htryIndUn`) are no longer used: its statement is
+unchanged, and the proven `CtxTW` families replace them.
 
 * `InSubsetTCF`, `InSubsetTC.toTCF`, `CompiledTCF`, `CompiledATCF`, `CompiledTC.toTCF`,
   `CompiledTCF.toA`;
@@ -150,8 +161,7 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (houtB : vc.outgoing ≤ out) :
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hlow
-  have hctxT : CtxT f ctx :=
-    ctxT_of_functionETCF hsub.subsetETCF hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+  have hctxT : CtxTW f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx :=
     storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   intro s'
@@ -161,14 +171,16 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     shape := hshape
     cert := hcert
     dsem := (hds s').toDriverSemG
-    insts := instCallsTF_of_rules hrules hrulesF hrulesA hrulesC hrulesFC hnE hcallRules hindRules
-      hmemRules hmemF
+    insts := instCallsTFW_of_rules lowerRulesCorrectTIW_program hrulesF hrulesA hrulesC hrulesFC
+      nonEUnmatchableTFW_program callRulesCorrectTFP_program typedRulesW_program.ind
+      memRulesCorrectRTIW_program hmemF
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)
       (indStack_mono (indStackTCF_of_check hlow) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
-    terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
+    terms := termCallsTW_of_rules typedRulesW_program.term typedRulesW_program.termUn
+      typedRulesW_program.branch typedRulesW_program.branchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetTCF hsub
@@ -181,7 +193,8 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') hshape.ctxInvT,
       tryStack_mono (tryStackTCF_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
-    tryInd := tryIndCallsT_of_rules htryIndRules htryIndUn (hRef s')
+    tryInd := tryIndCallsTW_of_rules typedRulesW_program.tryIndT typedRulesW_program.tryIndUn
+      (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (indStack_mono (indStackTCF_of_check hlow) houtB) (hicalls s') hctxT

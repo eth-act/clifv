@@ -475,7 +475,7 @@ theorem stack_addr_okTI (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms ise
   rw [hs3] at hs'
   subst hs'
   refine ⟨_, ?_, _, rfl, (stackAddr_lower_okTI hMR hM hctx hMRo hbase
-    (width_stackAddr hRE (by assumption) (by assumption))).toR⟩
+    (width_stackAddr (hRE (fun _ _ h => nomatch h)) (by assumption) (by assumption))).toR⟩
   rw [fresh_fst]
   exact (frag_one _ (.loadAddr (.vreg _ .int) (.slotOffset _)) rfl).emitted
 

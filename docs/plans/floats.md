@@ -1021,6 +1021,70 @@ literal line and the entry's data words, `near_lit`; outside the typed scopes, `
 `E2E.formsCovered2_complete_witness`, `EmitCondsTWitness.fW_poolReach` (a typed function with an
 `f64const`).
 
+**S11g (#1015): plain `call`s with float signatures verified.** Measured first (#1039, exact
+reasons): of deps' 115 functions outside the typed scope, all fail `callsE` (a `call` whose
+callee signature has an `f32`/`f64`), 110 also a float `call` argument in `opsTypedTCF`, 2 also a
+pooled `f64const` (#1002 part 2), none any other condition. Generated code is unchanged: rules
+1031 (`bl`) and 1032 (GOT + `blr`) are already lowered and proven for every signature
+(`IselCtlCallF.callRulesCorrectTFP_program`: arguments in x0..x7 / v0..v7 by class, then the
+stack with `str s`/`str d`; returns from `retRegsC`), and the link layer is class-aware since
+#742. The change is the per-function chain. `Compile.functionETCF` (compiler function, widened in
+place) drops `callsE`, and `opsTypedTCF` uses `intOperandsFC` (a `call`'s arguments are not
+integer positions); `functionET`/`functionETC`/`functionETF` and the decider-free scopes are
+unchanged. `intArgs` no longer lists a direct `call`'s arguments, so `CtxInvT` (the invariant the
+validator `ctxOkT` decides) and `lowerCheckTCF` accept float `call` arguments; `intArgsE` is the
+old `intArgs`, `CallArgsInt ctx` the dropped part, and `CtxT` (the integer-call context, fields
+`inv`, `scope`, `calls`, `callArgs`) keeps its meaning, built by `CtxT.ofExterns`,
+`ctxT_of_functionET`, `ctxT_of_functionETC` from `CtxSpec.callArgs_of[F]` /
+`callArgsInt_of_functionETC`; `PInvT`/`PInvTB.intArgsOf` are over `intArgsE`. The rule families
+keep their statements over `CtxT`; the contexts of the new scope are `CtxTW f ctx :=
+⟨CtxInvT, InstScopeTF⟩` (no integer-call facts), and the families that never read those facts
+have new `…W` forms over it (`LowerRuleOkTXW`, `MemRuleOkRTXW`, `IndRuleOkTW`,
+`LowerTermRuleOkTW`, `TermUnmatchableTW`, `BranchRuleOkTW`, `BranchExcludedUnmatchableTW`,
+`TryIndRuleOkTW`, `TryIndUnmatchableTW`, `IndRuleOkTPW`, `TryIndRuleOkTPW`, their
+`…RulesCorrect…W`, `TypedRulesW`), each giving its `CtxT` form (`.toT`). Their proofs for
+`program` are the `CtxT` proofs transported (`ctxW_transport`, `CtxTWTransport.lean`: the same
+proof terms with each `CtxT` constant replaced by its `CtxTW` counterpart, as Mathlib's
+`to_additive`, every declaration re-checked by the kernel; `TypedRulesW.lean`:
+`typedRulesW_program`, `lowerRulesCorrectTIW_program`, `memRulesCorrectRTIW_program`,
+`Driver.termCallsTW_of_rules`, `Driver.tryIndCallsTW_of_rules`). The exclusion with calls
+returning floats: `floatOpsFC = floatOpsF ++
+[Call]`, `exclOkTFC_program` and `nonEOkFC_program` (kernel decisions over the exported program,
+both true), `inst_splitFC`, `lower_nonroot_nomatchTFC`, `nonEUnmatchableTFW_program`. The
+dispatchers `LowerContractTFW.lean` (`lowerInstOkP_of_rulesTFW`, `lowerInstOkP_runTermTFW`,
+`lowerInstOk_runTermTFW`, `instCallsTFW_of_rules`) lower every `call` with the float family
+(`CtxInvT.toCallCtx`) and take the `CtxTW` families; `FinalTCF`/`LinkWorldTC` use them, and
+`PairDriverTC`/`DeadCleanupPairTC` through new `CtxTW` twins (`instCalls_pairTCFW`,
+`tryCalls_pairTCW`, `termCalls_pairTW`, `tryIndCalls_pairTW` and the `…_value…W` ones); every
+existing statement over `CtxT` is unchanged. Witnesses: `FVTest/E2E/FloatCallFinalTCF.lean` (`fCallP` calling
+`%g (f64, i64, f32) -> f64` and `%k (f32) -> f32`: `InSubsetTCF`, `CompiledTCF`, the verdict,
+`backend_correct_finalTCF_fCallP`; `functionETCF` but not `callsE`, so the removed
+`callsE_of_functionETCF`/`ctxT_of_functionETCF` are false), `FVTest/Link/FloatPlainCallsT.lean`
+(`%f` calling `f32`/`f64` program functions by `bl` and an outside `f64` callee through the GOT,
+`%h` both program functions through the GOT; `okBTS`, `attemptT`, `attemptT_correct`),
+`FVTest/Backend/FloatCallF.lean` (`ctxInvT_fCallF`), `FVTest/Backend/CallArgsIntW.lean` (an `f64`
+passed to an `i64` parameter: `CtxT.ofExterns` and `CovT.famCover_ofG` are false without their
+new premise `CallArgsInt`, and so is the FVTest helper `FloatCtlRulesT.ctxT_of` without its
+`buildCtx` premise). `CallOutOkT`/`callOut_runTermT` keep their statements (their proofs read the
+arguments' registers by class: `mapM_valueRegInvT`, `ctor_gen_call_args_genV`).
+
+Measured (`cargo fv --lean-link --verified`, remote): deps 20,910 → **21,023 of 21,037**
+verified (the 113 of the histogram), binary check 4 of 4, SAME 16; fv-demo 1,372 of 1,378 and
+survey 3,251 of 3,251 unchanged (2 of 2, 18 of 18); generated code unchanged (encode-check 1,473
+identical, crate proofs regenerate to the same files). deps' 14 left: 2 pooled `f64const`
+(#1002 part 2), 9 SIMD types (`i32x4`/`i64x2`: sha2 8, zmij 1), 3 over the validation budget
+(sha2 2, tiny_keccak 1). **The 113 do not reach the executables yet (#1048):** `lean-link
+--verified` admits a function into an executable's region only if it meets `fnScopeInTB` or the
+admission predicate `fnScopeInTCB`, whose `driverInTCB`/`stmtInB` requires `sigIntB` of a
+`call`'s callee, so they are left out of the region with their cg_clif code (per executable
+126/105/59/101 left out, of which 17/12/9/12 are `SrcScopeB` `declSigB` exclusions that #1036
+introduced and #1042 addresses; Lean-compiled functions in the binary check unchanged,
+19,900/17,134/15,222/16,726; pinned per executable in `scripts/gate-expected-leftout.txt`, and
+cargo fv's `--lean-link:` line counts them). Still out: a pooled `f64const` (#1002 part 2);
+float `call_indirect`/`try_call_indirect` (`sigIntB`); the decider-free totality scopes
+(`InScopeInT3`, `fnScopeInTB3F`: integer extern signatures), so float calls are admitted through
+the run-time deciders (`lowerCheckTCF`, `okRWithTS`) only, and in executables not before #1048.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in

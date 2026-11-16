@@ -558,6 +558,63 @@ class BaseRevision(unittest.TestCase):
             self.assertIn("origin/main is unknown", (t / "native_survey.log.base-rev").read_text())
 
 
+def covered(package, stem, n, h="e3ea9c8990bd8ccd"):
+    """A coverage line of `lean-link --verified` with `n` functions left out of the region."""
+    left = f"; {n} function(s) outside the input conditions keep cg_clif's code (/t/exclude-{h}.txt)" if n else ""
+    return f"cargo fv: lean-link {OUT}/{package}/{h}/out/{stem}-{h}: covered by Link.X.attemptT_correct{left}\n"
+
+
+class LeftOut(unittest.TestCase):
+    """#1048: the functions `lean-link --verified` leaves out of an executable's region, pinned."""
+    PINS = "# c\n\nsurvey  a/a  0\nsurvey  a/values  3\nsurvey  b/b  0\nsurvey  b/b  2\nother  x/x  9\n"
+    LOG = covered("a", "a", 0) + covered("a", "values", 3) + covered("b", "b", 2, h="1" * 16) + covered("b", "b", 0)
+
+    def pins(self, text=None):
+        return gc.read_leftout(self.PINS if text is None else text, "survey")[0]
+
+    def test_read(self):
+        self.assertEqual(self.pins(), {"a/a": [0], "a/values": [3], "b/b": [0, 2]})
+        self.assertIsNone(gc.read_leftout(self.PINS, "deps")[0])
+        self.assertTrue(gc.read_leftout("survey a/a\n", "survey")[1])
+
+    def test_equal_as_multiset(self):
+        self.assertEqual(gc.measured_leftout(self.LOG.splitlines()), self.pins())
+        self.assertEqual(gc.leftout_fails("survey", gc.measured_leftout(self.LOG.splitlines()), self.pins()), [])
+
+    def test_rise_is_red(self):
+        got = gc.measured_leftout(self.LOG.replace("; 3 function(s)", "; 4 function(s)").splitlines())
+        fails = gc.leftout_fails("survey", got, self.pins())
+        self.assertTrue(any("a rise" in f for f in fails), fails)
+        self.assertTrue(any("`survey  a/values  4`" in f for f in fails), fails)
+
+    def test_drop_must_be_recorded(self):
+        got = gc.measured_leftout(self.LOG.replace("; 3 function(s)", "; 1 function(s)").splitlines())
+        fails = gc.leftout_fails("survey", got, self.pins())
+        self.assertTrue(any("record the drop" in f for f in fails), fails)
+
+    def test_missing_executable_is_red(self):
+        got = gc.measured_leftout(covered("a", "a", 0).splitlines())
+        self.assertTrue(gc.leftout_fails("survey", got, self.pins()))
+
+    def test_no_pins_no_check(self):
+        self.assertEqual(gc.leftout_fails("deps", {"x/x": [5]}, None), [])
+
+    def test_base_revision(self):
+        base = self.pins(self.PINS.replace("a/values  3", "a/values  2"))
+        self.assertTrue(gc.base_leftout_fails(self.pins(), base))
+        self.assertEqual(gc.base_leftout_fails(self.pins(), self.pins()), [])
+        lower = self.pins(self.PINS.replace("a/values  3", "a/values  5"))
+        self.assertEqual(gc.base_leftout_fails(self.pins(), lower), [])
+
+    def test_only_lean_link_lines(self):
+        ok, line = gc.cargo_fv("survey", GREEN, False, leftout=self.pins())
+        self.assertNotIn("left out", line)
+
+    def test_checked_in_file(self):
+        text = (HERE / "gate-expected-leftout.txt").read_text()
+        self.assertEqual(gc.read_leftout(text, "deps")[1], [])
+        self.assertIsNotNone(gc.read_leftout(text, "deps")[0])
+
 class CommandLine(unittest.TestCase):
     def run_script(self, *a):
         return subprocess.run([sys.executable, str(HERE / "gate-line-check.py"), *map(str, a)], capture_output=True, text=True)
@@ -566,13 +623,16 @@ class CommandLine(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             t = pathlib.Path(t)
             log, known, fvlog, pins = t / "survey.log", t / "known.txt", t / "fv.log", t / "pins.txt"
+            leftout = t / "leftout.txt"
             log.write_text(survey())
             known.write_text(LIST)
             fvlog.write_text(LEAN_LD)
             pins.write_text(PINS)
+            leftout.write_text("")
 
             def run(example, *a, known=known, pins=pins):
-                return self.run_script("cargo-fv", example, "--known", known, "--expected", pins, *a)
+                return self.run_script("cargo-fv", example, "--known", known, "--expected", pins,
+                                       "--leftout", leftout, *a)
 
             r = run("survey", "--lean-link", log, fvlog)
             self.assertEqual((r.returncode, len(r.stdout.splitlines())), (0, 1), r.stdout)
@@ -639,6 +699,11 @@ class CommandLine(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             log, fvlog = pathlib.Path(t) / "deps.log", pathlib.Path(t) / "fv.log"
             fvlog.write_text(LEAN_LD)
+            # the checked-in left-out pins of deps, as coverage lines
+            left = gc.read_leftout((HERE / "gate-expected-leftout.txt").read_text(), "deps")[0] or {}
+            covers = "".join(covered(*e.split("/"), n, h=f"{i:016x}")
+                             for i, (e, ns) in enumerate(left.items()) for n in ns)
+            funcs = covers + funcs
             log.write_text(exe("deps-demo", "deps_demo") * e + count(e, e) + funcs + same)
             self.assertEqual(self.run_script("cargo-fv", "deps", "--lean-link", log, fvlog).returncode, 0)
             log.write_text(exe("deps-demo", "deps_demo") * (e - 1) + exe("deps-demo", "deps_demo", "not verified: x") + count(e - 1, e) + funcs + same)

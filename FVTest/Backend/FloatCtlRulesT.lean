@@ -58,10 +58,17 @@ theorem instScopeT_of {ctx : Ctx} (h : scopeOkB ctx = true) : InstScopeT ctx := 
   simp only [hc] at hm
   exact hm
 
-/-- A typed context from the decided checks. -/
-theorem ctxT_of {f : Clif.Function} {ctx : Ctx} (h1 : ctxOkT f ctx = true) (h2 : scopeOkB ctx = true)
-    (h3 : Compile.functionET f = true) : CtxT f ctx :=
-  CtxT.ofExterns (ctxOkT_sound h1) (instScopeT_of h2) (functionET_externs h3)
+/-- A typed context from the decided checks (`buildCtx`'s context of a typed-scope function;
+S11g: its `call` arguments are integers by `ctxT_of_functionET`; without the `buildCtx` premise
+the statement is false, `CallArgsIntW.ctxT_of_needs_buildCtx`). -/
+theorem ctxT_of {f : Clif.Function} (hb : (buildCtx f).toBool = true)
+    (h1 : ctxOkT f (ctxStOf f).1 = true) (h2 : scopeOkB (ctxStOf f).1 = true)
+    (h3 : Compile.functionET f = true) : CtxT f (ctxStOf f).1 := by
+  rcases hB : buildCtx f with _ | ⟨ctx, ranges, st⟩
+  · rw [hB] at hb; cases hb
+  · have e : (ctxStOf f).1 = ctx := by simp [ctxStOf, hB]
+    rw [e] at h1 h2 ⊢
+    exact ctxT_of_functionET h3 hB (ctxOkT_sound h1) (instScopeT_of h2)
 
 /-- A float-classed value rules out the integer invariant. -/
 theorem not_ctxInv_of {f : Clif.Function} {ctx : Ctx} {x : Nat}
@@ -84,7 +91,7 @@ theorem mrStable_true : MRStable (fun _ => True) (fun _ _ (_ : Arm.ArmState) => 
 
 /-- **`fCtl`'s context is typed** … -/
 theorem ctxT_fCtl : CtxT fCtl (ctxStOf fCtl).1 :=
-  ctxT_of (by native_decide) (by native_decide) functionET_fCtl
+  ctxT_of (by native_decide) (by native_decide) (by native_decide) functionET_fCtl
 
 /-- … **and not an integer one**. -/
 theorem not_ctxInv_fCtl : ¬ CtxInv fCtl (ctxStOf fCtl).1 := not_ctxInv_of (x := 0) (by native_decide)
@@ -120,7 +127,7 @@ block0(v0: f64, v1: i64):
 #guard (lowerTrace fCall 0).contains 1032 && (lowerTrace fCall 1).contains 1033
 
 theorem ctxT_fCall : CtxT fCall (ctxStOf fCall).1 :=
-  ctxT_of (by native_decide) (by native_decide) (by native_decide)
+  ctxT_of (by native_decide) (by native_decide) (by native_decide) (by native_decide)
 
 theorem not_ctxInv_fCall : ¬ CtxInv fCall (ctxStOf fCall).1 :=
   not_ctxInv_of (x := 0) (by native_decide)
@@ -170,7 +177,7 @@ def fTry : Clif.Function := fnOfText
 #guard fTry.blocks.any fun B => B.term matches .tryCall ..
 
 theorem ctxT_fTry : CtxT fTry (ctxStOf fTry).1 :=
-  ctxT_of (by native_decide) (by native_decide) (by native_decide)
+  ctxT_of (by native_decide) (by native_decide) (by native_decide) (by native_decide)
 
 theorem not_ctxInv_fTry : ¬ CtxInv fTry (ctxStOf fTry).1 :=
   not_ctxInv_of (x := 0) (by native_decide)

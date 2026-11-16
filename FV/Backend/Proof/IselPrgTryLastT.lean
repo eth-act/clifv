@@ -264,7 +264,8 @@ theorem tryCall_lastG {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx)
   have hP' := pinv_tryCtxTB hP hi data trs
   have hcT : CtxT f (tryCtx ctx ti data trs) :=
     ⟨hctx', fun ii info inst hii hc => hsc _ (hP'.clifOf ii info inst hii hc),
-      callsE_of_externs hP.externsE _⟩
+      callsE_of_externs hP.externsE _, fun ii info fn args hii hc x hx =>
+        hP'.intArgsOf _ (hP'.clifOf ii info _ hii hc) x (by simpa [intArgsE] using hx)⟩
   have hi' : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hi data
   have hti : ∀ x ∈ Compile.termIntOperands t, IntPos (tryCtx ctx ti data trs) x := by

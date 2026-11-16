@@ -50,7 +50,7 @@ theorem pinv_buildTF (hdom : dominatedB f = true) (hs : LowerScopeTF f)
   -- intArgsOf
   · intro c hc x hx
     obtain ⟨j, info, hi, hcl⟩ := hinst c hc
-    exact hctx.intOps j info c hi hcl x hx
+    exact sp.intOpsE_ofF hs.subsetTF j info c hi hcl x hx
   -- argsTyped
   · intro c hc x hx
     obtain ⟨bi, B, j, stm, hB, hj, rfl⟩ := instOf_idx hc

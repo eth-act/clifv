@@ -24,7 +24,8 @@ open Backend Backend.Proof
 theorem ctxT_ofF {f : Clif.Function} (hs : LowerScopeTF f) {ctx : Ctx}
     {ranges : Array (Nat × Nat)} {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) :
     CtxT f ctx :=
-  ⟨ctxInvT_ofF hs hb, (ctxSpec_of hb).instScopeTF hs.subsetTF, callsE_of_externs hs.externsE ctx⟩
+  ⟨ctxInvT_ofF hs hb, (ctxSpec_of hb).instScopeTF hs.subsetTF, callsE_of_externs hs.externsE ctx,
+    (ctxSpec_of hb).callArgs_ofF hs.subsetTF⟩
 
 /-- **The size analysis on the float scope** (`iselSzT`). -/
 theorem iselSzTF {f : Clif.Function} (hdom : dominatedB f = true) (hs : LowerScopeTF f)

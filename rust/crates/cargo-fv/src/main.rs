@@ -1,6 +1,6 @@
 //! `cargo fv build|run|test|report`: see docs/USAGE.md.
 use cargo_fv::config::{Config, Mode};
-use cargo_fv::report::{Report, UnitReport};
+use cargo_fv::report::{Report, Status, UnitReport};
 use cargo_fv::{TARGET, TOOLCHAIN};
 use std::collections::HashSet;
 use std::os::unix::fs::MetadataExt;
@@ -589,6 +589,31 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             eprintln!("cargo fv: lean-link {}: covered by {c}", b.path);
         }
     }
+    // #1048: the verified functions `lean-link --verified` leaves out of an executable's region
+    // (a per-function input condition fails): cg_clif's code is linked for them there, so the
+    // binary check does not cover them. "Verified" above is per function; this says how many of
+    // them are not inside the executables' verified regions.
+    let covers: Vec<&String> = report.units.iter().filter_map(|u| u.unit.binary.as_ref()?.lean_link.as_ref()).collect();
+    if !covers.is_empty() {
+        let mut left: HashSet<String> = HashSet::new();
+        for c in &covers {
+            if let Some(text) = left_out_file(c).and_then(|p| std::fs::read_to_string(p).ok()) {
+                left.extend(text.lines().filter(|l| !l.is_empty()).map(|l| unmangled(l).to_string()));
+            }
+        }
+        let out = report
+            .units
+            .iter()
+            .flat_map(|u| u.unit.functions.iter())
+            .filter(|f| matches!(f.status, Status::Verified) && left.contains(unmangled(&f.symbol)))
+            .count();
+        eprintln!(
+            "cargo fv: --lean-link: {} of the {} verified functions are inside the regions of the linked executables, {} left out of a region with cg_clif's code linked (lean-link --verified: a per-function input condition fails)",
+            report.totals.verified - out,
+            report.totals.verified,
+            out
+        );
+    }
     if bin_check {
         // the binary-level theorem's checks, per linked executable with Lean-compiled code
         let manifest = value_of(&cargo_args, "--manifest-path");
@@ -643,6 +668,22 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     match r.status() {
         Ok(s) => s.code().unwrap_or(1),
         Err(e) => die(&format!("{}: {e}", cargo.display())),
+    }
+}
+
+/// The file of the functions `lean-link --verified` left out of an executable's region, from its
+/// coverage text (`…; N function(s) outside the input conditions keep cg_clif's code (FILE)`).
+fn left_out_file(coverage: &str) -> Option<&str> {
+    const KEY: &str = "outside the input conditions keep cg_clif's code (";
+    let i = coverage.find(KEY)? + KEY.len();
+    coverage[i..].strip_suffix(')')
+}
+
+/// A symbol without the `__fv_<hash>_` prefix the region gives internal symbols.
+fn unmangled(s: &str) -> &str {
+    match s.strip_prefix("__fv_").and_then(|r| r.split_once('_')) {
+        Some((h, rest)) if !h.is_empty() && h.bytes().all(|b| b.is_ascii_hexdigit()) => rest,
+        _ => s,
     }
 }
 

@@ -257,4 +257,156 @@ theorem nonEUnmatchableTF_program : NonEUnmatchableTF program := by
       · cases hok
   · exact intStore_nonE hr his hctx hi hc hE hst hmatch
 
+/-! ## Float calls (S11g, #1015)
+
+`rootNEF` whose look-through fields are checked over `floatOpsFC` (a `call` of a callee
+returning a float has a float result and the opcode `call`, `inst_splitFC`), so the theorem
+holds over `CtxTW` (no condition on the callees). The root instruction itself is non-E, so not a
+`call`: its data lists are `rootNEF`'s. -/
+
+section
+variable (p : Program)
+
+mutual
+/-- **Root checker with float calls**: `rootNEF` with the fields over `floatOpsFC`. -/
+def rootNEFC (sel : Bool) : Pattern → Bool
+  | .bind _ _ q => rootNEFC sel q
+  | .and _ qs => rootNEFCAny sel qs
+  | .term _ t args =>
+    match termOf p t with
+    | .error _ => true
+    | .ok term =>
+      match term.kind with
+      | .decl flags _ (some (.external _ _)) =>
+        if flags.isMulti then true else
+        term.id == TId.inst_data_value &&
+          failsArgsTG p opsTF floatOpsFC [.tys (.invalid :: eCTys), .data neIOpsF] args &&
+          failsArgsTG p opsTF floatOpsFC [.tys fTys, .data (neFOpsF sel)] args
+      | _ => false
+  | _ => false
+
+/-- Some conjunct is refuted. -/
+def rootNEFCAny (sel : Bool) : List Pattern → Bool
+  | [] => false
+  | q :: qs => rootNEFC sel q || rootNEFCAny sel qs
+end
+
+/-- `nonEOkF` with `rootNEFC`. -/
+def nonEOkFC (r : Rule) : Bool :=
+  !closureRootIds.contains r.id || floatMoveRootRule r || floatMemRootRule r ||
+    floatArithRootRule r || floatCvtRootRule r || floatCmpRootRule r || intStoreRoot r ||
+    match r.args with
+    | [q] => rootNEFC p (r.id == 971) q
+    | _ => false
+
+end
+
+set_option maxRecDepth 100000 in
+/-- Checked over the exported rule list. -/
+theorem nonEOkFC_program : (program.rulesOf TId.lower).all (nonEOkFC program) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  decide +kernel
+
+section
+variable {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeTF ctx)
+  {ii : Nat} {info : IInfo} {sel : Bool}
+  (hsp : (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
+        (AVT.data neIOpsF).HoldsS Compile.instETF f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧
+        (AVT.data (neFOpsF sel)).HoldsS Compile.instETF f ctx info.data))
+  (hi : ctx.insts[ii]? = some info)
+include hctx hsc hsp hi
+
+mutual
+theorem rootNEFC_sound : ∀ (q : Pattern) (st : LState) (env env' : Interp.Env V),
+    rootNEFC program sel q = true →
+    matchPat program (sem ctx) st q (.inst ii) env = .ok (some env') → False
+  | .bind ty x q, st, env, env', hf, hm => by
+    rw [rootNEFC.eq_1] at hf
+    exact rootNEFC_sound q st _ env' hf (matchPat_bind_inv hm).2
+  | .and ty qs, st, env, env', hf, hm => by
+    rw [rootNEFC.eq_2] at hf
+    rw [matchPat.eq_7] at hm
+    exact rootNEFCAny_sound qs st env env' hf hm
+  | .term ty t args, st, env, env', hf, hm => by
+    rw [rootNEFC.eq_3] at hf
+    cases ht : termOf program t with
+    | error e => exact matchPat_termOf_error ht hm
+    | ok term =>
+      rw [ht] at hf
+      simp only at hf
+      cases hk : term.kind with
+      | decl flags c ex =>
+        rw [hk] at hf
+        cases ex with
+        | none => simp at hf
+        | some ex =>
+          cases ex with
+          | internal form => simp at hf
+          | external fn inf =>
+            simp only at hf
+            cases hmu : flags.isMulti
+            · rw [hmu] at hf
+              simp only [Bool.false_eq_true, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at hf
+              obtain ⟨⟨hid, hf1⟩, hf2⟩ := hf
+              obtain ⟨fs, hx', hma⟩ := matchPat_extract_inv ht hk hmu hm
+              rw [sem_extract] at hx'
+              obtain ⟨info', hi', rfl⟩ := ext_idv_inv hid hx'
+              rw [hi] at hi'
+              cases hi'
+              rcases hsp with ⟨h1, h2⟩ | ⟨h1, h2⟩
+              · exact failsArgsTG_sound hctx (inst_splitFC hctx hsc) args _
+                  [.ty (info.resTys.head?.getD .invalid), info.data] st env env' hf1
+                  ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
+              · exact failsArgsTG_sound hctx (inst_splitFC hctx hsc) args _
+                  [.ty (info.resTys.head?.getD .invalid), info.data] st env env' hf2
+                  ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
+            · exact matchPat_multi ht hk hmu hm
+      | _ => rw [hk] at hf; simp at hf
+  | .var .., _, _, _, hf, _ => by simp [rootNEFC] at hf
+  | .constBool .., _, _, _, hf, _ => by simp [rootNEFC] at hf
+  | .constInt .., _, _, _, hf, _ => by simp [rootNEFC] at hf
+  | .constPrim .., _, _, _, hf, _ => by simp [rootNEFC] at hf
+  | .wildcard .., _, _, _, hf, _ => by simp [rootNEFC] at hf
+
+theorem rootNEFCAny_sound : ∀ (qs : List Pattern) (st : LState) (env env' : Interp.Env V),
+    rootNEFCAny program sel qs = true →
+    matchAll program (sem ctx) st qs (.inst ii) env = .ok (some env') → False
+  | [], _, _, _, hf, _ => by simp [rootNEFCAny] at hf
+  | q :: qs, st, env, env', hf, hm => by
+    rw [rootNEFCAny.eq_2, Bool.or_eq_true] at hf
+    obtain ⟨e1, h1, h2⟩ := matchAll_cons_inv_ex hm
+    rcases hf with hf | hf
+    · exact rootNEFC_sound q st env e1 hf h1
+    · exact rootNEFCAny_sound qs st e1 env' hf h2
+end
+
+end
+
+/-- **The integer roots never match the non-E instructions of a typed context with the proven
+float operations and float calls** (`NonEUnmatchableTFW`: over `CtxTW`, no condition on the
+callees of the `call`s). -/
+theorem nonEUnmatchableTFW_program : NonEUnmatchableTFW program := by
+  intro r hr hroot hfm hmm hfa hfc hfcmp f ctx hctx ii info inst hi hc hE hsel hst cfg m st tr
+    env' s1 _ hmatch
+  have hok := List.all_eq_true.mp nonEOkFC_program r hr
+  rw [closureRoot_eq] at hroot
+  simp only [nonEOkFC, hroot, hfm, hmm, hfa, hfc, hfcmp, Bool.not_true, Bool.false_or] at hok
+  cases his : intStoreRoot r
+  · rw [his, Bool.false_or] at hok
+    cases m with
+    | zero => rw [matchRule.eq_1] at hmatch; cases hmatch
+    | succ m =>
+      obtain ⟨env0, ha, -⟩ := matchRule_some_inv hmatch
+      split at hok
+      · rename_i q hargs
+        rw [hargs] at ha
+        obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
+        have hd := hctx.inv.data ii info inst hi hc
+        have hsp := nonE_splitF hctx.inv hi hc hd (hctx.scope ii info inst hi hc) hE
+          (sel := r.id == 971) (fun h => hsel (beq_iff_eq.mp h))
+        exact rootNEFC_sound hctx.inv hctx.scope hsp hi q _ _ _ hok h1
+      · cases hok
+  · exact intStore_nonEW hr his hctx hi hc hE hst hmatch
+
 end Backend.Proof

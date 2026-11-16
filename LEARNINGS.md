@@ -138,6 +138,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Problem (#995):** `rcases … with e | hl | e <;> (try obtain ⟨…⟩ := f hl) <;> …` relies on `try` to skip the cases without `hl`. With `hl` as an argument, `obtain`/`rcases` elaborate the term with error recovery: `Unknown identifier` is logged, the module is red, and `try`/`first` do not catch it (a bare `:= hl`, `exact f hl` and `have := f hl` are caught). It stays green only while every case binds `hl`; a new case of the split breaks it (#581: two modules red in a 6 h Full gate run).
 - **Rule:** name the cases (`rcases … with e | hl | e`, then `· …` per case, or a helper lemma per kind of case). Eight sites of the old shape are listed in #995.
 
+### A weaker premise for a whole proof family: transport the proof terms, don't duplicate them
+- **Problem (S11g, #1015):** the typed rule families quantify over `CtxT`; the new scope needed them over the weaker `CtxTW` (no integer-call facts), while the statement rule forbids changing the existing statements. Restating ~150 per-rule lemmas and their dispatchers under new names would have doubled 40+ heavy modules.
+- **Trick:** the proofs never read the call facts (only `CtxT.inv`/`.scope`/`.toW`), so the `CtxTW` form of each theorem is the same proof term with the `CtxT` constants replaced. `ctxW_transport src => dst` (`FV/Backend/Proof/CtxTWTransport.lean`, ~150 lines, like Mathlib's `to_additive`) rewrites the constants (and `CtxT`/`TypedRules` projections), transports every used theorem whose statement mentions one first (`<name>.ctxW`), and `addDecl`s the result: the kernel re-checks each term, so a proof that does read a call fact fails instead of producing a wrong theorem.
+- **Numbers:** `FV/E2E/TypedRulesW.lean` transports `typedRules_program`, `lowerRulesCorrectTI_program` (≈100 per-rule lemmas behind it), `memRulesCorrectRTI_program` and two dispatchers in 60 s at 6.3 GB; no source module changed besides the hand-written `…W` definitions.
+
 ## Build infrastructure
 
 ### Threads per Lean process don't help us

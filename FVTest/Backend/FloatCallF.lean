@@ -6,8 +6,9 @@ import FV.Backend.SpillAlloc
 /-!
 Non-vacuity of the typed `call` family with `f32`/`f64` arguments and returns (S11e6, #419):
 `buildCtx`'s contexts of functions calling float-taking callees are `CallCtxT` contexts
-(`callCtxOkB`, `native_decide`, witness only), while `CtxInvT` fails on them (it types every
-`call` argument as an integer), and the `call` roots of `lower` fire on their calls:
+(`callCtxOkB`, `native_decide`, witness only) and, since S11g (#1015: `CtxInvT` no longer types a
+`call`'s arguments as integers), `CtxInvT` contexts too (`ctxOkT`), and the `call` roots of
+`lower` fire on their calls:
 
 * `fCallF` calls `%g(f64, i64, f32) -> f64`: the call's fixed uses are v0 (the `f64`), x0 (the
   `i64`) and v1 (the `f32`), its def is v0 into a fresh float vreg (rule 1032, GOT + `blr`);
@@ -74,8 +75,9 @@ def callsOf (ms : List MInst) : List CallInfo :=
   [(List.range 8).map Reg.v]
 #guard (callsOf (lowerCode fCallStk 0)).all fun ci =>
   ci.defs.map (·.1) == [.v 0] && ci.defs.all (·.2.homeCls == .float)
--- `CtxInvT` fails on both (a `call` argument of float type), `CallCtxT` holds
-#guard !ctxOkT fCallF (ctxStOf fCallF).1 && !ctxOkT fCallStk (ctxStOf fCallStk).1
+-- `CtxInvT` holds on both (S11g: a `call`'s arguments are not integer positions; before, a
+-- `call` argument of float type made `ctxOkT` fail), and so does `CallCtxT`
+#guard ctxOkT fCallF (ctxStOf fCallF).1 && ctxOkT fCallStk (ctxStOf fCallStk).1
 
 /-- The prepared VCode of `f` (`default` if lowering or `prepare` fails). -/
 def vcpOf (f : Clif.Function) : VCode :=
@@ -96,18 +98,10 @@ theorem callCtx_fCallF : CallCtxT fCallF (ctxStOf fCallF).1 := callCtxOkB_sound 
 theorem callCtx_fCallStk : CallCtxT fCallStk (ctxStOf fCallStk).1 :=
   callCtxOkB_sound (by native_decide)
 
-/-- `CtxInvT` types the arguments of a `call` as integers, so it fails on `fCallF`'s context. -/
-theorem not_ctxInvT_fCallF : ¬ CtxInvT fCallF (ctxStOf fCallF).1 := by
-  intro h
-  have hc0 : ((ctxStOf fCallF).1.insts[0]?.bind (·.clif)) = some (.call 0 [0, 1, 2]) := by
-    native_decide
-  have ht : (ctxStOf fCallF).1.valueType? 0 = some (.float 64) := by native_decide
-  cases hi : (ctxStOf fCallF).1.insts[0]? with
-  | none => rw [hi] at hc0; cases hc0
-  | some info =>
-    rw [hi] at hc0
-    have := h.intOps 0 info _ hi hc0 0 (by simp [intArgs]) _ ht
-    simp [eCTys] at this
+/-- **`CtxInvT` holds on `fCallF`'s context** (S11g; until then `not_ctxInvT_fCallF` said the
+opposite: `CtxInvT` typed every `call` argument as an integer, and `intArgs` no longer lists
+them). -/
+theorem ctxInvT_fCallF : CtxInvT fCallF (ctxStOf fCallF).1 := ctxOkT_sound (by native_decide)
 
 /-- **The float `call` family applies to both contexts**: `CallCtxT` contexts whose instruction 0
 is a `call` of an extern with an `f64` parameter, and rule 1032 (`rule_lower_2518`) is a `call`

@@ -23,9 +23,20 @@ namespace Backend.Proof
 
 open Backend
 
-/-- `intArgs` is the scope's `Compile.intOperands`. -/
-theorem intArgs_eq_intOperands (i : Clif.Inst) : intArgs i = Compile.intOperands i := by
+/-- `intArgsE` (`intArgs` with a `call`'s arguments) is the scope's `Compile.intOperands`. -/
+theorem intArgsE_eq_intOperands (i : Clif.Inst) : intArgsE i = Compile.intOperands i := by
   cases i <;> rfl
+
+/-- `intArgs` is the scope's `Compile.intOperands` off the `call`s. S11g: it was stated for
+every instruction; `intArgs` no longer lists a `call`'s arguments (`intArgsE` does,
+`intArgsE_eq_intOperands`). -/
+theorem intArgs_eq_intOperands (i : Clif.Inst) (h : ∀ fn args, i ≠ .call fn args) :
+    intArgs i = Compile.intOperands i := by
+  cases i <;> first | rfl | exact absurd rfl (h _ _)
+
+theorem mem_intOperands_of_intArgs {i : Clif.Inst} {x : Nat} (h : x ∈ intArgs i) :
+    x ∈ Compile.intOperands i := by
+  rw [← intArgsE_eq_intOperands]; exact mem_intArgsE h
 
 /-- **The supported instructions of a float-capable context**: every instruction of `ctx` is
 in the typed movement scope (`Compile.instET`). Separate from `CtxInvT`. -/
@@ -220,8 +231,30 @@ theorem CtxSpec.intOps_of (sp : CtxSpec f ctx ranges st0) (hT : Compile.function
   obtain ⟨B, hB, s, hs, -, rfl⟩ := sp.inst_of hi hc
   refine sp.eCTys_of_not_floatDef ht fun hfd => ?_
   simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at hT
-  have := (hT.1.2 B hB).1 s hs x (by rw [← intArgs_eq_intOperands]; exact hx)
+  have := (hT.1.2 B hB).1 s hs x (mem_intOperands_of_intArgs hx)
   simp [hfd] at this
+
+/-- The `call` arguments of a typed-scope function's instructions are integers (S11g: what
+`CtxSpec.intOps_of` gave for them before `intArgs` dropped a `call`'s arguments). -/
+theorem CtxSpec.callArgs_of (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionET f = true) :
+    CallArgsInt ctx := by
+  intro ii info fn args hi hc x hx t ht
+  obtain ⟨B, hB, s, hs, -, hsi⟩ := sp.inst_of hi hc
+  refine sp.eCTys_of_not_floatDef ht fun hfd => ?_
+  simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at hT
+  have hx' : x ∈ Compile.intOperands s.inst := by
+    rw [← hsi]; simpa [Compile.intOperands] using hx
+  have := (hT.1.2 B hB).1 s hs x hx'
+  simp [hfd] at this
+
+/-- `CtxSpec.intOps_of` with a `call`'s arguments (`intArgsE`). -/
+theorem CtxSpec.intOpsE_of (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionET f = true) :
+    ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+      info.clif = some inst → ∀ x ∈ intArgsE inst, IntPos ctx x := by
+  intro ii info inst hi hc x hx
+  cases inst with
+  | call fn args => exact sp.callArgs_of hT ii info fn args hi hc x hx
+  | _ => exact sp.intOps_of hT ii info _ hi hc x hx
 
 /-- The instructions of `buildCtx`'s context of a typed-scope function are in the scope. -/
 theorem CtxSpec.instScopeT (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionET f = true) :
