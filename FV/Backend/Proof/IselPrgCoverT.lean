@@ -432,7 +432,8 @@ theorem stmt_rootTB {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx) {ii : Na
     rw [← hd]
     have hp : p ∈ intArgsE (.store .store ty fl x p off) := by
       show p ∈ (if ty.isFloat then [p] else [x, p])
-      rw [if_pos hfloat]; exact List.mem_singleton_self _
+      rw [if_pos (show ty.isFloat = true by revert hfloat; cases ty <;> simp)]
+      exact List.mem_singleton_self _
     exact γ_instDataV (by rfl) (γL_cons' (γ_opcodeV (by rfl)) (γL_cons'
       (γ_vals (γL_cons' (γ_aVMTB hP (hargs x (by simp [Driver.instArgs])))
         (γL_cons' (γ_aVT (hargs p (by simp [Driver.instArgs])) (hint p hp)) γL_nil')))
@@ -448,7 +449,8 @@ theorem stmt_rootTB {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx) {ii : Na
     · simp only [pure, Except.pure, Except.ok.injEq] at hd
       have hcI : c ∈ intArgsE (.select ty c x y) := by
         show c ∈ (if ty.isFloat then [c] else [c, x, y])
-        rw [if_pos hfloat]; exact List.mem_singleton_self _
+        rw [if_pos (show ty.isFloat = true by revert hfloat; cases ty <;> simp)]
+        exact List.mem_singleton_self _
       refine ⟨γ_inst hi hT ?_ hR, sfT_select hty2, hsingle ty _ _ (by decide) (by decide) hl⟩
       rw [← hd]
       exact γ_instDataV (by rfl) (γL_cons' (γ_opcodeV (by rfl)) (γL_cons'

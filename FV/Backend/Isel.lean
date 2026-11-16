@@ -145,11 +145,11 @@ def fUnaryOpcode : Clif.FOp → Option String
   | _ => none
 
 /-- S11f: the controlling types at which `instData` accepts a float operation: `fpromote.f64`,
-`fdemote.f32`, the others at `f32`/`f64`. -/
+`fdemote.f32`, the others at `f32`/`f64` (`isArithFloat`: not the move-only `f16`). -/
 def fTyOk : Clif.FOp → Clif.Ty → Bool
   | .fpromote, ty => ty == .f64
   | .fdemote, ty => ty == .f32
-  | _, ty => ty.isFloat
+  | _, ty => ty.isArithFloat
 
 /-- S11f-cvt: the `Opcode` of a float/integer conversion whose `lower` root is in the closure
 (`InstructionData::Unary`; an integer operand or an integer result, so kept apart from
@@ -164,7 +164,7 @@ def fCvtOpcode : Clif.FOp → Option String
 proven). -/
 def fCvtTyOk : Clif.FOp → Clif.Ty → Bool
   | .fcvtToUintSat, ty | .fcvtToSintSat, ty => ty == .i32 || ty == .i64
-  | _, ty => ty.isFloat
+  | _, ty => ty.isArithFloat
 
 /-- S11f: the ISLE `FloatCC` variant name of an `fcmp` condition. -/
 def floatccName : Clif.FloatCC → String
@@ -190,10 +190,11 @@ def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
 def eTy (ty : Clif.Ty) : Bool := ty.isInt && ty != .i128
 
 /-- Types of the values the lowering keeps in registers: the integer types of E and
-`f32`/`f64` (in a V register). Also the movement predicate of S11e4: the types at which
-`instData` accepts the data-movement instructions (`f32const`/`f64const`, `load`/`store` of
-the full width, `select`, `bitcast`); `eTy` stays the predicate of the integer operations. -/
-def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isFloat
+`f32`/`f64` (in a V register; `isArithFloat`, not `f16`). Also the movement predicate of S11e4:
+the types at which `instData` accepts the data-movement instructions (`f32const`/`f64const`,
+`load`/`store` of the full width, `select`, `bitcast`); `eTy` stays the predicate of the integer
+operations. -/
+def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isArithFloat
 
 /-- The register class of a value of type `t` (`regClass?`; `.int` where it has none). -/
 def CTy.valClass (t : CTy) : RegClass := (t.regClass?).getD .int
@@ -259,11 +260,11 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .ireduce ty x => if eTy ty then pure (instDataV "Unary" [opcodeV "Ireduce", .value x])
     else throw "ireduce.i128"
   | .load op ty flags p off =>
-    if !eTy ty && !(ty.isFloat && op == .load) then throw s!"load.{ty.name}"
+    if !eTy ty && !(ty.isArithFloat && op == .load) then throw s!"load.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian load"
     else pure (instDataV "Load" [opcodeV (loadOpcode op), .value p, .op (.memFlags flags), .int off])
   | .store op ty flags x p off =>
-    if !eTy ty && !(ty.isFloat && op == .store) then throw s!"store.{ty.name}"
+    if !eTy ty && !(ty.isArithFloat && op == .store) then throw s!"store.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian store"
     else pure (instDataV "Store"
       [opcodeV (storeOpcode op), .values [x, p], .op (.memFlags flags), .int off])
@@ -348,7 +349,7 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
       | none =>
         match op with
         | .fcmp cc =>
-          if ty.isFloat && fccOk cc then
+          if ty.isArithFloat && fccOk cc then
             pure (instDataV "FloatCompare"
               [opcodeV "Fcmp", .values [x, y], mkVariant TyId.FloatCC (floatccName cc)])
           else throw s!"fcmp.{ty.name} {cc.name}"
@@ -519,13 +520,19 @@ def slotsOk : List (Nat × Nat) → Nat → Nat → Bool
   | [], _, _ => true
   | (off, b) :: rest, lo, S => decide (lo ≤ off ∧ off + b ≤ S) && slotsOk rest (off + b) S
 
+/-- No parameter of `s` is an `f16` (#35, interim: the lowering of an `f16` call argument is not
+proven yet; `stackArgStore` has no 2-byte float store). -/
+def sigNoF16 (s : Clif.Signature) : Bool :=
+  s.params.all (·.ty != .f16)
+
 /-- The stack-argument layout of `s` (`sigArgLocs`) is well formed: the stack-passed parameters
 occupy non-overlapping byte ranges of the stack-argument area, in parameter order (a
-translation-validation check of `argLocs`; `lowerCheck` checks it for every call). -/
+translation-validation check of `argLocs`; `lowerCheck` checks it for every call); and no
+parameter is an `f16` (`sigNoF16`). -/
 def stackLayoutOk (s : Clif.Signature) : Bool :=
-  match sigArgLocs s, sigArgs s with
-  | .ok (locs, S), .ok bytes => slotsOk (stackSlots locs bytes) 0 S
-  | _, _ => false
+  (match sigArgLocs s, sigArgs s with
+    | .ok (locs, S), .ok bytes => slotsOk (stackSlots locs bytes) 0 S
+    | _, _ => false) && sigNoF16 s
 
 /-- The returns of a signature as the ABI sees them (`from_func_sig` /
 `ensure_struct_return_ptr_is_returned`, which is `keep in sync` in Cranelift's abi.rs): a

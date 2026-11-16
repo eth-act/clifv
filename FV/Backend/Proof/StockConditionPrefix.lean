@@ -26,7 +26,7 @@ theorem stock_select_nonzero_prefix {f : Clif.Function} {ctx : Ctx}
     rw [gas] at rhs
     obtain ⟨_,_,_,_,finish⟩ := ScalarCmp.stock_cmp_nonzero8_rhs_observed data_program ctx rfl rhs
     exact ⟨[],by rw [finish]; exact Frag.nil _⟩
-  case i16 =>
+  case i16 | f16 =>
     obtain ⟨_,key,mapped,_,finish⟩ := stock_select_nonzero16_emitter_observed inv enough typed run
     rw [finish]
     refine ⟨_,Frag.fresh_emit _ ?_⟩

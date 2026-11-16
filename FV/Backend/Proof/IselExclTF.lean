@@ -99,7 +99,7 @@ theorem fCvtET_cases {c : Clif.Inst} (h : Compile.fCvtET c = true) :
       | nil =>
         refine ⟨op, ty, x, rfl, ?_⟩
         simp only [Compile.fCvtET, Bool.and_eq_true] at h
-        cases op <;> simp_all [fCvtOpcode, fCvtTyOk]
+        cases op <;> cases ty <;> simp_all [fCvtOpcode, fCvtTyOk]
   | _ => simp [Compile.fCvtET] at h
 
 set_option maxRecDepth 20000 in
@@ -141,7 +141,7 @@ theorem fCmpET_cases {c : Clif.Inst} (h : Compile.fCmpET c = true) :
       match args, h with
       | [x, y], h =>
         simp only [Compile.fCmpET, Bool.and_eq_true] at h
-        exact ⟨cc, ty, x, y, rfl, h.1⟩
+        exact ⟨cc, ty, x, y, rfl, by have h1 := h.1; revert h1; cases ty <;> simp⟩
       | [], h => simp [Compile.fCmpET] at h
       | [_], h => simp [Compile.fCmpET] at h
       | _ :: _ :: _ :: _, h => simp [Compile.fCmpET] at h
@@ -261,7 +261,9 @@ theorem inst_splitF1_at {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {
     · obtain ⟨kf, ko, fs, he, hko⟩ := instData_cvtFrom hop hd
       refine .inr ⟨?_, _, hTF, hd, kf, ko, fs, he, hko⟩
       rw [float_resTy hctx (fun cc e => by rcases hop with rfl | rfl <;> cases e) hi hc]
-      revert hty; cases ty <;> simp [fTys, CTy.ofClif, Clif.Ty.isFloat]
+      have hA : ty.isArithFloat = true := by
+        rcases hop with rfl | rfl <;> simpa [Compile.fCvtET, fCvtTyOk, fCvtOpcode] using hV
+      revert hA; cases ty <;> simp [fTys, CTy.ofClif]
     · obtain ⟨kf, ko, fs, he, hko⟩ := instData_cvtTo hop hd
       refine .inl ⟨?_, _, hTF, hd, kf, ko, fs, he, hko⟩
       rw [float_resTy hctx (fun cc e => by rcases hop with rfl | rfl <;> cases e) hi hc]

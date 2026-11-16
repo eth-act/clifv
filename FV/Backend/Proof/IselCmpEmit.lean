@@ -349,10 +349,17 @@ theorem ty_of_bits {ty : Clif.Ty} {t : CTy} (ht : CTy.ofClif ty = t) (hE : t ∈
   rcases h with ⟨h, rfl⟩ | ⟨h, rfl⟩ <;> cases ty <;>
     simp [Clif.Ty.width, CTy.ofClif, eCTys] at h hE ⊢
 
-theorem ty_narrow {ty : Clif.Ty} {t : CTy} (ht : CTy.ofClif ty = t) (h : t.bits ≤ 16) :
-    ty = .i8 ∨ ty = .i16 := by
+/-- Restated for `f16` (#35): `CTy.ofClif .f16 = .float 16` is 16 bits wide, so the type must be
+one of E's integer types (`hE`, as `ty_of_bits`; `ty_narrow_old_false`). -/
+theorem ty_narrow {ty : Clif.Ty} {t : CTy} (ht : CTy.ofClif ty = t) (hE : t ∈ eCTys)
+    (h : t.bits ≤ 16) : ty = .i8 ∨ ty = .i16 := by
   subst ht; rw [ofClif_bits] at h
-  cases ty <;> simp [Clif.Ty.width] at h ⊢
+  cases ty <;> simp [Clif.Ty.width, CTy.ofClif, eCTys] at h hE ⊢
+
+/-- The statement of `ty_narrow` before `f16` is false: `f16`. -/
+theorem ty_narrow_old_false :
+    ¬ ∀ (ty : Clif.Ty) (t : CTy), CTy.ofClif ty = t → t.bits ≤ 16 → ty = .i8 ∨ ty = .i16 :=
+  fun h => by rcases h .f16 _ rfl (by decide) with h | h <;> cases h
 
 theorem imm_lt {ty : Clif.Ty} (he : eTy ty = true) (imm : BitVec ty.width) : imm.toNat < 2 ^ 64 :=
   Nat.lt_of_lt_of_le imm.isLt (Nat.pow_le_pow_right (by omega) (eTy_width he))
@@ -506,7 +513,7 @@ theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInvT f ctx) {st st' : L
       rcases hkx with h | rfl
       · exact .inl h
       · exact .inr (by simp [hxv])
-    · have hw : ity = .i8 ∨ ity = .i16 := ty_narrow (vholds_ty hdf hT hxv) h16
+    · have hw : ity = .i8 ∨ ity = .i16 := ty_narrow (vholds_ty hdf hT hxv) (hxi t hT) h16
       have hw32 : ity.width ≤ 32 := by rcases hw with rfl | rfl <;> decide
       rw [hval]
       exact narrow_cond cc hus hw (he.2 hw32)
@@ -565,7 +572,7 @@ theorem emit_narrow_ext (hR : Refines F isem) (hctx : CtxInvT f ctx) {st st' : L
         · exact .inr (by simp [hxv])
       · exact .inr (by simp [hyv])
     · have ht := vholds_ty hdf hT hyv
-      have hw := ty_narrow ht h16
+      have hw := ty_narrow ht (hyi t hT) h16
       have hw32 : ty.width ≤ 32 := by rcases hw with rfl | rfl <;> decide
       have hy' : ρ' y = ρ y := hf.frame hrun' (vreg_lt hvb hy)
       exact narrow_cond cc hsg hw (he.2 hw32) (by rw [hy']; exact hesem _ _ _ ht (hh y _ hyv))

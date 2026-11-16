@@ -35,6 +35,8 @@ theorem extends_zero_sext (w : Nat) : Rust.sext w 0 = 0 := by
 
 attribute [local opt_imm] extends_zero_mask extends_zero_sext
 
+theorem tyInt_ofClif_f16 : Rust.tyInt (CTy.ofClif .f16) = none := rfl
+
 open Lean Elab Tactic in
 elab "extends_noinfo " t:tacticSeq : tactic => withEnableInfoTree false (evalTactic t)
 
@@ -47,10 +49,11 @@ macro "rule_extends_zero " r:ident : tactic => `(tactic| (
   all_goals opt_split_i128
   opt_cases_ty
   opt_widths
-  all_goals simp only [Ty.width, Nat.reduceLT] at *
+  all_goals try simp only [Ty.width, Nat.reduceLT] at *
   all_goals try contradiction
   all_goals (first | rule_no_iflets | rule_iflets_c [Rust.signedCondCode])
-  all_goals rule_rhs_y [reduceCtorEq, Int.reduceBEq, tyInt_ofClif_f32, tyInt_ofClif_f64]
+  all_goals rule_rhs_y [reduceCtorEq, Int.reduceBEq, tyInt_ofClif_f32, tyInt_ofClif_f64,
+    tyInt_ofClif_f16]
   all_goals opt_some_subst
   all_goals try contradiction
   all_goals rule_finish_x))

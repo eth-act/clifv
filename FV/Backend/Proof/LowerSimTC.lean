@@ -1152,6 +1152,12 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
+/-- The function's signature is in the typed scope (`Compile.functionETCF`). -/
+theorem sigET_of_functionETCF {f : Clif.Function} (h : Compile.functionETCF f = true) :
+    Compile.sigET f.sig = true := by
+  simp only [Compile.functionETCF, Bool.and_eq_true] at h
+  exact h.1.1.1.1.1
+
 /-- **Entry**: the entry block's `Args` defines the register-passed parameters from their
 argument registers, then the loads the stack-passed ones from the caller's outgoing area. -/
 theorem entry_stepTC (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
@@ -1292,7 +1298,7 @@ theorem entry_stepTC (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p) (hds 
       rw [hqb]
       refine ⟨hqb ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm), fun hf => ?_, hav⟩
       rw [hcls q hq m v hm hv] at hf
-      exact bytes_of_float hf) hmr
+      exact bytes_of_float hf (ne_f16_of_sigET (sigET_of_functionETCF H.subETC) hsig hv)) hmr
   have hseq : seqRun sem (E.filterMap (entryLoadOfT ctx R)) ρ₁ w₀ = some (.fall ρ₂ w₂) := hrun
   have hsz : (preT f ctx R 0).length < vb.insts.size := by
     have h1 : vb.insts.size = vb.insts.toList.length := by simp
@@ -1549,7 +1555,7 @@ theorem entry_step2TC (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p) (hds
     rw [hqb, hw]
     refine ⟨hqb ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm), fun hf => ?_, hav⟩
     rw [hcls q hq m v hm hv] at hf
-    exact bytes_of_float hf
+    exact bytes_of_float hf (ne_f16_of_sigET (sigET_of_functionETCF H.subETC) hsig hv)
   obtain ⟨ρ₂, w₂, hrun, hmr₂, hfr, hreg2, hstk2, hsw2⟩ := entryLoads_runT hMem hFP hMR E ρ₁ slots
     cs.mem w₀ hRid (by rw [hEids]; exact hnd) (hloadsF w₀ rfl) hmr
   obtain ⟨ρ₂', w₂', hrun', hmr₂', hfr', hreg2', hstk2', hsw2'⟩ := entryLoads_runT hMem hFP hMR E ρ₁

@@ -16,7 +16,7 @@ theorem stock_select_comparison_condition_shape {f : Clif.Function} {ctx : Ctx}
     CondShape out (fun _ => True) := by
   cases ty
   case i8 => exact stock_select_narrow_comparison_condition_shape inv cc false typeX typeY enough run
-  case i16 => exact stock_select_narrow_comparison_condition_shape inv cc true typeX typeY enough run
+  case i16 | f16 => exact stock_select_narrow_comparison_condition_shape inv cc true typeX typeY enough run
   case i32 | f32 => exact stock_select_wide_comparison_condition_shape inv cc false typeX typeY enough run
   case i64 | f64 => exact stock_select_wide_comparison_condition_shape inv cc true typeX typeY enough run
   case i128 => simp [Clif.Ty.width] at width

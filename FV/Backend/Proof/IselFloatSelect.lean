@@ -205,9 +205,19 @@ end Sem
 
 /-! ## The `select` of floats -/
 
-theorem float_ty_cases {ty : Clif.Ty} (h : ty.isFloat = true) :
+/-- Restated for `f16` (#35): the arithmetic float types (`float_ty_cases_old_false`). -/
+theorem float_ty_cases {ty : Clif.Ty} (h : ty.isArithFloat = true) :
     ∃ w, (w = 32 ∨ w = 64) ∧ CTy.ofClif ty = .float w ∧ ty.width = w := by
-  cases ty <;> simp_all [Clif.Ty.isFloat, CTy.ofClif, Clif.Ty.width]
+  cases ty <;> simp_all [CTy.ofClif, Clif.Ty.width]
+
+/-- The statement of `float_ty_cases` before `f16` is false: `f16` is 16 bits wide. -/
+theorem float_ty_cases_old_false :
+    ¬ ∀ ty : Clif.Ty, ty.isFloat = true →
+      ∃ w, (w = 32 ∨ w = 64) ∧ CTy.ofClif ty = .float w ∧ ty.width = w := by
+  intro h
+  obtain ⟨w, hw, -, hwid⟩ := h .f16 rfl
+  simp [Clif.Ty.width] at hwid
+  omega
 
 theorem vholds_fselect {ty : Clif.Ty} {w : Nat} (hwid : ty.width = w) (hw : w = 32 ∨ w = 64)
     (t : Bool) {a b : BitVec ty.width} {zx zy : CV} (hx : VHolds ⟨ty, a⟩ zx) (hy : VHolds ⟨ty, b⟩ zy) :
@@ -244,10 +254,10 @@ theorem select_float_okT (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (e
   subst hins
   have hdat := hctx.data ii _ _ hi hic
   rw [← hdd] at hdat
-  obtain ⟨ty', c', x', y', he, -, rfl⟩ := instData_select_inv hdat
+  obtain ⟨ty', c', x', y', he, hvt, rfl⟩ := instData_select_inv hdat
   simp only [Clif.Inst.select.injEq] at he
   obtain ⟨rfl, rfl, rfl, rfl⟩ := he
-  obtain ⟨w, hw, hof, hwid⟩ := float_ty_cases hfl
+  obtain ⟨w, hw, hof, hwid⟩ := float_ty_cases (isArithFloat_of_valTyOk hfl hvt)
   rw [ext_value_array_3] at hva
   cases hva
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii _ _ hi hic

@@ -452,6 +452,7 @@ theorem bswap_bswap (t : Clif.Ty) (x : BitVec t.width) : Clif.Sem.bswap (Clif.Se
   · exact bswap_bswap_128 x
   · exact bswap_bswap_32 x
   · exact bswap_bswap_64 x
+  · exact bswap_bswap_16 x
 
 theorem popcnt_bswap (t : Clif.Ty) (x : BitVec t.width) :
     Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
@@ -463,6 +464,7 @@ theorem popcnt_bswap (t : Clif.Ty) (x : BitVec t.width) :
   · exact popcnt_bswap_128 x
   · exact popcnt_bswap_32 x
   · exact popcnt_bswap_64 x
+  · exact popcnt_bswap_16 x
 
 theorem bitrev_bitrev {w : Nat} (x : BitVec w) : Clif.Sem.bitrev (Clif.Sem.bitrev x) = x :=
   BitVec.reverse_reverse_eq

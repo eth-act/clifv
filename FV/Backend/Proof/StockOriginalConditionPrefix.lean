@@ -22,7 +22,7 @@ theorem comparison_prefix {f : Clif.Function} {ctx : Ctx}
     ∃ code,Frag before.base next.base code := by
   cases ty
   case i8 => exact stock_select_narrow_comparison_prefix inv cc false typeX typeY enough run
-  case i16 => exact stock_select_narrow_comparison_prefix inv cc true typeX typeY enough run
+  case i16 | f16 => exact stock_select_narrow_comparison_prefix inv cc true typeX typeY enough run
   case i32 | f32 => exact stock_select_wide_comparison_prefix inv cc false typeX typeY enough run
   case i64 | f64 => exact stock_select_wide_comparison_prefix inv cc true typeX typeY enough run
   case i128 => simp [Clif.Ty.width] at width
