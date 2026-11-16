@@ -131,7 +131,8 @@ theorem nonE_split {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : N
     simp only [Clif.Inst.resultTypes, Option.some.injEq] at hty
     subst hty
     right
-    refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat], .iconst ty imm, hT, hd, ?_⟩
+    refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat, Compile.instET, Compile.tyE],
+      .iconst ty imm, hT, hd, ?_⟩
     obtain ⟨rest, h | h⟩ := instData_iconst_float hf hd
     · exact ⟨_, _, _, h, by cases sel <;> decide⟩
     · exact ⟨_, _, _, h, by cases sel <;> decide⟩
@@ -143,7 +144,8 @@ theorem nonE_split {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : N
     simp only [Clif.Inst.resultTypes, Option.some.injEq] at hty
     subst hty
     right
-    refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat], _, hT, hd, ?_⟩
+    refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat, Compile.instET, Compile.tyE],
+      _, hT, hd, ?_⟩
     rcases hnm with ⟨rest, h⟩ | ⟨_, _, h, -⟩
     · exact data_of_names h (by simp [instNames, loadOpcode]) (neNames_load sel)
     · cases h
@@ -167,7 +169,8 @@ theorem nonE_split {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : N
     · simp only [Clif.Inst.resultTypes, Option.some.injEq] at hty
       subst hty
       right
-      refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat], _, hT, hd, ?_⟩
+      refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat, Compile.instET, Compile.tyE,
+        Compile.tyM], _, hT, hd, ?_⟩
       rcases hnm with ⟨rest, h⟩ | ⟨_, _, h, -⟩
       · exact data_of_names h (by simp [instNames]) neNames_select
       · cases h
@@ -186,7 +189,8 @@ theorem nonE_split {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : N
       revert hT hfl
       cases ty <;> simp [Compile.instET, Compile.tyM, Compile.tyE, Clif.Ty.isFloat, CTy.ofClif, eCTys]
     · right
-      refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat], _, hT, hd,
+      refine ⟨by cases ty <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat, Compile.instET, Compile.tyE,
+        Compile.tyM], _, hT, hd,
         hdata [("LoadNoOffset", "Bitcast")] (by simp [instNames]) (neFOps sel) (neNames_bitcastF sel)⟩
   all_goals exact absurd hT (by simp_all [Compile.instET])
 
