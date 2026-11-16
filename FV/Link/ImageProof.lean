@@ -15,9 +15,10 @@ What the patched executable `patch file0 off B` holds, from the outside part's f
 * the region `[R, R + B.size)` is in one read-only `PT_LOAD` segment (`segIn_region`), its file
   bytes at `off`: the loaded byte at `R + j` is `B[j]`, read-only (`loadMem_patch`, `ro_patch`);
 * the region's bytes (`regionBytes`) hold function `j`'s resolved words from its offset
-  `span (sizes.take j)` (`regionBytes_getElem?`), little-endian (`readN_wordBytes`);
-* **`artOk_region`**: each placed function whose relocations pass `relocsOkB` is `ArtOk` in the
-  patched file (by `artOk_of_image`).
+  `span (sizes.take j)` (`regionBytes_getElem?`), little-endian (`readN_wordBytes`); the aligned
+  region (`regionBytesA`, #1061) from its aligned offset `offsA` (`regionBytesA_getElem?`);
+* **`artOk_region`**, **`artOk_regionA`**: each placed function whose relocations pass
+  `relocsOkB` is `ArtOk` in the patched file (by `artOk_of_image`).
 -/
 
 namespace Link
@@ -383,6 +384,128 @@ theorem artOk_region {I : LinkInput} {file0 : ByteArray} {phs : List Phdr}
     (hbase : a.base = BitVec.ofNat 64 (R + (offs (T.map (·.fb.words.size)) 0)[j]!)) :
     ArtOk I (patch file0 off (ByteArray.mk (regionBytes I (tpOff phs) T).toArray)) a :=
   have hw := region_words hok hR ha hbase
+  artOk_of_image hv (tpOff_patch hok hph) hw.1 hw.2
+
+/-! ## The aligned region (#1061) -/
+
+theorem regionGo_length (I : LinkInput) (tp : Nat → Option Nat) :
+    ∀ (T : List Art) (as : List Nat) (o : Nat),
+      (regionGo I tp T as o).length = endA (T.map (·.fb.words.size)) as o - o
+  | [], _, o => by simp [regionGo, endA]
+  | a :: T, as, o => by
+    have ih := regionGo_length I tp T as.tail (alignW o (as.headD 4) + 4 * a.fb.words.size + 4)
+    have h1 := alignW_ge o (as.headD 4)
+    have h2 := endA_ge (T.map (·.fb.words.size)) as.tail
+      (alignW o (as.headD 4) + 4 * a.fb.words.size + 4)
+    simp only [regionGo, List.length_append, List.length_replicate, artImage_length, ih,
+      List.map_cons, endA]
+    omega
+
+/-- **Function `j`'s image in the region from `o`**, at its aligned offset. -/
+theorem regionGo_getElem? (I : LinkInput) (tp : Nat → Option Nat) :
+    ∀ {T : List Art} {as : List Nat} {o j : Nat} {a : Art}, T[j]? = some a →
+      ∀ {m : Nat}, m < (artImage I tp a).length →
+      (regionGo I tp T as o)[(offsA (T.map (·.fb.words.size)) as o)[j]! - o + m]? =
+        (artImage I tp a)[m]?
+  | [], _, _, _, _, h, _, _ => by simp at h
+  | a0 :: T, as, o, 0, a, h, m, hm => by
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at h
+    subst h
+    have h1 := alignW_ge o (as.headD 4)
+    simp only [regionGo, List.map_cons, offsA, List.getElem!_cons_zero, List.append_assoc]
+    rw [List.getElem?_append_right (by simp only [List.length_replicate]; omega)]
+    rw [List.getElem?_append_left (by simp only [List.length_replicate]; omega)]
+    simp only [List.length_replicate]
+    congr 1
+    omega
+  | a0 :: T, as, o, j + 1, a, h, m, hm => by
+    simp only [List.getElem?_cons_succ] at h
+    have hj : j < T.length := (List.getElem?_eq_some_iff.1 h).1
+    have h1 := alignW_ge o (as.headD 4)
+    have h2 := offsA_ge (ns := T.map (·.fb.words.size)) (as := as.tail)
+      (o := alignW o (as.headD 4) + 4 * a0.fb.words.size + 4) (i := j) (by simpa using hj)
+    have ih := regionGo_getElem? I tp (as := as.tail)
+      (o := alignW o (as.headD 4) + 4 * a0.fb.words.size + 4) h hm
+    simp only [regionGo, List.map_cons, offsA, List.getElem!_cons_succ, List.append_assoc]
+    rw [List.getElem?_append_right (by simp only [List.length_replicate]; omega),
+      List.getElem?_append_right
+      (by simp only [List.length_replicate, artImage_length]; omega)]
+    rw [← ih]
+    congr 1
+    simp only [List.length_replicate, artImage_length]
+    omega
+
+theorem regionBytesA_length (I : LinkInput) (tp : Nat → Option Nat) (as : List Nat)
+    (T : List Art) : (regionBytesA I tp as T).length = endA (T.map (·.fb.words.size)) as 0 := by
+  rw [regionBytesA, regionGo_length, Nat.sub_zero]
+
+/-- **Function `j`'s image in the aligned region**, from its aligned offset. -/
+theorem regionBytesA_getElem? (I : LinkInput) (tp : Nat → Option Nat) (as : List Nat)
+    {T : List Art} {j : Nat} {a : Art} (ha : T[j]? = some a) {m : Nat}
+    (hm : m < (artImage I tp a).length) :
+    (regionBytesA I tp as T)[(offsA (T.map (·.fb.words.size)) as 0)[j]! + m]? =
+      (artImage I tp a)[m]? := by
+  have := regionGo_getElem? I tp (as := as) (o := 0) ha hm
+  rwa [Nat.sub_zero] at this
+
+/-- **A placed function's words are in the patched file** (#1061): the aligned region `B` (the
+`regionBytesA` of the placed functions `T`) written at `off` over the outside part's placeholder
+(`regionOkB`), function `j` at `R` plus its aligned offset: its code is read-only and holds its
+resolved words. -/
+theorem region_wordsA {I : LinkInput} {tp : Nat → Option Nat} {file0 : ByteArray} {R off : Nat}
+    {as : List Nat} {T : List Art}
+    (hok : regionOkB file0 R (ByteArray.mk (regionBytesA I tp as T).toArray).size off = true)
+    (hR : R + endA (T.map (·.fb.words.size)) as 0 ≤ 2 ^ 64)
+    {j : Nat} {a : Art} (ha : T[j]? = some a)
+    (hbase : a.base = BitVec.ofNat 64 (R + (offsA (T.map (·.fb.words.size)) as 0)[j]!)) :
+    (∀ k < a.fb.words.size, ∀ i < 4,
+      Elf.ro (patch file0 off (ByteArray.mk (regionBytesA I tp as T).toArray)) (wAt a (4 * k + i))) ∧
+    (∀ k < a.fb.words.size,
+      readN (loadMem (patch file0 off (ByteArray.mk (regionBytesA I tp as T).toArray))) 4
+        (wAt a (4 * k)) = some (resolveWord I tp a k)) := by
+  have hBs : (ByteArray.mk (regionBytesA I tp as T).toArray).size =
+      endA (T.map (·.fb.words.size)) as 0 := by
+    show (regionBytesA I tp as T).toArray.size = _
+    rw [List.size_toArray, regionBytesA_length]
+  have hbyte : ∀ k < a.fb.words.size, ∀ i < 4,
+      ∃ jb, jb < (ByteArray.mk (regionBytesA I tp as T).toArray).size ∧
+        wAt a (4 * k + i) = BitVec.ofNat 64 (R + jb) ∧
+        (ByteArray.mk (regionBytesA I tp as T).toArray)[jb]? =
+          (wordBytes (resolveWord I tp a k))[i]? := by
+    intro k hk i hi
+    have hm : 4 * k + i < (artImage I tp a).length := by
+      rw [artImage_length]; omega
+    have hr := regionBytesA_getElem? I tp as ha hm
+    rw [artImage_getElem? I tp a hk hi] at hr
+    have hw4 : (wordBytes (resolveWord I tp a k))[i]? = some (wordBytes (resolveWord I tp a k))[i] :=
+      List.getElem?_eq_getElem (by rw [wordBytes_length]; exact hi)
+    have hlt : (offsA (T.map (·.fb.words.size)) as 0)[j]! + (4 * k + i) <
+        (regionBytesA I tp as T).length :=
+      (List.getElem?_eq_some_iff.1 (hr.trans hw4)).1
+    refine ⟨_, by rw [hBs, ← regionBytesA_length]; exact hlt, ?_, ?_⟩
+    · rw [wAt, hbase, ← BitVec.ofNat_add, Nat.add_assoc]
+    · rw [byteArray_getElem?]
+      show (regionBytesA I tp as T).toArray[_]? = _
+      rw [List.getElem?_toArray, hr]
+  refine ⟨fun k hk i hi => ?_, fun k hk => readN_wordBytes fun i hi => ?_⟩
+  · obtain ⟨jb, hjb, hw, -⟩ := hbyte k hk i hi
+    rw [hw]
+    exact ro_patch hok (by rw [hBs]; exact hR) hjb
+  · obtain ⟨jb, hjb, hw, hb⟩ := hbyte k hk i hi
+    rw [show wAt a (4 * k) + BitVec.ofNat 64 i = wAt a (4 * k + i) by
+      rw [wAt, wAt, BitVec.add_assoc, BitVec.ofNat_add], hw,
+      loadMem_patch hok (by rw [hBs]; exact hR) hjb, hb]
+
+/-- **A placed function is in the patched file** (`ArtOk`, #1061): its words are
+(`region_wordsA`), its relocations pass the checks, the thread-pointer offsets are the file's. -/
+theorem artOk_regionA {I : LinkInput} {file0 : ByteArray} {phs : List Phdr}
+    (hph : phdrs (fileRd file0) = some phs) {R off : Nat} {as : List Nat} {T : List Art}
+    (hok : regionOkB file0 R (ByteArray.mk (regionBytesA I (tpOff phs) as T).toArray).size off = true)
+    (hR : R + endA (T.map (·.fb.words.size)) as 0 ≤ 2 ^ 64)
+    {j : Nat} {a : Art} (ha : T[j]? = some a) (hv : relocsOkB I (tpOff phs) a = true)
+    (hbase : a.base = BitVec.ofNat 64 (R + (offsA (T.map (·.fb.words.size)) as 0)[j]!)) :
+    ArtOk I (patch file0 off (ByteArray.mk (regionBytesA I (tpOff phs) as T).toArray)) a :=
+  have hw := region_wordsA hok hR ha hbase
   artOk_of_image hv (tpOff_patch hok hph) hw.1 hw.2
 
 end Link

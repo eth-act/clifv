@@ -25,7 +25,7 @@ def leanLinkWithResults (S : LinkSpec) (file0 : ByteArray)
     else if !(T.all fun e => relocsOkB I tp e.2) then .error "a relocation fails the checks (relocsOkB)"
     else if !(codeMapB I T) then .error "the code map check fails (codeMapB)"
     else
-      let B := ByteArray.mk (regionBytes I tp ((T.take S.funcs.length).map (·.2))).toArray
+      let B := ByteArray.mk (regionBytesA I tp S.aligns ((T.take S.funcs.length).map (·.2))).toArray
       let off := offsetOf phs S.R
       if !regionOkB file0 S.R B.size off then
         .error "the region is not a read-only part of one PT_LOAD segment (regionOkB)"

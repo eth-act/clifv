@@ -20,7 +20,7 @@ theorem inputCleanup_results : S.inputCleanup.resultsCleanup = S.inputCleanup.re
     S.symNames.filterMap (fun n => (S.addrs.lookup n).map (n, ·)) := rfl
 
 theorem inputCleanup_baseOf_name {S : LinkSpec} (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
-    S.inputCleanup.baseOf S.names[i]! = S.R + (offs S.sizes 0)[i]! :=
+    S.inputCleanup.baseOf S.names[i]! = S.R + (offsA S.sizes S.aligns 0)[i]! :=
   baseOf_name hP hi
 end Link.LinkSpec
 
@@ -55,7 +55,7 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
     else if !(T.all fun e => relocsOkB I tp e.2) then .error "a relocation fails the checks (relocsOkB)"
     else if !(codeMapB I T) then .error "the code map check fails (codeMapB)"
     else
-      let B := ByteArray.mk (regionBytes I tp ((T.take S.funcs.length).map (·.2))).toArray
+      let B := ByteArray.mk (regionBytesA I tp S.aligns ((T.take S.funcs.length).map (·.2))).toArray
       let off := offsetOf phs S.R
       if !regionOkB file0 S.R B.size off then
         .error "the region is not a read-only part of one PT_LOAD segment (regionOkB)"

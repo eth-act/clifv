@@ -118,7 +118,7 @@ abbrev placedArts (S : LinkSpec) : List Art :=
 
 /-- The region's bytes the linker writes. -/
 abbrev regionOf (S : LinkSpec) (tp : Nat → Option Nat) : ByteArray :=
-  ByteArray.mk (regionBytes S.input tp (placedArts S)).toArray
+  ByteArray.mk (regionBytesA S.input tp S.aligns (placedArts S)).toArray
 
 theorem of_not_not {b : Bool} (h : ¬(!b) = true) : b = true := by
   cases b <;> simp_all

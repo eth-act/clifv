@@ -643,31 +643,19 @@ fn gap_object(cfg: &Config, work: &Path) -> Result<PathBuf, String> {
     Ok(o)
 }
 
-/// The function object `o` with its `.text` word-aligned, for the `--lean-link` program part: a
-/// copy beside it when `lean-backend` gave the section a larger alignment (8: a function with a
-/// literal pool, as Cranelift's `MachBuffer` aligns its code to its constants'), else `o`. The
-/// Lean linker places the functions consecutively, each followed by one gap word (`Link.offs`,
-/// no alignment), so `ld -r` must not pad before such a function: it would move it and every
-/// later function off their placement (`symsOkB` then fails and the executable leaves the typed
-/// route, #1059). The function's bytes are unchanged (the pool's padding is relative to the
-/// function's start, `Backend.poolLines`); only its start may be 4 modulo 8, where an 8-byte
-/// `ldr (literal)` load is unaligned, which AArch64 permits for normal memory.
-fn word_aligned(cfg: &Config, o: &Path) -> Result<PathBuf, String> {
+/// The alignment of the function object `o`'s `.text` (`lean-backend`: 8 for a function with a
+/// literal pool, as Cranelift's `MachBuffer` aligns its code to its constants'; else 4). Under
+/// `--lean-link`, `ld -r` starts the function at that alignment in the program part and the
+/// Lean linker's placement follows it (`Link.offsA`, `cargo fv link-proof`'s `aligns`, #1061).
+pub fn text_align(o: &Path) -> Result<u64, String> {
     let data = fs::read(o).map_err(|e| format!("{}: {e}", o.display()))?;
     let file = object::File::parse(&*data).map_err(|e| format!("{}: {e}", o.display()))?;
-    let wide = file.sections().any(|s| {
-        object::read::ObjectSection::name(&s) == Ok(".text") && object::read::ObjectSection::align(&s) > 4
-    });
-    if !wide {
-        return Ok(o.to_path_buf());
-    }
-    let out = o.with_extension("a4.o");
-    if !out.is_file() {
-        let tmp = o.with_extension(format!("a4-{}.o", std::process::id()));
-        run(Command::new(&cfg.objcopy).arg("--set-section-alignment=.text=4").arg(o).arg(&tmp))?;
-        fs::rename(&tmp, &out).map_err(|e| format!("{}: {e}", out.display()))?;
-    }
-    Ok(out)
+    Ok(file
+        .sections()
+        .filter(|s| object::read::ObjectSection::name(s) == Ok(".text"))
+        .map(|s| object::read::ObjectSection::align(&s))
+        .max()
+        .unwrap_or(4))
 }
 
 /// The unit's Lean-compiled functions (`--lean-link`): one line `symbol<TAB>object` each, in
@@ -676,11 +664,12 @@ pub const LEAN_FUNCS: &str = "lean-funcs.txt";
 
 /// The Lean code of the functions `fns` (symbol, object) as one relocatable object `out` in the
 /// work directory: `ld -r` of the objects (with `--lean-link` each followed by a zero word, the
-/// Lean linker's placement `Link.offs`: the gap word, so that `ld -r` lays the code out as the
-/// Lean linker places it), the unit's renaming `renames` (data names too, and the names the
-/// code references under another spelling, [`obj_name_of`]) and a marker `__fvlean$<final>` at
-/// each function. `prefix` names the work files. Returns the CLIF names of the code → their
-/// final symbol names (`cargo fv link-proof`).
+/// Lean linker's placement `Link.offsA`: each function at its object's `.text` alignment, zeros
+/// before it, the gap word after it, so that `ld -r` lays the code out as the Lean linker places
+/// it), the unit's renaming `renames` (data names too, and the names the code references under
+/// another spelling, [`obj_name_of`]) and a marker `__fvlean$<final>` at each function. `prefix`
+/// names the work files. Returns the CLIF names of the code → their final symbol names
+/// (`cargo fv link-proof`).
 fn lean_object(
     cfg: &Config,
     work: &Path,
@@ -694,7 +683,7 @@ fn lean_object(
     if cfg.lean_link {
         let pad = gap_object(cfg, work)?;
         for (_, o) in fns {
-            inputs.push(word_aligned(cfg, o)?);
+            inputs.push(o.clone());
             inputs.push(pad.clone());
         }
     } else {
@@ -918,6 +907,8 @@ fn process_in(
                             "ra": o.with_extension("ra.json"),
                             "verified": unverified.is_none(),
                             "reason": unverified,
+                            // where `ld -r` starts it in the program part (`--lean-link`, #1061)
+                            "align": text_align(&o)?,
                         }));
                         ours.push((sym.clone(), o));
                         match unverified {

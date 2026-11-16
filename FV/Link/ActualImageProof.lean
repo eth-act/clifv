@@ -17,7 +17,7 @@ abbrev artsFor (S : LinkSpec) (lower : Clif.Function → Except String VCode)
   ((tabOf (resultsFor S lower stage)).take S.funcs.length).map (·.2)
 abbrev regionFor (S : LinkSpec) (lower : Clif.Function → Except String VCode)
     (stage : Clif.Function → VCode → VCode) (tp : Nat → Option Nat) : ByteArray :=
-  ByteArray.mk (regionBytes (inputFor S lower stage) tp (artsFor S lower stage)).toArray
+  ByteArray.mk (regionBytesA (inputFor S lower stage) tp S.aligns (artsFor S lower stage)).toArray
 
 theorem spec {S : LinkSpec} {lower : Clif.Function → Except String VCode}
     {stage : Clif.Function → VCode → VCode} {file0 file : ByteArray} (h : leanLinkWithLowering S file0 lower stage = .ok file) :
@@ -107,7 +107,7 @@ theorem tab_placed {S : LinkSpec} {lower : Clif.Function → Except String VCode
     (hn : S.namesOkB (tabOf (resultsFor S lower stage)) = true)
     (hs : S.sizesOkB (tabOf (resultsFor S lower stage)) = true) :
     ∀ i < S.funcs.length, ∃ e, (tabOf (resultsFor S lower stage))[i]? = some e ∧
-      e.2.base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) ∧
+      e.2.base = BitVec.ofNat 64 (S.R + (offsA S.sizes S.aligns 0)[i]!) ∧
       e.2.fb.words.size = S.sizes[i]! ∧ e.1.name = S.names[i]! ∧
       e.2.fa.layout = .ok e.2.fb := by
   intro i hi
@@ -153,7 +153,7 @@ theorem placed_words {S : LinkSpec} {lower : Clif.Function → Except String VCo
   have hsz := arts_sizes hs
   have ha : (artsFor S lower stage)[i]? = some e.2 := by
     simp only [artsFor, List.getElem?_map, List.getElem?_take, hi, ↓reduceIte, he, Option.map_some]
-  refine region_words hok ?_ ha ?_
+  refine region_wordsA hok ?_ ha ?_
   · rw [hsz]
     have := hP.fits
     simp only [LinkSpec.size] at this

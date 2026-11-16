@@ -9,10 +9,13 @@ facts (`FV/Link/LayoutProof.lean`) and the code part of `BinOk` (`FV/Link/ImageP
 * `pipeT_layout`: a successful pipeline's artifact is the layout of its assembly, at its base.
 * `offs_getElem!`, `offs_sep`, `offs_end`: the offsets are the spans of the preceding functions;
   each function's words and its gap word end before the next function and within the region.
+* `offsA_ge`, `offsA_sep`, `offsA_end`, `offsA_mod4`, `offsA_aligned`: the same for the aligned
+  offsets (#1061), each a multiple of its alignment; `offsA_nil`, `endA_nil`: without
+  alignments they are `offs` and `span`.
 * `nodupB_sound`: the hash-set duplicate check decides `Nodup`.
 * `PlaceOk`, `placeOk_of`: `placeOkB` unfolded.
 * `baseOf_name`, `addrs_name`: with `placeOkB`, the load and link-map address of the `i`-th
-  placed function is `R + offs_i`.
+  placed function is `R + offsA_i`.
 * `tab_length`, `names_getElem!`, `tab_placed`: the compiled table consists of the placed
   functions, with the placement's names and sizes.
 -/
@@ -112,6 +115,134 @@ theorem offs_mod4 {ns : List Nat} {o i : Nat} (ho : o % 4 = 0) (hi : i < ns.leng
   have := this (ns.take i)
   omega
 
+/-! ## Aligned offsets (#1061) -/
+
+theorem alignW_ge (o a : Nat) : o ≤ alignW o a := by
+  unfold alignW; omega
+
+theorem alignW_mod4 (o a : Nat) : alignW o a % 4 = o % 4 := by
+  unfold alignW; omega
+
+theorem alignW_four (o : Nat) : alignW o 4 = o := by
+  unfold alignW; omega
+
+/-- **A word-aligned offset rounded to an alignment `a` (a positive multiple of a word) is a
+multiple of `a`.** -/
+theorem alignW_dvd {o a : Nat} (ho : o % 4 = 0) (ha : a % 4 = 0) (hpos : 0 < a) :
+    alignW o a % a = 0 := by
+  obtain ⟨q, rfl⟩ : ∃ q, o = 4 * q := ⟨o / 4, by omega⟩
+  obtain ⟨w, rfl⟩ : ∃ w, a = 4 * w := ⟨a / 4, by omega⟩
+  have hw : 0 < w := by omega
+  have e1 : 4 * q / 4 = q := by omega
+  have e2 : 4 * w / 4 = w := by omega
+  simp only [alignW, e1, e2]
+  rw [show 4 * q + 4 * ((w - q % w) % w) = 4 * (q + (w - q % w) % w) by omega,
+    Nat.mul_mod_mul_left]
+  have hr := Nat.mod_lt q hw
+  have hd := Nat.mod_add_div q w
+  by_cases h0 : q % w = 0
+  · rw [h0, Nat.sub_zero, Nat.mod_self, Nat.add_zero, h0]
+  · rw [Nat.mod_eq_of_lt (show w - q % w < w by omega)]
+    have : q + (w - q % w) = w * (q / w + 1) := by rw [Nat.mul_add, Nat.mul_one]; omega
+    rw [this, Nat.mul_mod_right]
+
+theorem offsA_length : ∀ (ns as : List Nat) (o : Nat), (offsA ns as o).length = ns.length
+  | [], _, _ => rfl
+  | _ :: ns, as, _ => by simp [offsA, offsA_length ns]
+
+theorem endA_ge : ∀ (ns as : List Nat) (o : Nat), o ≤ endA ns as o
+  | [], _, _ => Nat.le_refl _
+  | n :: ns, as, o => by
+    have := endA_ge ns as.tail (alignW o (as.headD 4) + 4 * n + 4)
+    have := alignW_ge o (as.headD 4)
+    simp only [endA]
+    omega
+
+theorem endA_mod4 : ∀ (ns as : List Nat) (o : Nat), o % 4 = 0 → endA ns as o % 4 = 0
+  | [], _, _, h => h
+  | n :: ns, as, o, h => by
+    simp only [endA]
+    exact endA_mod4 ns as.tail _ (by have := alignW_mod4 o (as.headD 4); omega)
+
+/-- Every aligned offset is at least the start. -/
+theorem offsA_ge : ∀ {ns as : List Nat} {o i : Nat}, i < ns.length → o ≤ (offsA ns as o)[i]!
+  | [], _, _, _, h => absurd h (Nat.not_lt_zero _)
+  | n :: ns, as, o, 0, _ => by
+    simp only [offsA, List.getElem!_cons_zero]
+    exact alignW_ge _ _
+  | n :: ns, as, o, i + 1, h => by
+    simp only [offsA, List.getElem!_cons_succ]
+    have := offsA_ge (ns := ns) (as := as.tail) (o := alignW o (as.headD 4) + 4 * n + 4) (i := i)
+      (by simp at h; omega)
+    have := alignW_ge o (as.headD 4)
+    omega
+
+/-- **The aligned functions do not overlap**: the `i`-th function's words and gap word end
+before the `i'`-th function. -/
+theorem offsA_sep : ∀ {ns as : List Nat} {o i i' : Nat}, i < i' → i' < ns.length →
+    (offsA ns as o)[i]! + 4 * ns[i]! + 4 ≤ (offsA ns as o)[i']!
+  | [], _, _, _, _, _, h => absurd h (Nat.not_lt_zero _)
+  | _ :: _, _, _, _, 0, hi, _ => absurd hi (Nat.not_lt_zero _)
+  | n :: ns, as, o, 0, i' + 1, _, h => by
+    simp only [offsA, List.getElem!_cons_zero, List.getElem!_cons_succ]
+    exact offsA_ge (by simp at h; omega)
+  | n :: ns, as, o, i + 1, i' + 1, hi, h => by
+    simp only [offsA, List.getElem!_cons_succ]
+    exact offsA_sep (by omega) (by simp at h; omega)
+
+/-- **The aligned functions are in the region**: the `i`-th function's words and gap word end
+by `endA ns as o`. -/
+theorem offsA_end : ∀ {ns as : List Nat} {o i : Nat}, i < ns.length →
+    (offsA ns as o)[i]! + 4 * ns[i]! + 4 ≤ endA ns as o
+  | [], _, _, _, h => absurd h (Nat.not_lt_zero _)
+  | n :: ns, as, o, 0, _ => by
+    simp only [offsA, endA, List.getElem!_cons_zero]
+    exact endA_ge _ _ _
+  | n :: ns, as, o, i + 1, h => by
+    simp only [offsA, endA, List.getElem!_cons_succ]
+    exact offsA_end (by simp at h; omega)
+
+/-- Every aligned offset is a multiple of 4 (from a multiple of 4). -/
+theorem offsA_mod4 : ∀ {ns as : List Nat} {o i : Nat}, o % 4 = 0 → i < ns.length →
+    (offsA ns as o)[i]! % 4 = 0
+  | [], _, _, _, _, h => absurd h (Nat.not_lt_zero _)
+  | n :: ns, as, o, 0, ho, _ => by
+    simp only [offsA, List.getElem!_cons_zero]
+    have := alignW_mod4 o (as.headD 4)
+    omega
+  | n :: ns, as, o, i + 1, ho, h => by
+    simp only [offsA, List.getElem!_cons_succ]
+    exact offsA_mod4 (by have := alignW_mod4 o (as.headD 4); omega) (by simp at h; omega)
+
+/-- **Each function starts at its alignment** (#1061): the `i`-th aligned offset from a
+multiple of 4 is a multiple of the `i`-th alignment, when that is a positive multiple of 4. -/
+theorem offsA_aligned : ∀ {ns as : List Nat} {o i : Nat}, o % 4 = 0 → i < ns.length →
+    as.getD i 4 % 4 = 0 → 0 < as.getD i 4 → (offsA ns as o)[i]! % as.getD i 4 = 0
+  | [], _, _, _, _, h, _, _ => absurd h (Nat.not_lt_zero _)
+  | n :: ns, as, o, 0, ho, _, h4, hp => by
+    simp only [offsA, List.getElem!_cons_zero]
+    have e : as.getD 0 4 = as.headD 4 := by cases as <;> rfl
+    rw [e] at h4 hp ⊢
+    exact alignW_dvd ho h4 hp
+  | n :: ns, as, o, i + 1, ho, h, h4, hp => by
+    simp only [offsA, List.getElem!_cons_succ]
+    have e : as.getD (i + 1) 4 = as.tail.getD i 4 := by cases as <;> simp
+    rw [e] at h4 hp ⊢
+    exact offsA_aligned (by have := alignW_mod4 o (as.headD 4); omega) (by simp at h; omega) h4 hp
+
+/-- Without alignments the aligned offsets are `offs`. -/
+theorem offsA_nil : ∀ (ns : List Nat) (o : Nat), offsA ns [] o = offs ns o
+  | [], _ => rfl
+  | n :: ns, o => by
+    simp only [offsA, offs, List.headD_nil, List.tail_nil, alignW_four, offsA_nil ns]
+
+/-- Without alignments the end is the start plus `span`. -/
+theorem endA_nil : ∀ (ns : List Nat) (o : Nat), endA ns [] o = o + span ns
+  | [], o => by simp [endA, span]
+  | n :: ns, o => by
+    simp only [endA, List.headD_nil, List.tail_nil, alignW_four, endA_nil ns, span_cons]
+    omega
+
 /-! ## Association lists -/
 
 theorem lookup_getElem {α β : Type} [BEq α] [LawfulBEq α] :
@@ -184,36 +315,36 @@ variable {S : LinkSpec}
 
 /-- The `i`-th placed function's offset, gap word included, ends within the region. -/
 theorem off_end (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
-    (offs S.sizes 0)[i]! + 4 * S.sizes[i]! + 4 ≤ S.size := by
-  have := offs_end (o := 0) (ns := S.sizes) (by rw [hP.sizesLen]; exact hi)
-  simpa [LinkSpec.size] using this
+    (offsA S.sizes S.aligns 0)[i]! + 4 * S.sizes[i]! + 4 ≤ S.size :=
+  offsA_end (by rw [hP.sizesLen]; exact hi)
 
 /-- The `i`-th and `i'`-th placed functions (`i < i'`) do not overlap. -/
 theorem off_sep (hP : PlaceOk S) {i i' : Nat} (hi : i < i') (hi' : i' < S.funcs.length) :
-    (offs S.sizes 0)[i]! + 4 * S.sizes[i]! + 4 ≤ (offs S.sizes 0)[i']! :=
-  offs_sep hi (by rw [hP.sizesLen]; exact hi')
+    (offsA S.sizes S.aligns 0)[i]! + 4 * S.sizes[i]! + 4 ≤ (offsA S.sizes S.aligns 0)[i']! :=
+  offsA_sep hi (by rw [hP.sizesLen]; exact hi')
 
 theorem names_nodup (hP : PlaceOk S) : S.names.Nodup := hP.nodup
 
 /-- **The link map of a placed function**: its placed address. -/
 theorem addrs_name (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
-    S.addrs.lookup S.names[i]! = some (S.R + (offs S.sizes 0)[i]!) := by
+    S.addrs.lookup S.names[i]! = some (S.R + (offsA S.sizes S.aligns 0)[i]!) := by
   have hl : i < S.progAddrs.length := by
-    simp [progAddrs, offs_length, hi, hP.sizesLen, hP.namesLen]
+    simp [progAddrs, offsA_length, hi, hP.sizesLen, hP.namesLen]
   have hm : S.progAddrs.map (·.1) = S.names := by
     rw [progAddrs]
-    exact List.map_fst_zip (by simp [offs_length, hP.sizesLen, hP.namesLen])
+    exact List.map_fst_zip (by simp [offsA_length, hP.sizesLen, hP.namesLen])
   have := lookup_getElem hl (hm ▸ names_nodup hP)
   have e1 : S.progAddrs[i].1 = S.names[i]! := by
     simp [progAddrs, getElem!_pos S.names i (by rw [hP.namesLen]; exact hi)]
-  have e2 : S.progAddrs[i].2 = S.R + (offs S.sizes 0)[i]! := by
-    simp [progAddrs, getElem!_pos (offs S.sizes 0) i (by simpa [offs_length, hP.sizesLen] using hi)]
+  have e2 : S.progAddrs[i].2 = S.R + (offsA S.sizes S.aligns 0)[i]! := by
+    simp [progAddrs, getElem!_pos (offsA S.sizes S.aligns 0) i
+      (by simpa [offsA_length, hP.sizesLen] using hi)]
   rw [e1, e2] at this
   exact lookup_append_some this
 
 /-- **The load address of a placed function** is its placed address. -/
 theorem baseOf_name (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
-    S.input.baseOf S.names[i]! = S.R + (offs S.sizes 0)[i]! := by
+    S.input.baseOf S.names[i]! = S.R + (offsA S.sizes S.aligns 0)[i]! := by
   unfold LinkInput.baseOf LinkInput.addrOf
   simp only [input_aliases, List.lookup_nil, Option.getD_none, input_addrs, addrs_name hP hi,
     Option.getD_some]
@@ -265,7 +396,7 @@ theorem tab_placed {S : LinkSpec} (hp : S.placeOkB = true)
     (hn : S.namesOkB (tabOf S.input.resultsT) = true)
     (hs : S.sizesOkB (tabOf S.input.resultsT) = true) :
     ∀ i < S.funcs.length, ∃ e, (tabOf S.input.resultsT)[i]? = some e ∧
-      e.2.base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) ∧
+      e.2.base = BitVec.ofNat 64 (S.R + (offsA S.sizes S.aligns 0)[i]!) ∧
       e.2.fb.words.size = S.sizes[i]! ∧ e.1.name = S.names[i]! ∧
       e.2.fa.layout = .ok e.2.fb := by
   intro i hi

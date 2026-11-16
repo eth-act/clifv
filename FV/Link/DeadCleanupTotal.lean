@@ -88,12 +88,12 @@ theorem leanLink_total_checks {S : LinkSpec} {file0 : ByteArray}
     simp only [Bool.not_eq_false']; exact hv
   have e8 : (!codeMapB (S.input0.withDepth S.input0.resultsCleanupT) (tabOf S.input0.resultsCleanupT)) =
       false := by simp only [Bool.not_eq_false']; exact hcm
-  have e9 : (!regionOkB file0 S.R (ByteArray.mk (regionBytes (S.input0.withDepth S.input0.resultsCleanupT)
-      (tpOff phs) ((List.take S.funcs.length (tabOf S.input0.resultsCleanupT)).map (·.2))).toArray).size
+  have e9 : (!regionOkB file0 S.R (ByteArray.mk (regionBytesA (S.input0.withDepth S.input0.resultsCleanupT)
+      (tpOff phs) S.aligns ((List.take S.funcs.length (tabOf S.input0.resultsCleanupT)).map (·.2))).toArray).size
       (offsetOf phs S.R)) = false := by simp only [Bool.not_eq_false']; exact hreg
   have e10 : (!outsideOkB (S.input0.withDepth S.input0.resultsCleanupT) S.data (patch file0
-      (offsetOf phs S.R) (ByteArray.mk (regionBytes (S.input0.withDepth S.input0.resultsCleanupT)
-      (tpOff phs) ((List.take S.funcs.length (tabOf S.input0.resultsCleanupT)).map (·.2))).toArray))) =
+      (offsetOf phs S.R) (ByteArray.mk (regionBytesA (S.input0.withDepth S.input0.resultsCleanupT)
+      (tpOff phs) S.aligns ((List.take S.funcs.length (tabOf S.input0.resultsCleanupT)).map (·.2))).toArray))) =
       false := by simp only [Bool.not_eq_false']; exact hout
   simp only [e1, e2, e3, e4, e5, e8, e9, e10, Bool.false_eq_true, ↓reduceIte]
   rfl

@@ -22,7 +22,7 @@ theorem tab_home {S : LinkSpec} (hp : S.placeOkB = true)
     (hs : S.sizesOkB (tabOf S.inputCleanup.resultsCleanupT) = true)
     {e : Clif.Function × Art} (he : e ∈ tabOf S.inputCleanup.resultsCleanupT) :
     ∃ i < S.funcs.length, ∃ ef, (tabOf S.inputCleanup.resultsCleanupT)[i]? = some ef ∧
-      ef.2.base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) ∧
+      ef.2.base = BitVec.ofNat 64 (S.R + (offsA S.sizes S.aligns 0)[i]!) ∧
       ef.2.fb.words.size = S.sizes[i]! ∧ ef.1.name = S.names[i]! ∧
       e.2.base = ef.2.base ∧ e.2.fb.words = ef.2.fb.words ∧ callShape e.2 = callShape ef.2 ∧
       e.1.name = S.names[i]! := by
@@ -48,10 +48,11 @@ theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
   have hpos := hP.pos
   -- every address of the `i`-th function, gap word included, is in the region
   have hend : ∀ i < S.funcs.length, ∀ c ≤ 4 * S.sizes[i]!,
-      S.R + (offs S.sizes 0)[i]! + c + 4 ≤ S.R + S.size :=
+      S.R + (offsA S.sizes S.aligns 0)[i]! + c + 4 ≤ S.R + S.size :=
     fun i hi c hc => by have := off_end hP hi; omega
   have hbase : ∀ i < S.funcs.length,
-      (BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!)).toNat = S.R + (offs S.sizes 0)[i]! :=
+      (BitVec.ofNat 64 (S.R + (offsA S.sizes S.aligns 0)[i]!)).toNat =
+        S.R + (offsA S.sizes S.aligns 0)[i]! :=
     fun i hi => by have := hend i hi 0 (Nat.zero_le _); rw [BitVec.toNat_ofNat]; omega
   have home := fun {e} (he : e ∈ tabOf S.inputCleanup.resultsCleanupT) => tab_home hp hr hn hs he
   unfold linkerOkR
@@ -61,7 +62,8 @@ theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
     refine imgB_of (fun e he => ?_) (fun e he e' he' k hk k' hk' hx => ?_)
     · obtain ⟨i, hi, ef, -, hb, -, -, heb, -⟩ := home he
       rw [heb, hb, hbase i hi]
-      have := offs_mod4 (ns := S.sizes) (o := 0) rfl (by rw [hP.sizesLen]; exact hi)
+      have := offsA_mod4 (ns := S.sizes) (as := S.aligns) (o := 0) rfl
+        (by rw [hP.sizesLen]; exact hi)
       omega
     · obtain ⟨i, hi, ef, hef, hb, hsz, -, heb, hw, -⟩ := home he
       obtain ⟨i', hi', ef', hef', hb', hsz', -, heb', hw', -⟩ := home he'
@@ -91,7 +93,7 @@ theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
     obtain ⟨i, hi, ef, -, -, -, -, -, -, -, hn⟩ :=
       home (List.mem_map_of_mem (f := fun e => (e.1, getOk e.2)) he)
     have hn : e.1.name = S.names[i]! := hn
-    have hA : S.addrs.lookup e.1.name = some (S.R + (offs S.sizes 0)[i]!) := by
+    have hA : S.addrs.lookup e.1.name = some (S.R + (offsA S.sizes S.aligns 0)[i]!) := by
       rw [hn, addrs_name hP hi]
     have hAe := hend i hi 0 (Nat.zero_le _)
     simp only [LinkInput.addrOf, inputCleanup_addrs, hA, Option.getD_some, Bool.and_eq_true,
@@ -125,7 +127,8 @@ theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
       List.mem_map_of_mem (f := fun e => (e.1, getOk e.2)) he
     obtain ⟨i, hi, ef, hef, hb, hsz, -, heb, hw, hsh, -⟩ := home he'
     have hl : (getOk e.2).fa.layout = .ok (getOk e.2).fb := tab_layout hr he'
-    have heb : (getOk e.2).base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) := heb.trans hb
+    have heb : (getOk e.2).base = BitVec.ofNat 64 (S.R + (offsA S.sizes S.aligns 0)[i]!) :=
+      heb.trans hb
     have hw : (getOk e.2).fb.words = ef.2.fb.words := hw
     have hsz : (getOk e.2).fb.words.size = S.sizes[i]! := by rw [hw, hsz]
     have hsh : callShape (getOk e.2) = callShape ef.2 := hsh
@@ -148,7 +151,7 @@ theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
       unfold raOkB
       simp only [Bool.or_eq_true]
       have hra : ((getOk e.2).base + BitVec.ofNat 64 (lineOffset (getOk e.2).fa.lines.toList j)
-          + 4).toNat = S.R + (offs S.sizes 0)[i]! + lineOffset (getOk e.2).fa.lines.toList j
+          + 4).toNat = S.R + (offsA S.sizes S.aligns 0)[i]! + lineOffset (getOk e.2).fa.lines.toList j
             + 4 := by
         rw [heb, BitVec.toNat_add, toNat_addr (by omega),
           show (4 : BitVec 64).toNat = 4 from rfl]
