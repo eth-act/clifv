@@ -118,7 +118,8 @@ block0(v0: f16, v1: i16):
     v2 = call fn0(v0)
     v3 = call fn1(v1)
     v4 = call fn2(v2)
-    v5 = icmp_imm eq v1, 0
+    v7 = iconst.i16 0
+    v5 = icmp eq v1, v7
     v6 = select v5, v4, v3
     return v6
 }
