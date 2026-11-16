@@ -880,6 +880,7 @@ def tyPred : TermId → Option (CTy → Bool)
 /-- The variant index of an `IntCC` value. -/
 def V.intcc? : V → Option Nat := V.enum? tyIntCC some
 
+set_option maxHeartbeats 800000 in
 open Isle (ExtResult) in
 /-- Extern extractors: the input value to the term's argument values. Dispatch is on the term
 id (`Isle.Aarch64.TId.*`, generated), a `Nat`-literal match. -/
@@ -999,6 +1000,14 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   -- layer 2); the last arm, so the dispatch of every earlier extractor is unchanged
   | TId.u16_from_ieee16, .int i => .ok [.int i]
   | _, v => .unmodeled s!"extractor {t.name} on {(repr v).pretty.take 60}"
+
+set_option maxHeartbeats 800000 in
+/-- Realizes `externExtract`'s equation lemmas (one per arm, about 13 s) in this module, under a
+raised `maxHeartbeats`: realized in an importing module (`simp [externExtract]`) they run under
+the default limit, which the `u16_from_ieee16` arm exceeds, and once per module. -/
+theorem externExtract_eqns_realized : True := by
+  have _ := @externExtract.eq_1
+  trivial
 
 /-- `ASIMDFPModImm::value16` (aarch64/inst/imms.rs:830-838): the 16-bit value of an 8-bit
 encoding `0b_abcdefgh`, `0b_aBbb_cdef_gh00_0000`. -/
