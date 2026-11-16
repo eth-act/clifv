@@ -194,10 +194,10 @@ inductive Insn where
   /-- `movi vd.<T>, #imm8` for 8-, 16- and 32-bit lanes, `lsl #0` (Cranelift `VecDupImm` without
   shift or inversion; `movi vd.2s, #0` is its zero `f32const`/`f64const`). -/
   | movi (size : VectorSize) (rd : Reg) (imm8 : Nat)
-  /-- Single-register SIMD&FP load `ldr/ldur st/dt, m` (`size` 32/64; `m` a final mode;
-  Cranelift `FpuLoad32/64`). The 128-bit load is `load .fpuLoad128`. -/
+  /-- Single-register SIMD&FP load `ldr/ldur ht/st/dt, m` (`size` 16/32/64; `m` a final mode;
+  Cranelift `FpuLoad16/32/64`). The 128-bit load is `load .fpuLoad128`. -/
   | fpuLoad (size : ScalarSize) (rt : Reg) (m : AMode)
-  /-- Single-register SIMD&FP store `str/stur st/dt, m` (Cranelift `FpuStore32/64`). -/
+  /-- Single-register SIMD&FP store `str/stur ht/st/dt, m` (Cranelift `FpuStore16/32/64`). -/
   | fpuStore (size : ScalarSize) (rt : Reg) (m : AMode)
   /-- `ldp st/dt/qt, st2/dt2/qt2, m` (`m` = `spPreIndexed`/`spPostIndexed`, byte offset;
   Cranelift `FpuLoadP64/128`). -/

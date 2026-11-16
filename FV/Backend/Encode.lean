@@ -846,7 +846,7 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
         e := imm.extractLsb' 3 1, f := imm.extractLsb' 2 1, g := imm.extractLsb' 1 1,
         h := imm.extractLsb' 0 1, Rd := ← rd.encV }))
   | .fpuLoad s rt m =>
-    -- C7.2 LDR/LDUR (SIMD&FP), 32-bit (size 10) / 64-bit (size 11), opc 01
+    -- C7.2 LDR/LDUR (SIMD&FP), 16-bit (size 01) / 32-bit (size 10) / 64-bit (size 11), opc 01
     let size ← fpLdstSize s
     ldstFields size 1 1 s.bytes (← rt.encV) m
   | .fpuStore s rt m =>
@@ -887,9 +887,11 @@ where
   /-- `ftype` of a scalar floating-point operand (C7.2: 00 single, 01 double). -/
   fpFtype : ScalarSize → Except String (BitVec 2)
     | .size32 => pure 0 | .size64 => pure 1 | s => throw s!"floating-point size {repr s}"
-  /-- `size` of a 32- or 64-bit SIMD&FP single-register load/store (C7.2 LDR/STR (SIMD&FP)). -/
+  /-- `size` of a 16-, 32- or 64-bit SIMD&FP single-register load/store (C7.2 LDR/STR
+  (SIMD&FP); 16: `ldr h`/`str h` of the move-only `f16`, #35). -/
   fpLdstSize : ScalarSize → Except String (BitVec 2)
-    | .size32 => pure 2 | .size64 => pure 3 | s => throw s!"fp load/store size {repr s}"
+    | .size16 => pure 1 | .size32 => pure 2 | .size64 => pure 3
+    | s => throw s!"fp load/store size {repr s}"
   /-- `opc` of a SIMD&FP pair or literal load/store (C7.2 LDP/STP, LDR (literal) (SIMD&FP):
   00 S, 01 D, 10 Q). -/
   fpOpc : ScalarSize → Except String (BitVec 2)

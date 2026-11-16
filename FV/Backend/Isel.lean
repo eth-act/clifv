@@ -196,6 +196,11 @@ the types at which `instData` accepts the data-movement instructions (`f32const`
 operations. -/
 def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isArithFloat
 
+/-- The types of the values `buildCtx` keeps in registers: `valTyOk`'s and the move-only `f16`
+(#35 group A; in a V register, as Cranelift's `F16` without FEAT_FP16, its value in the low 16
+bits). Also the types at which `instData` accepts `bitcast`; `select` stays at `valTyOk`. -/
+def valTyOkH (ty : Clif.Ty) : Bool := valTyOk ty || ty == .f16
+
 /-- The register class of a value of type `t` (`regClass?`; `.int` where it has none). -/
 def CTy.valClass (t : CTy) : RegClass := (t.regClass?).getD .int
 
@@ -226,12 +231,16 @@ instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32con
 its `MemFlags`, as `InstructionData::LoadNoOffset`). The float arithmetic of S11f whose roots
 are proven (`fBinaryOpcode`, `fUnaryOpcode`): `Binary`/`Unary` with the opcode, as Cranelift's
 `InstructionData`; `fcmp` of `f32`/`f64` at a condition of `fccOk` (`FloatCompare`). The
-conversions of S11f-cvt (`fCvtOpcode`, at `fCvtTyOk`): `Unary` with the opcode. -/
+conversions of S11f-cvt (`fCvtOpcode`, at `fCvtTyOk`): `Unary` with the opcode. The move-only
+`f16` (#35 group A, stock Cranelift without FEAT_FP16): `f16const` (`UnaryIeee16` with the
+bit pattern; `constant_f16`'s `constant_f32` of it), `load`/`store` of a whole `f16` (`ldr h`/
+`str h`) and `bitcast.f16` (`valTyOkH`; of an `i16`: `fmov s, w`); no `select.f16`. -/
 def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .iconst ty imm =>
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
     else if ty = .f32 then pure (instDataV "UnaryIeee32" [opcodeV "F32const", .int imm.toNat])
     else if ty = .f64 then pure (instDataV "UnaryIeee64" [opcodeV "F64const", .int imm.toNat])
+    else if ty = .f16 then pure (instDataV "UnaryIeee16" [opcodeV "F16const", .int imm.toNat])
     else throw s!"iconst.{ty.name}"
   | .unary op ty x =>
     match unaryOpcode op with
@@ -260,11 +269,11 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .ireduce ty x => if eTy ty then pure (instDataV "Unary" [opcodeV "Ireduce", .value x])
     else throw "ireduce.i128"
   | .load op ty flags p off =>
-    if !eTy ty && !(ty.isArithFloat && op == .load) then throw s!"load.{ty.name}"
+    if !eTy ty && !(ty.isFloat && op == .load) then throw s!"load.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian load"
     else pure (instDataV "Load" [opcodeV (loadOpcode op), .value p, .op (.memFlags flags), .int off])
   | .store op ty flags x p off =>
-    if !eTy ty && !(ty.isArithFloat && op == .store) then throw s!"store.{ty.name}"
+    if !eTy ty && !(ty.isFloat && op == .store) then throw s!"store.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian store"
     else pure (instDataV "Store"
       [opcodeV (storeOpcode op), .values [x, p], .op (.memFlags flags), .int off])
@@ -272,7 +281,7 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     if valTyOk ty then pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
     else throw s!"select.{ty.name}"
   | .bitcast ty flags x =>
-    if valTyOk ty then pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
+    if valTyOkH ty then pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
     else throw s!"bitcast.{ty.name}"
   | .nop => pure (instDataV "NullAry" [opcodeV "Nop"])
   | .symbolValue ty gv =>
@@ -761,16 +770,21 @@ def loadOpOfBytes : Nat → LoadOp
 def trustedFlags : Clif.MemFlags := { trapCode := none, aligned := true }
 
 /-- The load of a stack-passed value of `bytes` bytes into `r`: an integer `ldr`/`ldrb`/`ldrh`
-for an integer register, `ldr s`/`ldr d` for a float one. -/
+for an integer register, `ldr s`/`ldr d` for a float one (`ldr h` for the 2 bytes of an `f16`,
+Cranelift's `gen_load_stack` at `F16`). -/
 def stackArgLoad (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
   match r.homeCls with
-  | .float => .fpuLoad (if bytes == 4 then .size32 else .size64) r am trustedFlags
+  | .float =>
+    .fpuLoad (if bytes == 4 then .size32 else if bytes == 2 then .size16 else .size64) r am
+      trustedFlags
   | .int => .load (loadOpOfBytes bytes) r am trustedFlags
 
 /-- The store of a stack-passed value of `bytes` bytes from `r` (`stackArgLoad`'s inverse). -/
 def stackArgStore (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
   match r.homeCls with
-  | .float => .fpuStore (if bytes == 4 then .size32 else .size64) r am trustedFlags
+  | .float =>
+    .fpuStore (if bytes == 4 then .size32 else if bytes == 2 then .size16 else .size64) r am
+      trustedFlags
   | .int => .store (storeOpOfBytes bytes) r am trustedFlags
 
 /-- The register classes of returned values (one register each): the class of the first
@@ -850,6 +864,7 @@ def tyPred : TermId → Option (CTy → Bool)
 /-- The variant index of an `IntCC` value. -/
 def V.intcc? : V → Option Nat := V.enum? tyIntCC some
 
+set_option maxHeartbeats 800000 in
 open Isle (ExtResult) in
 /-- Extern extractors: the input value to the term's argument values. Dispatch is on the term
 id (`Isle.Aarch64.TId.*`, generated), a `Nat`-literal match. -/
@@ -965,7 +980,19 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.u32_from_u64, .int i => if 0 ≤ i ∧ i < 2 ^ 32 then .ok [.int i] else .fail
   -- `u64_low32_bits_unset` (aarch64/lower/isle.rs:860-866): `val & 0xffffffff == 0`
   | TId.u64_low32_bits_unset, .int i => if u64 i % 2 ^ 32 = 0 then .ok [.int i] else .fail
+  -- `u16_from_ieee16` (`Ieee16::bits`): the bit pattern of an `f16const` (`UnaryIeee16`, #35);
+  -- the last arm, so the dispatch of every earlier extractor is unchanged
+  | TId.u16_from_ieee16, .int i => .ok [.int i]
   | _, v => .unmodeled s!"extractor {t.name} on {(repr v).pretty.take 60}"
+
+set_option maxHeartbeats 800000 in
+/-- Realizes `externExtract`'s equation lemmas (one per arm, about 13 s) in this module, under a
+raised `maxHeartbeats`: realized in an importing module (`simp [externExtract]`) they run under
+the default limit (the options of an imported constant's realization), which the
+`u16_from_ieee16` arm exceeds, and once per module. -/
+theorem externExtract_eqns_realized : True := by
+  have _ := @externExtract.eq_1
+  trivial
 
 /-- `ASIMDFPModImm::value16` (aarch64/inst/imms.rs:830-838): the 16-bit value of an 8-bit
 encoding `0b_abcdefgh`, `0b_aBbb_cdef_gh00_0000`. -/
@@ -1333,8 +1360,9 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | TId.u64_wrapping_sub, [.int a, .int b] => ok (.int (u64 (a - b)))
   | TId.u64_wrapping_shl, [.int a, .int b] => ok (.int (u64 (a * 2 ^ (b.toNat % 64))))
   | TId.u64_is_odd, [.int a] => ok (.bool (a % 2 == 1))
-  | TId.u8_into_u32, [.int a] | TId.u8_into_u64, [.int a] | TId.u16_into_u64, [.int a]
-  | TId.i32_into_i64, [.int a] | TId.u32_into_u64, [.int a] => ok (.int a)
+  | TId.u8_into_u32, [.int a] | TId.u8_into_u64, [.int a] | TId.u16_into_u32, [.int a]
+  | TId.u16_into_u64, [.int a] | TId.i32_into_i64, [.int a] | TId.u32_into_u64, [.int a] =>
+    ok (.int a)
   | TId.i64_cast_unsigned, [.int a] => ok (.int (u64 a))
   -- clif_lower.isle
   | TId.value_array_2, [.value a, .value b] => ok (.values [a, b])
@@ -1422,7 +1450,7 @@ def slotLayout (slots : List (Nat × Clif.StackSlot)) : List (Nat × Nat) × Nat
 
 /-- Build the lowering context of a function: instruction table (statements, then the
 terminator, block by block), value types/definitions, and one vreg per value, of the class of
-its type (`CTy.regClass?`: `.int` for `i8..i64`, `.float` for `f32`/`f64`). -/
+its type (`CTy.regClass?`: `.int` for `i8..i64`, `.float` for `f16`/`f32`/`f64`; `valTyOkH`). -/
 def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) := do
   let sigOf (r : Nat) : Option Clif.Signature := (f.extern? r).map (·.sig)
   -- value ids and types
@@ -1438,7 +1466,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
   let mut ranges : Array (Nat × Nat) := #[]
   for b in f.blocks do
     for (v, ty) in b.params do
-      if !valTyOk ty then throw s!"block parameter v{v} is {ty.name}"
+      if !valTyOkH ty then throw s!"block parameter v{v} is {ty.name}"
       valTy := valTy.set! v (some (CTy.ofClif ty))
     let start := insts.size
     for s in b.body do
@@ -1447,7 +1475,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
         throw "ill-typed instruction"
       if tys.length != s.results.length then throw "result count mismatch"
       for (r, ty) in s.results.zip tys do
-        if !valTyOk ty then throw s!"value v{r} is {ty.name}"
+        if !valTyOkH ty then throw s!"value v{r} is {ty.name}"
         valTy := valTy.set! r (some (CTy.ofClif ty))
         valDef := valDef.set! r (some insts.size)
       insts := insts.push ⟨data, s.results, tys.map CTy.ofClif, some s.inst⟩

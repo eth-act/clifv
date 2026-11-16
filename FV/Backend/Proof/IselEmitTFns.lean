@@ -252,6 +252,9 @@ def eFpuRR : List AT → Bool
       (op.enumAll (· != VIdx.FPUOp1.Cvt32To64) || s.enumAll (· == VIdx.ScalarSize.Size32)) &&
       (op.enumAll (· != VIdx.FPUOp1.Cvt64To32) || s.enumAll (· == VIdx.ScalarSize.Size64))
   | _ => false
+/-- Never accepted: the 16-bit `FpuLoad16`/`FpuStore16` of the move-only `f16` (#35 layer 2),
+outside `emitOk`. -/
+def eNeverT (_ : List AT) : Bool := false
 
 /-- The emission checks by variant (other variants: no condition). -/
 def emTab : List (Nat × (List AT → Bool)) :=
@@ -266,7 +269,8 @@ def emTab : List (Nat × (List AT → Bool)) :=
    (VIdx.MInst.CallInd, eCall), (VIdx.MInst.AtomicRMWLoop, eAtomic),
    (VIdx.MInst.AtomicCASLoop, eAtomic), (VIdx.MInst.FpuMoveFPImm, eFpuMoveFPImm),
    (VIdx.MInst.VecDupImm, eVecDupImm), (VIdx.MInst.FpuRR, eFpuRR), (VIdx.MInst.FpuRRR, eFpuOpSz),
-   (VIdx.MInst.FpuRRRR, eFpuOpSz), (VIdx.MInst.FpuCmp, eFpuCmp)]
+   (VIdx.MInst.FpuRRRR, eFpuOpSz), (VIdx.MInst.FpuCmp, eFpuCmp),
+   (VIdx.MInst.FpuLoad16, eNeverT), (VIdx.MInst.FpuStore16, eNeverT)]
 
 /-- The emission check of an `MInst` of variant `k` with fields `fs` (`nb`: not a branch). -/
 def em1 (nb : Bool) (k : Nat) (fs : List AT) : Bool :=

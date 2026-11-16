@@ -461,11 +461,11 @@ inductive MInst where
   `add x0, x0, tmp`). The TLSDESC resolver preserves every register but x0 and x30, so the
   only operands are the fixed def x0 (`rd`, the address) and the early def `tmp`. Unverified. -/
   | elfTlsGetAddr (symbol : String) (rd tmp : Reg)
-  /-- `ldr st/dt, mem` (Cranelift `FpuLoad32`/`FpuLoad64`, one constructor with the size;
-  `size` 32 or 64): the low `size` bits of the float register, the rest zeroed. The 128-bit
-  load of the spill code is `load .fpuLoad128`. -/
+  /-- `ldr ht/st/dt, mem` (Cranelift `FpuLoad16`/`FpuLoad32`/`FpuLoad64`, one constructor with
+  the size; `size` 16, 32 or 64; 16: the move-only `f16` of #35): the low `size` bits of the
+  float register, the rest zeroed. The 128-bit load of the spill code is `load .fpuLoad128`. -/
   | fpuLoad (size : ScalarSize) (rd : Reg) (mem : AMode) (flags : Clif.MemFlags)
-  /-- `str st/dt, mem` (Cranelift `FpuStore32`/`FpuStore64`). -/
+  /-- `str ht/st/dt, mem` (Cranelift `FpuStore16`/`FpuStore32`/`FpuStore64`). -/
   | fpuStore (size : ScalarSize) (rd : Reg) (mem : AMode) (flags : Clif.MemFlags)
   /-- `fcsel sd/dd, sn/dn, sm/dm, cond` (Cranelift `FpuCSel32`/`FpuCSel64`). -/
   | fpuCSel (size : ScalarSize) (rd rn rm : Reg) (c : Cond)
@@ -1270,10 +1270,14 @@ def MInst.ofV (v : V) : Option MInst := do
   | VIdx.MInst.Fence, [] => return .fence
   | VIdx.MInst.ElfTlsGetAddr, [s, rd, tmp] =>
     return .elfTlsGetAddr (← s.extName?) (← rd.reg?) (← tmp.reg?)
+  | VIdx.MInst.FpuLoad16, [rd, m, fl] =>
+    return .fpuLoad .size16 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
   | VIdx.MInst.FpuLoad32, [rd, m, fl] =>
     return .fpuLoad .size32 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
   | VIdx.MInst.FpuLoad64, [rd, m, fl] =>
     return .fpuLoad .size64 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
+  | VIdx.MInst.FpuStore16, [rd, m, fl] =>
+    return .fpuStore .size16 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
   | VIdx.MInst.FpuStore32, [rd, m, fl] =>
     return .fpuStore .size32 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
   | VIdx.MInst.FpuStore64, [rd, m, fl] =>
