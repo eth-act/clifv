@@ -64,7 +64,7 @@ private theorem inst_data_input {ctx : Ctx} {st : State} {v : V} {fields : List 
     ∃ i, v = .inst i := by
   cases v with
   | inst i => exact ⟨i,rfl⟩
-  | _ => simp [Stock.sem, Backend.externExtract, T.inst_data_value, Backend.tyPred] at run
+  | _ => cases run
 
 private theorem rejects_load {ctx : Ctx} {st : State} {tyPat : Pattern}
     {t fmt : Nat} {ps : List Pattern} {term : Term}
