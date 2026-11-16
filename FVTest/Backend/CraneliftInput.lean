@@ -50,7 +50,10 @@ the current state, so memory stays linear in the function): the fresh vregs of e
 the first temporary. -/
 def replay (f : Clif.Function) :
     Except String (Ctx × Array (Nat × Nat) × Array BlockVregs × Nat) := do
-  let (ctx, ranges, st0) ← buildCtx f
+  -- staging device (#35 layer 2): the `f16` functions are `lowerFunctionH`'s (`buildCtxH`)
+  let (ctx, ranges, st0) ← match buildCtx f with
+    | .ok r => pure r
+    | .error _ => buildCtxH f
   let mut st := st0
   let mut nl := f.blocks.length
   let mut ii := 0
@@ -65,7 +68,7 @@ def replay (f : Clif.Function) :
       st := { st' with emitted := #[] }
       ii := ii + 1
     let tst : LState := { st with emitted := #[] }
-    let some (_, _, tl, tst', nl') := lowTerm f (termCallF ctx) (tryCallF ctx) ii B.term tst nl
+    let some (_, _, tl, tst', nl') := lowTermC f (termCallF ctx) (tryCallF ctx) ii B.term tst nl
       | throw s!"no lowering of terminator {ii}"
     out := out.push { stmts := sr, term := ((tl.map (·.st1.nextVreg)).getD tst.nextVreg, tst'.nextVreg),
                       tryRegs := tl.map (·.regs) }
@@ -74,6 +77,22 @@ def replay (f : Clif.Function) :
     ii := ii + 1
   pure (ctx, ranges, out, st0.nextVreg)
 
+/-- `Stock.allocationRequests` with the typed `try_call` table (`exnTableOpndC`, as
+`lowerFunction`): the counts of a `try_call`'s return and payload vregs (staging device). -/
+def allocationRequestsC (f : Clif.Function) (ranges : Array (Nat × Nat)) :
+    Except String (List Stock.AllocationRequest) := do
+  let chunks ← f.blocks.zipIdx.mapM fun (b, bi) => do
+    let extra ← match b.term with
+      | .tryCall _ _ et | .tryCallIndirect _ _ et => do
+        let (sig, _) ← exnTableOpndC f et
+        if sig.returns.any (·.ty == .i128) then throw "try_call returning i128"
+        pure (some (ranges[bi]!.2 - 1, sig.returns.length, (payloadRegs sig.callConv).length))
+      | _ => pure none
+    let values := (b.params.map fun p => Stock.AllocationRequest.value p.1) ++
+      b.body.flatMap (fun s => s.results.map Stock.AllocationRequest.value)
+    pure (values ++ extra.toList.map fun (i, rets, pays) => Stock.AllocationRequest.exception i rets pays)
+  pure chunks.flatten
+
 /-- Cranelift's vreg number of every vreg number `lowerFunction f` uses (values by id,
 temporaries from `firstTemp` on; `bvs`, `ranges` from `replay f`), and the number of vregs.
 `drop b j`: statement `j` of block `b` was skipped (`skipDead`), so, as in Cranelift, which never
@@ -81,7 +100,7 @@ lowers it, its temporaries get no number. -/
 def numbering (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat))
     (bvs : Array BlockVregs) (firstTemp : Nat) (drop : Nat → Nat → Bool) :
     Except String (Std.HashMap Nat Nat × Nat) := do
-  let reqs ← Stock.allocationRequests f ranges
+  let reqs ← allocationRequestsC f ranges
   let alloc := Stock.allocateRequests ctx.valTy.size ctx.insts.size reqs
   let mut m : Std.HashMap Nat Nat := {}
   for v in [0:firstTemp] do
@@ -354,7 +373,7 @@ def shape (f : Option Clif.Function) (deadCleanup : Bool) (vcp : VCode) : Shape 
   | some f =>
     let noDrop : Nat → Nat → Bool := fun _ _ => false
     let legacy : Except String (VCode × (Nat → Nat → Bool)) := do
-      let vc ← lowerFunction f
+      let vc ← Backend.lowerUnverifiedWith lowerFunction f
       let lv ← prepare (if deadCleanup then DeadCleanup.prune vc else vc)
       if !deadCleanup || sameCode lv vcp || !Compile.functionE f then return (lv, noDrop)
       -- the skip ran (`cleanupStageChecked`): its statements are not lowered
