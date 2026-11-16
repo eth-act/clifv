@@ -55,7 +55,9 @@ in its `(logs: DIR)`):
     regression, a drop is recorded in the same PR), every executable of a pinned example has a
     line, and with --base no pin is above the base revision's pin for the same executable (read
     from FILE.leftout, which base-pins writes beside FILE). An example without lines is not
-    checked.
+    checked. With --rise-ok (the weekly std line, which no PR runs, so no PR can record a drop)
+    a drop is green and printed as `drop (record it): …`; a rise and a different number of
+    executables stay red (#1042).
   --summary FILE appends the counts (pinned and measured) and the known-unverified executables
   with cargo fv's reasons to FILE as Markdown (the CI job summary).
 
@@ -266,8 +268,14 @@ def measured_leftout(lines):
     return {e: sorted(n) for e, n in got.items()}
 
 
-def leftout_fails(example, got, pinned):
-    """The failed conditions of the left-out pins (`pinned`: None, no pin)."""
+def leftout_lines(example, got):
+    """The pin lines (scripts/gate-expected-leftout.txt) of the measured left-out counts."""
+    return "; ".join(f"`{example}  {e}  {n}`" for e in sorted(got) for n in got[e])
+
+
+def leftout_fails(example, got, pinned, rise_ok=False):
+    """The failed conditions of the left-out pins (`pinned`: None, no pin); `rise_ok`
+    (--rise-ok): a drop is no failure (`cargo_fv` prints it)."""
     if pinned is None or got == pinned:
         return []
     fails = []
@@ -280,10 +288,10 @@ def leftout_fails(example, got, pinned):
         elif any(x > y for x, y in zip(g, p)):
             fails.append(f"left out of the region, {e}: {g}, pinned {p} (a rise: functions left the "
                          "verified region)")
-        else:
+        elif not rise_ok:
             fails.append(f"left out of the region, {e}: {g}, pinned {p}: record the drop in the same PR")
-    new = "; ".join(f"`{example}  {e}  {n}`" for e in sorted(got) for n in got[e])
-    fails.append(f"this run's lines (scripts/gate-expected-leftout.txt): {new}")
+    if fails:
+        fails.append(f"this run's lines (scripts/gate-expected-leftout.txt): {leftout_lines(example, got)}")
     return fails
 
 
@@ -331,8 +339,9 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=No
     got = measured(lines)
     fails += pin_fails(example, got, pinned, rise_ok)
     fails += base_fails(pinned, base)
+    left = measured_leftout(lines) if lean_link else None
     if lean_link:
-        fails += leftout_fails(example, measured_leftout(lines), leftout)
+        fails += leftout_fails(example, left, leftout, rise_ok)
         fails += base_leftout_fails(leftout, base_leftout)
     shown = [l for l in lines if l.startswith("cargo fv: binary check:")] + same + different
     shown += [m[0].removeprefix("cargo fv: ") for m in funcs]
@@ -344,6 +353,9 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=No
                      + ", ".join(f"{e} {i}" for e, i in known))
     if rise_ok and rises(got, pinned):
         shown.append(f"rise (record it): `{new_line(example, got, pinned)}` in scripts/gate-expected-counts.txt")
+    if (rise_ok and left is not None and leftout is not None and left != leftout
+            and not leftout_fails(example, left, leftout, rise_ok)):
+        shown.append(f"drop (record it): {leftout_lines(example, left)} in scripts/gate-expected-leftout.txt")
     return not fails, " ".join(shown + [f"FAIL: {f}" for f in fails])
 
 
