@@ -12,9 +12,9 @@
 #   pinned example needs its line; an example without lines is not checked.
 # - No pin may rise above the base revision's (main's) pin for the same executable: lowering a
 #   left-out count is free, raising one is a parent decision.
-# - Not a baseline of "intended" exclusions: deps' and survey's counts are the SrcScopeB
-#   `declSigB` exclusions that #1036 introduced (#1042 addresses them); deps' include
-#   num_integer's one float-call function verified since S11g, which fails `declSigB` the same way.
+# - Not a baseline of "intended" exclusions: survey's g_u128 counts are a SrcScopeB `declSigB`
+#   exclusion (#1052). deps' 18/13/10/13 (#1036's `declSigB` set, #1042) dropped to 0 with #1051
+#   (measured on the combined tree of #1051, #1050, #1053 and #1055, 2026-11-16).
 #
 # Format: EXAMPLE  EXECUTABLE  LEFT_OUT
 
@@ -38,10 +38,10 @@ survey   h_dyn_generic/h_dyn_generic  0
 survey   h_dyn_generic/values  0
 survey   i_alloc/i_alloc  0
 survey   i_alloc/values  0
-deps     deps-demo/crates  18
-deps     deps-demo/deps_demo  13
-deps     deps-demo/deps_demo  10
-deps     deps-demo/deps_demo  13
+deps     deps-demo/crates  0
+deps     deps-demo/deps_demo  0
+deps     deps-demo/deps_demo  0
+deps     deps-demo/deps_demo  0
 # `--build-std` (the weekly std line, #1040; --rise-ok: no PR runs it, so a drop is green and
 # printed `drop (record it)`, a rise is red): #753's 10 functions per test executable
 # (`callRegs/blrRegs`; measured on #1051's head, 2026-11-15)
