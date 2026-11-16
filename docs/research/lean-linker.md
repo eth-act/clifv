@@ -130,12 +130,14 @@ outside part. What stays checked is about the outside file only.
 
 ### Definitions (`FV/Link/`)
 
-* `Layout.lean`: `offs`/`span` (functions consecutive, each followed by one zero gap word, so a
-  call in a function's last word does not return into the next function); `LinkSpec` (the
-  functions in placement order and their sizes in words, the outside part's
-  addresses `outside` and CLIF data objects `data`, the CLIF image's symbol names, the region's
-  base `R`); `LinkSpec.input` (the crate-level `LinkInput` whose link map **is** the
-  placement, with `syms` read from it and `raStar` the end of the region);
+* `Layout.lean`: `offsA`/`endA` (functions consecutive, each started at its alignment and
+  followed by one zero gap word, so a call in a function's last word does not return into the
+  next function; the bytes up to an aligned start are zeros, rust-lld's filler; without
+  alignments it is `offs`/`span`, #1061); `LinkSpec` (the functions in placement order, their
+  sizes in words and alignments (`aligns`, the driver's: where `ld -r` starts each one), the
+  outside part's addresses `outside` and CLIF data objects `data`, the CLIF image's symbol
+  names, the region's base `R`); `LinkSpec.input` (the crate-level `LinkInput` whose link map
+  **is** the placement, with `syms` read from it and `raStar` the end of the region);
   `placeOkB` (distinct names, one positive size
   per function, region nonzero, aligned, in the address space, no outside symbol in it);
   `sizesOkB` (the compiled code has the placement's sizes).
@@ -143,7 +145,8 @@ outside part. What stays checked is about the outside file only.
   `baseOf sym`; both page pairs as `adrp`+`add` of the target — the GOT pair too, which
   `PairOk.adrpAdd` accepts, so the program part needs no GOT; TLSDESC as
   `movz`/`movk`/`nop`/`nop` of `tpOff`), `relocsOkB` (the linker's check of the relocation
-  shapes, partners and ranges), `regionBytes`.
+  shapes, partners and ranges), `regionBytes`; `Image.lean`: `regionBytesA` (the functions'
+  images at their aligned offsets, zeros before each).
 * `Image.lean`: `patch`, **`leanLink S file0`**: the compiler's pipeline once, the linker's
   checks of its own output, the region's bytes written over the placeholder, then the checks of
   rust-lld's output (`regionOkB` on `file0`; `outsideOkB` on the written file: `hdrB`, `dataB`,
@@ -187,10 +190,13 @@ those bytes too (design (b)).
 
 * Codegen units: cg_clif's object with our functions weak and the renamed symbols global (no
   merge); `lean.o` stays in the work directory, each function followed by a zero gap word
-  (`gap_object`), so `ld -r` lays it out as `Link.offs` does. A function with a literal pool,
-  whose object `lean-backend` 8-aligns (as Cranelift), enters `ld -r` as a word-aligned copy
-  (`word_aligned`), else `ld -r` pads before it and every later function leaves its placement
-  (#1059: `symsOkB` failed and the executable left the typed route); its bytes are unchanged.
+  (`gap_object`), so `ld -r` lays it out as `Link.offsA` does: a function with a literal pool,
+  whose object `lean-backend` 8-aligns (as Cranelift), starts 8-aligned (zeros before it), as
+  rust-lld places it in a stock build (#1061; #1059 had word-aligned such objects instead). The
+  alignments enter the placement from `cargo fv link-proof` (`aligns`: each function's object's
+  `.text` alignment, a unit's first function its unit's largest one, since a unit's `lean.o` is
+  one section); the link fails if a function's Lean code is not at a multiple of its object's
+  alignment.
   Only verified functions enter the
   region: an unverified one keeps cg_clif's code (fallback, reason "unverified (…): cg_clif's
   code kept under --lean-link"). Self-calls retain the function's original symbol, including

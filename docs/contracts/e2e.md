@@ -2217,9 +2217,11 @@ part (the Lean-compiled functions) is placed, relocated and written by Lean; rus
 outside part around a placeholder of the region:
 
 ```lean
-structure Link.LinkSpec   -- funcs (placement order), names, sizes, outside, data, symNames, R
-def LinkSpec.input (S : LinkSpec) : LinkInput   -- link map = the placement (`offs`: each
-                                                -- function, then one zero gap word)
+structure Link.LinkSpec   -- funcs (placement order), names, sizes, outside, data, symNames, R,
+                          -- aligns (#1061: where `ld -r` starts each function; default a word)
+def LinkSpec.input (S : LinkSpec) : LinkInput   -- link map = the placement (`offsA`: each
+                                                -- function at its alignment, zeros before it,
+                                                -- then one zero gap word)
 def LinkSpec.placeOkB (S : LinkSpec) : Bool      -- distinct names, positive sizes, region in
                                                 -- range, no outside symbol in it
 def LinkSpec.namesOkB/sizesOkB (S) (T) : Bool    -- the compiled code has the given names, sizes
