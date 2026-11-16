@@ -520,9 +520,8 @@ jobs:
           # Locally 27 min under a 12 GB cap (after #985); 2 h 08 min on a runner (#1010)
           - { example: deps, args: '--lean-link --verified', parity: false }
           # #479: a panic unwinding through a Lean-compiled frame larger than 32 KiB. Plain
-          # `cargo fv`: the big function is outside the verified subset (--verified would keep
-          # cg_clif's code), so its executable is outside the binary check: `0 of 1`, with its
-          # entry in the known-unverified list (#1008, #1009)
+          # `cargo fv`: every function, the big one too, is verified since #1057's validation
+          # budget (#1009), so its executable goes through the binary check: `1 of 1`
           - { example: bigframe-unwind, args: '', parity: false }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

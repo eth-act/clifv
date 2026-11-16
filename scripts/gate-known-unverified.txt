@@ -8,7 +8,3 @@
 # entries, and nothing is added here without a parent decision and an open issue.
 #
 # Format: EXAMPLE  PACKAGE/EXECUTABLE  #ISSUE   (the executable's file name without its -<hash>)
-
-# plain cargo fv links `big` (Lean-compiled, unverified: f64 values outside subset E; over the
-# validation budget without them), and link-check stops at an unverified function of the region
-bigframe-unwind  bigframe-unwind/bigframe_unwind  #1009
