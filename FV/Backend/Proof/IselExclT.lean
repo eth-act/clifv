@@ -976,9 +976,9 @@ theorem fArith_resTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j :
     (hc : info.clif = some c) : info.resTys.head?.getD .invalid ∈ fTys := by
   cases c with
   | float op ty args =>
-    have hty : ty.isFloat = true := by
+    have hty : ty.isArithFloat = true := by
       simp only [Compile.fArithET, Bool.and_eq_true] at hA
-      revert hA; cases op <;> cases ty <;> simp [fTyOk, Clif.Ty.isFloat]
+      revert hA; cases op <;> cases ty <;> simp [fTyOk]
     obtain ⟨tys, htys, hres, -⟩ := hctx.resTys j info _ hi hc
     rcases fArithET_op hA with ho | ho <;> cases op <;> simp [fBinaryOpcode, fUnaryOpcode] at ho <;>
       simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys <;> subst htys <;>

@@ -65,7 +65,7 @@ theorem stock_lower_cmp_constant_left_source_values {f : Clif.Function} {result 
     intro world
     exact (execution world).imp (fun ρ' _ _ ⟨value,kept,post⟩ => ⟨value,fun k outside => kept k (by omega),post⟩)
   | i128 => simp [Clif.Ty.width] at widths
-  | f32 | f64 =>
+  | f32 | f64 | f16 =>
     have accepted := inv.instE _ info _ source clif
     simp [Compile.instE, Compile.tyE] at accepted
 /-- Original source execution supplies both getters internally; the earlier

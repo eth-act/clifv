@@ -44,8 +44,14 @@ theorem tyM_ne_i128 {t : Clif.Ty} (h : Compile.tyM t = true) : t ≠ .i128 := by
 theorem valTyOk_of_tyE {ty : Clif.Ty} (h : Compile.tyE ty = true) : valTyOk ty = true := by
   cases ty <;> simp_all [valTyOk, eTy, Compile.tyE]
 
-theorem valTyOk_of_isFloat {ty : Clif.Ty} (h : ty.isFloat = true) : valTyOk ty = true := by
+/-- Restated for `f16` (#35): `valTyOk` admits the arithmetic float types (the old hypothesis
+`ty.isFloat = true` admits `f16`, and `valTyOk .f16 = false`). -/
+theorem valTyOk_of_isFloat {ty : Clif.Ty} (h : ty.isArithFloat = true) : valTyOk ty = true := by
   cases ty <;> simp_all [valTyOk, eTy, Compile.tyE]
+
+/-- The statement of `valTyOk_of_isFloat` before `f16` is false: `f16`. -/
+theorem valTyOk_of_isFloat_old_false : ¬ ∀ ty : Clif.Ty, ty.isFloat = true → valTyOk ty = true :=
+  fun h => absurd (h .f16 rfl) (by decide)
 
 /-! ## `instData` on the typed scope -/
 
@@ -65,6 +71,7 @@ theorem instET_cases {i : Clif.Inst} (h : Compile.instET i = true) :
     · exact absurd h (by simp [Compile.instET, Compile.tyE])
     · exact .inr (.inl ⟨_, _, rfl⟩)
     · exact .inr (.inl ⟨_, _, rfl⟩)
+    · exact absurd h (by simp [Compile.instET, Compile.tyE])
   | unary op ty x => exact .inl h
   | binary op ty x y => exact .inl h
   | div op ty x y => exact .inl h
@@ -161,6 +168,7 @@ theorem instData_okT {f : Clif.Function} {s : Clif.Stmt} (hT : Compile.instET s.
         ?_⟩
       cases ty with
       | i128 => exact absurd hty (by decide)
+      | f16 => exact absurd hty (by decide)
       | _ => simp [instData, eTy, hty, beq_iff_eq.mp hop, hbig, pure, Except.pure]
   · obtain ⟨op, ty, fl, x, p, off, rfl⟩ := hstore
     simp only [Compile.instET, Bool.and_eq_true, Bool.or_eq_true] at hT'
@@ -175,6 +183,7 @@ theorem instData_okT {f : Clif.Function} {s : Clif.Stmt} (hT : Compile.instET s.
           .int off], ?_⟩
       cases ty with
       | i128 => exact absurd hty (by decide)
+      | f16 => exact absurd hty (by decide)
       | _ => simp [instData, eTy, hty, beq_iff_eq.mp hop, hbig, pure, Except.pure]
   · obtain ⟨ty, c, x, y, rfl⟩ := hselect
     cases ty <;> first

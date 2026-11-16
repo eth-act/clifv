@@ -56,7 +56,7 @@ theorem stock_rotate_wide_register_requests {p : Program} (hp : Data p) (ctx : C
 actual extension and count-negation calls and original frame consistency. -/
 theorem stock_rotate_narrow_register_requests {p : Program} (hp : Data p) (ctx : Ctx) (left : Bool)
     {w x y n : Nat} (width : w = 8 ∨ w = 16)
-    {fr : Clif.Frame} (dfg : DFGCons ctx fr) {ty : Clif.Ty} (same : ty.width = w)
+    {fr : Clif.Frame} (dfg : DFGCons ctx fr) {ty : Clif.Ty} (same : ty.width = w) (h16 : ty ≠ .f16)
     {u : BitVec ty.width} (getX : fr.getAs x ty = .ok u)
     {st next : State} {tr trace : Array RuleId} {out : V}
     (run : (evalExpr p (Stock.sem ctx) {} (n+160) (rotateNarrowRule left false).rhs
@@ -80,7 +80,7 @@ theorem stock_rotate_narrow_register_requests {p : Program} (hp : Data p) (ctx :
     obtain ⟨t,typed,safeX,rx,mapX,form⟩ := shape
     have typeEq : t = .int ty.width := by
       have h := (dfg.2 x t ⟨ty,u⟩ typed (getAs_ok getX)).symm
-      exact h.trans (ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega)))
+      exact h.trans (ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega) h16))
     rw [typeEq] at typed form
     rcases form with pass | extended
     · rcases pass with ⟨impossible,_,_⟩

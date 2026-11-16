@@ -206,9 +206,16 @@ theorem storesTyped_of_buildCtx {f : Clif.Function} {ctx : Ctx} {ranges : Array 
   have sp := ctxSpec_of hb
   intro ii info inst hi hc op ty fl x q off hinst hf t ht
   obtain ⟨B, hB, s, hs, -, rfl⟩ := sp.inst_of hi hc
-  have hvt : valTyOk ty = true := by cases ty <;> simp_all [valTyOk]
-  have hcl := sp.class_of_argClassOk
-    (Compile.storeTypedB_sound hT B hB s hs op ty fl x q off hinst hf) hvt t ht
+  have hsnd := Compile.storeTypedB_sound hT B hB s hs op ty fl x q off hinst hf
+  -- `argClassOk` depends on `isFloat` only: an `f16` store is checked as an `f32` one
+  have hcl : t.valClass = (CTy.ofClif ty).valClass := by
+    by_cases h16 : ty = .f16
+    · subst h16
+      have h' : Compile.argClassOk (Compile.defFloats f) x .f32 = true := by
+        simpa [Compile.argClassOk] using hsnd
+      rw [sp.class_of_argClassOk h' (by decide) t ht]
+      simp [CTy.ofClif, CTy.valClass, CTy.regClass?]
+    · exact sp.class_of_argClassOk hsnd (by cases ty <;> simp_all [valTyOk]) t ht
   rcases sp.tyOf x t ht with ⟨B', hB', ⟨v, ty'⟩, hq', -, rfl⟩ |
     ⟨B', hB', s', hs', m, ty', -, hty, rfl⟩
   · have hv' : valTyOk ty' = true := (sp.blockC B' hB').1 _ hq'

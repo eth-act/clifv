@@ -1,12 +1,13 @@
 /-!
-# CLIF float literals (`Ieee32`/`Ieee64` text)
+# CLIF float literals (`Ieee16`/`Ieee32`/`Ieee64` text)
 
-The text form of `f32const`/`f64const` immediates and of float run-line values, as Cranelift
-0.136.1's `parse_float`/`format_float` (`cranelift/codegen/src/ir/immediates.rs`) define it:
-hexadecimal significand with a binary exponent (`0x1.8p3`, `-0x0.0004p-126`), the decimal zero
-`0.0`, `Inf`, `NaN` (canonical quiet NaN), `NaN:0xT` (quiet NaN with payload `T`) and `sNaN:0xT`,
-each with an optional sign. Literals are exact: a value that needs rounding is an error, as in
-Cranelift. `w`/`t` are the exponent and trailing-significand field widths (8/23, 11/52).
+The text form of `f16const`/`f32const`/`f64const` immediates and of float run-line values, as
+Cranelift 0.136.1's `parse_float`/`format_float` (`cranelift/codegen/src/ir/immediates.rs`)
+define it: hexadecimal significand with a binary exponent (`0x1.8p3`, `-0x0.0004p-126`), the
+decimal zero `0.0`, `Inf`, `NaN` (canonical quiet NaN), `NaN:0xT` (quiet NaN with payload `T`)
+and `sNaN:0xT`, each with an optional sign. Literals are exact: a value that needs rounding is an
+error, as in Cranelift. `w`/`t` are the exponent and trailing-significand field widths (5/10,
+8/23, 11/52).
 -/
 
 namespace Clif.FloatLit
@@ -121,8 +122,9 @@ def format (bits w t : Nat) : String :=
       else pre ++ s!"sNaN:0x{hex payload}"
   else pre ++ s!"0x1.{hexPad leftT digits}p{e}"
 
-/-- Exponent and trailing-significand widths of a float type width (32 → binary32,
-64 → binary64). -/
-def fields (width : Nat) : Nat × Nat := if width = 32 then (8, 23) else (11, 52)
+/-- Exponent and trailing-significand widths of a float type width (16 → binary16,
+32 → binary32, 64 → binary64). -/
+def fields (width : Nat) : Nat × Nat :=
+  if width = 16 then (5, 10) else if width = 32 then (8, 23) else (11, 52)
 
 end Clif.FloatLit

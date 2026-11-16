@@ -26,7 +26,7 @@ theorem stock_select_nonzero_actual_condition_shape {f : Clif.Function} {ctx : C
     rw [producer]
     exact Or.inr (Or.inr ⟨_,_,Cond.ne,rfl,ofV_tst .xzr (.vreg key .int) ⟨255,.size32⟩,
       by decide,by decide,rfl,fun _ _ => trivial⟩)
-  case i16 =>
+  case i16 | f16 =>
     obtain ⟨_,key,_,producer,_⟩ := stock_select_nonzero16_emitter_observed inv enough typed run
     rw [producer]
     exact Or.inr (Or.inl ⟨st.base.nextVreg,0,.size32,rfl,rfl,trivial⟩)

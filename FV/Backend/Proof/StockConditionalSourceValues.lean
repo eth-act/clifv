@@ -72,7 +72,7 @@ theorem nonzero_boolean_values {f : Clif.Function} {ctx : Ctx}
     intro final _ _ pair
     exact ⟨pair.1,fun k outside => pair.2 k (by rcases outside with h | h <;> omega)⟩
   case i128 => simp [Clif.Ty.width] at width
-  case f32 | f64 => cases getAs_typed dfg typed getC
+  case f32 | f64 | f16 => cases getAs_typed dfg typed getC
 
 
 /-- Actual original650 constructs its boolean proof companion and establishes

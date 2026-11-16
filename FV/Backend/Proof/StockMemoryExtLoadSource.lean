@@ -28,13 +28,13 @@ theorem extending_load_source_data (kind : Kind) {ty : Clif.Ty}
       info.data = .data 152 16
         [.data 151 kind.sourceTag [],.value x,.op (.memFlags flags),.int 0] := by
   have data := inv.data i info _ source clif
-  change (if (!eTy ty && !(ty.isFloat && kind.sourceOp == .load)) = true then
+  change (if (!eTy ty && !(ty.isArithFloat && kind.sourceOp == .load)) = true then
       Except.error s!"load.{ty.name}"
     else if (flags.endianness == some .big) = true then Except.error "big-endian load"
     else Except.ok (instDataV "Load"
       [opcodeV (loadOpcode kind.sourceOp),.value x,.op (.memFlags flags),.int 0])) =
         Except.ok info.data at data
-  by_cases invalid : (!eTy ty && !(ty.isFloat && kind.sourceOp == .load)) = true
+  by_cases invalid : (!eTy ty && !(ty.isArithFloat && kind.sourceOp == .load)) = true
   · rw [if_pos invalid] at data
     cases data
   · rw [if_neg invalid] at data

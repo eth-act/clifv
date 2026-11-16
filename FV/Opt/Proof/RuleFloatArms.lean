@@ -23,9 +23,16 @@ open Isle Isle.Opt Clif
     t.isFloat = true := by
   cases t <;> simp_all
 
-@[opt_monad] theorem ty_width_ne_16_of_not_isInt {t : Ty} (h : ¬t.isInt = true) :
+/-- Restated for `f16` (#35): `f16` is not an integer and has width 16, so the arm `$F16` is
+excluded only at the other float types (`ty_width_ne_16_of_not_isInt_old_false`). -/
+@[opt_monad] theorem ty_width_ne_16_of_not_isInt {t : Ty} (h : ¬t.isInt = true) (h16 : t ≠ .f16) :
     (16 == t.width) = false := by
   cases t <;> simp_all [Ty.width]
+
+/-- The statement of `ty_width_ne_16_of_not_isInt` before `f16` is false: `f16`. -/
+theorem ty_width_ne_16_of_not_isInt_old_false :
+    ¬ ∀ t : Ty, ¬t.isInt = true → (16 == t.width) = false := fun h =>
+  absurd (h .f16 (by decide)) (by decide)
 
 @[opt_monad] theorem ty_width_ne_128_of_not_isInt {t : Ty} (h : ¬t.isInt = true) :
     (128 == t.width) = false := by
@@ -45,6 +52,10 @@ variable {σ : Type} (G : EGraph σ)
 
 @[opt_monad] theorem ctorFn_f64_from_uint_zero (s : St σ) :
     ctorFn G "f64_from_uint" [.int 0] s = .error "unmodeled extern constructor f64_from_uint" :=
+  rfl
+
+@[opt_monad] theorem ctorFn_f16_zero (s : St σ) :
+    ctorFn G "f16_zero" [] s = .error "unmodeled extern constructor f16_zero" :=
   rfl
 
 end

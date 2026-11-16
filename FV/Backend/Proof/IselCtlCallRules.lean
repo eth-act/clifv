@@ -539,9 +539,16 @@ theorem sigStack_facts {s : Clif.Signature} {outB : Nat} (hso : SigStackOk s out
     slotsOk (stackSlots locs bytes) 0 outB = true := by
   obtain ⟨hS, hlay⟩ := hso
   have hb' : sigArgs s = .ok bytes := hb
-  simp only [stackLayoutOk, hl, hb'] at hlay
+  simp only [stackLayoutOk, hl, hb', Bool.and_eq_true] at hlay
   simp only [stackBytes, hl] at hS
-  exact slotsOk_mono _ 0 S outB hS hlay
+  exact slotsOk_mono _ 0 S outB hS hlay.1
+
+/-- The parameters of a signature with a well-formed stack layout are not `f16` (`sigNoF16`). -/
+theorem params_ne_f16_of_stackLayoutOk {s : Clif.Signature} (h : stackLayoutOk s = true)
+    {p : Clif.AbiParam} (hp : p ∈ s.params) : p.ty ≠ .f16 := by
+  have h2 := ((Bool.and_eq_true _ _).mp h).2
+  have := List.all_eq_true.mp h2 p hp
+  simpa using this
 
 theorem slotsOk_bound : ∀ (L : List (Nat × Nat)) (lo S : Nat), slotsOk L lo S = true →
     ∀ q ∈ L, lo ≤ q.1 ∧ q.1 + q.2 ≤ S
