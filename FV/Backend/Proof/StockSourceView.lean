@@ -40,6 +40,7 @@ theorem MappedCtxInv.identityView {f : Clif.Function} {ctx : Ctx} (h : MappedCtx
     rw [identityView_valueReg]
     simp only [hx, ite_true]
 
+set_option maxHeartbeats 800000 in
 /-- DFG extraction depends on the source view, not assigned register numbers. -/
 theorem DFGViewEq.externExtract {ctx original : Ctx} (h : DFGViewEq ctx original)
     (t : Term) (v : V) (st : LState) :

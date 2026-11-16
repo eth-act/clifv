@@ -7,6 +7,7 @@ namespace Backend.Stock.Proof
 
 open Isle Isle.Interp Isle.Aarch64
 
+set_option maxHeartbeats 800000 in
 theorem DFGViewEq.externExtract_eq {ctx original : Ctx}
     (view : DFGViewEq ctx original) (t : Term) (v : V) (st : LState) :
     Backend.externExtract ctx t v st = Backend.externExtract original t v st := by

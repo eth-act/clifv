@@ -59,6 +59,7 @@ private theorem rejects_enum {ctx : Ctx} {st : State} {ty t fmt : Nat}
   obtain ⟨_, _, args⟩ := matchPat_enum_inv lookup kind run
   exact rejects_args member reject args
 
+set_option maxHeartbeats 800000 in
 private theorem inst_data_input {ctx : Ctx} {st : State} {v : V} {fields : List V}
     (run : (Stock.sem ctx).extract T.inst_data_value v st = .ok fields) :
     ∃ i, v = .inst i := by
