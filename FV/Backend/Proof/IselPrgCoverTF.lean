@@ -67,6 +67,10 @@ theorem formOfTF_of_instET {f : Clif.Function} {c : Clif.Inst} (h : Compile.inst
 theorem fTys_of_isFloat {ty : Clif.Ty} (h : ty.isArithFloat = true) : ty ∈ fTys := by
   cases ty <;> simp_all [fTys]
 
+/-- The statement of `fTys_of_isFloat` before `f16` is false: `f16`. -/
+theorem fTys_of_isFloat_old_false : ¬ ∀ ty : Clif.Ty, ty.isFloat = true → ty ∈ fTys :=
+  fun h => absurd (h .f16 rfl) (by decide)
+
 set_option maxRecDepth 100000 in
 /-- The `FloatCC` value of an `fcmp`'s condition is variant `fccIdxF`. -/
 theorem mkVariant_floatccF (cc : Clif.FloatCC) :

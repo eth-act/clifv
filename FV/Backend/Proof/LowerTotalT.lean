@@ -49,6 +49,10 @@ theorem valTyOk_of_tyE {ty : Clif.Ty} (h : Compile.tyE ty = true) : valTyOk ty =
 theorem valTyOk_of_isFloat {ty : Clif.Ty} (h : ty.isArithFloat = true) : valTyOk ty = true := by
   cases ty <;> simp_all [valTyOk, eTy, Compile.tyE]
 
+/-- The statement of `valTyOk_of_isFloat` before `f16` is false: `f16`. -/
+theorem valTyOk_of_isFloat_old_false : ¬ ∀ ty : Clif.Ty, ty.isFloat = true → valTyOk ty = true :=
+  fun h => absurd (h .f16 rfl) (by decide)
+
 /-! ## `instData` on the typed scope -/
 
 /-- The instructions `instET` admits beyond subset E (`instE`): the float data movement. -/
