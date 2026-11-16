@@ -231,7 +231,8 @@ theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (houtB : vc.outgoing ≤ out) :
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligationsT_of_check hlow
-  have hctxT : CtxT f ctx := CtxT.ofExterns hshape.ctxInvT hshape.scope (functionET_externs hsub.subsetET)
+  have hctxT : CtxT f ctx :=
+    ctxT_of_functionET hsub.subsetET hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
   have hstT : StoresTyped ctx :=
     storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   intro s'

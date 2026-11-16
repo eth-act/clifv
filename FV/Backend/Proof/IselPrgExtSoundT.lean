@@ -18,7 +18,7 @@ instruction data
   extractors.
 * `aidata_soundT`: the `InstructionData` of an E instruction of `f` (`instData`) is variant `k` of
   `InstructionData` whose fields `aidata k` describes: an E instruction's operands are in integer
-  positions (`instArgs_intArgs`, `PInvT.intArgsOf`).
+  positions (`instArgs_intArgs`, `PInvT.intArgsOf`; S11g: `intArgsE`, with a `call`'s arguments).
 -/
 
 namespace Backend.Proof.Prg
@@ -80,10 +80,11 @@ private theorem γ_val_int {x : Nat} (h : (ctx.valueType? x).isSome) (hi : IntPo
   obtain ⟨t, ht⟩ := Option.isSome_iff_exists.mp h
   simp only [γ]; exact ⟨x, t, rfl, ht, hi t ht⟩
 
-/-- The operands of an E instruction are in integer positions. -/
+/-- The operands of an E instruction are in integer positions (`intArgsE`; S11g: until then
+`intArgs`, which no longer lists a `call`'s arguments, so that form is false on an E `call`). -/
 theorem instArgs_intArgs {c : Clif.Inst} (hE : Compile.instE c = true) {x : Nat}
-    (hx : x ∈ Driver.instArgs c) : x ∈ intArgs c := by
-  cases c <;> simp_all [Driver.instArgs, intArgs, Compile.instE, Compile.tyE, Clif.Ty.isFloat]
+    (hx : x ∈ Driver.instArgs c) : x ∈ intArgsE c := by
+  cases c <;> simp_all [Driver.instArgs, intArgsE, Compile.instE, Compile.tyE, Clif.Ty.isFloat]
 
 /-- A pruned abstract value describes nothing. -/
 private theorem isBot_γ {a : PA} (h : a.isBot = true) (v : V) : ¬ γ f ctx a v := by
@@ -278,7 +279,7 @@ private theorem fData_of (hP : PInvTB f ctx) {c : Clif.Inst} (hof : InstOf f c)
     refine ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),
       γ_mkVariantT (by rfl) ?_⟩
     refine ⟨γ_opcT (by rfl), γ_val_int (hargs p (by simp [Driver.instArgs]))
-      (hint p (by simp [intArgs])), ⟨_, rfl, fl, rfl, by simpa using hbig⟩, ⟨_, rfl, by simp, by simp⟩,
+      (hint p (by simp [intArgsE])), ⟨_, rfl, fl, rfl, by simpa using hbig⟩, ⟨_, rfl, by simp, by simp⟩,
       trivial⟩
   case store op ty fl x p off =>
     simp [Clif.Inst.resultTypes] at hrt
@@ -295,7 +296,7 @@ private theorem fData_of (hP : PInvTB f ctx) {c : Clif.Inst} (hof : InstOf f c)
       refine ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
         (List.mem_cons_self ..))), γ_mkVariantT (by rfl) ?_⟩
       refine ⟨γ_opcT (by rfl), ⟨[c, x, y], rfl, ?_, ?_, ?_, trivial⟩, trivial⟩
-      · have hc : c ∈ intArgs (.select ty c x y) := by
+      · have hc : c ∈ intArgsE (.select ty c x y) := by
           show c ∈ (if ty.isFloat then [c] else [c, x, y])
           have hf' : ty.isFloat = true := by revert hfloat; cases ty <;> simp
           rw [if_pos hf']; exact List.mem_singleton_self _
@@ -526,7 +527,7 @@ theorem aextG_sound {dO : List (List PA)} (hP : PInvTB f ctx)
         have hof := instOf_defClif hP hd
         obtain ⟨u, hu⟩ := Option.isSome_iff_exists.mp
           (hP.argsTyped _ hof y (by simp [Driver.instArgs]))
-        have hue := hP.intArgsOf _ hof y (by simp [intArgs]) u hu
+        have hue := hP.intArgsOf _ hof y (by simp [intArgsE]) u hu
         refine concl_ok rfl (γL1 ⟨y, u, rfl, hu, ?_⟩)
         unfold withE
         by_cases hc : ts.contains u = true

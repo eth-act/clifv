@@ -90,7 +90,23 @@ theorem CtxSpec.intOps_ofF (sp : CtxSpec f ctx ranges st0) (hT : Compile.functio
     ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
       info.clif = some inst → ∀ x ∈ intArgs inst, IntPos ctx x :=
   fun ii info inst hi hc x hx => sp.intOpsF_of hT ii info inst hi hc x
-    (mem_intOperandsF (by rw [← intArgs_eq_intOperands]; exact hx))
+    (mem_intOperandsF (mem_intOperands_of_intArgs hx))
+
+/-- The `call` arguments of a float-scope function's instructions are integers (S11g: what
+`CtxSpec.intOps_ofF` gave for them before `intArgs` dropped a `call`'s arguments). -/
+theorem CtxSpec.callArgs_ofF (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionETF f = true) :
+    CallArgsInt ctx :=
+  fun ii info fn args hi hc x hx =>
+    sp.intOpsF_of hT ii info _ hi hc x (by simpa [Compile.intOperandsF, Compile.intOperands] using hx)
+
+/-- `CtxSpec.intOps_ofF` with a `call`'s arguments (`intArgsE`). -/
+theorem CtxSpec.intOpsE_ofF (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionETF f = true) :
+    ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+      info.clif = some inst → ∀ x ∈ intArgsE inst, IntPos ctx x := by
+  intro ii info inst hi hc x hx
+  cases inst with
+  | call fn args => exact sp.callArgs_ofF hT ii info fn args hi hc x hx
+  | _ => exact sp.intOps_ofF hT ii info _ hi hc x hx
 
 /-- The instructions of `buildCtx`'s context of a float-scope function are in the scope. -/
 theorem CtxSpec.instScopeTF (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionETF f = true) :

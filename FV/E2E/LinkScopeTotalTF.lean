@@ -94,16 +94,17 @@ theorem functionETCF_of_functionETF {f : Clif.Function} (h : Compile.functionETF
   simp only [Compile.functionETF, Bool.and_eq_true] at h
   obtain ⟨⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, hb⟩, ho⟩, he⟩, -⟩ := h
   simp only [Compile.functionETCF, Bool.and_eq_true]
-  refine ⟨⟨⟨⟨⟨⟨hs, hg⟩, ?_⟩, Compile.callsE_of_externs hx⟩, hb⟩, ?_⟩, he⟩
+  refine ⟨⟨⟨⟨⟨hs, hg⟩, ?_⟩, hb⟩, ?_⟩, he⟩
   · exact List.all_eq_true.mpr fun p hp => Compile.sigET_of_sigE (List.all_eq_true.mp hx p hp)
   · simp only [Compile.opsTypedTF, Compile.opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at ho ⊢
-    exact fun b hb' => ⟨(ho b hb').1, fun x hx => (ho b hb').2 x (Compile.termIntOperandsC_sub _ x hx)⟩
+    exact fun b hb' => ⟨fun s hs x hx' => (ho b hb').1 s hs x (Compile.intOperandsFC_sub hx'),
+      fun x hx' => (ho b hb').2 x (Compile.termIntOperandsC_sub _ x hx')⟩
 
 /-- `driverInB` contains `driverInTCB`. -/
 theorem driverInTCB_of_driverInB {g : Clif.Function} (h : driverInB g = true) :
     driverInTCB g = true := by
   simp only [driverInB, driverInTCB, Bool.and_eq_true, List.all_eq_true] at h ⊢
-  exact ⟨h.1, fun B hB => (h.2 B hB).1⟩
+  exact ⟨h.1, fun B hB s hs => by simp [stmtInTCB, (h.2 B hB).1 s hs]⟩
 
 /-- **The run-time decider `lowersTCB` holds on `fnScopeInTB3F`**: `lowerFunction` succeeds
 (`lowerFunction_ok_inT3F`) and its output passes the float validator `lowerCheckTCF`

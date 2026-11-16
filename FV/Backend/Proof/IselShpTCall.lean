@@ -124,7 +124,7 @@ theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
-  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hci.intOps ii info _ hi hcl x hx
+  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.callArgs ii info fn args hi hcl x hx
   have hrs := mapM_valueRegTI hci hops ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
   simp only [ctor_gen_call_args_gen _ _ _ hb hl,
@@ -205,7 +205,7 @@ theorem run_2518 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
-  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hci.intOps ii info _ hi hcl x hx
+  have hops : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.callArgs ii info fn args hi hcl x hx
   have hrs := mapM_valueRegTI hci hops ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
   simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,

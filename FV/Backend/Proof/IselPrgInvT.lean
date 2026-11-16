@@ -8,7 +8,8 @@ import FV.Compile.SubsetTFIn
 
 `PInvT f ctx`: `PInv` (`IselPrgInv`) for a float-capable lowering context (`CtxInvT` for
 `CtxInv`): the context's instructions are `f`'s and in the typed scope (`Compile.instET`), the
-operands in integer positions (`intArgs`) of `f`'s statements are integers, operands and results
+operands in integer positions (`intArgsE`: S11g, `intArgs` with a `call`'s arguments, as `intArgs`
+was until then) of `f`'s statements are integers, operands and results
 have types, stack slots exist, callees are declared with signatures the lowering handles, and
 every `uextend`/`sextend` widens a narrower than 64-bit value. `IselPrgCtxT` proves it for the
 context `buildCtx f` builds (and its terminator/`try_call` variants) from the input conditions.
@@ -28,7 +29,7 @@ structure PInvT (f : Clif.Function) (ctx : Ctx) : Prop where
   /-- `f`'s statements are in the typed scope. -/
   instET : ∀ (c : Clif.Inst), InstOf f c → Compile.instET c = true
   /-- The operands in integer positions of `f`'s statements are integers. -/
-  intArgsOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ intArgs c, IntPos ctx x
+  intArgsOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ intArgsE c, IntPos ctx x
   /-- Every operand of a statement of `f` has a type. -/
   argsTyped : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ Driver.instArgs c, (ctx.valueType? x).isSome
   /-- Every result of an instruction of the context has a type. -/
@@ -60,7 +61,7 @@ structure PInvTB (f : Clif.Function) (ctx : Ctx) : Prop where
   ctxInv : CtxInvT f ctx
   clifOf : ∀ (j : Nat) (info : IInfo) (c : Clif.Inst), ctx.insts[j]? = some info → info.clif = some c → InstOf f c
   externsE : f.externs.all (Compile.sigE ·.2.sig) = true
-  intArgsOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ intArgs c, IntPos ctx x
+  intArgsOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ intArgsE c, IntPos ctx x
   argsTyped : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ Driver.instArgs c, (ctx.valueType? x).isSome
   resTyped : ∀ (j : Nat) (info : IInfo), ctx.insts[j]? = some info → ∀ r ∈ info.results, (ctx.valueType? r).isSome
   noClifRes : ∀ (j : Nat) (info : IInfo), ctx.insts[j]? = some info → info.clif = none → info.resTys = []

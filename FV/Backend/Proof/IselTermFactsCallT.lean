@@ -5,10 +5,11 @@ import FV.Backend.Proof.IselTermFactsCall
 
 `IselTermFactsCall` over float-capable contexts (`CtxInvT`): the `call` rules (1031, 1032) and the
 `try_call` rules (1034, 1035) raise the outgoing area to the callee's stack-argument size. The
-symbolic executions are `IselTermFactsCall`'s; the arguments' registers are integer vregs because
-the arguments are in integer positions (`CtxInvT.intOps` for a `call`, `TermIntPos` for a
-`try_call`) rather than because every value is an integer. A `call`'s outputs may be of either
-class (typed calls, S11e5a: `ctor_gen_call_output_typed`, `outRegsC_single`).
+symbolic executions are `IselTermFactsCall`'s. A `call`'s arguments are in vregs of their values'
+classes (`mapM_valueRegInvT`, `ctor_gen_call_args_genV`: the stores of stack-passed arguments
+do not touch the outgoing area); a `try_call`'s are integer vregs because they are in integer
+positions (`TermIntPos`). A `call`'s outputs may be of either class (typed calls, S11e5a:
+`ctor_gen_call_output_typed`, `outRegsC_single`).
 -/
 
 namespace Backend.Proof
@@ -30,6 +31,45 @@ theorem mapM_valueRegI {ctx : Ctx}
     rw [hvr x r hr (hi x List.mem_cons_self),
       mapM_valueRegI hvr (fun y hy => hi y (List.mem_cons_of_mem _ hy)) hrs]
     rfl
+
+/-- The registers of values of a float-capable context: vreg `x` of `x`'s class. -/
+theorem mapM_valueRegInvT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) :
+    ∀ {xs : List Nat} {rs : List Reg}, xs.mapM ctx.valueReg? = some rs →
+      rs = xs.map fun x => Reg.vreg x (valClassOf ctx x)
+  | [], rs, h => by simp at h; simp [h]
+  | x :: xs, rs, h => by
+    simp only [List.mapM_cons, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.pure_def,
+      Option.some.injEq] at h
+    obtain ⟨r, hr, rs', hrs, rfl⟩ := h
+    rw [hctx.valueReg x r hr, mapM_valueRegInvT hctx hrs]
+    rfl
+
+/-- **`gen_call_args`** with arguments in vregs of classes `cls` (any number of parameters): the
+register-passed arguments become the call's uses, every stack-passed one a store
+(`IselCtlCallF.ctor_gen_call_args_genC` states the same with its class-general pair lists). -/
+theorem ctor_gen_call_args_genV {ctx : Ctx} (st : LState) (s : Clif.Signature) (args : List Nat)
+    (cls : Nat → RegClass) {bytes : List Nat} (hb : sigParamBytes s = .ok bytes)
+    {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs s = .ok (locs, S)) (v : V) (st' : LState) :
+    externCtor ctx T.gen_call_args
+      [.op (.sig s), .regsVec ((args.map fun a => Reg.vreg a (cls a)).map fun r => [r])] st =
+        .ok (v, st') ↔
+      v = .op (.callArgs (argRegPairs (((locs.zip args).zip bytes).map
+          fun q => ((q.1.1, Reg.vreg q.1.2 (cls q.1.2)), q.2)))) ∧
+        st' = { st with emitted := st.emitted ++ (argStores (((locs.zip args).zip bytes).map
+          fun q => ((q.1.1, Reg.vreg q.1.2 (cls q.1.2)), q.2))).toArray } := by
+  have : externCtor ctx T.gen_call_args
+      [.op (.sig s), .regsVec ((args.map fun a => Reg.vreg a (cls a)).map fun r => [r])] st =
+      match sigArgLocs s, ((args.map fun a => Reg.vreg a (cls a)).map fun r => [r]).mapM single? with
+      | .ok (locs, _), some rs =>
+        let bytes := match sigParamBytes s with | .ok b => b | _ => []
+        let r := (((locs.zip rs).zip bytes).foldl argStep (#[], st))
+        .ok (.op (.callArgs r.1.toList), r.2)
+      | .error e, _ => .unmodeled s!"gen_call_args: {e}"
+      | _, none => .unmodeled "gen_call_args: multi-register value" := rfl
+  rw [this, hl, hb, mapM_single_map]
+  simp only []
+  rw [foldl_argStep_gen, zip3_map]
+  simp [eq_comm]
 
 /-- `gen_call_output`'s registers are single vregs (of the returns' classes). -/
 theorem outRegsC_single (st : LState) (cs : List RegClass) :
@@ -69,7 +109,6 @@ theorem call_bl_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2508 
   cases hinfo
   rw [← ‹V.data 152 6 _ = info.data›] at hd
   obtain ⟨fn, args, ext, rfl, hext, hfs⟩ := instData_call_inv hd
-  have hai : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.intOps ii info _ hi hcl x (by simpa [intArgs])
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
@@ -90,10 +129,9 @@ theorem call_bl_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2508 
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
-  have hrs := mapM_valueRegI (fun x r h hx => hctx.valueReg_int h hx) hai
-    ‹List.mapM ctx.valueReg? args = some _›
+  have hrs := mapM_valueRegInvT hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
-  simp only [ctor_gen_call_args_gen _ _ _ hb hl,
+  simp only [ctor_gen_call_args_genV _ _ _ (valClassOf ctx) hb hl,
     ctor_gen_call_info_gen _ _ _ _ _ _ _ hl,
     mapM_single_map, Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
@@ -137,7 +175,6 @@ theorem call_got_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2518
   cases hinfo
   rw [← ‹V.data 152 6 _ = info.data›] at hd
   obtain ⟨fn, args, ext, rfl, hext, hfs⟩ := instData_call_inv hd
-  have hai : ∀ x ∈ args, IntPos ctx x := fun x hx => hctx.intOps ii info _ hi hcl x (by simpa [intArgs])
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
@@ -159,10 +196,9 @@ theorem call_got_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2518
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
-  have hrs := mapM_valueRegI (fun x r h hx => hctx.valueReg_int h hx) hai
-    ‹List.mapM ctx.valueReg? args = some _›
+  have hrs := mapM_valueRegInvT hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
-  simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
+  simp only [ctor_gen_call_args_genV _ _ _ (valClassOf ctx) hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
   have h570 := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The verdict of a gate line whose exit status alone does not say that the check ran (#998).
 
-usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--rise-ok] [--known FILE] [--expected FILE] [--base FILE] [--summary FILE] COMPARE_LOG FV_LOG
+usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--rise-ok] [--known FILE] [--expected FILE] [--leftout FILE] [--base FILE] [--summary FILE] COMPARE_LOG FV_LOG
        gate-line-check.py base-pins OUT (--before SHA | --local REV)
        gate-line-check.py arm-fault-cosim LOG
 
@@ -46,14 +46,26 @@ in its `(logs: DIR)`):
     of LEAN or VERIFIED is green and printed as `rise (record it): …`; a drop stays red and the
     executables stay exact;
   - with --lean-link (the lines that link with lean-ld): at least one `linked by lean-ld` line
-    and no `linked by rust-lld` line in FV_LOG.
+    and no `linked by rust-lld` line in FV_LOG, and
+  - with --lean-link, the pinned left-out counts of EXAMPLE (--leftout FILE, default
+    gate-expected-leftout.txt beside this script: `EXAMPLE  EXECUTABLE  LEFT_OUT`, a line per
+    executable, repeated for executables with one name; #1048): per executable, the N of its
+    coverage line `cargo fv: lean-link <exe>: covered by …; N function(s) outside the input
+    conditions keep cg_clif's code (…)` (0 without that clause) equals the pin (a rise is a
+    regression, a drop is recorded in the same PR), every executable of a pinned example has a
+    line, and with --base no pin is above the base revision's pin for the same executable (read
+    from FILE.leftout, which base-pins writes beside FILE). An example without lines is not
+    checked. With --rise-ok (the weekly std line, which no PR runs, so no PR can record a drop)
+    a drop is green and printed as `drop (record it): …`; a rise and a different number of
+    executables stay red (#1042).
   --summary FILE appends the counts (pinned and measured) and the known-unverified executables
   with cargo fv's reasons to FILE as Markdown (the CI job summary).
 
 base-pins (run in the checkout): writes to OUT the expected counts of the base revision of this
 run, for `cargo-fv --base OUT`, and prints the revision. The base revision is never the tested
 commit. OUT is empty when the base revision has no such file; exit status 1 and no OUT when the
-revision cannot be found (`cargo-fv --base OUT` then fails: no base, no green line).
+revision cannot be found (`cargo-fv --base OUT` then fails: no base, no green line). It also
+writes the base revision's gate-expected-leftout.txt to OUT.leftout (empty when it has none).
   --before SHA (CI; SHA: the push event's `before`, or empty): on a branch main's tip; on main
     the tip the push replaced, or the tested commit's parent when there is none (a re-run, the
     weekly run). Fetched from origin. Read from the environment: GITHUB_REF, GITHUB_EVENT_NAME,
@@ -86,9 +98,12 @@ TOTAL = re.compile(r"^TOTAL forms (\d+) vectors (\d+) faults (\d+) failures (\d+
 # report a tool it could not run or a fallback it took
 FV_LINE = re.compile(r"^\s*cargo fv\b|\bfv-rustc: ")
 FALLBACK = re.compile(r"cannot run|\bmissing\b|not checked|linking with rust-lld")
+COVERED = re.compile(r"^cargo fv: lean-link (/\S+): covered by ")
+LEFT_N = re.compile(r"; (\d+) function\(s\) outside the input conditions keep cg_clif's code")
 HERE = pathlib.Path(__file__).resolve().parent
 KNOWN = HERE / "gate-known-unverified.txt"
 EXPECTED = HERE / "gate-expected-counts.txt"
+LEFTOUT = HERE / "gate-expected-leftout.txt"
 # the pinned counts, in the file's column order
 PINS = ("executables through the binary check", "functions compiled by the Lean backend", "verified functions")
 
@@ -226,12 +241,82 @@ def fallback_fails(fv_log, lean_ld):
     return fails
 
 
-def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=None, rise_ok=False):
+def read_leftout(text, example):
+    """(the pinned left-out counts of `example` as {executable: sorted counts}, or None when it
+    has no line, errors) from the text of the left-out pins: `EXAMPLE  EXECUTABLE  LEFT_OUT`
+    lines, `#` comments; a line repeated names several executables with one name."""
+    pins, errors = collections.defaultdict(list), []
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        w = line.split()
+        if len(w) != 3 or "/" not in w[1] or not re.fullmatch(r"\d+", w[2]):
+            errors.append(f"unreadable expected-leftout line: {line.strip()}")
+        elif w[0] == example:
+            pins[w[1]].append(int(w[2]))
+    return ({e: sorted(n) for e, n in pins.items()} or None), errors
+
+
+def measured_leftout(lines):
+    """{executable: sorted left-out counts} from the coverage lines of a compare.sh log."""
+    got = collections.defaultdict(list)
+    for line in lines:
+        m = COVERED.match(line)
+        if m:
+            n = LEFT_N.search(line)
+            got[exe_name(m[1])].append(int(n[1]) if n else 0)
+    return {e: sorted(n) for e, n in got.items()}
+
+
+def leftout_lines(example, got):
+    """The pin lines (scripts/gate-expected-leftout.txt) of the measured left-out counts."""
+    return "; ".join(f"`{example}  {e}  {n}`" for e in sorted(got) for n in got[e])
+
+
+def leftout_fails(example, got, pinned, rise_ok=False):
+    """The failed conditions of the left-out pins (`pinned`: None, no pin); `rise_ok`
+    (--rise-ok): a drop is no failure (`cargo_fv` prints it)."""
+    if pinned is None or got == pinned:
+        return []
+    fails = []
+    for e in sorted(set(got) | set(pinned)):
+        g, p = got.get(e, []), pinned.get(e, [])
+        if g == p:
+            continue
+        if len(g) != len(p):
+            fails.append(f"left out of the region, {e}: {len(g)} executable(s) measured {g}, {len(p)} pinned {p}")
+        elif any(x > y for x, y in zip(g, p)):
+            fails.append(f"left out of the region, {e}: {g}, pinned {p} (a rise: functions left the "
+                         "verified region)")
+        elif not rise_ok:
+            fails.append(f"left out of the region, {e}: {g}, pinned {p}: record the drop in the same PR")
+    if fails:
+        fails.append(f"this run's lines (scripts/gate-expected-leftout.txt): {leftout_lines(example, got)}")
+    return fails
+
+
+def base_leftout_fails(pinned, base):
+    """The failed conditions of the left-out pins against the base revision's (None: not
+    compared): no pin above the base pin of the same executable."""
+    if pinned is None or base is None:
+        return []
+    fails = []
+    for e, p in sorted(pinned.items()):
+        b = base.get(e)
+        if b is not None and len(b) == len(p) and any(x > y for x, y in zip(p, b)):
+            fails.append(f"pinned left-out count of {e}: {p} is above the base revision's {b} "
+                         "(scripts/gate-expected-leftout.txt on main): raising one is a parent decision")
+    return fails
+
+
+def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=None, rise_ok=False,
+             leftout=None, base_leftout=None):
     """(ok, one-line summary) for the text of a compare.sh log and of cargo fv's own log;
     `lean_link`: a --lean-link line; `known`: the known-unverified entries [(executable, issue)]
     of the example; `pinned`: its expected (executables, Lean-compiled, verified) counts; `base`:
     the base revision's (None: not compared); `rise_ok`: a rise of the function counts is green
-    (--rise-ok)."""
+    (--rise-ok); `leftout`, `base_leftout`: the pinned and the base revision's left-out counts per
+    executable (None: none)."""
     lines = text.splitlines()
     same = [l for l in lines if l.startswith("SAME")]
     different = [l for l in lines if l.startswith("DIFFERENT")]
@@ -254,6 +339,10 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=No
     got = measured(lines)
     fails += pin_fails(example, got, pinned, rise_ok)
     fails += base_fails(pinned, base)
+    left = measured_leftout(lines) if lean_link else None
+    if lean_link:
+        fails += leftout_fails(example, left, leftout, rise_ok)
+        fails += base_leftout_fails(leftout, base_leftout)
     shown = [l for l in lines if l.startswith("cargo fv: binary check:")] + same + different
     shown += [m[0].removeprefix("cargo fv: ") for m in funcs]
     if pinned is not None:
@@ -264,6 +353,9 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=No
                      + ", ".join(f"{e} {i}" for e, i in known))
     if rise_ok and rises(got, pinned):
         shown.append(f"rise (record it): `{new_line(example, got, pinned)}` in scripts/gate-expected-counts.txt")
+    if (rise_ok and left is not None and leftout is not None and left != leftout
+            and not leftout_fails(example, left, leftout, rise_ok)):
+        shown.append(f"drop (record it): {leftout_lines(example, left)} in scripts/gate-expected-leftout.txt")
     return not fails, " ".join(shown + [f"FAIL: {f}" for f in fails])
 
 
@@ -381,6 +473,12 @@ def base_pins(out, mode, value, env=os.environ):
             return 1
         text = shown.stdout
     path.write_text(text)
+    left = f"{commit.stdout.strip()}:scripts/gate-expected-leftout.txt"
+    shown = git("show", left) if git("cat-file", "-e", left).returncode == 0 else None
+    if shown is not None and shown.returncode != 0:
+        print(f"FAIL: base revision: git show {left}: {shown.stderr.strip()}")
+        return 1
+    pathlib.Path(f"{out}.leftout").write_text(shown.stdout if shown is not None else "")
     print(f"base revision {commit.stdout.strip()[:9]} ({what}, {rev}): "
           + (f"{sum(1 for l in text.splitlines() if l.strip() and not l.lstrip().startswith('#'))} pinned line(s)"
              if text else "no scripts/gate-expected-counts.txt"))
@@ -403,7 +501,7 @@ def main(argv):
     opts, args = {}, []
     while rest:
         a = rest.pop(0)
-        if a in ("--known", "--expected", "--base", "--summary") and kind == "cargo-fv" and rest and a not in opts:
+        if a in ("--known", "--expected", "--leftout", "--base", "--summary") and kind == "cargo-fv" and rest and a not in opts:
             opts[a] = rest.pop(0)
         elif a in ("--lean-link", "--rise-ok") and kind == "cargo-fv" and a not in opts:
             opts[a] = True
@@ -424,12 +522,20 @@ def main(argv):
                 fv_log = f.read()
             known, errors = read_known(pathlib.Path(opts.get("--known", KNOWN)).read_text(), example)
             pinned, errors2 = read_expected(pathlib.Path(opts.get("--expected", EXPECTED)).read_text(), example)
-            base, errors3 = (None, [])
+            lp = pathlib.Path(opts.get("--leftout", LEFTOUT))
+            leftout, errors4 = (read_leftout(lp.read_text(), example)
+                                if "--leftout" in opts or lp.exists() else (None, []))
+            base, errors3, base_leftout = (None, [], None)
             if "--base" in opts:
                 base, errors3 = read_expected(pathlib.Path(opts["--base"]).read_text(), example)
                 errors3 = [f"base revision: {e}" for e in errors3]
+                bl = pathlib.Path(opts["--base"] + ".leftout")
+                if bl.exists():
+                    base_leftout, e5 = read_leftout(bl.read_text(), example)
+                    errors3 += [f"base revision: {e}" for e in e5]
             ok, line = cargo_fv(example, text, "--lean-link" in opts, known, fv_log, pinned, base,
-                                "--rise-ok" in opts)
+                                "--rise-ok" in opts, leftout, base_leftout)
+            errors += errors4
             if errors + errors2 + errors3:
                 ok, line = False, " ".join([line] + [f"FAIL: {e}" for e in errors + errors2 + errors3])
             if "--summary" in opts:

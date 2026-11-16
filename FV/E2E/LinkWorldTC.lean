@@ -49,21 +49,21 @@ theorem driverHypTCF_relW_of {sem : Sem} (hsub : InSubsetTCF p f) (hT : TypedRul
     (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) :
     DriverHypTC f vc ctx st0 R gn bl A sem (RelW ⟨F, syms, slotOff, out⟩ f c) env p := by
   let Γ : Rel := ⟨F, syms, slotOff, out⟩
-  have hctxT : CtxT f ctx :=
-    ctxT_of_functionETCF hsub.subsetETCF hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+  have hctxT : CtxTW f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   exact {
     shape := hshape
     cert := hcert
     dsem := hds.toDriverSemG
-    insts := instCallsTF_of_rules lowerRulesCorrectTI_program lowerRulesCorrectT_program
+    insts := instCallsTFW_of_rules lowerRulesCorrectTIW_program lowerRulesCorrectT_program
       lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program lowerRulesCorrectFC_program
-      nonEUnmatchableTF_program hT.callsT hT.indT
-      memRulesCorrectRTI_program memRulesCorrectRT_program hRef (mrStable_relW Γ f c) hcalls
+      nonEUnmatchableTFW_program callRulesCorrectTFP_program typedRulesW_program.ind
+      memRulesCorrectRTIW_program memRulesCorrectRT_program hRef (mrStable_relW Γ f c) hcalls
       hicalls hmem hFP (outArgsOk_relW Γ f c)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)
       (indStack_mono (indStackTCF_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hstT
-    terms := termCallsT_of_rules hT.term hT.termUn hT.branch hT.branchEx hRef
+    terms := termCallsTW_of_rules typedRulesW_program.term typedRulesW_program.termUn
+      typedRulesW_program.branch typedRulesW_program.branchEx hRef
       (mrStable_relW Γ f c) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetTCF hsub
@@ -75,7 +75,8 @@ theorem driverHypTCF_relW_of {sem : Sem} (hsub : InSubsetTCF p f) (hT : TypedRul
       (outArgsOk_relW Γ f c) hcalls hshape.ctxInvT,
       tryStack_mono (tryStackTCF_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
-    tryInd := tryIndCallsT_of_rules hT.tryIndT hT.tryIndUn hRef (mrStable_relW Γ f c) hmem
+    tryInd := tryIndCallsTW_of_rules typedRulesW_program.tryIndT typedRulesW_program.tryIndUn hRef
+      (mrStable_relW Γ f c) hmem
       (outArgsOk_relW Γ f c) (indStack_mono (indStackTCF_of_check hlow) houtB) hicalls hctxT
     tryIndSig := tryIndSig_of_subsetTCF hsub
     cfg := hcfg }

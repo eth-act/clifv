@@ -186,7 +186,8 @@ theorem famCover_ofF {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
     (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true) (hdom : dominatedB f = true)
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
     (hb : buildCtx f = .ok (ctx, ranges, st0)) : FamCover ctx := by
-  refine famCover_ofG (ctxInvT_ofF hs hb) hs.externsE (fun B hB s hsB => ?_)
+  refine famCover_ofG (ctxInvT_ofF hs hb) ((ctxSpec_of hb).callArgs_ofF hs.subsetTF) hs.externsE
+    (fun B hB s hsB => ?_)
     (famFloat_of hs hfa hdom hb) hdom hst hsel hb
   have h := (functionETF_parts hs.subsetTF).2.2.1 B hB
   simp only [Bool.and_eq_true, List.all_eq_true] at h

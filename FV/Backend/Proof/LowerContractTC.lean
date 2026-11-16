@@ -360,13 +360,28 @@ theorem callsE_of_functionETC {f : Clif.Function} (hT : Compile.functionETC f = 
   rw [← hsi] at this
   simpa [he] using this
 
+/-- The arguments of the `call` statements of `buildCtx`'s context of a `functionETC` function
+are in integer positions (`Compile.opsTypedTC` lists them, `Compile.intOperands`). -/
+theorem callArgsInt_of_functionETC {f : Clif.Function} (hT : Compile.functionETC f = true)
+    {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) : CallArgsInt ctx := by
+  intro ii info fn args hi hc x hx t ht
+  refine (ctxSpec_of hb).eCTys_of_not_floatDef ht fun hfd => ?_
+  obtain ⟨B, hB, s, hs, -, hsi⟩ := (ctxSpec_of hb).inst_of hi hc
+  simp only [Compile.functionETC, Compile.opsTypedTC, Bool.and_eq_true, List.all_eq_true] at hT
+  have hx' : x ∈ Compile.intOperands s.inst := by
+    rw [← hsi]; simpa [Compile.intOperands] using hx
+  have := (hT.1.2 B hB).1 s hs x hx'
+  simp [hfd] at this
+
 /-- **`CtxT` of a `functionETC` function's context** (the typed shape gives `CtxInvT` and
-`InstScopeT`). -/
+`InstScopeT`; S11g: the `call` arguments' integer positions from the scope,
+`callArgsInt_of_functionETC`). -/
 theorem ctxT_of_functionETC {f : Clif.Function} (hT : Compile.functionETC f = true)
     {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
     (hb : buildCtx f = .ok (ctx, ranges, st0)) (hinv : CtxInvT f ctx) (hsc : InstScopeT ctx) :
     CtxT f ctx :=
-  ⟨hinv, hsc.toTF, callsE_of_functionETC hT hb⟩
+  ⟨hinv, hsc.toTF, callsE_of_functionETC hT hb, callArgsInt_of_functionETC hT hb⟩
 
 /-- The integer-position operands of a `functionETC` function's terminators other than the
 direct `try_call`s. -/
@@ -382,27 +397,13 @@ theorem termIntPos_of_functionETC {f : Clif.Function} (hT : Compile.functionETC 
   have := (hT.1.2 B hB).2 x hx'
   simp [hfd] at this
 
-/-! ## Contexts of the scope with the float operations (S11f) -/
+/-! ## Contexts of the scope with the float operations (S11f) and float calls (S11g)
 
-/-- The callees of the `call` statements of `buildCtx`'s context of a `functionETCF` function
-have integer signatures. -/
-theorem callsE_of_functionETCF {f : Clif.Function} (hT : Compile.functionETCF f = true)
-    {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (hb : buildCtx f = .ok (ctx, ranges, st0)) : CallsE f ctx := by
-  intro ii info fn args e hi hc he
-  obtain ⟨B, hB, s, hs, -, hsi⟩ := (ctxSpec_of hb).inst_of hi hc
-  simp only [Compile.functionETCF, Compile.callsE, Bool.and_eq_true, List.all_eq_true] at hT
-  have := hT.1.1.1.2 B hB s hs
-  rw [← hsi] at this
-  simpa [he] using this
-
-/-- **`CtxT` of a `functionETCF` function's context** (`CtxInvT` and `InstScopeTF` from the
-shape). -/
-theorem ctxT_of_functionETCF {f : Clif.Function} (hT : Compile.functionETCF f = true)
-    {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (hb : buildCtx f = .ok (ctx, ranges, st0)) (hinv : CtxInvT f ctx) (hsc : InstScopeTF ctx) :
-    CtxT f ctx :=
-  ⟨hinv, hsc, callsE_of_functionETCF hT hb⟩
+S11g: `callsE_of_functionETCF` and `ctxT_of_functionETCF` (`CtxT` of a `functionETCF`
+function's context) are removed: `Compile.functionETCF` admits `call`s of float signatures (no
+`callsE` conjunct, no integer position in a `call`'s arguments), so their conclusions are false
+for it. The context premise of the scope's dispatchers (`LowerContractTFW.lean`) is
+`CtxTW f ctx = ⟨CtxInvT f ctx, InstScopeTF ctx⟩`, the shape's two facts. -/
 
 /-- The integer-position operands of a `functionETCF` function's terminators other than the
 direct `try_call`s. -/
