@@ -24,6 +24,7 @@ import FV.Link.SemanticCompileDefs
 import FV.Link.UnwReport
 import FV.Link.SemanticCompileT
 import FV.E2E.SrcScopeFast
+import FV.Link.TypedStockShared
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -299,19 +300,6 @@ def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
       (fun n => cs.contains n) anyInd P e.1 e.2).filter (!·.2)).map (·.1))) Rs
     rs.filter (!·.2.isEmpty)
 
-/-- Whether `lean-backend` compiled `g` with a Stock lowering other than `lowerFunction` (#691):
-as it does, `lower` (the Stock routes, `lowerCheckedParameterCfgNI`'s chain) on a function
-without `try_call` (`compileFileParameterCfgNIWhen`), and a different `VCode` from
-`lowerFunction`'s (`Stock.D0.defaultLower`, `pipeCleanupT`'s); a function on which `lower`
-fails takes `lowerFunction` in both. -/
-def stockDiffersB (lower : Clif.Function → Except String Backend.VCode) (g : Clif.Function) : Bool :=
-  !(g.blocks.any fun b => b.term.isTry) &&
-    match lower g with
-    | .error _ => false
-    | .ok vc => match Backend.Stock.D0.defaultLower g with
-      | .ok vl => !decide (vc = vl)
-      | .error _ => true
-
 /-- On a typed input whose `Link.SemanticCompilerWith.attemptT lower SP` fails (#722): the
 functions failing the per-function checks of `okRWithTS` on the Stock route's results
 (`chksWithTS` in `okRWithTSFast`'s std-sized form: `staticChksWithTS` and the class-aware
@@ -501,7 +489,10 @@ def main (args0 : List String) : IO UInt32 := do
   -- with the Lean compiler's layout (`placedPar = placed`: the totality theorems' layout)
   let tailOn := deadCleanup && !opt && S.funcs.any (fun fi => Opt.TailLoop.eligB fi.func)
   let SC0 := if opt then S.opt else if tailOn then S.tail else S
-  let SC := if deadCleanup then Link.DeadCleanup.placedPar SC0 else SC0.placedPar
+  -- the cleanup layout from the cleanup pipeline's results, kept for the typed Stock route below
+  -- (`TypedStockShared.cleanupArts_placed`: `DeadCleanup.placedPar SC0`)
+  let Ac := if deadCleanup then parMap TypedStockShared.cleanupArt SC0.funcs else []
+  let SC := if deadCleanup then TypedStockShared.placedFrom SC0 Ac else SC0.placedPar
   let names := SC.names
   let R := SC.R
   let file0 ← IO.FS.readBinFile exe
@@ -603,11 +594,13 @@ def main (args0 : List String) : IO UInt32 := do
   let routes := [Backend.Stock.MemorySinkExt.lowerValidated,Backend.Stock.MemoryCapturedCopy.lowerValidated,Backend.Stock.MemoryLoadStore.lowerValidated,Backend.Stock.MemoryStoreCfg.lowerValidated,Backend.Stock.MemoryUnsigned.lowerValidated,Backend.Stock.MemoryCfg.lowerValidated,Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   -- #691: on a typed input, the functions `lean-backend` compiled with the Stock lowering
-  -- (`stockDiffersB`); when there are some, the typed Stock route `attemptT` below
-  let stockFnsT := if typedV then
-      (SC.funcs.zip (parMap (fun fi => stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
-        fun (fi, b) => if b then some fi.func.name else none
+  -- (`stockDiffersB`, computed with the Stock route's result per function: `stockSteps_fst`);
+  -- when there are some, the typed Stock route `attemptT` below
+  let steps := if typedV then
+      parMap (fun (p : FnInput × Except String Art) => TypedStockShared.stockStep routes[0]! p.1 p.2)
+        (SC0.funcs.zip Ac)
     else []
+  let stockFnsT := steps.filterMap fun s => if s.1 then some s.2.1.name else none
   -- #1042: every route below but `attemptT` names `_source` theorems, instantiated at the
   -- compiled input `S0.cp`, so under `--verified` it needs `SrcScopeB` there too (`srcOkCp`):
   -- leave out the functions failing it (`exclusions` on `S`)
@@ -636,8 +629,10 @@ def main (args0 : List String) : IO UInt32 := do
     if !stockFns.isEmpty then
       -- #722: the typed compiler on the Stock route: the units' code (the Stock route's pipeline
       -- and placement), the typed checks per function
-      let SP := SC0.placedProductionWith routes[0]! true
-      let att := SemanticCompilerWith.attemptT routes[0]! SP file0
+      -- (`TypedStockShared.stockSteps_placed`: `SC0.placedProductionWith routes[0]! true`;
+      -- `TypedStockShared.attemptTFrom_eq`: `attemptT routes[0]! SP file0`)
+      let SP := TypedStockShared.placedStock SC0 steps
+      let att := TypedStockShared.attemptTFrom routes[0]! SP file0 steps
       if let .ok file := att then
         IO.FS.writeBinFile exe file
         IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
@@ -822,7 +817,7 @@ def main (args0 : List String) : IO UInt32 := do
     -- function) reproduce neither the units' code nor the layout rust-lld reserved for it; the
     -- bare Lean linker then links on the Stock placement (`compileWithRoutes`' routes in order)
     let stockFns := if !opt && !tailOn then
-        (SC.funcs.zip (parMap (fun fi => stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
+        (SC.funcs.zip (parMap (fun fi => TypedStockShared.stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
           fun (fi, b) => if b then some fi.func.name else none
       else []
     -- the typed scope (S11, #35; under `--verified` taken above when every function meets

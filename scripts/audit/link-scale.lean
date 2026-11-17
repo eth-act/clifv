@@ -18,6 +18,7 @@ import FV.Link.ReturnPinCompileDefs
 import FV.Link.SemanticCompileDefs
 import FV.Link.SemanticCompileT
 import FV.Link.TypedCompileModes
+import FV.Link.TypedStockShared
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -60,3 +61,11 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.LinkCheck.okRSemanticFor_eq_fast
 #print axioms E2E.LinkCheck.okRWithTS_eq_fast
 #print axioms E2E.LinkCheck.okBCleanupTFast_eq
+
+-- the typed Stock route with one cleanup pipeline and one Stock lowering per function (`lean-link`)
+#print axioms Link.TypedStockShared.pipeTFrom_base
+#print axioms Link.TypedStockShared.pipeProductionWith_eq
+#print axioms Link.TypedStockShared.cleanupArts_placed
+#print axioms Link.TypedStockShared.stockSteps_fst
+#print axioms Link.TypedStockShared.stockSteps_placed
+#print axioms Link.TypedStockShared.attemptTFrom_eq
