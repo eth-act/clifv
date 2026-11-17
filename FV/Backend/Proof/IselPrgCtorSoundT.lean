@@ -37,6 +37,34 @@ theorem op_movModImm_acc {a : PA} {w : V} (h : isOp .movModImm a = true) (hw : �
   obtain ⟨x, rfl⟩ := ho
   exact ⟨x, rfl⟩
 
+/-- A value `shiftOpOk` accepts: the variant of its lane size, an amount `ok` accepts. -/
+theorem shiftOp_acc {ty : TypeId} {ok : Int → Int → Bool} {a : PA} {w : V}
+    (h : shiftOpOk ty ok a = true) (hw : γ f ctx a w) :
+    ∃ x l, w = .data ty (laneVariant l) [.int x, .int l] ∧ ok x l = true := by
+  cases a with
+  | data t k fs =>
+    rcases fs with _ | ⟨x, _ | ⟨y, _ | ⟨_, _⟩⟩⟩
+    all_goals try (simp [shiftOpOk] at h; done)
+    simp only [shiftOpOk, Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨rfl, h⟩ := h
+    obtain ⟨ws, rfl, hws⟩ := hw
+    obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
+    obtain ⟨w2, ws, rfl, hw2, hws⟩ := CS.γL_cons hws
+    obtain rfl := CS.γL_nil hws
+    cases hx : x.intOf with
+    | none => simp [hx] at h
+    | some a =>
+      cases hy : y.intOf with
+      | none => simp [hx, hy] at h
+      | some l =>
+        simp only [hx, hy, Option.bind_some, Option.map_some, Option.some.injEq,
+          Bool.and_eq_true, beq_iff_eq] at h
+        obtain ⟨rfl, hok⟩ := h
+        obtain rfl := CS.intOf_sh hx hw1
+        obtain rfl := CS.intOf_sh hy hw2
+        exact ⟨a, l, rfl, hok⟩
+  | _ => simp [shiftOpOk] at h
+
 end CS
 
 set_option hygiene false in
@@ -191,6 +219,30 @@ theorem minstOkF_sound {k : Nat} {fs : List PA} (h : minstOkF k fs = true) {ws :
   · fpu_op_rr V.fpuRoundMode?
   · fpu_op_rr V.fpuToIntOp?
   · fpu_op_rr V.intToFpuOp?
+  -- FpuRRI
+  · intro p1 p2 p3 h ws hws
+    simp only [Bool.and_eq_true] at h
+    obtain ⟨⟨h1, h2⟩, h3⟩ := h
+    ws3
+    obtain rfl := CS.γL_nil hws
+    obtain ⟨x, l, rfl, hok⟩ := CS.shiftOp_acc h1 hw1
+    obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
+    obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
+    red_safe MInst.ofV
+    simp [e2, e3, hok]
+  -- FpuRRIMod
+  · intro p1 p2 p3 p4 h ws hws
+    simp only [Bool.and_eq_true] at h
+    obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
+    ws3
+    obtain ⟨w4, ws, rfl, hw4, hws⟩ := CS.γL_cons hws
+    obtain rfl := CS.γL_nil hws
+    obtain ⟨x, l, rfl, hok⟩ := CS.shiftOp_acc h1 hw1
+    obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
+    obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
+    obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
+    red_safe MInst.ofV
+    simp [e2, e3, e4, hok]
   · intro _ _ h; cases h
 
 mutual
@@ -242,6 +294,23 @@ end
 theorem ofvOkT_sound {a : PA} {v : V} (h : ofvOkT a = true) (hv : γ f ctx a v) :
     (MInst.ofV v).isSome := ofvOkT_sound' h hv
 
+set_option hygiene false in
+/-- `fpu_op_ri_ushr`/`fpu_op_ri_sli` (`shiftCtor`): on exact in-range arguments `externCtor`
+builds the value. -/
+macro "shift_ctor" : tactic => `(tactic| (
+  cintro; gl2
+  simp only [shiftCtor, Option.bind_eq_some_iff] at h
+  obtain ⟨bi, hb, si, hs, h⟩ := h
+  split at h
+  · rename_i hok
+    cok
+    obtain rfl := CS.intOf_sh hb hw1
+    obtain rfl := CS.intOf_sh hs hw2
+    red_safe externCtor
+    simp only [hok, ↓reduceIte]
+    exact CS.fin_ok ⟨_, rfl, CS.γ_exact si, CS.γ_exact bi, trivial⟩
+  · cases h))
+
 /-- The alternatives of `actorT` past the type predicates are sound: the float ones here, the
 others V7's (`actor_none_soundTB`). -/
 theorem actorT_none_soundB (hP : PInvTB f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
@@ -282,6 +351,9 @@ theorem actorT_none_soundB (hP : PInvTB f ctx) (id : TermId) (as : List PA) (hp 
       | none => simp only [hm, Option.map_none]; exact CS.fin_fail rfl
       | some m => simp only [hm, Option.map_some]; exact CS.fin_ok (by simp [γ, OpOk])
     · cases h
+  -- fpu_op_ri_ushr, fpu_op_ri_sli
+  · shift_ctor
+  · shift_ctor
   -- the others: V7's
   · exact actor_none_soundTB hP _ _ hp
 

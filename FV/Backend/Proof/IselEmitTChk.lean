@@ -454,6 +454,8 @@ theorem em1_sound {nb : Bool} {t k : Nat} {as : List AT} {vs : List V} (hc : em1
   all_goals try (simp only [pure, Option.some.injEq] at hm; subst hm)
   all_goals first
     | exact ⟨rfl, fun _ => rfl⟩
+    | exact ⟨Cov.ec_fpuRRI (by assumption), fun _ => rfl⟩
+    | exact ⟨Cov.ec_fpuRRIMod (by assumption), fun _ => rfl⟩
     | skip
   all_goals fields hl
   all_goals first
