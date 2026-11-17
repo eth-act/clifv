@@ -988,6 +988,27 @@ and the backend (the switch is #990 part 5; translation validation: an untrusted
   `S.cp`'s program from an entry (e.g. any route theorem's `ExecRefines` at `S.cp`) holds for every
   run of `S`'s program from the entry with the same registers, slots and memory; `withSizes_cp`.
   Witness: `Link.ConstPhiExeWitness.source_returns`.
+* **The bundle's program** (#1052, `FV/Link/CpSource.lean`): `FnInput.cp` prints a changed
+  function after the `i128` legalisation, so the source program of `S.cp` (`LinkInput.srcProg`)
+  is not the bundle's, and is outside `SrcScopeB` where a changed and an unchanged function meet
+  at an `i128` signature (`declSigB`; shape: `Link.ConstPhiSrcScopeWitness`). For inputs `I0`,
+  `I` with `I.funcs = I0.funcs.map FnInput.cp`: `LinkInput.cpRel` (`OptRel I0.prog I.prog`),
+  `srcCtx_cp` (`ProgCtx I0.srcProg` from `SrcScopeB I0` and `I.prog`'s linked-system facts),
+  **`cpSource`** / **`cpSource_depth`** (a source run of `I0` that returns or traps without a
+  load/store trap is a run of `I.prog` from the compiled function's entry on the ABI-split
+  arguments, with the split results and the same memory; keeping the call depth). Composed with
+  each route that `lean-link` names a source theorem for, under new names (premises `hcp :
+  S.funcs = I0.funcs.map FnInput.cp`, `hsrc : SrcScopeB I0`, `hkeep : Opt.EnvKeepsSymbols B.env`):
+  `Link.ReturnPinCompilerWith.attempt_correct_source{,_peak}Cp`,
+  `Link.SemanticCompilerWith.attempt_correct_source{,_peak}Cp`,
+  `Link.TypedCompilerWith.attempt_correct_source{,_peak}Cp`,
+  `Link.{,DeadCleanup.}compileExe_correct_source{,_peak}Cp`,
+  `Link.DeadCleanup.compileExe_correct_source{,_peak}_okTCp`,
+  `Link.DeadCleanup.compileExeT_correct_source{,_peak}Cp`,
+  `Link.{,DeadCleanup.}compileExeOpt_correct_source{,_peak}Cp`. `lean-link --verified` requires
+  `SrcScopeB` of the bundle's program only and names these. Witness:
+  `Link.CpSourceWitness.correct_sourceCp_applies` (two functions at an `i128` declaration, one
+  changed by constant-phi removal, on the ABI-aware route). Audit: `scripts/audit/cp-source.lean`.
 
 ### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
 
