@@ -212,9 +212,17 @@ program only drops conjuncts of the other functions' per-function conditions (ea
 over the program's functions), and every condition is decided again on the relinked
 executable. `only`: just `extra` (with the program-wide conditions): the typed Stock route's
 failures (`typedStockFails`), whose theorem `attemptT_correct` has none of the per-function
-conditions above as premises (#754). -/
-def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (only : Bool := false) :
-    Option (List String) :=
+conditions above as premises (#754).
+
+`typedNext` (the exits before the route is chosen: the source domain and the admission, #1076):
+the program-level conditions (`scopeFails`) are premises of the integer route only (`compile`,
+`InScopeIn`), not of the typed routes (`attemptT_correct` has no per-function premise, #754;
+`compileExeT`'s failures are listed on its own exit). So when the executable linked again takes
+the typed scope — `typed`, and a function left in fails `fnScopeInB` (it meets
+`fnScopeInTB`/`fnScopeInTCB`) — only the functions failing a per-function condition are left
+out; otherwise, as before, those failing `scopeFails` too (one link fewer). -/
+def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (only : Bool := false)
+    (typedNext : Bool := false) : Option (List String) :=
   let srcP := S.input0.srcProg
   let P := SC.input0.prog
   let sy := assocMap SC.input0.syms
@@ -229,10 +237,15 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (onl
   if !helperFreeB srcP || !Link.nodupB (P.funcs.map (·.name)) || !addrSlotsInputB P syms then none
   else if only then some (Front.dedupFirst extra)
   else
-    let src := srcP.funcs.filter fun g => !(srcFails (fun n => fmS[n]?) g).isEmpty
-    let fns := (P.funcs.zip (parMap (fun g => fnFails g ++ scopeFails (fun n => fm[n]?) P syms g)
-      P.funcs)).filter (!·.2.isEmpty)
-    some (Front.dedupFirst (src.map (·.name) ++ fns.map (·.1.name) ++ extra))
+    let src := (srcP.funcs.filter fun g => !(srcFails (fun n => fmS[n]?) g).isEmpty).map (·.name)
+    let fs := P.funcs.zip (parMap (fun g => (fnFails g, fnScopeInFails g)) P.funcs)
+    let out : Std.HashSet String := .ofList (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name))
+    let typedScope := typedNext && typed &&
+      fs.any fun (g, _, i) => !i.isEmpty && !out.contains g.name
+    let scope := if typedScope then [] else
+      (P.funcs.zip (parMap (fun g => scopeFails (fun n => fm[n]?) P syms g) P.funcs)).filterMap
+        fun (g, s) => if s.isEmpty then none else some g.name
+    some (Front.dedupFirst (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name) ++ scope ++ extra))
 
 /-- On a typed input (`--verified`) whose `compileExeT` fails: the functions failing the typed
 per-function conditions of `InScopePT` (`fnScopeTB`), and those whose compiled code fails the
@@ -364,8 +377,8 @@ def outsideFails (I : LinkInput) (D : List Clif.DataObject) (file0 : ByteArray) 
 
 /-- Print `exclusions` (the line `cargo fv` reads). -/
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := [])
-    (only : Bool := false) : IO Unit :=
-  match exclusions S SC typed extra only with
+    (only : Bool := false) (typedNext : Bool := false) : IO Unit :=
+  match exclusions S SC typed extra only typedNext with
   | some (n :: ns) => IO.eprintln s!"lean-link: {exe}: --verified: exclude: {" ".intercalate (n :: ns)}"
   | _ => pure ()
 
@@ -508,7 +521,9 @@ def main (args0 : List String) : IO UInt32 := do
     IO.eprintln s!"lean-link: {exe}: --verified: outside the source domain (SrcScopeB): {bad.length} function(s) failing legalOkB/linkFreeB/declSigB {(bad.take 3).map (·.1)}, helperFreeB {helperFreeB P}; not written"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
-    printExclusions exe S0 SC typedOk
+    -- only the failing functions when the executable linked again takes the typed scope
+    -- (`exclusions`' `typedNext`, #1076)
+    printExclusions exe S0 SC typedOk (typedNext := true)
     return 1
   -- the input conditions decided on the CLIF alone (`fnScopeInB`, `addrSlotsInputB`); with
   -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`; with the cleanup
@@ -553,7 +568,7 @@ def main (args0 : List String) : IO UInt32 := do
       IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn{if typedOk then "T" else ""}): {badT.length} function(s) failing {scopeN} (by cause: {causes}) {(badT.take 3).map (·.1)}; not written"
       for (n, fs) in badT do
         IO.eprintln s!"lean-link:   {n}: {fs}"
-      printExclusions exe S0 SC typedOk
+      printExclusions exe S0 SC typedOk (typedNext := true)
       return 1
   -- The checked semantic provider handles a CFG function alongside retained
   -- try-call functions. Recompiling that mixed program only through the old
