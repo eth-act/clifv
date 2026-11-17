@@ -16,6 +16,27 @@ def attempt (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cle
       leanLinkProductionWith lower S file0 cleanup
     else .error "the actual ABI-aware production pipeline checks failed"
 
+/-- `attempt` with the Stock route's pipeline run once (`attempt_eq_fast`, `@[csimp]`; as
+`SemanticCompilerWith.attemptFast`). -/
+def attemptFast (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cleanup : Bool) :
+    Except String ByteArray :=
+  let scope := if cleanup then inScopePar S.input0 else inScopeInPar S.input0
+  if !scope then .error (if cleanup then outOfScopeMsg else outOfScopeInMsg)
+  else
+    let R := S.input0.resultsProductionWith lower cleanup
+    if okRReturnPinCalls (productionStage cleanup) (S.input0.withDepth R) R then
+      leanLinkWithResults S file0 (fun _ => R)
+    else .error "the actual ABI-aware production pipeline checks failed"
+
+@[csimp] theorem attempt_eq_fast : @attempt = @attemptFast := by
+  funext lower S file0 cleanup
+  have hl : leanLinkProductionWith lower S file0 cleanup =
+      leanLinkWithResults S file0 (fun _ => S.input0.resultsProductionWith lower cleanup) :=
+    leanLinkWithResults_congr S file0 (parResultsProductionWith_eq lower S.input0 cleanup)
+  have hr : (S.input0.withDepth (S.input0.resultsProductionWith lower cleanup)).resultsProductionWith
+      lower cleanup = S.input0.resultsProductionWith lower cleanup := rfl
+  simp only [attempt, attemptFast, LinkSpec.inputProductionWith, hl, hr]
+
 end Link.ReturnPinCompilerWith
 
 namespace Link.ReturnPinCompilerWith

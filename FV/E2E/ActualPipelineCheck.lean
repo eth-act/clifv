@@ -284,6 +284,19 @@ def LinkInput.resultsTWithLowering (I : LinkInput)
     (fi.func, pipeTWithLowering lower stage fi.func fi.k
       (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j))
 
+/-- `LinkInput.resultsTWithLowering` with the functions compiled in parallel tasks, each function
+parsed once (`resultsTWithLowering_eq_par`, `@[csimp]`). -/
+def LinkInput.resultsTWithLoweringPar (I : LinkInput)
+    (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) : Res :=
+  Link.parMap (fun fi => let f := fi.func
+    (f, pipeTWithLowering lower stage f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j)))
+    I.funcs
+
+@[csimp] theorem LinkInput.resultsTWithLowering_eq_par :
+    @LinkInput.resultsTWithLowering = @LinkInput.resultsTWithLoweringPar := by
+  funext I lower stage
+  simp only [LinkInput.resultsTWithLowering, LinkInput.resultsTWithLoweringPar, Link.parMap_eq]
+
 theorem LinkInput.resultsTWithLowering_provenance (I : LinkInput)
     (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) :
     ResOkWithLowering lower stage I (I.resultsTWithLowering lower stage) := by

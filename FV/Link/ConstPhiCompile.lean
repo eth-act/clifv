@@ -37,4 +37,30 @@ def LinkSpec.cpFallbacks (S : LinkSpec) : List String :=
     let f := fi.func
     if !decide (Opt.ConstPhi.run f = f) && fi.cp.clif == fi.clif then some f.name else none
 
+/-- `LinkSpec.cp` with the functions transformed in parallel tasks (`cp_eq_par`, `@[csimp]`). -/
+def LinkSpec.cpPar (S : LinkSpec) : LinkSpec := { S with funcs := parMap FnInput.cp S.funcs }
+
+@[csimp] theorem LinkSpec.cp_eq_par : @LinkSpec.cp = @LinkSpec.cpPar := by
+  funext S
+  simp only [LinkSpec.cp, LinkSpec.cpPar, parMap_eq]
+
+/-- `LinkSpec.cpChanged` in parallel tasks (`cpChanged_eq_par`, `@[csimp]`). -/
+def LinkSpec.cpChangedPar (S : LinkSpec) : List String :=
+  (parMap (fun fi => if fi.cp.clif != fi.clif then some fi.func.name else none) S.funcs).filterMap id
+
+@[csimp] theorem LinkSpec.cpChanged_eq_par : @LinkSpec.cpChanged = @LinkSpec.cpChangedPar := by
+  funext S
+  simp [LinkSpec.cpChanged, LinkSpec.cpChangedPar, parMap_eq, List.filterMap_map]
+
+/-- `LinkSpec.cpFallbacks` in parallel tasks (`cpFallbacks_eq_par`, `@[csimp]`). -/
+def LinkSpec.cpFallbacksPar (S : LinkSpec) : List String :=
+  (parMap (fun fi =>
+    let f := fi.func
+    if !decide (Opt.ConstPhi.run f = f) && fi.cp.clif == fi.clif then some f.name else none)
+    S.funcs).filterMap id
+
+@[csimp] theorem LinkSpec.cpFallbacks_eq_par : @LinkSpec.cpFallbacks = @LinkSpec.cpFallbacksPar := by
+  funext S
+  simp [LinkSpec.cpFallbacks, LinkSpec.cpFallbacksPar, parMap_eq, List.filterMap_map]
+
 end Link
