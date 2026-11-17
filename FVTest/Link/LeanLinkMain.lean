@@ -10,7 +10,7 @@ import FV.Link.OptCompile
 import FV.Link.ConstPhiCompile
 import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
-import FV.E2E.SrcScopeDefsT
+import FV.E2E.SrcScopeFastT
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 import FV.E2E.LinkScopeInputDefsT
@@ -679,9 +679,10 @@ def main (args0 : List String) : IO UInt32 := do
         let progTot := if progN = 0 then "" else
           s!"; {progN} function(s) fail a program-level input condition (scopeFails: declSigB/indB/callScopeB/outScopeB), so the executable is outside InScopeInT: no totality claim for it"
         -- #1076: name `attemptT_correct_sourceTB` only where its premise `SrcScopeTB` holds of the
-        -- route's input (the compiled input's source program)
+        -- route's input (the compiled input's source program; `SrcScopeTB` does not read the
+        -- route input's call-level stack, `SrcScopeTB_withDepth`: decided on `SP.input0`)
         let srcTB := if !srcT then "" else
-          let thmTB := if SrcScopeTB (SemanticCompilerWith.input routes[0]! SP true).toLinkInput then
+          let thmTB := if SrcScopeTB SP.input0 then
             ", Link.SemanticCompilerWith.attemptT_correct_sourceTB, Link.SemanticCompilerWith.attemptT_correct_source_peakTB"
             else ""
           s!"; the bundle's program is in SrcScopeTB, not SrcScopeB (#1076: i128 functions with a try_call_indirect at an i128-free signature): its legalisation refines it (E2E.LegalProgram.legalProg_refinesT{thmTB})"
