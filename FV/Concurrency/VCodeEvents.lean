@@ -41,7 +41,7 @@ theorem memCls_norm (a : ArmInst) : memCls a.norm = memCls a := by
   | BR i => cases i <;> rfl
   | DPI i => cases i <;> rfl
   | DPR i => cases i <;> rfl
-  | DPSFP i => cases i <;> rfl
+  | DPSFP i => cases i <;> first | rfl | (simp only [ArmInst.norm]; split <;> rfl)
   | RES i => cases i <;> rfl
 
 theorem instEvs_of_memCls {a : ArmInst} (h : memCls a = false) (s : ArmState) : instEvs a s = [] := by
@@ -189,7 +189,7 @@ theorem aiKind_norm (a : ArmInst) : aiKind a.norm = aiKind a := by
   | BR i => cases i <;> rfl
   | DPI i => cases i <;> rfl
   | DPR i => cases i <;> rfl
-  | DPSFP i => cases i <;> rfl
+  | DPSFP i => cases i <;> first | rfl | (simp only [ArmInst.norm]; split <;> rfl)
   | RES i => cases i <;> rfl
 
 theorem ldstFields_kind {size : BitVec 2} {V : BitVec 1} {opc : BitVec 2} {bytes : Nat}
