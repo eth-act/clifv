@@ -327,6 +327,25 @@ def function128 (f : Function) : Except String Function :=
 /-- The unverified reason of a legalised function the validator rejects. -/
 def rejectedReason : String := "i128 legalized (outside backend_correct: Opt.Legal.checkW rejects)"
 
+/-- The size measure of `Opt.Legal.checkW` on a legalisation `g`: instructions (statements and
+terminators) × values, the measure of the lowering validator's budget (`Backend.validationCost`).
+With `T0` and `freshValue` once per function (`Opt.Legal.checkW_eq_F`, #1074) the check's costly
+parts are the distinct-definitions test (definitions², `defsOf`) and, per statement, the lookups
+in the definitions and the pairs (statements × values). -/
+def checkCost (g : Function) : Nat :=
+  (g.blocks.length + (g.blocks.map (·.body.length)).sum) * g.freshValue
+
+/-- The legalisation validator's budget, the lowering validator's (`Backend.validationBudget`):
+a legalisation whose `checkCost` exceeds it is not checked and stays unverified. -/
+def checkBudget : Nat := 1000000000
+
+/-- The unverified reason of a legalisation over the validator's budget. -/
+def overCheckBudget? (g : Function) : Option String :=
+  let c := checkCost g
+  if c > checkBudget then
+    some s!"i128 legalized (outside backend_correct: validation budget: {c} instructions × values > {checkBudget}, Opt.Legal.checkW not run)"
+  else none
+
 /-- The result of `parsedFile128`. -/
 structure Legalized where
   /-- The file with every legalisable function replaced by its legalisation. -/
@@ -341,7 +360,8 @@ structure Legalized where
 /-- Legalise every parsed function of a file. Accepted functions use
 `E2E.backend_correct_legal_wide` with function-free source and target programs: its extern-call
 and indirect-resolution program conditions then hold independently of names in the file.
-The backend checks the remaining local conditions; rejected legalisations stay unverified. -/
+The backend checks the remaining local conditions; rejected legalisations, and those over the
+validator's budget (`overCheckBudget?`, not checked), stay unverified. -/
 def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
   pf.funcs.foldl (fun (acc : Legalized) p =>
     let push (f : Clif.ParsedFunction) : Clif.ParsedFile :=
@@ -353,8 +373,9 @@ def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
         if f' == f then { acc with file := push p }
         else
           let acc := { acc with file := push { p with func := .ok f' } }
-          if !Opt.Legal.checkW f f' cert then
-            { acc with unverified := acc.unverified ++ [(p.name, rejectedReason)] }
+          let over := overCheckBudget? f'
+          if over.isSome || !Opt.Legal.checkW f f' cert then
+            { acc with unverified := acc.unverified ++ [(p.name, over.getD rejectedReason)] }
           else { acc with accepted := acc.accepted ++ [p.name] }
       | .error _ => { acc with file := push p }
     | .error _ => { acc with file := push p }) ⟨{ pf with funcs := [] }, [], []⟩

@@ -1600,6 +1600,27 @@ def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
     off := off + ln.size
   pure { name := af.name, k, lines, size := off, traps := traps.toList, alias := emitAlias k af }
 
+/-- `emitFunc` as the compiler runs it (`emitFunc_eq_fast`, `@[csimp]`, #1074): `emitPre` and
+`emitAlias` each compute `emitPlan` (the `MachBuffer` simulation and its branch check); here it
+is computed once. -/
+def emitFuncFast (k : Nat) (af : AFunc) : Except String FnAsm := do
+  let p ← emitPlan k af
+  let pre := p.lines.toArray.toList
+  let body := relaxLines (relaxOf pre) pre
+  let pool := poolLines (poolUses body) (body.foldl (· + ·.size) 0)
+  let lines := (body ++ pool).toArray
+  let mut off := 0
+  let mut traps : Array TrapSite := #[]
+  for ln in lines do
+    if let .ins _ (some code) := ln then traps := traps.push ⟨off, code⟩
+    off := off + ln.size
+  pure { name := af.name, k, lines, size := off, traps := traps.toList, alias := p.alias }
+
+@[csimp] theorem emitFunc_eq_fast : @emitFunc = @emitFuncFast := by
+  funext k af
+  unfold emitFunc emitFuncFast emitPre emitAlias
+  cases emitPlan k af <;> rfl
+
 /-! ## Assembly text (GNU/LLVM syntax) -/
 
 /-- A general-purpose register at 64 (`x`) or 32 (`w`) bits. -/

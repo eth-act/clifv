@@ -31,6 +31,15 @@ def closedB (g : Function) : Bool :=
   g.blocks.all fun b => b.body.all (fun st => (operands st.inst).all (· < g.freshValue)) &&
     (termOperands b.term).all (· < g.freshValue)
 
+/-- `closedB` as the compiler runs it (`closedB_eq_fast`, `@[csimp]`, #1074): `g.freshValue`
+(a pass over the whole function) once, not once per operand. -/
+def closedBFast (g : Function) : Bool :=
+  let fv := g.freshValue
+  g.blocks.all fun b => b.body.all (fun st => (operands st.inst).all (· < fv)) &&
+    (termOperands b.term).all (· < fv)
+
+@[csimp] theorem closedB_eq_fast : @closedB = @closedBFast := rfl
+
 /-- The guard of `optimizeX`: removing unreachable blocks keeps every operand read the same
 register (module doc). -/
 def freshOkB (f : Function) : Bool :=
