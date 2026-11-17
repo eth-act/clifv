@@ -46,6 +46,9 @@ env:
   # the continuous main gate's tracking issue (docs/TO-PROVE.md §7)
   FULL_GATE_ISSUE: '261'
   LEAN_TARGETS: FV FVTest Corpus
+  # cargo fv's per-function time limit (#1074) is off on every line: a function's fallback must
+  # not depend on the runner's load, or the pinned counts would flap
+  FV_FN_TIME_LIMIT: 'off'
 
 jobs:
   plan:

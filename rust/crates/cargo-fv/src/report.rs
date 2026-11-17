@@ -384,7 +384,7 @@ fn short_root(src: &str) -> &str {
 
 /// Group reasons: function names (`%f`), value names (`v12`) and measured sizes (numbers of 5
 /// or more digits, e.g. the validation budget's cost) vary, the reason does not.
-fn generalize(r: &str) -> String {
+pub(crate) fn generalize(r: &str) -> String {
     let mut out = String::new();
     let mut chars = r.chars().peekable();
     let mut prev: Option<char> = None;

@@ -27,6 +27,8 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 export PATH=$ROOT/rust/target/release:$PATH
+# no per-function time limit (#1074): the generated proofs must not depend on the machine's load
+export FV_FN_TIME_LIMIT=off
 OUT=../../crate-proofs/Crates
 TC=${FV_TOOLCHAIN:-nightly-2026-09-26}
 sysroot=$(rustc +"$TC" --print sysroot)

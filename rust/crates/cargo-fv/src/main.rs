@@ -70,6 +70,11 @@ Executables run under qemu-aarch64-static. After a build the report is in target
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json
 
+FV_FN_TIME_LIMIT=N: wall-time limit of one function's lean-backend run, in seconds (default
+1800; 0 or off: none). A function over it keeps cg_clif's code (fallback reason
+`unverified (time limit N s)`). cargo does not see FV_* variables: run `cargo clean` (or touch the
+crate) to recompile a crate under another limit.
+
 `cargo fv link-proof` (after a build with --keep-temps): the input of the crate-level linking
 theorem for one executable's Lean-compiled functions, checked by `lake exe link-check`
 (docs/contracts/e2e.md, \"Crate-level instance\"; `cargo fv link-proof --help`).";
@@ -423,6 +428,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         lean_link_verified: verified,
         lean_ld,
         pkg_skip,
+        fn_time_limit: cargo_fv::config::parse_fn_time_limit(std::env::var("FV_FN_TIME_LIMIT").ok().as_deref())
+            .unwrap_or_else(|e| die(&e)),
     };
     let wrapper = std::env::current_exe()
         .ok()
