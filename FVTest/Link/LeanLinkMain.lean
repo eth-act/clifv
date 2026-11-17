@@ -1,4 +1,5 @@
 import FV.Link.TypedCompileSourceModes
+import FV.E2E.LinkIdxT
 import FV.Link.ReturnPinExeSourceWith
 import FV.Backend.Lowering.StockMemorySinkExtNI
 import FV.Link.Compile
@@ -254,8 +255,9 @@ def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
     let P := progOf R
     let T := tabOf R
     let C := LinkCtx.of I P T
+    let X := LinkIdx.of P C.ents
     let rs := parMap (fun e => (e.1.name, ((staticChksWithT (fun _ => Backend.DeadCleanup.prune) I e.1 e.2 ++
-      linkChksWithT C P e.1 e.2 ++
+      linkChksWithTI C X P e.1 e.2 ++
       [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S e.1 ||
         e.1.sig.returns.all (·.ty.isInt))]).filter (!·.2)).map (·.1))) R
     rs.filter (!·.2.isEmpty)
@@ -296,9 +298,10 @@ def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP 
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
+  let X := LinkIdx.of P C.ents
   let gl := ((globalChksWith C I P T).filter (!·.2)).map (·.1)
   let rs := parMap (fun e => (e.1.name, ((staticChksWithTS (productionStage true) I e.1 e.2 ++
-      linkChksWithTS C P e.1 e.2).filter (!·.2)).map (·.1))) R
+      linkChksWithTSI C X P e.1 e.2).filter (!·.2)).map (·.1))) R
   (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
 
 /-- The error of the linkers when `outsideOkB` fails (`Link.leanLink`, `Link.leanLinkWithResults`). -/
