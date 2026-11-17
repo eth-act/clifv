@@ -966,6 +966,33 @@ def hexBytes? : List Char → Option (List (BitVec 8))
     pure (BitVec.ofNat 8 (16 * a + b) :: r)
   | [_] => none
 
+/-- `hexBytes?` in constant stack depth, the bytes collected in an array (`hexBytes?_eq_TR`,
+the compiler's implementation of `hexBytes?`): a 16 MiB data object is a 33,554,432-digit item,
+deeper than the native stack in the non-tail-recursive form (#1071). -/
+def hexBytesTR? (l : List Char) : Option (List (BitVec 8)) := go l #[]
+where
+  go : List Char → Array (BitVec 8) → Option (List (BitVec 8))
+    | [], acc => some acc.toList
+    | h :: l :: rest, acc => match hexDigit? h, hexDigit? l with
+      | some a, some b => go rest (acc.push (BitVec.ofNat 8 (16 * a + b)))
+      | _, _ => none
+    | [_], _ => none
+
+theorem hexBytesTR?_go : ∀ (l : List Char) (acc : Array (BitVec 8)),
+    hexBytesTR?.go l acc = (hexBytes? l).map (acc.toList ++ ·)
+  | [], acc => by simp [hexBytesTR?.go, hexBytes?]
+  | [_], acc => by simp [hexBytesTR?.go, hexBytes?]
+  | h :: l :: rest, acc => by
+    rcases ha : hexDigit? h with _ | a <;> rcases hb : hexDigit? l with _ | b <;>
+      simp only [hexBytesTR?.go, hexBytes?, ha, hb, Option.bind_none, Option.bind_some,
+        Option.map_none, Option.bind_eq_bind, Option.pure_def]
+    rw [hexBytesTR?_go rest]
+    cases hexBytes? rest <;> simp
+
+@[csimp] theorem hexBytes?_eq_TR : @hexBytes? = @hexBytesTR? := by
+  funext l
+  simp [hexBytesTR?, hexBytesTR?_go]
+
 def dataItems (w : String) : Except String (List DataItem) :=
   if w.startsWith "%" then
     let body := (w.drop 1).toString

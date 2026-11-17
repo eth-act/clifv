@@ -65,9 +65,27 @@ With `--opt [--opt-* options]`, the functions are first optimised by the mid-end
 (`Opt.optimize`), i.e. the validators run on the code `lean-backend --opt` compiles; the
 legalised functions are then out of scope (no theorem composes the legalisation with the
 mid-end).
+
+Without file arguments it also parses and prints back a `; data:` line of a 16 MiB writable
+zero-initialised object (`bigDataCheck`, the size of bytes' `test_bytes_vec_alloc` table, #1071:
+`Clif.hexBytes?` overflowed the stack on it and `Clif.printDataItems` was quadratic; both now run
+through `hexBytes?_eq_TR` and `printDataItems_eq_TR`); a failure fails the run.
 -/
 
 open Backend Backend.Proof.Driver
+
+/-- #1071: a `; data:` line of an `n`-byte writable zero object parses to `n` bytes
+(`Clif.dataDirective`, as `lean-link` and `link-check` read it) and prints back to the same line
+(`Clif.dataObject`, as `link-check` prints it). -/
+def bigDataCheck (n : Nat) : IO Bool := do
+  let line := "; data: %big align=8 writable = ".pushn '0' (2 * n)
+  let t0 ← IO.monoMsNow
+  let ok ← IO.lazyPure fun _ => match Clif.dataDirective line with
+    | some (.ok o) => o.items.length == n && Clif.dataObject o == line
+    | _ => false
+  let t1 ← IO.monoMsNow
+  IO.println s!"data line (#1071): {n} bytes parsed and printed back {if ok then "ok" else "FAILED"} in {t1 - t0} ms"
+  pure ok
 
 /-- An instruction's `repr` on one line. -/
 def oneLine (i : MInst) : String :=
@@ -453,4 +471,5 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"immsOkB (EmitEnc, encodable immediates): {immOk} pass, {immBad} fail"
   IO.println s!"killFreeB (SpillKillFree, gives SpillAvailable): {kfOk} accepted ({kfKilled} with killed vregs: scratch or terminator defs), {kfBad} rejected"
   IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
-  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 && spillRej == 0 && emitBad == 0 && readyBad == 0 && naBad == 0 && tgtBad == 0 && immBad == 0 && scopeMis == 0 then 0 else 1
+  let dataOk ← if args.isEmpty then bigDataCheck (1 <<< 24) else pure true
+  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 && spillRej == 0 && emitBad == 0 && readyBad == 0 && naBad == 0 && tgtBad == 0 && immBad == 0 && scopeMis == 0 && dataOk then 0 else 1
