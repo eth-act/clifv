@@ -414,7 +414,10 @@ fn compile_one(
         cmd.arg(input)
             .arg(out)
             .args(cfg.mode.backend_args())
-            .args(["--personality", "rust_eh_personality"]);
+            .args(["--personality", "rust_eh_personality"])
+            // `--lean-link` keeps cg_clif's code for an unverified function: one unverified
+            // before it is compiled is not compiled (#1074)
+            .args(cfg.lean_link.then_some("--skip-unverified"));
         // `--keep-temps`: keep the register allocator's answers next to the object (`cargo fv
         // link-proof` and `lean-link` rebuild the allocations from them in Lean): lean-backend
         // writes regalloc2's answers to `$FV_RA_OUT` (`FVTest/Backend/Main.lean`)
@@ -635,6 +638,11 @@ impl From<String> for CguFail {
     }
 }
 
+/// The fallback reason of a function `lean-backend` lists unverified (`u`) under `--lean-link`.
+fn kept_reason(u: &str) -> String {
+    format!("unverified ({u}): cg_clif's code kept under --lean-link")
+}
+
 fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, input: &Path) -> Compiled {
     let strip = |l: &str| -> String {
         // `lean-backend: <input>: %name: …` / `lean-backend: <input>: …`
@@ -652,6 +660,15 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
     let mut outside_closure: Option<String> = None;
     let mut normal_returns = false;
     for l in stderr.lines() {
+        // `--skip-unverified`: the reason the compiled function would get, and its fallback
+        if let Some((_, rest)) = l.split_once(": not compiled (--skip-unverified), unverified (") {
+            let u = match rest.split_once("): ") {
+                Some(("validation budget", why)) => format!("validation budget: {why}"),
+                Some((_, why)) => why.to_string(),
+                None => rest.to_string(),
+            };
+            return Compiled::Fallback(kept_reason(&u));
+        }
         if l.contains(": compiled, verified for normal returns") {
             normal_returns = true;
         }
@@ -952,7 +969,7 @@ fn process_in(
                 // keeps cg_clif's code (the outside part)
                 if bad.is_none() && cfg.lean_link {
                     if let Some(u) = &unverified {
-                        bad = Some(format!("unverified ({u}): cg_clif's code kept under --lean-link"));
+                        bad = Some(kept_reason(u));
                     }
                 }
                 match bad {
@@ -1195,5 +1212,27 @@ mod tests {
         let c = compile_one(&test_config(&root, 30), &syms, &split, &outdir, 0, &d, "f");
         assert!(matches!(&c, Compiled::Fallback(why) if why == "unsupported: test"));
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    /// #1074: a function `lean-backend --skip-unverified` did not compile falls back with the
+    /// reason the compiled function gets under `--lean-link`.
+    #[test]
+    fn skipped_unverified_keeps_the_reason() {
+        let root = std::env::temp_dir().join(format!("cargo-fv-skip-{}", std::process::id()));
+        let cfg = test_config(&root, 0);
+        let (out, input) = (root.join("f0.o"), root.join("f.unopt.clif"));
+        for (line, why) in [
+            (
+                "lean-backend: x.clif: %f: not compiled (--skip-unverified), unverified (validation budget): 9 instructions × values > 1, lowerCheck not run",
+                "validation budget: 9 instructions × values > 1, lowerCheck not run",
+            ),
+            (
+                "lean-backend: x.clif: %f: not compiled (--skip-unverified), unverified (outside backend_correct): i128 legalized (outside backend_correct: validation budget: 9 instructions × values > 1, Opt.Legal.checkW not run)",
+                "i128 legalized (outside backend_correct: validation budget: 9 instructions × values > 1, Opt.Legal.checkW not run)",
+            ),
+        ] {
+            let c = classify(&cfg, line, true, &out, "f", &input);
+            assert!(matches!(&c, Compiled::Fallback(r) if *r == kept_reason(why)), "{line}");
+        }
     }
 }

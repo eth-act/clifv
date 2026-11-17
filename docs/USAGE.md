@@ -457,6 +457,10 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `i128 legalized (outside backend_correct: validation budget: N instructions × values >
   1000000000, Opt.Legal.checkW not run)`. No function of std or `examples/` reaches it; ruint's
   macro-generated `bits::tests::test_primitive_shifts` (105,241 instructions, 7.4 × 10⁹) does.
+  Both verdicts are known before the function is compiled, and under `--lean-link` (which keeps
+  cg_clif's code for every unverified function) `cargo fv` passes `--skip-unverified`:
+  `lean-backend` does not compile such a function (`not compiled (--skip-unverified),
+  unverified (…)`), and the report gives it the same fallback and reason as a compiled one.
 * **Compile budget.** A function with more than 20000000000 instructions × blocks is not
   compiled (`unsupported: compile budget: N instructions × blocks > 20000000000`; cg_clif's
   code): a deterministic bound on the steps whose time grows faster than the function (the

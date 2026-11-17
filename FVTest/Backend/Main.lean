@@ -95,13 +95,17 @@ validator and listed as `compiled, unverified (validation budget)`; an `i128`-le
 whose legalisation is over the same budget is not checked by the legalisation validator
 (`Opt.Legalize128.overCheckBudget?`) and is listed unverified with that reason. A function
 whose instructions × blocks exceed the compile budget (`compileBudget`) is not compiled
-(`unsupported: compile budget: …`).
+(`unsupported: compile budget: …`). With `--skip-unverified` (`cargo fv` under `--lean-link`,
+which keeps cg_clif's code for every unverified function), a function whose verdict is
+unverified before it is compiled (the legalisation's reason, or over the validation budget) is
+not compiled and is listed `not compiled (--skip-unverified), unverified (…)` with the reason it
+would get compiled.
 -/
 
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--pipeline-t] [--stock-config <request.json> --config-receipt <receipt.json>] [--settings <request.json> --settings-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--pipeline-t] [--skip-unverified] [--stock-config <request.json> --config-receipt <receipt.json>] [--settings <request.json> --settings-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -134,6 +138,11 @@ structure Opts where
   D0 lowering, no dead cleanup, no Stock routes), the compiler `crate_correct_inScope` covers.
   Only for regenerating `crate-proofs/Crates/InScopeInputs` (`scripts/regen-crate-proofs.sh`). -/
   pipelineT : Bool := false
+  /-- `--skip-unverified` (#1074): in the default mode (no `--opt`, `--stock-config`,
+  `--settings` or `--pipeline-t`), a function whose verdict is unverified before it is compiled
+  is not compiled (`preUnverifiedOf`). `cargo fv` passes it under `--lean-link`, where an
+  unverified function's code is never used. -/
+  skipUnverified : Bool := false
 
 /-- The compile budget's size measure of a function (#1074): instructions (statements and
 terminators) × blocks. After #1074's fixes (`Backend.repAt_eq_chain`, `Opt.Legal.checkW_eq_F`)
@@ -154,6 +163,17 @@ def overCompileBudget? (f : Clif.Function) : Option String :=
   if c > compileBudget then
     some s!"compile budget: {c} instructions × blocks > {compileBudget}"
   else none
+
+/-- The verdict `compileFileWithLowering` gives a function before compiling it, when that verdict
+is unverified: its kind (as `run` prints it) and reason, with `compileFileWithLowering`'s
+precedence. `pre` is the function's reason from the legalisation (`preUnverified`); a function
+over the validation budget (`overBudget?`) gets the scope reason (`unverifiedReason?`) if any,
+else the budget's. Every other unverified reason is decided on the compiled code. -/
+def preUnverifiedOf (pre : Option String) (f : Clif.Function) : Option (String × String) :=
+  match pre, overBudget? f with
+  | some r, _ => some ("outside backend_correct", r)
+  | none, some b => some ((unverifiedReason? f).elim ("validation budget", b) ("outside backend_correct", ·))
+  | none, none => none
 
 /-- One function's allocation as the backend lowered it: the prepared VCode `vcp`, the
 allocation `rf` with `lowerRFunc vcp rf = .ok af` (`lowerAllocReady_eq`, `lowerAlloc_eq`), and
@@ -340,6 +360,14 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         (·, "i128 legalized and optimised with unproven rules (outside backend_correct_legal_opt: --opt)")
     | none => lg.unverified
   let unvTry : List (String × String) := []
+  -- `--skip-unverified` (#1074): a function unverified before it is compiled is not compiled
+  let skipped : List (String × String × String) :=
+    if o.skipUnverified && o.opt.isNone && stock.isNone && proved.isNone && !pipelineT then
+      pfc.funcs.filterMap fun p => p.func.toOption.bind fun f =>
+        (preUnverifiedOf ((unv128 ++ unvTry).lookup p.name) f).map fun (k, r) => (p.name, k, r)
+    else []
+  let pfc : Clif.ParsedFile :=
+    { pfc with funcs := pfc.funcs.filter fun p => !skipped.any (·.1 == p.name) }
   -- The settings checks see each function before and after `i128` legalisation.
   let clif (name : String) : List Clif.Function :=
     (source.funcs ++ pf.funcs).filterMap fun p => if p.name == name then p.func.toOption else none
@@ -481,6 +509,8 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
   for (n, why) in fa.unvalidated do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (validation budget): {why}"
+  for (n, k, why) in skipped do
+    IO.eprintln s!"lean-backend: {input}: %{n}: not compiled (--skip-unverified), unverified ({k}): {why}"
   -- A function with a `try_call` is inside `backend_correct_final` for the runs in which every
   -- callee of a `try_call` returns normally (callee contract `CalleeTryOk`: the results only; the
   -- exception payload registers are havocked on the normal return). Its unwinding (landing
@@ -588,6 +618,7 @@ def main (args : List String) : IO UInt32 := do
     | "--dead-cleanup" :: rest => opts { o with deadCleanup := true } rest
     | "--no-dead-cleanup" :: rest => opts { o with deadCleanup := false } rest
     | "--pipeline-t" :: rest => opts { o with pipelineT := true } rest
+    | "--skip-unverified" :: rest => opts { o with skipUnverified := true } rest
     | _ => none
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r
