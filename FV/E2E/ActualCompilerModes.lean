@@ -42,6 +42,17 @@ def LinkInput.resultsWithLowering (I : LinkInput)
     (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) : Res :=
   I.funcs.map fun fi => (fi.func, I.pipeOfWithLowering lower stage fi)
 
+/-- `LinkInput.resultsWithLowering` with the functions compiled in parallel tasks
+(`resultsWithLowering_eq_par`, `@[csimp]`). -/
+def LinkInput.resultsWithLoweringPar (I : LinkInput)
+    (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) : Res :=
+  Link.parMap (fun fi => (fi.func, I.pipeOfWithLowering lower stage fi)) I.funcs
+
+@[csimp] theorem LinkInput.resultsWithLowering_eq_par :
+    @LinkInput.resultsWithLowering = @LinkInput.resultsWithLoweringPar := by
+  funext I lower stage
+  simp only [LinkInput.resultsWithLowering, LinkInput.resultsWithLoweringPar, Link.parMap_eq]
+
 theorem LinkInput.pipeOfWithLowering_provenance {I : LinkInput}
     {lower : Clif.Function → Except String VCode} {stage : Clif.Function → VCode → VCode}
     {fi : FnInput} {a : Art} (h : I.pipeOfWithLowering lower stage fi = .ok a) :

@@ -20,6 +20,17 @@ def LinkInput.resultsProductionWith (I : LinkInput) (lower : ProductionLowering)
     (cleanup : Bool) : Res :=
   I.funcs.map fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)
 
+/-- `LinkInput.resultsProductionWith` with the functions compiled in parallel tasks
+(`resultsProductionWith_eq_par`, `@[csimp]`). -/
+def LinkInput.resultsProductionWithPar (I : LinkInput) (lower : ProductionLowering)
+    (cleanup : Bool) : Res :=
+  Link.parMap (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs
+
+@[csimp] theorem LinkInput.resultsProductionWith_eq_par :
+    @LinkInput.resultsProductionWith = @LinkInput.resultsProductionWithPar := by
+  funext I lower cleanup
+  simp only [LinkInput.resultsProductionWith, LinkInput.resultsProductionWithPar, Link.parMap_eq]
+
 theorem LinkInput.pipeProductionWith_original (I : LinkInput) (cleanup : Bool) (fi : FnInput) :
     I.pipeProductionWith Stock.Production.lower cleanup fi = I.pipeProduction cleanup fi := rfl
 

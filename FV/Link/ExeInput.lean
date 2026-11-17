@@ -51,6 +51,15 @@ open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec
 def LinkSpec.withSizes (S : LinkSpec) (sz : List Nat) : LinkSpec :=
   { S with names := S.funcs.map (·.func.name), sizes := sz }
 
+/-- `LinkSpec.withSizes` with the functions' names parsed in parallel tasks (`withSizes_eq_par`,
+`@[csimp]`). -/
+def LinkSpec.withSizesPar (S : LinkSpec) (sz : List Nat) : LinkSpec :=
+  { S with names := parMap (·.func.name) S.funcs, sizes := sz }
+
+@[csimp] theorem LinkSpec.withSizes_eq_par : @LinkSpec.withSizes = @LinkSpec.withSizesPar := by
+  funext S sz
+  simp only [LinkSpec.withSizes, LinkSpec.withSizesPar, parMap_eq]
+
 /-- **The Lean compiler's layout**: the CLIF functions' names, the compiled code's sizes. -/
 def LinkSpec.placed (S : LinkSpec) : LinkSpec := S.withSizes S.sizesOf
 

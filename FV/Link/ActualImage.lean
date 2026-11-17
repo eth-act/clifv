@@ -35,6 +35,12 @@ def leanLinkWithResults (S : LinkSpec) (file0 : ByteArray)
           .error "rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)"
         else .ok file
 
+/-- The writer reads its result table at the spec's input only. -/
+theorem leanLinkWithResults_congr (S : LinkSpec) (file0 : ByteArray) {f g : LinkInput → Res}
+    (h : f S.input0 = g S.input0) :
+    leanLinkWithResults S file0 f = leanLinkWithResults S file0 g := by
+  simp only [leanLinkWithResults, h]
+
 /-- The legacy instance preserves every result and error for arbitrary inputs. -/
 theorem leanLinkWithResults_plain (S : LinkSpec) (file0 : ByteArray) :
     leanLinkWithResults S file0 parResultsT = leanLink S file0 := by

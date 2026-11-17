@@ -22,6 +22,7 @@ import FV.Link.ExeUCompile
 import FV.Link.SemanticCompileDefs
 import FV.Link.UnwReport
 import FV.Link.SemanticCompileT
+import FV.E2E.SrcScopeFast
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -526,7 +527,7 @@ def main (args0 : List String) : IO UInt32 := do
     if !addrSlotsInputB P syms then
       IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn): addrSlotsInputB fails (an indirect call, a function with an address and stack slots, no program callee with slots); not written"
       return 1
-    let bad := P.funcs.filterMap fun g => match fnScopeInFails g with
+    let bad := (P.funcs.zip (parMap fnScopeInFails P.funcs)).filterMap fun (g, fs) => match fs with
       | [] => none
       | fs => some (g.name, fs)
     -- per function: the `fnScopeInTB` causes it fails when it fails `fnScopeInTCB` too, and
