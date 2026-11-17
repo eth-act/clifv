@@ -301,14 +301,13 @@ def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
     rs.filter (!·.2.isEmpty)
 
 /-- On a typed input whose `Link.SemanticCompilerWith.attemptT lower SP` fails (#722): the
-functions failing the per-function checks of `okRWithTS` on the Stock route's results
-(`chksWithTS` in `okRWithTSFast`'s std-sized form: `staticChksWithTS` and the class-aware
-`linkChksWithTS`, #742), with the failing conditions, and the failing global checks (as
-`<global>`). -/
-def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP : LinkSpec) :
-    List (String × List String) :=
-  let I := SP.inputProductionWith lower true
-  let R : Res := parMap (fun fi => (fi.func, I.pipeProductionWith lower true fi)) I.funcs
+functions failing the per-function checks of `okRWithTS` on the Stock route's results `R`
+(`SP.input0.resultsProductionWith lower true`, `TypedStockShared.stockRes_eq`; the input
+`SP.inputProductionWith lower true` is `SP.input0.withDepth R`) (`chksWithTS` in
+`okRWithTSFast`'s std-sized form: `staticChksWithTS` and the class-aware `linkChksWithTS`, #742),
+with the failing conditions, and the failing global checks (as `<global>`). -/
+def typedStockFails (SP : LinkSpec) (R : Res) : List (String × List String) :=
+  let I := SP.input0.withDepth R
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
@@ -632,7 +631,8 @@ def main (args0 : List String) : IO UInt32 := do
       -- (`TypedStockShared.stockSteps_placed`: `SC0.placedProductionWith routes[0]! true`;
       -- `TypedStockShared.attemptTFrom_eq`: `attemptT routes[0]! SP file0`)
       let SP := TypedStockShared.placedStock SC0 steps
-      let att := TypedStockShared.attemptTFrom routes[0]! SP file0 steps
+      let RS := TypedStockShared.stockRes SP steps
+      let att := TypedStockShared.attemptTFrom SP file0 RS
       if let .ok file := att then
         IO.FS.writeBinFile exe file
         IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
@@ -648,7 +648,7 @@ def main (args0 : List String) : IO UInt32 := do
         IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim{progTot}"
         return 0
       if let .error e := att then
-        let bad := typedStockFails routes[0]! SP
+        let bad := typedStockFails SP RS
         let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
         IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT): {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}"
         for (n, fs) in bad.take 50 do

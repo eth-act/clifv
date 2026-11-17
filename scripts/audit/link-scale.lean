@@ -69,6 +69,7 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms Link.TypedStockShared.cleanupArts_placed
 #print axioms Link.TypedStockShared.stockSteps_fst
 #print axioms Link.TypedStockShared.stockSteps_placed
+#print axioms Link.TypedStockShared.stockRes_eq
 #print axioms Link.TypedStockShared.attemptTFrom_eq
 
 -- link-check: the integer and typed Stock per-function checks from one evaluation

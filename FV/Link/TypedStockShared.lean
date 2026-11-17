@@ -251,34 +251,37 @@ theorem stockSteps_placed (lower : ProductionLowering) (S : LinkSpec) :
   simp only [placedStock, LinkSpec.placedProductionWith, List.map_map]
   congr 1
 
-/-- **`attemptT` from the steps' Stock results** at address `0` (`attemptTFrom_eq`): the results
-loaded at the placed addresses (looked up in a hash map of the link map), then `attemptTFast`. -/
-def attemptTFrom (lower : ProductionLowering) (SP : LinkSpec) (file0 : ByteArray)
-    (st : List (Bool × Clif.Function × Except String Art)) : Except String ByteArray :=
-  let J := SP.input0
-  let m := assocMap J.addrs
-  let R : Res := st.map fun s =>
-    (s.2.1, s.2.2.map (artAt (BitVec.ofNat 64 ((m[s.2.1.name]?).getD 0))))
-  if okRWithTS (productionStage true) (J.withDepth R) R then leanLinkWithResults SP file0 (fun _ => R)
+/-- **The Stock route's results at the placed addresses**, from the steps' results at address `0`
+(the link map looked up in a hash map; `stockRes_eq`). -/
+def stockRes (SP : LinkSpec) (st : List (Bool × Clif.Function × Except String Art)) : Res :=
+  let m := assocMap SP.input0.addrs
+  st.map fun s => (s.2.1, s.2.2.map (artAt (BitVec.ofNat 64 ((m[s.2.1.name]?).getD 0))))
+
+theorem stockRes_eq (lower : ProductionLowering) (S : LinkSpec) :
+    stockRes (S.placedProductionWith lower true) (stockSteps lower S (cleanupArts S)) =
+      (S.placedProductionWith lower true).input0.resultsProductionWith lower true := by
+  have hf : (S.placedProductionWith lower true).input0.funcs = S.funcs := rfl
+  rw [stockRes, stockSteps_cleanup, List.map_map]
+  simp only [LinkInput.resultsProductionWith, hf]
+  apply List.map_congr_left
+  intro fi _
+  simp only [Function.comp, assocMap_get]
+  rw [pipeProductionWith_eq lower _ rfl fi]
+  rfl
+
+/-- **`attemptT` from the Stock route's results `R`** (`attemptTFrom_eq`): `attemptTFast` with
+`R` for the pipeline's. -/
+def attemptTFrom (SP : LinkSpec) (file0 : ByteArray) (R : Res) : Except String ByteArray :=
+  if okRWithTS (productionStage true) (SP.input0.withDepth R) R then
+    leanLinkWithResults SP file0 (fun _ => R)
   else .error SemanticCompilerWith.outOkTSMsg
 
 /-- **`lean-link`'s typed Stock route writes `attemptT`'s output.** -/
 theorem attemptTFrom_eq (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) :
-    attemptTFrom lower (S.placedProductionWith lower true) file0 (stockSteps lower S (cleanupArts S)) =
+    attemptTFrom (S.placedProductionWith lower true) file0
+        (stockRes (S.placedProductionWith lower true) (stockSteps lower S (cleanupArts S))) =
       SemanticCompilerWith.attemptT lower (S.placedProductionWith lower true) file0 := by
-  rw [SemanticCompilerWith.attemptT_eq_fast]
-  have hR : (stockSteps lower S (cleanupArts S)).map (fun s =>
-      (s.2.1, s.2.2.map (artAt (BitVec.ofNat 64
-        (((assocMap (S.placedProductionWith lower true).input0.addrs)[s.2.1.name]?).getD 0))))) =
-      (S.placedProductionWith lower true).input0.resultsProductionWith lower true := by
-    have hf : (S.placedProductionWith lower true).input0.funcs = S.funcs := rfl
-    rw [stockSteps_cleanup, List.map_map]
-    simp only [LinkInput.resultsProductionWith, hf]
-    apply List.map_congr_left
-    intro fi _
-    simp only [Function.comp, assocMap_get]
-    rw [pipeProductionWith_eq lower _ rfl fi]
-    rfl
-  simp only [attemptTFrom, SemanticCompilerWith.attemptTFast, hR]
+  rw [SemanticCompilerWith.attemptT_eq_fast, stockRes_eq]
+  rfl
 
 end Link.TypedStockShared
