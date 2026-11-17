@@ -1,6 +1,7 @@
 import FV.Backend.Proof.StockD0Code
 import FV.Backend.SemanticNICheck
 import FV.E2E.LinkCheckFast
+import FV.E2E.LinkIdx
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
@@ -51,18 +52,21 @@ theorem okRSemanticNI_img (stage : Clif.Function → VCode → VCode) {I : LinkI
     (by simp [globalChks])
 
 /-- `okRSemanticNI` with the lookups of `linkChks`/`globalChks` computed once
-(`LinkCtx.of`, `linkChksWith_of`, `globalChksWith_of`). The compiler evaluates this in place
+(`LinkCtx.of`, `linkChksWith_of`, `globalChksWith_of`) and the program's scans per call site
+indexed (`LinkIdx.of`, `linkChksWithI_of`, #1062). The compiler evaluates this in place
 of `okRSemanticNI` (`okRSemanticNI_eq_fast`, `@[csimp]`): the list lookups per call site made
 the Stock routes' checks hours long on 15k-function programs (#683). No statement changes. -/
 def okRSemanticNIFast (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
+  let X := LinkIdx.of P C.ents
   (globalChksWith C I P T).all (·.2) &&
-    R.all fun e => (staticChksSemanticNI stage I e.1 e.2 ++ linkChksWith C P e.1 e.2).all (·.2)
+    R.all fun e => (staticChksSemanticNI stage I e.1 e.2 ++ linkChksWithI C X P e.1 e.2).all (·.2)
 
 @[csimp] theorem okRSemanticNI_eq_fast : @okRSemanticNI = @okRSemanticNIFast := by
   funext stage I R
-  simp only [okRSemanticNIFast, okRSemanticNI, chksSemanticNI, linkChksWith_of, globalChksWith_of]
+  simp only [okRSemanticNIFast, okRSemanticNI, chksSemanticNI, linkChksWithI_of, linkChksWith_of,
+    globalChksWith_of]
 
 end E2E.LinkCheck

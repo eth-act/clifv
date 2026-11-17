@@ -30,4 +30,15 @@ def LinkSpec.placedProduction (S : LinkSpec) (cleanup : Bool) : LinkSpec :=
   let I : LinkInput := {S.input0 with addrs := []}
   S.withSizes (S.funcs.map fun fi =>
     (getOk (I.pipeProduction cleanup fi)).fb.words.size)
+
+/-- `LinkSpec.placedProduction` with the functions compiled in parallel tasks
+(`placedProduction_eq_par`, `@[csimp]`). -/
+def LinkSpec.placedProductionPar (S : LinkSpec) (cleanup : Bool) : LinkSpec :=
+  let I : LinkInput := {S.input0 with addrs := []}
+  S.withSizes (parMap (fun fi => (getOk (I.pipeProduction cleanup fi)).fb.words.size) S.funcs)
+
+@[csimp] theorem LinkSpec.placedProduction_eq_par :
+    @LinkSpec.placedProduction = @LinkSpec.placedProductionPar := by
+  funext S cleanup
+  simp only [LinkSpec.placedProduction, LinkSpec.placedProductionPar, parMap_eq]
 end Link
