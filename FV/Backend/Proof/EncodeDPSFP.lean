@@ -42,6 +42,9 @@ theorem decode_armBits_FP_conditional_select (x : FP_conditional_select_cls) :
     decode_raw_inst (armBits (.DPSFP (.FP_conditional_select x))) = some (ArmInst.DPSFP (.FP_conditional_select x)).norm := by
   decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
 
+-- Since the shift-by-immediate patterns follow this class in `decode_data_proc_sfp`, this proof
+-- needs more than the default heartbeats (it timed out in `isDefEq` at 200000).
+set_option maxHeartbeats 4000000 in
 theorem decode_armBits_Advanced_simd_modified_immediate (x : Advanced_simd_modified_immediate_cls) :
     decode_raw_inst (armBits (.DPSFP (.Advanced_simd_modified_immediate x))) = some (ArmInst.DPSFP (.Advanced_simd_modified_immediate x)).norm := by
   decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
