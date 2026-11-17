@@ -66,6 +66,19 @@ def LinkInput.pipeCleanupOf (I : LinkInput) (fi : FnInput) : Except String Art :
 def LinkInput.resultsCleanup (I : LinkInput) : Res :=
   I.funcs.map fun fi => (fi.func, I.pipeCleanupOf fi)
 
+/-- `LinkInput.resultsCleanup` with the functions compiled in parallel tasks, each function parsed
+once (`resultsCleanup_eq_par`, `@[csimp]`). -/
+def LinkInput.resultsCleanupPar (I : LinkInput) : Res :=
+  Link.parMap (fun fi => let f := fi.func
+    (f, cond I.fallback pipeCleanupT pipeCleanup f fi.k (BitVec.ofNat 64 (I.baseOf f.name))
+      (raJ fi.ra fi.j))) I.funcs
+
+@[csimp] theorem LinkInput.resultsCleanup_eq_par :
+    @LinkInput.resultsCleanup = @LinkInput.resultsCleanupPar := by
+  funext I
+  simp only [LinkInput.resultsCleanup, LinkInput.resultsCleanupPar, LinkInput.pipeCleanupOf,
+    Link.parMap_eq]
+
 theorem resultsCleanup_ok (I : LinkInput) :
     ResOkWith cleanupStage I I.resultsCleanup := by
   intro e he a ha
@@ -150,6 +163,17 @@ theorem baseOk_closedCleanup {I : LinkInput} {F : BitVec 64 → Prop}
 def LinkInput.resultsCleanupT (I : LinkInput) : Res :=
   I.funcs.map fun fi => (fi.func, pipeCleanupT fi.func fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j))
+
+/-- `LinkInput.resultsCleanupT` with the functions compiled in parallel tasks
+(`resultsCleanupT_eq_par`, `@[csimp]`). -/
+def LinkInput.resultsCleanupTPar (I : LinkInput) : Res :=
+  Link.parMap (fun fi => let f := fi.func
+    (f, pipeCleanupT f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))) I.funcs
+
+@[csimp] theorem LinkInput.resultsCleanupT_eq_par :
+    @LinkInput.resultsCleanupT = @LinkInput.resultsCleanupTPar := by
+  funext I
+  simp only [LinkInput.resultsCleanupT, LinkInput.resultsCleanupTPar, Link.parMap_eq]
 
 theorem LinkInput.resultsCleanup_fallback {I : LinkInput} (h : I.fallback = true) :
     I.resultsCleanup = I.resultsCleanupT := by
