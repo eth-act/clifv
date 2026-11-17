@@ -401,12 +401,13 @@ functions whose compiled name or size is not the placement's), `relocsOkB` (the 
 the first failing relocation), `codeMapB` (the functions whose code-map conditions fail); the
 checks of rust-lld's output: `regionOkB` (the region `[R, R + n)`, the segment containing `R`
 and which condition fails), then, on the written file, `outsideOkB` (`outsideFails`). Where the
-checks of rust-lld's output fail, the functions whose placement is not rust-lld's layout of the
-units' code: `unitSizes` (the region object's sizes in words, the bundle's) and `marks` (the
-functions' addresses in rust-lld's output, the bundle's markers; a size that differs moves every
-later function). -/
+checks of rust-lld's output fail, the placement against rust-lld's layout of the units' code
+(`marks`: the functions' addresses in rust-lld's output, the bundle's markers): the functions
+whose span to the next placed function is not rust-lld's (the functions whose compiled code or
+alignment is not the units'; each moves every later function), and the functions placed
+elsewhere. -/
 def linkFails (S : LinkSpec) (file0 : ByteArray) (results : LinkInput → Res)
-    (marks unitSizes : List (String × Nat) := []) (k : Nat := 10) : List String :=
+    (marks : List (String × Nat) := []) (k : Nat := 10) : List String :=
   match phdrs (fileRd file0) with
   | none => ["phdrs: rust-lld's output has no program headers"]
   | some phs =>
@@ -457,15 +458,16 @@ def linkFails (S : LinkSpec) (file0 : ByteArray) (results : LinkInput → Res)
     let n := B.length
     let off := offsetOf phs S.R
     let mk := assocMap marks
-    let us := assocMap unitSizes
+    let pa := S.progAddrs
+    let words := assocMap (S.names.zip S.sizes)
     let moved :=
-      failLines k "placed sizes as the region object's (bundle sizes)" S.names.length
-        ((S.names.zip S.sizes).filterMap fun e => match us[e.1]? with
-          | some u => if u == e.2 then none else some (e.1, e.2, u)
-          | none => none)
-        (fun e => s!"placement: {e.1}: {e.2.1} word(s), {e.2.2} in the region object") ++
-      failLines k "placed at rust-lld's addresses (markers)" S.progAddrs.length
-        (S.progAddrs.filterMap fun e => match mk[e.1]? with
+      failLines k "placed spans as rust-lld's (markers)" pa.length
+        ((pa.zip pa.tail).filterMap fun (e, e') => match mk[e.1]?, mk[e'.1]? with
+          | some m, some m' => if m' - m == e'.2 - e.2 then none else some (e.1, e'.2 - e.2, m' - m)
+          | _, _ => none)
+        (fun e => s!"placement: {e.1} ({words[e.1]?.getD 0} words): {e.2.1} bytes to the next function, rust-lld's {e.2.2}") ++
+      failLines k "placed at rust-lld's addresses (markers)" pa.length
+        (pa.filterMap fun e => match mk[e.1]? with
           | some m => if m == e.2 then none else some (e.1, e.2, m)
           | none => none)
         (fun e => s!"placement: {e.1} at {hex e.2.1}, rust-lld's at {hex e.2.2}")
@@ -718,12 +720,32 @@ def main (args0 : List String) : IO UInt32 := do
     let stockFns := stockFnsT
     if !stockFns.isEmpty then
       -- #722: the typed compiler on the Stock route: the units' code (the Stock route's pipeline
-      -- and placement), the typed checks per function
-      let SP := SC0.placedProductionWith routes[0]! true
-      let att := SemanticCompilerWith.attemptT routes[0]! SP file0
+      -- and placement), the typed checks per function. #1075: `lean-backend` compiles a unit with
+      -- a return-pin function (an `sret` copy or a void call, `returnPinModeB`) with the
+      -- return-pin lowering `Stock.VoidCall.NI.lowerValidated`, the others with `routes[0]`;
+      -- where the two differ on a function, `routes[0]`'s placement is not the reserved layout
+      -- (`regionOkB`/`symsOkB` fail). So when the first attempt fails and some function is
+      -- return-pin eligible, the typed route is tried again with the return-pin lowering (the
+      -- integer route's, `ReturnPinCompilerWith.attempt`); `attemptT_correct` holds for any
+      -- lowering.
+      let pinLower := Backend.Stock.VoidCall.NI.lowerValidated
+      let pinEligible := SC0.funcs.any fun fi =>
+        Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome
+      let SP0 := SC0.placedProductionWith routes[0]! true
+      let att0 := SemanticCompilerWith.attemptT routes[0]! SP0 file0
+      let SPpin := SC0.placedProductionWith pinLower true
+      let attPin : Except String ByteArray := if att0.isOk || !pinEligible then .error "not tried"
+        else SemanticCompilerWith.attemptT pinLower SPpin file0
+      if let .error e := attPin then
+        if pinEligible && !att0.isOk then
+          IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT) with the return-pin lowering (Stock.VoidCall.NI.lowerValidated): {e}"
+      let (SP, att, how) := match attPin with
+        | .ok file => (SPpin, (.ok file : Except String ByteArray),
+            " with the return-pin lowering (Stock.VoidCall.NI.lowerValidated, lean-backend's on return-pin units)")
+        | .error _ => (SP0, att0, "")
       if let .ok file := att then
         IO.FS.writeBinFile exe file
-        IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
+        IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT{how} (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
         if let some f := ldFile then
           match ← ldCheck SP file0 f with
           | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
@@ -739,8 +761,7 @@ def main (args0 : List String) : IO UInt32 := do
         -- the link's own checks (`leanLinkProductionWith`): name the failing check and its
         -- objects, also where no function fails the typed checks (#1075)
         if e != SemanticCompilerWith.outOkTSMsg then
-          for l in linkFails SP file0 (fun I => parResultsProductionWith routes[0]! I true)
-              b0.markers b0.sizes do
+          for l in linkFails SP file0 (fun I => parResultsProductionWith routes[0]! I true) b0.markers do
             IO.eprintln s!"lean-link:   {l}"
         -- leave out only the functions failing the typed checks when that set is the smallest
         -- (only those: `attemptT_correct` has no per-function input premise, #754)
