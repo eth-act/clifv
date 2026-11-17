@@ -1,6 +1,7 @@
 import FV.Backend.Asm
 import FV.Opt.Legal
 import FV.Opt.LegalExn
+import FV.Opt.LegalExnT
 import FV.Opt.OptimizeX
 import FV.E2E.LinkScopeInputDefsTC
 import FV.E2E.LinkScopeFast
@@ -17,6 +18,8 @@ replacement equals the original definition (the kernel and every theorem see the
 #print axioms Opt.Legal.checkW_eq_F
 #print axioms Opt.Legal.termExnOk_eq_F
 #print axioms Opt.Legal.exnOk_eq_F
+#print axioms Opt.Legal.termExnOkT_eq_F
+#print axioms Opt.Legal.exnOkT_eq_F
 #print axioms Opt.closedB_eq_fast
 #print axioms Backend.Proof.Driver.ptrSet_contains
 #print axioms Backend.Proof.Driver.stmtInB_eq_W
