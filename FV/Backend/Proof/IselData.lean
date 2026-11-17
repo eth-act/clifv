@@ -6,9 +6,9 @@ import FV.Backend.Proof.IselAttr
 
 Regenerate: `lake env lean --run FVTest/Backend/Proof/Probe/GenData.lean closure > FV/Backend/Proof/IselData.lean`.
 
-Roots: 197 root rules (closure); 701 terms reachable from them (patterns, if-lets,
+Roots: 198 root rules (closure); 716 terms reachable from them (patterns, if-lets,
 right-hand sides, and the rules of every internal constructor they call, transitively), of
-which the internal constructors have 886 rules. `lower`/`lower_branch` are included with
+which the internal constructors have 893 rules. `lower`/`lower_branch` are included with
 their full rule lists.
 
 `Data p` bundles `Interp.termOf p t = pure T.x` and `p.rulesOf t = [...]` for these terms.
@@ -36,6 +36,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_90_name : T.«ty_mask».name = "ty_mask" := rfl
 @[isel_data] theorem term_93_kind : T.«ty_bytes».kind = (.decl ⟨true, false, false, false⟩ (some (.external "ty_bytes")) none) := rfl
 @[isel_data] theorem term_93_name : T.«ty_bytes».name = "ty_bytes" := rfl
+@[isel_data] theorem term_94_kind : T.«lane_type».kind = (.decl ⟨true, false, false, false⟩ (some (.external "lane_type")) none) := rfl
+@[isel_data] theorem term_94_name : T.«lane_type».name = "lane_type" := rfl
 @[isel_data] theorem term_102_kind : T.«mem_flags_trusted_data».kind = (.decl ⟨true, false, false, false⟩ (some (.external "mem_flags_trusted_data")) none) := rfl
 @[isel_data] theorem term_102_name : T.«mem_flags_trusted_data».name = "mem_flags_trusted_data" := rfl
 @[isel_data] theorem term_103_kind : T.«little_or_native_endian».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "little_or_native_endian" false))) := rfl
@@ -233,6 +235,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_329_name : T.«branch_target».name = "branch_target" := rfl
 @[isel_data] theorem term_330_kind : T.«targets_jt_space».kind = (.decl ⟨false, false, false, false⟩ (some (.external "targets_jt_space")) none) := rfl
 @[isel_data] theorem term_330_name : T.«targets_jt_space».name = "targets_jt_space" := rfl
+@[isel_data] theorem term_333_kind : T.«fpu_op_ri_ushr».kind = (.decl ⟨false, false, false, false⟩ (some (.external "fpu_op_ri_ushr")) none) := rfl
+@[isel_data] theorem term_333_name : T.«fpu_op_ri_ushr».name = "fpu_op_ri_ushr" := rfl
+@[isel_data] theorem term_334_kind : T.«fpu_op_ri_sli».kind = (.decl ⟨false, false, false, false⟩ (some (.external "fpu_op_ri_sli")) none) := rfl
+@[isel_data] theorem term_334_name : T.«fpu_op_ri_sli».name = "fpu_op_ri_sli" := rfl
 @[isel_data] theorem term_336_kind : T.«lshl_from_imm64».kind = (.decl ⟨true, false, true, false⟩ (some (.external "lshl_from_imm64")) none) := rfl
 @[isel_data] theorem term_336_name : T.«lshl_from_imm64».name = "lshl_from_imm64" := rfl
 @[isel_data] theorem term_338_kind : T.«ashr_from_u64».kind = (.decl ⟨true, false, true, false⟩ (some (.external "ashr_from_u64")) none) := rfl
@@ -275,12 +281,16 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_363_name : T.«vec_rrr».name = "vec_rrr" := rfl
 @[isel_data] theorem term_364_kind : T.«fpu_rr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_364_name : T.«fpu_rr».name = "fpu_rr" := rfl
+@[isel_data] theorem term_367_kind : T.«fpu_rri».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_367_name : T.«fpu_rri».name = "fpu_rri" := rfl
 @[isel_data] theorem term_368_kind : T.«fpu_rrr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_368_name : T.«fpu_rrr».name = "fpu_rrr" := rfl
 @[isel_data] theorem term_370_kind : T.«fpu_cmp».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_370_name : T.«fpu_cmp».name = "fpu_cmp" := rfl
 @[isel_data] theorem term_371_kind : T.«vec_lanes».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_371_name : T.«vec_lanes».name = "vec_lanes" := rfl
+@[isel_data] theorem term_372_kind : T.«vec_shift_imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_372_name : T.«vec_shift_imm».name = "vec_shift_imm" := rfl
 @[isel_data] theorem term_375_kind : T.«vec_dup_imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_375_name : T.«vec_dup_imm».name = "vec_dup_imm" := rfl
 @[isel_data] theorem term_376_kind : T.«alu_rr_imm12».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -399,6 +409,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_501_name : T.«and_reg».name = "and_reg" := rfl
 @[isel_data] theorem term_502_kind : T.«and_imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_502_name : T.«and_imm».name = "and_imm" := rfl
+@[isel_data] theorem term_511_kind : T.«ushr_vec_imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_511_name : T.«ushr_vec_imm».name = "ushr_vec_imm" := rfl
 @[isel_data] theorem term_513_kind : T.«a64_rotr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_513_name : T.«a64_rotr».name = "a64_rotr" := rfl
 @[isel_data] theorem term_514_kind : T.«a64_rotr_imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -517,6 +529,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_612_name : T.«atomic_rmw_loop».name = "atomic_rmw_loop" := rfl
 @[isel_data] theorem term_613_kind : T.«atomic_cas_loop».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_613_name : T.«atomic_cas_loop».name = "atomic_cas_loop" := rfl
+@[isel_data] theorem term_623_kind : T.«max_shift».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_623_name : T.«max_shift».name = "max_shift" := rfl
+@[isel_data] theorem term_624_kind : T.«fcopy_sign».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_624_name : T.«fcopy_sign».name = "fcopy_sign" := rfl
 @[isel_data] theorem term_629_kind : T.«fpu_to_int_cvt_sat».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_629_name : T.«fpu_to_int_cvt_sat».name = "fpu_to_int_cvt_sat" := rfl
 @[isel_data] theorem term_630_kind : T.«signed_min».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -785,6 +801,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1869_name : T.«MInst.FpuRR».name = "MInst.FpuRR" := rfl
 @[isel_data] theorem term_1870_kind : T.«MInst.FpuRRR».kind = (.enumVariant 52) := rfl
 @[isel_data] theorem term_1870_name : T.«MInst.FpuRRR».name = "MInst.FpuRRR" := rfl
+@[isel_data] theorem term_1871_kind : T.«MInst.FpuRRI».kind = (.enumVariant 53) := rfl
+@[isel_data] theorem term_1871_name : T.«MInst.FpuRRI».name = "MInst.FpuRRI" := rfl
+@[isel_data] theorem term_1872_kind : T.«MInst.FpuRRIMod».kind = (.enumVariant 54) := rfl
+@[isel_data] theorem term_1872_name : T.«MInst.FpuRRIMod».name = "MInst.FpuRRIMod" := rfl
 @[isel_data] theorem term_1874_kind : T.«MInst.FpuCmp».kind = (.enumVariant 56) := rfl
 @[isel_data] theorem term_1874_name : T.«MInst.FpuCmp».name = "MInst.FpuCmp" := rfl
 @[isel_data] theorem term_1877_kind : T.«MInst.FpuLoad32».kind = (.enumVariant 59) := rfl
@@ -821,6 +841,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1914_name : T.«MInst.VecMisc».name = "MInst.VecMisc" := rfl
 @[isel_data] theorem term_1915_kind : T.«MInst.VecLanes».kind = (.enumVariant 97) := rfl
 @[isel_data] theorem term_1915_name : T.«MInst.VecLanes».name = "MInst.VecLanes" := rfl
+@[isel_data] theorem term_1916_kind : T.«MInst.VecShiftImm».kind = (.enumVariant 98) := rfl
+@[isel_data] theorem term_1916_name : T.«MInst.VecShiftImm».name = "MInst.VecShiftImm" := rfl
+@[isel_data] theorem term_1917_kind : T.«MInst.VecShiftImmMod».kind = (.enumVariant 99) := rfl
+@[isel_data] theorem term_1917_name : T.«MInst.VecShiftImmMod».name = "MInst.VecShiftImmMod" := rfl
 @[isel_data] theorem term_1924_kind : T.«MInst.VecCSel».kind = (.enumVariant 106) := rfl
 @[isel_data] theorem term_1924_name : T.«MInst.VecCSel».name = "MInst.VecCSel" := rfl
 @[isel_data] theorem term_1927_kind : T.«MInst.Call».kind = (.enumVariant 109) := rfl
@@ -1087,6 +1111,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_2165_name : T.«VecMisc2.Cnt».name = "VecMisc2.Cnt" := rfl
 @[isel_data] theorem term_2200_kind : T.«VecLanesOp.Addv».kind = (.enumVariant 0) := rfl
 @[isel_data] theorem term_2200_name : T.«VecLanesOp.Addv».name = "VecLanesOp.Addv" := rfl
+@[isel_data] theorem term_2203_kind : T.«VecShiftImmOp.Ushr».kind = (.enumVariant 1) := rfl
+@[isel_data] theorem term_2203_name : T.«VecShiftImmOp.Ushr».name = "VecShiftImmOp.Ushr" := rfl
+@[isel_data] theorem term_2205_kind : T.«VecShiftImmModOp.Sli».kind = (.enumVariant 0) := rfl
+@[isel_data] theorem term_2205_name : T.«VecShiftImmModOp.Sli».name = "VecShiftImmModOp.Sli" := rfl
 @[isel_data] theorem term_2215_kind : T.«AtomicRMWLoopOp.Add».kind = (.enumVariant 0) := rfl
 @[isel_data] theorem term_2215_name : T.«AtomicRMWLoopOp.Add».name = "AtomicRMWLoopOp.Add" := rfl
 @[isel_data] theorem term_2216_kind : T.«AtomicRMWLoopOp.Sub».kind = (.enumVariant 1) := rfl
@@ -1331,6 +1359,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_2403_name : T.«Opcode.Fneg».name = "Opcode.Fneg" := rfl
 @[isel_data] theorem term_2404_kind : T.«Opcode.Fabs».kind = (.enumVariant 120) := rfl
 @[isel_data] theorem term_2404_name : T.«Opcode.Fabs».name = "Opcode.Fabs" := rfl
+@[isel_data] theorem term_2405_kind : T.«Opcode.Fcopysign».kind = (.enumVariant 121) := rfl
+@[isel_data] theorem term_2405_name : T.«Opcode.Fcopysign».name = "Opcode.Fcopysign" := rfl
 @[isel_data] theorem term_2406_kind : T.«Opcode.Fmin».kind = (.enumVariant 122) := rfl
 @[isel_data] theorem term_2406_name : T.«Opcode.Fmin».name = "Opcode.Fmin" := rfl
 @[isel_data] theorem term_2407_kind : T.«Opcode.Fmax».kind = (.enumVariant 123) := rfl
@@ -1436,6 +1466,7 @@ structure Data (p : Program) : Prop where
   t87 : Interp.termOf p 87 = pure T.«ty_bits»
   t90 : Interp.termOf p 90 = pure T.«ty_mask»
   t93 : Interp.termOf p 93 = pure T.«ty_bytes»
+  t94 : Interp.termOf p 94 = pure T.«lane_type»
   t102 : Interp.termOf p 102 = pure T.«mem_flags_trusted_data»
   t103 : Interp.termOf p 103 = pure T.«little_or_native_endian»
   t110 : Interp.termOf p 110 = pure T.«fits_in_16»
@@ -1567,6 +1598,8 @@ structure Data (p : Program) : Prop where
   t328 : Interp.termOf p 328 = pure T.«u64_into_imm_logic»
   t329 : Interp.termOf p 329 = pure T.«branch_target»
   t330 : Interp.termOf p 330 = pure T.«targets_jt_space»
+  t333 : Interp.termOf p 333 = pure T.«fpu_op_ri_ushr»
+  t334 : Interp.termOf p 334 = pure T.«fpu_op_ri_sli»
   t336 : Interp.termOf p 336 = pure T.«lshl_from_imm64»
   t338 : Interp.termOf p 338 = pure T.«ashr_from_u64»
   t339 : Interp.termOf p 339 = pure T.«integral_ty»
@@ -1604,6 +1637,9 @@ structure Data (p : Program) : Prop where
   t364 : Interp.termOf p 364 = pure T.«fpu_rr»
   r364 : p.rulesOf 364 =
     [rule_inst_2560]
+  t367 : Interp.termOf p 367 = pure T.«fpu_rri»
+  r367 : p.rulesOf 367 =
+    [rule_inst_2583]
   t368 : Interp.termOf p 368 = pure T.«fpu_rrr»
   r368 : p.rulesOf 368 =
     [rule_inst_2591]
@@ -1613,6 +1649,9 @@ structure Data (p : Program) : Prop where
   t371 : Interp.termOf p 371 = pure T.«vec_lanes»
   r371 : p.rulesOf 371 =
     [rule_inst_2612]
+  t372 : Interp.termOf p 372 = pure T.«vec_shift_imm»
+  r372 : p.rulesOf 372 =
+    [rule_inst_2619]
   t375 : Interp.termOf p 375 = pure T.«vec_dup_imm»
   r375 : p.rulesOf 375 =
     [rule_inst_2640]
@@ -1790,6 +1829,9 @@ structure Data (p : Program) : Prop where
   t502 : Interp.termOf p 502 = pure T.«and_imm»
   r502 : p.rulesOf 502 =
     [rule_inst_3431]
+  t511 : Interp.termOf p 511 = pure T.«ushr_vec_imm»
+  r511 : p.rulesOf 511 =
+    [rule_inst_3466]
   t513 : Interp.termOf p 513 = pure T.«a64_rotr»
   r513 : p.rulesOf 513 =
     [rule_inst_3478]
@@ -1949,6 +1991,12 @@ structure Data (p : Program) : Prop where
   t613 : Interp.termOf p 613 = pure T.«atomic_cas_loop»
   r613 : p.rulesOf 613 =
     [rule_inst_4532]
+  t623 : Interp.termOf p 623 = pure T.«max_shift»
+  r623 : p.rulesOf 623 =
+    [rule_inst_4606, rule_inst_4607]
+  t624 : Interp.termOf p 624 = pure T.«fcopy_sign»
+  r624 : p.rulesOf 624 =
+    [rule_inst_4612, rule_inst_4619]
   t629 : Interp.termOf p 629 = pure T.«fpu_to_int_cvt_sat»
   r629 : p.rulesOf 629 =
     [rule_inst_4716, rule_inst_4718, rule_inst_4720, rule_inst_4726]
@@ -2169,6 +2217,8 @@ structure Data (p : Program) : Prop where
   t1862 : Interp.termOf p 1862 = pure T.«MInst.Fence»
   t1869 : Interp.termOf p 1869 = pure T.«MInst.FpuRR»
   t1870 : Interp.termOf p 1870 = pure T.«MInst.FpuRRR»
+  t1871 : Interp.termOf p 1871 = pure T.«MInst.FpuRRI»
+  t1872 : Interp.termOf p 1872 = pure T.«MInst.FpuRRIMod»
   t1874 : Interp.termOf p 1874 = pure T.«MInst.FpuCmp»
   t1877 : Interp.termOf p 1877 = pure T.«MInst.FpuLoad32»
   t1878 : Interp.termOf p 1878 = pure T.«MInst.FpuStore32»
@@ -2187,6 +2237,8 @@ structure Data (p : Program) : Prop where
   t1911 : Interp.termOf p 1911 = pure T.«MInst.VecRRR»
   t1914 : Interp.termOf p 1914 = pure T.«MInst.VecMisc»
   t1915 : Interp.termOf p 1915 = pure T.«MInst.VecLanes»
+  t1916 : Interp.termOf p 1916 = pure T.«MInst.VecShiftImm»
+  t1917 : Interp.termOf p 1917 = pure T.«MInst.VecShiftImmMod»
   t1924 : Interp.termOf p 1924 = pure T.«MInst.VecCSel»
   t1927 : Interp.termOf p 1927 = pure T.«MInst.Call»
   t1928 : Interp.termOf p 1928 = pure T.«MInst.CallInd»
@@ -2320,6 +2372,8 @@ structure Data (p : Program) : Prop where
   t2135 : Interp.termOf p 2135 = pure T.«VecALUOp.Addp»
   t2165 : Interp.termOf p 2165 = pure T.«VecMisc2.Cnt»
   t2200 : Interp.termOf p 2200 = pure T.«VecLanesOp.Addv»
+  t2203 : Interp.termOf p 2203 = pure T.«VecShiftImmOp.Ushr»
+  t2205 : Interp.termOf p 2205 = pure T.«VecShiftImmModOp.Sli»
   t2215 : Interp.termOf p 2215 = pure T.«AtomicRMWLoopOp.Add»
   t2216 : Interp.termOf p 2216 = pure T.«AtomicRMWLoopOp.Sub»
   t2217 : Interp.termOf p 2217 = pure T.«AtomicRMWLoopOp.And»
@@ -2442,6 +2496,7 @@ structure Data (p : Program) : Prop where
   t2401 : Interp.termOf p 2401 = pure T.«Opcode.Sqrt»
   t2403 : Interp.termOf p 2403 = pure T.«Opcode.Fneg»
   t2404 : Interp.termOf p 2404 = pure T.«Opcode.Fabs»
+  t2405 : Interp.termOf p 2405 = pure T.«Opcode.Fcopysign»
   t2406 : Interp.termOf p 2406 = pure T.«Opcode.Fmin»
   t2407 : Interp.termOf p 2407 = pure T.«Opcode.Fmax»
   t2408 : Interp.termOf p 2408 = pure T.«Opcode.Ceil»
@@ -2502,6 +2557,7 @@ theorem program_term_31 : Interp.termOf program 31 = pure T.«i64_sextend_imm64�
 theorem program_term_87 : Interp.termOf program 87 = pure T.«ty_bits» := rfl
 theorem program_term_90 : Interp.termOf program 90 = pure T.«ty_mask» := rfl
 theorem program_term_93 : Interp.termOf program 93 = pure T.«ty_bytes» := rfl
+theorem program_term_94 : Interp.termOf program 94 = pure T.«lane_type» := rfl
 theorem program_term_102 : Interp.termOf program 102 = pure T.«mem_flags_trusted_data» := rfl
 theorem program_term_103 : Interp.termOf program 103 = pure T.«little_or_native_endian» := rfl
 theorem program_term_110 : Interp.termOf program 110 = pure T.«fits_in_16» := rfl
@@ -2633,6 +2689,8 @@ theorem program_term_327 : Interp.termOf program 327 = pure T.«u8_into_imm12» 
 theorem program_term_328 : Interp.termOf program 328 = pure T.«u64_into_imm_logic» := rfl
 theorem program_term_329 : Interp.termOf program 329 = pure T.«branch_target» := rfl
 theorem program_term_330 : Interp.termOf program 330 = pure T.«targets_jt_space» := rfl
+theorem program_term_333 : Interp.termOf program 333 = pure T.«fpu_op_ri_ushr» := rfl
+theorem program_term_334 : Interp.termOf program 334 = pure T.«fpu_op_ri_sli» := rfl
 theorem program_term_336 : Interp.termOf program 336 = pure T.«lshl_from_imm64» := rfl
 theorem program_term_338 : Interp.termOf program 338 = pure T.«ashr_from_u64» := rfl
 theorem program_term_339 : Interp.termOf program 339 = pure T.«integral_ty» := rfl
@@ -2670,6 +2728,9 @@ theorem program_rulesOf_363 : program.rulesOf 363 =
 theorem program_term_364 : Interp.termOf program 364 = pure T.«fpu_rr» := rfl
 theorem program_rulesOf_364 : program.rulesOf 364 =
     [rule_inst_2560] := rfl
+theorem program_term_367 : Interp.termOf program 367 = pure T.«fpu_rri» := rfl
+theorem program_rulesOf_367 : program.rulesOf 367 =
+    [rule_inst_2583] := rfl
 theorem program_term_368 : Interp.termOf program 368 = pure T.«fpu_rrr» := rfl
 theorem program_rulesOf_368 : program.rulesOf 368 =
     [rule_inst_2591] := rfl
@@ -2679,6 +2740,9 @@ theorem program_rulesOf_370 : program.rulesOf 370 =
 theorem program_term_371 : Interp.termOf program 371 = pure T.«vec_lanes» := rfl
 theorem program_rulesOf_371 : program.rulesOf 371 =
     [rule_inst_2612] := rfl
+theorem program_term_372 : Interp.termOf program 372 = pure T.«vec_shift_imm» := rfl
+theorem program_rulesOf_372 : program.rulesOf 372 =
+    [rule_inst_2619] := rfl
 theorem program_term_375 : Interp.termOf program 375 = pure T.«vec_dup_imm» := rfl
 theorem program_rulesOf_375 : program.rulesOf 375 =
     [rule_inst_2640] := rfl
@@ -2856,6 +2920,9 @@ theorem program_rulesOf_501 : program.rulesOf 501 =
 theorem program_term_502 : Interp.termOf program 502 = pure T.«and_imm» := rfl
 theorem program_rulesOf_502 : program.rulesOf 502 =
     [rule_inst_3431] := rfl
+theorem program_term_511 : Interp.termOf program 511 = pure T.«ushr_vec_imm» := rfl
+theorem program_rulesOf_511 : program.rulesOf 511 =
+    [rule_inst_3466] := rfl
 theorem program_term_513 : Interp.termOf program 513 = pure T.«a64_rotr» := rfl
 theorem program_rulesOf_513 : program.rulesOf 513 =
     [rule_inst_3478] := rfl
@@ -3015,6 +3082,12 @@ theorem program_rulesOf_612 : program.rulesOf 612 =
 theorem program_term_613 : Interp.termOf program 613 = pure T.«atomic_cas_loop» := rfl
 theorem program_rulesOf_613 : program.rulesOf 613 =
     [rule_inst_4532] := rfl
+theorem program_term_623 : Interp.termOf program 623 = pure T.«max_shift» := rfl
+theorem program_rulesOf_623 : program.rulesOf 623 =
+    [rule_inst_4606, rule_inst_4607] := rfl
+theorem program_term_624 : Interp.termOf program 624 = pure T.«fcopy_sign» := rfl
+theorem program_rulesOf_624 : program.rulesOf 624 =
+    [rule_inst_4612, rule_inst_4619] := rfl
 theorem program_term_629 : Interp.termOf program 629 = pure T.«fpu_to_int_cvt_sat» := rfl
 theorem program_rulesOf_629 : program.rulesOf 629 =
     [rule_inst_4716, rule_inst_4718, rule_inst_4720, rule_inst_4726] := rfl
@@ -3235,6 +3308,8 @@ theorem program_term_1861 : Interp.termOf program 1861 = pure T.«MInst.StoreRel
 theorem program_term_1862 : Interp.termOf program 1862 = pure T.«MInst.Fence» := rfl
 theorem program_term_1869 : Interp.termOf program 1869 = pure T.«MInst.FpuRR» := rfl
 theorem program_term_1870 : Interp.termOf program 1870 = pure T.«MInst.FpuRRR» := rfl
+theorem program_term_1871 : Interp.termOf program 1871 = pure T.«MInst.FpuRRI» := rfl
+theorem program_term_1872 : Interp.termOf program 1872 = pure T.«MInst.FpuRRIMod» := rfl
 theorem program_term_1874 : Interp.termOf program 1874 = pure T.«MInst.FpuCmp» := rfl
 theorem program_term_1877 : Interp.termOf program 1877 = pure T.«MInst.FpuLoad32» := rfl
 theorem program_term_1878 : Interp.termOf program 1878 = pure T.«MInst.FpuStore32» := rfl
@@ -3253,6 +3328,8 @@ theorem program_term_1901 : Interp.termOf program 1901 = pure T.«MInst.VecDupIm
 theorem program_term_1911 : Interp.termOf program 1911 = pure T.«MInst.VecRRR» := rfl
 theorem program_term_1914 : Interp.termOf program 1914 = pure T.«MInst.VecMisc» := rfl
 theorem program_term_1915 : Interp.termOf program 1915 = pure T.«MInst.VecLanes» := rfl
+theorem program_term_1916 : Interp.termOf program 1916 = pure T.«MInst.VecShiftImm» := rfl
+theorem program_term_1917 : Interp.termOf program 1917 = pure T.«MInst.VecShiftImmMod» := rfl
 theorem program_term_1924 : Interp.termOf program 1924 = pure T.«MInst.VecCSel» := rfl
 theorem program_term_1927 : Interp.termOf program 1927 = pure T.«MInst.Call» := rfl
 theorem program_term_1928 : Interp.termOf program 1928 = pure T.«MInst.CallInd» := rfl
@@ -3386,6 +3463,8 @@ theorem program_term_2127 : Interp.termOf program 2127 = pure T.«VecALUOp.Smax�
 theorem program_term_2135 : Interp.termOf program 2135 = pure T.«VecALUOp.Addp» := rfl
 theorem program_term_2165 : Interp.termOf program 2165 = pure T.«VecMisc2.Cnt» := rfl
 theorem program_term_2200 : Interp.termOf program 2200 = pure T.«VecLanesOp.Addv» := rfl
+theorem program_term_2203 : Interp.termOf program 2203 = pure T.«VecShiftImmOp.Ushr» := rfl
+theorem program_term_2205 : Interp.termOf program 2205 = pure T.«VecShiftImmModOp.Sli» := rfl
 theorem program_term_2215 : Interp.termOf program 2215 = pure T.«AtomicRMWLoopOp.Add» := rfl
 theorem program_term_2216 : Interp.termOf program 2216 = pure T.«AtomicRMWLoopOp.Sub» := rfl
 theorem program_term_2217 : Interp.termOf program 2217 = pure T.«AtomicRMWLoopOp.And» := rfl
@@ -3508,6 +3587,7 @@ theorem program_term_2400 : Interp.termOf program 2400 = pure T.«Opcode.Fdiv» 
 theorem program_term_2401 : Interp.termOf program 2401 = pure T.«Opcode.Sqrt» := rfl
 theorem program_term_2403 : Interp.termOf program 2403 = pure T.«Opcode.Fneg» := rfl
 theorem program_term_2404 : Interp.termOf program 2404 = pure T.«Opcode.Fabs» := rfl
+theorem program_term_2405 : Interp.termOf program 2405 = pure T.«Opcode.Fcopysign» := rfl
 theorem program_term_2406 : Interp.termOf program 2406 = pure T.«Opcode.Fmin» := rfl
 theorem program_term_2407 : Interp.termOf program 2407 = pure T.«Opcode.Fmax» := rfl
 theorem program_term_2408 : Interp.termOf program 2408 = pure T.«Opcode.Ceil» := rfl
@@ -3566,6 +3646,7 @@ theorem data_program : Data program where
   t87 := program_term_87
   t90 := program_term_90
   t93 := program_term_93
+  t94 := program_term_94
   t102 := program_term_102
   t103 := program_term_103
   t110 := program_term_110
@@ -3681,6 +3762,8 @@ theorem data_program : Data program where
   t328 := program_term_328
   t329 := program_term_329
   t330 := program_term_330
+  t333 := program_term_333
+  t334 := program_term_334
   t336 := program_term_336
   t338 := program_term_338
   t339 := program_term_339
@@ -3710,12 +3793,16 @@ theorem data_program : Data program where
   r363 := program_rulesOf_363
   t364 := program_term_364
   r364 := program_rulesOf_364
+  t367 := program_term_367
+  r367 := program_rulesOf_367
   t368 := program_term_368
   r368 := program_rulesOf_368
   t370 := program_term_370
   r370 := program_rulesOf_370
   t371 := program_term_371
   r371 := program_rulesOf_371
+  t372 := program_term_372
+  r372 := program_rulesOf_372
   t375 := program_term_375
   r375 := program_rulesOf_375
   t376 := program_term_376
@@ -3834,6 +3921,8 @@ theorem data_program : Data program where
   r501 := program_rulesOf_501
   t502 := program_term_502
   r502 := program_rulesOf_502
+  t511 := program_term_511
+  r511 := program_rulesOf_511
   t513 := program_term_513
   r513 := program_rulesOf_513
   t514 := program_term_514
@@ -3943,6 +4032,10 @@ theorem data_program : Data program where
   r612 := program_rulesOf_612
   t613 := program_term_613
   r613 := program_rulesOf_613
+  t623 := program_term_623
+  r623 := program_rulesOf_623
+  t624 := program_term_624
+  r624 := program_rulesOf_624
   t629 := program_term_629
   r629 := program_rulesOf_629
   t630 := program_term_630
@@ -4120,6 +4213,8 @@ theorem data_program : Data program where
   t1862 := program_term_1862
   t1869 := program_term_1869
   t1870 := program_term_1870
+  t1871 := program_term_1871
+  t1872 := program_term_1872
   t1874 := program_term_1874
   t1877 := program_term_1877
   t1878 := program_term_1878
@@ -4138,6 +4233,8 @@ theorem data_program : Data program where
   t1911 := program_term_1911
   t1914 := program_term_1914
   t1915 := program_term_1915
+  t1916 := program_term_1916
+  t1917 := program_term_1917
   t1924 := program_term_1924
   t1927 := program_term_1927
   t1928 := program_term_1928
@@ -4271,6 +4368,8 @@ theorem data_program : Data program where
   t2135 := program_term_2135
   t2165 := program_term_2165
   t2200 := program_term_2200
+  t2203 := program_term_2203
+  t2205 := program_term_2205
   t2215 := program_term_2215
   t2216 := program_term_2216
   t2217 := program_term_2217
@@ -4393,6 +4492,7 @@ theorem data_program : Data program where
   t2401 := program_term_2401
   t2403 := program_term_2403
   t2404 := program_term_2404
+  t2405 := program_term_2405
   t2406 := program_term_2406
   t2407 := program_term_2407
   t2408 := program_term_2408
@@ -4465,6 +4565,8 @@ theorem data_program : Data program where
 @[isel_data] theorem normInt_9_0 : normInt 9 (0) = 0 := rfl
 @[isel_data] theorem normInt_2_0 : normInt 2 (0) = 0 := rfl
 @[isel_data] theorem normInt_3_0 : normInt 3 (0) = 0 := rfl
+@[isel_data] theorem normInt_1_63 : normInt 1 (63) = 63 := rfl
+@[isel_data] theorem normInt_1_31 : normInt 1 (31) = 31 := rfl
 @[isel_data] theorem normInt_4_128 : normInt 4 (128) = 128 := rfl
 @[isel_data] theorem normInt_4_127 : normInt 4 (127) = 127 := rfl
 @[isel_data] theorem normInt_4_32767 : normInt 4 (32767) = 32767 := rfl
@@ -4498,13 +4600,11 @@ theorem data_program : Data program where
 @[isel_data] theorem normInt_5_12004814239757670119517129289737963270 : normInt 5 (12004814239757670119517129289737963270) = 12004814239757670119517129289737963270 := rfl
 @[isel_data] theorem normInt_5_14673614102390417578512422760905835780 : normInt 5 (14673614102390417578512422760905835780) = 14673614102390417578512422760905835780 := rfl
 @[isel_data] theorem normInt_4_32 : normInt 4 (32) = 32 := rfl
-@[isel_data] theorem normInt_1_63 : normInt 1 (63) = 63 := rfl
 @[isel_data] theorem normInt_1_7 : normInt 1 (7) = 7 := rfl
 @[isel_data] theorem normInt_5_neg169808226154284360427508033573982305791 : normInt 5 (-169808226154284360427508033573982305791) = 170474140766654103035866573857785905665 := rfl
 @[isel_data] theorem normInt_1_8 : normInt 1 (8) = 8 := rfl
 @[isel_data] theorem normInt_1_15 : normInt 1 (15) = 15 := rfl
 @[isel_data] theorem normInt_5_664619068533544770747334646890102785 : normInt 5 (664619068533544770747334646890102785) = 664619068533544770747334646890102785 := rfl
-@[isel_data] theorem normInt_1_31 : normInt 1 (31) = 31 := rfl
 @[isel_data] theorem normInt_5_633825300187901677051779743745 : normInt 5 (633825300187901677051779743745) = 633825300187901677051779743745 := rfl
 @[isel_data] theorem normInt_141_0 : normInt 141 (0) = 0 := rfl
 

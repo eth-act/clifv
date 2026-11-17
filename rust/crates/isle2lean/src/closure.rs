@@ -80,6 +80,8 @@ pub const FLAG_OFF: &[&str] = &["use_lse"];
 /// S11f (#35) adds the scalar rounding roots (`FV/Backend/Proof/IselFloatRound.lean`):
 /// `fpu_round` of `ceil` (567 `f32`, 570 `f64`), `floor` (578, 581), `trunc` (589, 592),
 /// `nearest` (600, 603).
+/// #35 adds the scalar `fcopysign` root (685, `fcopy_sign`'s scalar rule `inst.isle:4612`:
+/// `ushr` + `sli`, `FV/Backend/Proof/IselFloatCopysign.lean`); `instData` admits `f32`/`f64`.
 pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_63",
     "rule_lower_68",
@@ -128,6 +130,7 @@ pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_603",
     "rule_lower_1283",
     "rule_lower_2176",
+    "rule_lower_685",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
