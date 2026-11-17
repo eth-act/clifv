@@ -179,7 +179,7 @@ theorem sim_try_raise2 {C : Ctx} (hG : Good C) (hx : exnOk C.f C.g C.cert = true
   rename_i fn' args' et'
   rw [ht'] at hcode
   have hcode0 := hcode
-  obtain ⟨hts, hfnn, hsig, hblk, hne, hT0f, hT0g, hzg, hcg, e, d', B, s', gs, rg, he, hd', hB,
+  obtain ⟨hts, hfnn, hsig, -, -, hT0f, hT0g, hzg, hcg, e, d', B, s', gs, rg, he, hd', -,
     hs', hgs, hrg, hfn', htyp, htyr, hexp, hexpT⟩ := termOk_tryCall hcode
   rw [hfnn] at ht' hcode hcode0
   -- the handler tables are related
@@ -219,95 +219,8 @@ theorem sim_try_raise2 {C : Ctx} (hG : Good C) (hx : exnOk C.f C.g C.cert = true
   have hstep' : stepX E' p' ⟨⟨fr', [], m⟩, []⟩ = raiseIn ⟨⟨fr', [], m⟩, []⟩ x m1 := by
     simp [stepX, raiseAt?, hts, ht', hr']
   rw [hstep, hstep']
-  rcases catch?_rel (e := x) hitems with ⟨hn, hn'⟩ | ⟨d, d'', hc, hc', hdo⟩
-  · -- nothing catches: both frames are left
-    refine .inl ⟨?_, ?_⟩
-    · simp [raiseIn, hpend, catchIn, hn, unwindFrom, leftMem]
-    · simp [raiseIn, hpend', catchIn, hn', unwindFrom, leftMem, hR.slots]
-  -- related handlers
-  simp only [destOk, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at hdo
-  obtain ⟨⟨hblkd, hned⟩, hdo⟩ := hdo
-  split at hdo
-  · rename_i Bh hBh
-    simp only [beq_iff_eq] at hdo
-    cases hth : tryHandler d fr.func.freshValue with
-    | trap c => exact absurd hth (tryHandler_ne_trap _ _ c)
-    | stuck msg =>
-      refine .inr (.inl ⟨msg, ?_⟩)
-      simp [raiseIn, hpend, catchIn, hc, hth, bind, Res.bind, XStepResult.ofRes]
-    | ok bc =>
-    have hbcE := tryHandler_inv hth
-    have hth' := tryHandler_of_noRet (base := fr'.func.freshValue) (expandExn_noRet hdo)
-    generalize hbc'e : ({ block := d''.block, args := d''.args.map (exnId fr'.func.freshValue) } :
-      BlockCall) = bc' at hth'
-    have hpay := hE.arity e.name g hg vals m x m1 hgo
-    obtain ⟨ρ1, hs⟩ := setMany_of_len fr.regs
-      (rs := (List.range x.payload.length).map (fr.func.freshValue + ·)) (vs := x.payload)
-      (by simp)
-    obtain ⟨ρ1', hs'⟩ := setMany_of_len fr'.regs
-      (rs := (List.range x.payload.length).map (fr'.func.freshValue + ·)) (vs := x.payload)
-      (by simp)
-    have hfv : fr.func.freshValue = C.f.freshValue := by rw [hR.func]
-    have hfv' : fr'.func.freshValue = C.g.freshValue := by rw [hR.func']
-    refine .inr (.inr ⟨{ fr with regs := ρ1, body := [], term := .jump bc },
-      { fr' with regs := ρ1', body := [], term := .jump bc' }, ?_, ?_, ?_⟩)
-    · simp [raiseIn, hpend, catchIn, hc, hth, hs, bind, Res.bind, Res.ofOption, pure,
-        XStepResult.ofRes]
-    · simp [raiseIn, hpend', catchIn, hc', hth', hs', bind, Res.bind, Res.ofOption, pure,
-        XStepResult.ofRes]
-    -- the pending jumps
-    have hCR := crel_bind hG hR.toCRel hs hs'
-      (fun v hv => by have := (mem_range_map hv).1; rw [hfv] at this; omega)
-      (fun w hw => fresh_of_ge (base' := C.g.freshValue) hT0g hzg hcg
-        (by have := (mem_range_map hw).1; rw [hfv'] at this; exact this))
-      [] (.jump bc) [] (.jump bc')
-    have hsrc : stepX E p ⟨⟨{ fr with regs := ρ1, body := [], term := .jump bc }, [], m1⟩, []⟩ =
-        liftStep ⟨⟨{ fr with regs := ρ1, body := [], term := .jump bc }, [], m1⟩, []⟩
-          (StepResult.ofRes (enterBlock { fr with regs := ρ1, body := [], term := .jump bc } bc)
-            fun fr2 => .next ⟨fr2, [], m1⟩) := by
-      simp only [stepX, raiseAt_jump (env := E) (p := p) (m := m1)
-        (fr := { fr with regs := ρ1, body := [], term := .jump bc }) rfl rfl]
-      rw [step_term _ _ _ rfl]
-      rfl
-    have htgt : stepX E' p' ⟨⟨{ fr' with regs := ρ1', body := [], term := .jump bc' }, [], m1⟩, []⟩ =
-        liftStep ⟨⟨{ fr' with regs := ρ1', body := [], term := .jump bc' }, [], m1⟩, []⟩
-          (StepResult.ofRes (enterBlock { fr' with regs := ρ1', body := [], term := .jump bc' } bc')
-            fun fr2 => .next ⟨fr2, [], m1⟩) := by
-      simp only [stepX, raiseAt_jump (env := E') (p := p') (m := m1)
-        (fr := { fr' with regs := ρ1', body := [], term := .jump bc' }) rfl rfl]
-      rw [step_term _ _ _ rfl]
-      rfl
-    rw [hsrc, htgt]
-    cases hen : enterBlock { fr with regs := ρ1, body := [], term := .jump bc } bc with
-    | trap c => exact absurd hen (enterBlock_not_trap _ _ c)
-    | stuck msg => exact .inl ⟨msg, by simp [liftStep]⟩
-    | ok fr2 =>
-    obtain ⟨fr2', hen', hR2⟩ := enter_sim_vals hG hCR (bc' := bc')
-      (by rw [← hbc'e, hbcE]; exact hblkd) (by rw [hbcE]; exact hned)
-      (fun B1 vals1 hB1 hv1 => by
-        rw [← hbc'e]
-        rw [hbcE] at hB1 hv1
-        rw [hBh] at hB1
-        cases hB1
-        exact expandExn_holds hR.vrel hpay
-          (base := fr.func.freshValue) (base' := fr'.func.freshValue)
-          (fun v hv => setMany_other hs fun hm => by
-            have := (mem_range_map hm).1; rw [hfv] at this
-            exact absurd hv (Nat.not_lt.mpr (Nat.le_trans hT0f this)))
-          (fun i hi => setMany_get hs (range_map_nodup _ _) (getElem?_range_map hi))
-          (fun a ha => setMany_other hs' fun hm => absurd ha (Nat.not_lt.mpr (mem_range_map hm).1))
-          (fun j hj => setMany_get hs' (range_map_nodup _ _) (getElem?_range_map hj))
-          (fun v a b hp => by
-            obtain ⟨ha, hb⟩ := mem_comps hp
-            rw [hfv']; exact ⟨hcg a ha, hcg b hb⟩)
-          (by rw [hfv']; exact hT0g) hdo
-          (fun v hv => hlt v (List.mem_append_right _ (catch?_vals hc v hv))) hv1) hen
-    refine .inr ⟨fr2, fr2', by simp [liftStep], by simp [hen', liftStep], hR2, ?_⟩
-    obtain ⟨h1, B2, hB2, h2⟩ := enterBlock_next hen'
-    refine ⟨h1.trans hR.func', .inl ⟨B2, ?_, h2⟩⟩
-    rw [hR.func'] at hB2
-    exact hB2
-  · cases hdo
+  exact raise_sim hG hR hpend hpend' hitems (fun y hy => hlt y (List.mem_append_right _ hy))
+    hT0f hT0g hzg hcg (hE.arity e.name g hg vals m x m1 hgo)
 
 /-! ## Runs -/
 
