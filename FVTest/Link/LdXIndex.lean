@@ -19,6 +19,10 @@ private def shdr (name type flags off size link info align entsize : Nat) : Arra
   le name 4 ++ le type 4 ++ le flags 8 ++ le 0 8 ++ le off 8 ++ le size 8 ++ le link 4 ++
     le info 4 ++ le align 8 ++ le entsize 8
 
+/-- A string table's bytes: `s` with every `|` a NUL (no NUL inside a string constant). -/
+private def strtab (s : String) : Array UInt8 :=
+  s.toUTF8.data.map fun c => if c == '|'.toNat.toUInt8 then 0 else c
+
 /-- The object: ELF header (64 bytes), `.shstrtab` at 64 (47 bytes), `.strtab` at 111, `.symtab`
 at 120 (the null symbol and `f`), `.symtab_shndx` at 168, the code (`ret`) at 176, the section
 headers at 184: null (`sh_size` the count, `sh_link` `e_shstrndx`), `.shstrtab`, `.strtab`,
@@ -27,8 +31,8 @@ def xindexObj (n : Nat) : ByteArray := Id.run do
   let mut b : Array UInt8 := #[0x7f, 0x45, 0x4c, 0x46, 2, 1, 1, 0] ++ Array.replicate 8 0
   b := b ++ le 1 2 ++ le 183 2 ++ le 1 4 ++ le 0 8 ++ le 0 8 ++ le 184 8 ++ le 0 4 ++ le 64 2 ++
     le 0 2 ++ le 0 2 ++ le 64 2 ++ le 0 2 ++ le 0xffff 2
-  b := b ++ "\x00.text\x00.symtab\x00.strtab\x00.shstrtab\x00.symtab_shndx\x00".toUTF8.data
-  b := b ++ "\x00f\x00".toUTF8.data ++ Array.replicate 6 0
+  b := b ++ strtab "|.text|.symtab|.strtab|.shstrtab|.symtab_shndx|"
+  b := b ++ strtab "|f|" ++ Array.replicate 6 0
   b := b ++ Array.replicate 24 0 ++ le 1 4 ++ #[0x12, 0] ++ le 0xffff 2 ++ le 0 8 ++ le 4 8
   b := b ++ le 0 4 ++ le (n - 1) 4
   b := b ++ le 0xd65f03c0 4 ++ Array.replicate 4 0
