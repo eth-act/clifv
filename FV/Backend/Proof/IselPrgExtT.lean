@@ -12,7 +12,8 @@ the typed scope (`Compile.functionET`; context invariant `PInvT`, `IselPrgInvT`)
   extractors of the float constants (`u32_from_ieee32`, `u64_from_ieee64`, `u16_from_u32`,
   `u32_from_u64`, `u64_low32_bits_unset`);
 * `actorT`: `actor` with the float constants' immediates (`asimd_mov_mod_imm_zero`,
-  `asimd_fp_mod_imm_from_u64`) and `emit` of the float instructions `MInst.ofV` decodes
+  `asimd_fp_mod_imm_from_u64`), the `ushr`/`sli` operations of `fcopysign` (`fpu_op_ri_ushr`,
+  `fpu_op_ri_sli`, `shiftCtor`) and `emit` of the float instructions `MInst.ofV` decodes
   (`ofvOkT`: `minstOk` or `minstOkF`).
 
 `aidata` (the `InstructionData` of an E instruction) is V7's.

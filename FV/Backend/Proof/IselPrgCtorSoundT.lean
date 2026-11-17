@@ -11,7 +11,8 @@ result describes, or fails and `actorT` did not promise success.
 
 * `emit`: `ofvOkT_sound`, `MInst.ofV` decodes every value `ofvOkT` accepts: V7's `minstOk_sound`
   and `minstOkF_sound` for the float instructions;
-* the float constants' immediates `asimd_mov_mod_imm_zero`, `asimd_fp_mod_imm_from_u64`;
+* the float constants' immediates `asimd_mov_mod_imm_zero`, `asimd_fp_mod_imm_from_u64`, and the
+  `ushr`/`sli` operations `fpu_op_ri_ushr`, `fpu_op_ri_sli` (`shift_ctor`);
 * the type predicates and the other constructors: V7's proofs (`actor_none_soundT`).
 -/
 
@@ -229,7 +230,7 @@ theorem minstOkF_sound {k : Nat} {fs : List PA} (h : minstOkF k fs = true) {ws :
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     red_safe MInst.ofV
-    simp [e2, e3, hok]
+    simp [e2, e3, V.fpuOpRI?, hok]
   -- FpuRRIMod
   · intro p1 p2 p3 p4 h ws hws
     simp only [Bool.and_eq_true] at h
@@ -242,7 +243,7 @@ theorem minstOkF_sound {k : Nat} {fs : List PA} (h : minstOkF k fs = true) {ws :
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     red_safe MInst.ofV
-    simp [e2, e3, e4, hok]
+    simp [e2, e3, e4, V.fpuOpRIMod?, hok]
   · intro _ _ h; cases h
 
 mutual

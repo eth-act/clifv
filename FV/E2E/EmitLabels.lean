@@ -813,7 +813,7 @@ theorem lines_chunk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
       first
         | exact plain_chunk (plain_ins _ _ rfl)
         | (refine plain_chunk ?_; simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?])
-  case movToVec =>
+  case movToVec | fpuRRIMod =>
     split at h
     · cases h
     · simp only [Except.ok.injEq, Prod.mk.injEq] at h
