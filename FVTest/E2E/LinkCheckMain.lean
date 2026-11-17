@@ -1,4 +1,5 @@
 import FV.E2E.ProductionPipelineWith
+import FV.E2E.LinkIdxT
 import FV.Backend.Lowering.StockVoidCallNI
 import FV.E2E.ReturnPinChecksWith
 import FVTest.E2E.ReturnPinLinkProofWith
@@ -216,6 +217,9 @@ def main (args : List String) : IO UInt32 := do
     let P := progOf keep
     let T := tabOf keep
     let C := LinkCtx.of I P T
+    -- the program's scans per call site indexed (#1062: `linkChksWithI_of`, `linkChksWithTI_of`,
+    -- `linkChksWithTSI_of`)
+    let X := LinkIdx.of P C.ents
     let returnPins := ReturnPinCtx.of I keep
     let gl := bad (globalChksWith C I P T)
     -- typed: `chksWithT`'s call-site checks (`linkChksT`: a `blr` that enters no function of the
@@ -226,8 +230,8 @@ def main (args : List String) : IO UInt32 := do
         [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S g || g.sig.returns.all (·.ty.isInt))]
       else []
     let lc := fun (e : Clif.Function × Except String Art) =>
-      if typedS then linkChksWithTS C P e.1 e.2
-      else if typed then linkChksWithT C P e.1 e.2 else linkChksWith C P e.1 e.2 ++ [("returnPins", returnPinsWith returnPins e.1)]
+      if typedS then linkChksWithTSI C X P e.1 e.2
+      else if typed then linkChksWithTI C X P e.1 e.2 else linkChksWithI C X P e.1 e.2 ++ [("returnPins", returnPinsWith returnPins e.1)]
     let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
       match b with
       | [] => none
