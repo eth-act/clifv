@@ -36,5 +36,5 @@ import FVTest.Link.I128TryIndT
 #print axioms Link.SemanticCompilerWith.attemptT_correct_source_peakTB
 #print axioms Clif.Rust.LegalXTWitness.refines
 #print axioms Clif.Rust.LegalXTWitness.caught
-#print axioms Clif.Rust.LegalXTWitness.domains
-#print axioms E2E.I128TryIndTWitness.correct_source_applies
+#print axioms Clif.Rust.LegalXTWitness.domains -- witness: native_decide
+#print axioms E2E.I128TryIndTWitness.correct_source_applies -- witness: native_decide
