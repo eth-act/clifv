@@ -805,6 +805,9 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
       | .minus32 => (0, 10) | .minus64 => (1, 10) | .zero32 => (0, 11) | .zero64 => (1, 11)
     pure (.DPSFP (.FP_data_processing_one_source { M := 0, S := 0, ftype, opcode,
                                                    Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuRRI .. | .fpuRRIMod .. =>
+    -- `ushr`/`sli` (Cranelift `FpuRRI`/`FpuRRIMod`): the Arm encoding classes are not modelled yet
+    throw s!"{repr i}: not yet encodable"
   | .fpuToInt op rd rn =>
     -- C7.2 FCVTZS (scalar, integer) rmode 11 opcode 000, FCVTZU rmode 11 opcode 001;
     -- sf = 64-bit integer, ftype = float size (Cranelift `FpuToInt`, `enc_fputoint`)
