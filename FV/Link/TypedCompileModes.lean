@@ -20,6 +20,24 @@ def attempt (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cle
     leanLinkProductionWith lower S file0 cleanup
   else .error outOkTSMsg
 
+/-- `attempt` with the Stock route's pipeline run once (`attempt_eq_fast`, `@[csimp]`; as
+`SemanticCompilerWith.attemptTFast`). -/
+def attemptFast (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cleanup : Bool) :
+    Except String ByteArray :=
+  let R := S.input0.resultsProductionWith lower cleanup
+  if okRWithTS (productionStage cleanup) (S.input0.withDepth R) R then
+    leanLinkWithResults S file0 (fun _ => R)
+  else .error outOkTSMsg
+
+@[csimp] theorem attempt_eq_fast : @attempt = @attemptFast := by
+  funext lower S file0 cleanup
+  have hl : leanLinkProductionWith lower S file0 cleanup =
+      leanLinkWithResults S file0 (fun _ => S.input0.resultsProductionWith lower cleanup) :=
+    leanLinkWithResults_congr S file0 (parResultsProductionWith_eq lower S.input0 cleanup)
+  have hr : (S.input0.withDepth (S.input0.resultsProductionWith lower cleanup)).resultsProductionWith
+      lower cleanup = S.input0.resultsProductionWith lower cleanup := rfl
+  simp only [attempt, attemptFast, LinkSpec.inputProductionWith, hl, hr]
+
 theorem attempt_spec {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) :
     SemanticStackBound.okBTS (input lower S cleanup) = true ∧
