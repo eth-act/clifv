@@ -9,6 +9,7 @@ import FV.Link.OptCompile
 import FV.Link.ConstPhiCompile
 import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
+import FV.E2E.SrcScopeDefsT
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 import FV.E2E.LinkScopeInputDefsT
@@ -116,7 +117,12 @@ after the legalisation; where such a function has an `i128` parameter, return or
 declarations and its neighbours' no longer agree (`declSigB`, #1042). So the routes that name them
 also need `SrcScopeB` of the compiled input, and under `--verified` the functions failing it there
 are left out of the region; the typed Stock route (`attemptT`), whose coverage is about the
-legalised program and names no `_source` theorem, does not need it.
+legalised program and names no `_source` theorem, does not need it. The typed Stock route also
+takes a bundle whose program is only in `SrcScopeTB` (#1076: `legalOkTB` instead of `legalOkB`,
+an `i128` function with a `try_call_indirect` at an `i128`-free signature, as Rust's
+`Box<dyn Any>::downcast`), whose legalisation refines it there (`legalProg_refinesT`; at the
+route's input in `SrcScopeTB`, `attemptT_correct_sourceTB`); every other route then leaves out
+the functions failing `legalOkB` and links again.
 
 **`--opt`**: the optimising executable compiler — `Link.DeadCleanup.compileExeOpt` (default) or
 `Link.compileExeOpt` (`--no-dead-cleanup`): `compileExe` on the input whose functions the
@@ -194,10 +200,13 @@ def scopeFails (F : String → Option Clif.Function) (P : Clif.Program) (S : Str
       then ["indB:sretRets"] else []) ++
     sites ++ (if outScopeWithB F g then [] else ["outScopeB"])).eraseDups
 
-/-- The source-domain conditions (`SrcScopeB`'s per-function conjuncts) a parsed function `g` of
-the source program fails (`F`: its `func?`, a hash map, `funcMap`). -/
-def srcFails (F : String → Option Clif.Function) (g : Clif.Function) : List String :=
-  (if Opt.Legalize128.legalOkB g then [] else ["legalOkB"]) ++
+/-- The source-domain conditions (`SrcScopeB`'s per-function conjuncts; with `tb`,
+`SrcScopeTB`'s: `legalOkTB` instead of `legalOkB`, #1076) a parsed function `g` of the source
+program fails (`F`: its `func?`, a hash map, `funcMap`). -/
+def srcFails (F : String → Option Clif.Function) (g : Clif.Function) (tb : Bool := false) :
+    List String :=
+  (if tb then (if Opt.Legalize128.legalOkTB g then [] else ["legalOkTB"])
+    else if Opt.Legalize128.legalOkB g then [] else ["legalOkB"]) ++
     (if linkFreeB g then [] else ["linkFreeB"]) ++ (if declSigWithB F g then [] else ["declSigB"])
 
 /-- **`--verified`: the functions to leave out of the region** (T3c): those failing a
@@ -226,9 +235,13 @@ out, and of those failing `scopeFails` only the ones failing a call-site conditi
 (`callScopeB:*`): the typed Stock route checks those call sites again on the compiled code
 (`callRegs/blrRegs`, `typedStockFails`), so leaving them in usually costs one more link (k256:
 all 56 functions failing `callScopeB:blrRegs` failed it there; crypto-bigint: 0 of 5).
-Otherwise, as before, every function failing `scopeFails` (one link fewer). -/
+Otherwise, as before, every function failing `scopeFails` (one link fewer).
+
+`srcT` (#1076): the source-domain conditions are `SrcScopeTB`'s (the executable linked again may
+take the typed Stock route `attemptT`, which accepts an input in `SrcScopeTB`; an `i128` function
+with a `try_call_indirect` stays in). -/
 def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (only : Bool := false)
-    (typedNext : Bool := false) : Option (List String) :=
+    (typedNext : Bool := false) (srcT : Bool := false) : Option (List String) :=
   let srcP := S.input0.srcProg
   let P := SC.input0.prog
   let sy := assocMap SC.input0.syms
@@ -243,7 +256,8 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (onl
   if !helperFreeB srcP || !Link.nodupB (P.funcs.map (·.name)) || !addrSlotsInputB P syms then none
   else if only then some (Front.dedupFirst extra)
   else
-    let src := (srcP.funcs.filter fun g => !(srcFails (fun n => fmS[n]?) g).isEmpty).map (·.name)
+    let src := (srcP.funcs.filter fun g =>
+      !(srcFails (fun n => fmS[n]?) g (tb := srcT)).isEmpty).map (·.name)
     let fs := P.funcs.zip (parMap (fun g => (fnFails g, fnScopeInFails g)) P.funcs)
     let out : Std.HashSet String := .ofList (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name))
     let typedScope := typedNext && typed &&
@@ -517,8 +531,8 @@ def linkFails (S : LinkSpec) (file0 : ByteArray) (results : LinkInput → Res)
 
 /-- Print `exclusions` (the line `cargo fv` reads). -/
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := [])
-    (only : Bool := false) (typedNext : Bool := false) : IO Unit :=
-  match exclusions S SC typed extra only typedNext with
+    (only : Bool := false) (typedNext : Bool := false) (srcT : Bool := false) : IO Unit :=
+  match exclusions S SC typed extra only typedNext srcT with
   | some (n :: ns) => IO.eprintln s!"lean-link: {exe}: --verified: exclude: {" ".intercalate (n :: ns)}"
   | _ => pure ()
 
@@ -652,18 +666,23 @@ def main (args0 : List String) : IO UInt32 := do
   let srcOk := srcOk0 && srcOkCp
   -- the typed scope under `--verified` (S11e6): the cleanup compiler `compileExeT`
   let typedOk := deadCleanup && !opt && !tailOn
-  if verified && !srcOk0 then
+  -- #1076: the typed Stock route (`attemptT`, chosen below) also takes a bundle whose program is
+  -- only in `SrcScopeTB` (an `i128` function with a `try_call_indirect` at an `i128`-free
+  -- signature: `legalOkTB`, not `legalOkB`); the legalisation refines it there
+  -- (`legalProg_refinesT`, `attemptT_correct_sourceTB`). The other routes exit below (`srcT`).
+  let srcT := verified && !srcOk0 && typedOk && SrcScopeTB S0.input0
+  if verified && !srcOk0 && !srcT then
     let P := S0.input0.srcProg
     let fmS := funcMap P
-    let bad := P.funcs.filterMap fun g => match srcFails (fun n => fmS[n]?) g with
+    let bad := P.funcs.filterMap fun g => match srcFails (fun n => fmS[n]?) g (tb := typedOk) with
       | [] => none
       | fs => some (g.name, fs)
-    IO.eprintln s!"lean-link: {exe}: --verified: outside the source domain (SrcScopeB): {bad.length} function(s) failing legalOkB/linkFreeB/declSigB {(bad.take 3).map (·.1)}, helperFreeB {helperFreeB P}; not written"
+    IO.eprintln s!"lean-link: {exe}: --verified: outside the source domain ({if typedOk then "SrcScopeTB" else "SrcScopeB"}): {bad.length} function(s) failing {if typedOk then "legalOkTB" else "legalOkB"}/linkFreeB/declSigB {(bad.take 3).map (·.1)}, helperFreeB {helperFreeB P}; not written"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     -- only the failing functions when the executable linked again takes the typed scope
-    -- (`exclusions`' `typedNext`, #1076)
-    printExclusions exe S0 SC typedOk (typedNext := true)
+    -- (`exclusions`' `typedNext`, #1076), there `SrcScopeTB`'s (`srcT`)
+    printExclusions exe S0 SC typedOk (typedNext := true) (srcT := typedOk)
     return 1
   -- the input conditions decided on the CLIF alone (`fnScopeInB`, `addrSlotsInputB`); with
   -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`; with the cleanup
@@ -708,7 +727,7 @@ def main (args0 : List String) : IO UInt32 := do
       IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn{if typedOk then "T" else ""}): {badT.length} function(s) failing {scopeN} (by cause: {causes}) {(badT.take 3).map (·.1)}; not written"
       for (n, fs) in badT do
         IO.eprintln s!"lean-link:   {n}: {fs}"
-      printExclusions exe S0 SC typedOk (typedNext := true)
+      printExclusions exe S0 SC typedOk (typedNext := true) (srcT := srcT)
       return 1
   -- The checked semantic provider handles a CFG function alongside retained
   -- try-call functions. Recompiling that mixed program only through the old
@@ -731,6 +750,20 @@ def main (args0 : List String) : IO UInt32 := do
       (SC.funcs.zip (parMap (fun fi => stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
         fun (fi, b) => if b then some fi.func.name else none
     else []
+  -- #1076: a bundle only in `SrcScopeTB` is taken by the typed Stock route `attemptT` alone;
+  -- every other route names `_source` theorems on `SrcScopeB`: leave out the functions failing
+  -- it (`legalOkB`) and link again
+  if srcT && !(typedV && !stockFnsT.isEmpty) then
+    let P := S0.input0.srcProg
+    let fmS := funcMap P
+    let bad := P.funcs.filterMap fun g => match srcFails (fun n => fmS[n]?) g with
+      | [] => none
+      | fs => some (g.name, fs)
+    IO.eprintln s!"lean-link: {exe}: --verified: outside the source domain (SrcScopeB) of the routes other than the typed Stock route (the bundle's program is in SrcScopeTB, which only attemptT takes): {bad.length} function(s) failing legalOkB/linkFreeB/declSigB {(bad.take 3).map (·.1)}; not written"
+    for (n, fs) in bad do
+      IO.eprintln s!"lean-link:   {n}: {fs}"
+    printExclusions exe S0 SC typedOk (typedNext := true)
+    return 1
   -- #1042: every route below but `attemptT` names `_source` theorems, instantiated at the
   -- compiled input `S0.cp`, so under `--verified` it needs `SrcScopeB` there too (`srcOkCp`):
   -- leave out the functions failing it (`exclusions` on `S`)
@@ -773,7 +806,14 @@ def main (args0 : List String) : IO UInt32 := do
         let progN := if verified then progScopeFailsN SC else 0
         let progTot := if progN = 0 then "" else
           s!"; {progN} function(s) fail a program-level input condition (scopeFails: declSigB/indB/callScopeB/outScopeB), so the executable is outside InScopeInT: no totality claim for it"
-        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim{progTot}"
+        -- #1076: name `attemptT_correct_sourceTB` only where its premise `SrcScopeTB` holds of the
+        -- route's input (the compiled input's source program)
+        let srcTB := if !srcT then "" else
+          let thmTB := if SrcScopeTB (SemanticCompilerWith.input routes[0]! SP true).toLinkInput then
+            ", Link.SemanticCompilerWith.attemptT_correct_sourceTB, Link.SemanticCompilerWith.attemptT_correct_source_peakTB"
+            else ""
+          s!"; the bundle's program is in SrcScopeTB, not SrcScopeB (#1076: i128 functions with a try_call_indirect at an i128-free signature): its legalisation refines it (E2E.LegalProgram.legalProg_refinesT{thmTB})"
+        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim{progTot}{srcTB}"
         return 0
       if let .error e := att then
         let bad := typedStockFails routes[0]! SP
