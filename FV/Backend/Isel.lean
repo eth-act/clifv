@@ -219,6 +219,11 @@ def aapcsConv (c : Option Clif.CallConv) : Bool :=
 /-- Text of an instruction for error messages. -/
 def instText (i : Clif.Inst) : String := Clif.Print.inst (fun _ => none) i
 
+/-- The opcode of a constant of type `ty` for error messages: `f16const`/`f32const`/`f64const`
+at a float type (the parser stores them as `Inst.iconst`), else `iconst.ty` (#1069). -/
+def constText (ty : Clif.Ty) : String :=
+  if ty.isFloat then s!"{ty.name}const" else s!"iconst.{ty.name}"
+
 /-- `InstructionData` of a non-terminator instruction of E (an error with the reason if the
 instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32const`/`f64const`
 (`UnaryIeee32`/`UnaryIeee64` with the literal's bit pattern, as Cranelift's `Ieee32::bits`),
@@ -232,7 +237,7 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
     else if ty = .f32 then pure (instDataV "UnaryIeee32" [opcodeV "F32const", .int imm.toNat])
     else if ty = .f64 then pure (instDataV "UnaryIeee64" [opcodeV "F64const", .int imm.toNat])
-    else throw s!"iconst.{ty.name}"
+    else throw (constText ty)
   | .unary op ty x =>
     match unaryOpcode op with
     | some n =>
