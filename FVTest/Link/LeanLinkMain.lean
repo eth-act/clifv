@@ -94,9 +94,11 @@ route's pipeline and link `leanLinkProductionWith` on its placement `placedProdu
 the units' code, accepted by the typed checks `okRWithTS`: the Stock validator on an integer
 function, the typed validators on `lowerFunction`'s output) is tried instead; coverage
 `attemptT_correct`, `attemptT_correct_depth`, `attemptT_correct_peak` (returned values by
-class). When it fails, the smaller set of those functions or of the typed ones (outside
-`fnScopeInB`; the executable then takes the integer route) is left out of the region (the
-`exclude:` line below). On such an error it
+class). When it fails, the smallest of: the functions failing its typed checks, the functions
+whose placed code is not the units' (their span to the next function is not rust-lld's,
+`spanFails`, #1075; its link checks name the failing check and objects, `linkFails`), those
+Stock-lowered functions, or the typed ones (outside `fnScopeInB`; the executable then takes the
+integer route) is left out of the region (the `exclude:` line below). On such an error it
 also prints the functions failing a per-function condition (`exclusions`, the line
 `--verified: exclude: …`; the typed conditions `fnScopeInTB`, and on a typed input the functions
 failing `fnScopeTB` or the output checks `outChksT`): `cargo fv` then links
@@ -392,6 +394,17 @@ def regionFails (file : ByteArray) (phs : List Phdr) (R n off : Nat) : List Stri
           others.map fun q => s!"regionOkB: PT_LOAD segment {hex q.vaddr}..{hex (q.vaddr + q.memsz)} meets the region")
     hdr ++ seg
 
+/-- The placed functions of `S` whose span to the next placed function (code, gap word, the
+next one's alignment) is not the one in rust-lld's output (`marks`: the bundle's markers, the
+functions' addresses there), with both spans: where the placement's code is not the units'
+(`lean-backend`'s), which rust-lld laid out (#1075). -/
+def spanFails (S : LinkSpec) (marks : List (String × Nat)) : List (String × Nat × Nat) :=
+  let mk := assocMap marks
+  let pa := S.progAddrs
+  (pa.zip pa.tail).filterMap fun (e, e') => match mk[e.1]?, mk[e'.1]? with
+    | some m, some m' => if m' - m == e'.2 - e.2 then none else some (e.1, e'.2 - e.2, m' - m)
+    | _, _ => none
+
 /-- On a link by `Link.leanLinkWithResults S file0 results` (`Link.leanLinkProductionWith`: the
 Stock routes and the typed Stock route `attemptT`) that fails: every region-level check of the
 linker that fails, each with what fails it (at most `k` entries per check, with the number
@@ -461,10 +474,7 @@ def linkFails (S : LinkSpec) (file0 : ByteArray) (results : LinkInput → Res)
     let pa := S.progAddrs
     let words := assocMap (S.names.zip S.sizes)
     let moved :=
-      failLines k "placed spans as rust-lld's (markers)" pa.length
-        ((pa.zip pa.tail).filterMap fun (e, e') => match mk[e.1]?, mk[e'.1]? with
-          | some m, some m' => if m' - m == e'.2 - e.2 then none else some (e.1, e'.2 - e.2, m' - m)
-          | _, _ => none)
+      failLines k "placed spans as rust-lld's (markers)" pa.length (spanFails S marks)
         (fun e => s!"placement: {e.1} ({words[e.1]?.getD 0} words): {e.2.1} bytes to the next function, rust-lld's {e.2.2}") ++
       failLines k "placed at rust-lld's addresses (markers)" pa.length
         (pa.filterMap fun e => match mk[e.1]? with
@@ -720,32 +730,12 @@ def main (args0 : List String) : IO UInt32 := do
     let stockFns := stockFnsT
     if !stockFns.isEmpty then
       -- #722: the typed compiler on the Stock route: the units' code (the Stock route's pipeline
-      -- and placement), the typed checks per function. #1075: `lean-backend` compiles a unit with
-      -- a return-pin function (an `sret` copy or a void call, `returnPinModeB`) with the
-      -- return-pin lowering `Stock.VoidCall.NI.lowerValidated`, the others with `routes[0]`;
-      -- where the two differ on a function, `routes[0]`'s placement is not the reserved layout
-      -- (`regionOkB`/`symsOkB` fail). So when the first attempt fails and some function is
-      -- return-pin eligible, the typed route is tried again with the return-pin lowering (the
-      -- integer route's, `ReturnPinCompilerWith.attempt`); `attemptT_correct` holds for any
-      -- lowering.
-      let pinLower := Backend.Stock.VoidCall.NI.lowerValidated
-      let pinEligible := SC0.funcs.any fun fi =>
-        Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome
-      let SP0 := SC0.placedProductionWith routes[0]! true
-      let att0 := SemanticCompilerWith.attemptT routes[0]! SP0 file0
-      let SPpin := SC0.placedProductionWith pinLower true
-      let attPin : Except String ByteArray := if att0.isOk || !pinEligible then .error "not tried"
-        else SemanticCompilerWith.attemptT pinLower SPpin file0
-      if let .error e := attPin then
-        if pinEligible && !att0.isOk then
-          IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT) with the return-pin lowering (Stock.VoidCall.NI.lowerValidated): {e}"
-      let (SP, att, how) := match attPin with
-        | .ok file => (SPpin, (.ok file : Except String ByteArray),
-            " with the return-pin lowering (Stock.VoidCall.NI.lowerValidated, lean-backend's on return-pin units)")
-        | .error _ => (SP0, att0, "")
+      -- and placement), the typed checks per function
+      let SP := SC0.placedProductionWith routes[0]! true
+      let att := SemanticCompilerWith.attemptT routes[0]! SP file0
       if let .ok file := att then
         IO.FS.writeBinFile exe file
-        IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT{how} (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
+        IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
         if let some f := ldFile then
           match ← ldCheck SP file0 f with
           | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
@@ -769,6 +759,19 @@ def main (args0 : List String) : IO UInt32 := do
         if !badFns.isEmpty && badFns.length < min typedN stockFns.length then
           IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route: leaving out the {badFns.length} function(s) failing the typed checks; not written"
           printExclusions exe S SC true badFns (only := true)
+          return 1
+        -- #1075: where the route's code is not the units' (`lean-backend` compiles a unit with
+        -- an `sret` copy or a void call with the return-pin lowering `Stock.VoidCall.NI`; on
+        -- such an `sret` copy `routes[0]` falls back to `lowerFunction`, and `attemptT` with the
+        -- return-pin lowering fails the typed checks `okRWithTS`: itertools' specializations),
+        -- the placement is not rust-lld's layout and the link's checks of rust-lld's output fail
+        -- (`regionOkB`, `outsideOkB`) with no failing function: leave out the functions whose
+        -- placed span is not rust-lld's when that set is the smallest (they keep cg_clif's code,
+        -- as outside code; `attemptT_correct` has no per-function input premise)
+        let moved := if e == SemanticCompilerWith.outOkTSMsg then [] else (spanFails SP b0.markers).map (·.1)
+        if badFns.isEmpty && !moved.isEmpty && moved.length < min typedN stockFns.length then
+          IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route: leaving out the {moved.length} function(s) whose placed code is not the units' (span to the next function not rust-lld's) {moved.take 3}; not written"
+          printExclusions exe S SC true moved (only := true)
           return 1
       let typedSmaller := typedN ≤ stockFns.length
       IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {stockFns.length} function(s) compiled by the Stock lowering, which compileExeT does not reproduce (lowerFunction) {stockFns.take 3}; leaving out {if typedSmaller then s!"the {typedN} typed function(s)" else s!"those {stockFns.length}"}; not written"
