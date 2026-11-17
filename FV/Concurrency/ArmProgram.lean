@@ -256,6 +256,17 @@ macro "progkeep" : tactic => `(tactic|
     (DPSFP.exec_fp_compare i s).program = s.program := by
   unfold DPSFP.exec_fp_compare; progkeep
 
+@[local simp] theorem dpsfp_advanced_simd_shift_by_immediate_program (i) (s : ArmState) :
+    (DPSFP.exec_advanced_simd_shift_by_immediate i s).program = s.program := by
+  unfold DPSFP.exec_advanced_simd_shift_by_immediate DPSFP.exec_ushr_vector DPSFP.exec_sli_vector
+  progkeep
+
+@[local simp] theorem dpsfp_advanced_simd_scalar_shift_by_immediate_program (i) (s : ArmState) :
+    (DPSFP.exec_advanced_simd_scalar_shift_by_immediate i s).program = s.program := by
+  unfold DPSFP.exec_advanced_simd_scalar_shift_by_immediate DPSFP.exec_ushr_scalar
+    DPSFP.exec_sli_scalar
+  progkeep
+
 @[local simp] theorem ldst_reg_imm_common_program (i inst_str) (s : ArmState) :
     (LDST.exec_reg_imm_common i inst_str s).program = s.program := by
   unfold LDST.exec_reg_imm_common; progkeep

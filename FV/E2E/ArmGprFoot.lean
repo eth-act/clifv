@@ -248,6 +248,14 @@ theorem fp_data_processing_three_source (hk : ¬ 31#5 = k)
   intro v s; unfold DPSFP.exec_fp_data_processing_three_source; gprfree
 theorem fp_compare (hk : ¬ 31#5 = k) (i : FP_compare_cls) : GprFree k (DPSFP.exec_fp_compare i) := by
   intro v s; unfold DPSFP.exec_fp_compare; gprfree
+theorem advanced_simd_shift_by_immediate (hk : ¬ 31#5 = k)
+    (i : Advanced_simd_shift_by_immediate_cls) :
+    GprFree k (DPSFP.exec_advanced_simd_shift_by_immediate i) := by
+  intro v s; unfold DPSFP.exec_advanced_simd_shift_by_immediate; gprfree
+theorem advanced_simd_scalar_shift_by_immediate (hk : ¬ 31#5 = k)
+    (i : Advanced_simd_scalar_shift_by_immediate_cls) :
+    GprFree k (DPSFP.exec_advanced_simd_scalar_shift_by_immediate i) := by
+  intro v s; unfold DPSFP.exec_advanced_simd_scalar_shift_by_immediate; gprfree
 
 /-! ### Loads and stores: the shared operations -/
 
@@ -552,6 +560,9 @@ theorem gprFree_exec_inst (ai : ArmInst) {k : BitVec 5} (hk : ¬ 31#5 = k)
     | FP_data_processing_two_source i => exact fp_data_processing_two_source hk i v s
     | FP_data_processing_three_source i => exact fp_data_processing_three_source hk i v s
     | FP_compare i => exact fp_compare hk i v s
+    | Advanced_simd_shift_by_immediate i => exact advanced_simd_shift_by_immediate hk i v s
+    | Advanced_simd_scalar_shift_by_immediate i =>
+      exact advanced_simd_scalar_shift_by_immediate hk i v s
   | LDST x =>
     cases x with
     | Reg_imm_post_indexed i =>

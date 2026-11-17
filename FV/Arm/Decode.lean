@@ -145,6 +145,13 @@ def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
   -- (FV addition) Advanced SIMD modified immediate (op2 = 0000, op3 = xxxxxxxx1).
   | [0, Q:1, op:1, 0111100000, a:1, b:1, c:1, cmode:4, o2:1, 1, d:1, e:1, f:1, g:1, h:1, Rd:5] =>
     DPSFP (Advanced_simd_modified_immediate {Q, op, a, b, c, cmode, o2, d, e, f, g, h, Rd})
+  -- (FV addition) Advanced SIMD shift by immediate (op2 = 0xxx with immh ≠ 0000, op3 =
+  -- xxxxxxxx1): after modified immediate, which takes `immh = 0000`. Scalar shift by immediate
+  -- (op0 = 01x1, op2 = 10xx).
+  | [0, Q:1, U:1, 011110, immh:4, immb:3, opcode:5, 1, Rn:5, Rd:5] =>
+    DPSFP (Advanced_simd_shift_by_immediate {Q, U, immh, immb, opcode, Rn, Rd})
+  | [01, U:1, 111110, immh:4, immb:3, opcode:5, 1, Rn:5, Rd:5] =>
+    DPSFP (Advanced_simd_scalar_shift_by_immediate {U, immh, immb, opcode, Rn, Rd})
   -- (FV addition) Scalar floating-point: data-processing (2 source) (op3 = xxxxxxx10),
   -- compare (op3 = xxxxx1000), data-processing (3 source) (op1 = 1x).
   | [M:1, 0, S:1, 11110, ftype:2, 1, Rm:5, opcode:4, 10, Rn:5, Rd:5] =>

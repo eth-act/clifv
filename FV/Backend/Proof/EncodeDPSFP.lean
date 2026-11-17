@@ -58,6 +58,15 @@ theorem decode_armBits_FP_compare (x : FP_compare_cls) :
     decode_raw_inst (armBits (.DPSFP (.FP_compare x))) = some (ArmInst.DPSFP (.FP_compare x)).norm := by
   decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
 
+/-- `immh = 0000` words are modified immediates; `norm` maps them there. -/
+theorem decode_armBits_Advanced_simd_shift_by_immediate (x : Advanced_simd_shift_by_immediate_cls) :
+    decode_raw_inst (armBits (.DPSFP (.Advanced_simd_shift_by_immediate x))) = some (ArmInst.DPSFP (.Advanced_simd_shift_by_immediate x)).norm := by
+  decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
+
+theorem decode_armBits_Advanced_simd_scalar_shift_by_immediate (x : Advanced_simd_scalar_shift_by_immediate_cls) :
+    decode_raw_inst (armBits (.DPSFP (.Advanced_simd_scalar_shift_by_immediate x))) = some (ArmInst.DPSFP (.Advanced_simd_scalar_shift_by_immediate x)).norm := by
+  decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
+
 theorem decode_armBits_DPSFP (x : DataProcSFPInst) :
     decode_raw_inst (armBits (.DPSFP x)) = some (ArmInst.DPSFP x).norm := by
   cases x with
@@ -73,5 +82,8 @@ theorem decode_armBits_DPSFP (x : DataProcSFPInst) :
   | FP_data_processing_two_source x => exact decode_armBits_FP_data_processing_two_source x
   | FP_data_processing_three_source x => exact decode_armBits_FP_data_processing_three_source x
   | FP_compare x => exact decode_armBits_FP_compare x
+  | Advanced_simd_shift_by_immediate x => exact decode_armBits_Advanced_simd_shift_by_immediate x
+  | Advanced_simd_scalar_shift_by_immediate x =>
+    exact decode_armBits_Advanced_simd_scalar_shift_by_immediate x
 
 end Backend

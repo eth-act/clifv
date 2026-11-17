@@ -231,6 +231,46 @@ deriving DecidableEq, Repr
 
 instance : ToString FP_compare_cls where toString a := toString (repr a)
 
+/-- (FV addition, ported from LNSym) Advanced SIMD shift by immediate: USHR, SLI (vector). -/
+structure Advanced_simd_shift_by_immediate_cls where
+  _fixed1 : BitVec 1 := 0b0#1      -- [31:31]
+  Q       : BitVec 1               -- [30:30]
+  U       : BitVec 1               -- [29:29]
+  _fixed2 : BitVec 6 := 0b011110#6 -- [28:23]
+  immh    : BitVec 4               -- [22:19]
+  immb    : BitVec 3               -- [18:16]
+  opcode  : BitVec 5               -- [15:11]
+  _fixed3 : BitVec 1 := 0b1#1      -- [10:10]
+  Rn      : BitVec 5               --   [9:5]
+  Rd      : BitVec 5               --   [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString Advanced_simd_shift_by_immediate_cls where toString a := toString (repr a)
+
+def Advanced_simd_shift_by_immediate_cls.toBitVec32
+  (x : Advanced_simd_shift_by_immediate_cls) : BitVec 32 :=
+  x._fixed1 ++ x.Q ++ x.U ++ x._fixed2 ++ x.immh ++ x.immb ++ x.opcode ++ x._fixed3 ++ x.Rn ++ x.Rd
+
+/-- (FV addition, ported from LNSym) Advanced SIMD scalar shift by immediate: USHR, SLI
+(scalar). -/
+structure Advanced_simd_scalar_shift_by_immediate_cls where
+  _fixed1 : BitVec 2 := 0b01#2     -- [31:30]
+  U       : BitVec 1               -- [29:29]
+  _fixed2 : BitVec 6 := 0b111110#6 -- [28:23]
+  immh    : BitVec 4               -- [22:19]
+  immb    : BitVec 3               -- [18:16]
+  opcode  : BitVec 5               -- [15:11]
+  _fixed3 : BitVec 1 := 0b1#1      -- [10:10]
+  Rn      : BitVec 5               --   [9:5]
+  Rd      : BitVec 5               --   [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString Advanced_simd_scalar_shift_by_immediate_cls where toString a := toString (repr a)
+
+def Advanced_simd_scalar_shift_by_immediate_cls.toBitVec32
+  (x : Advanced_simd_scalar_shift_by_immediate_cls) : BitVec 32 :=
+  x._fixed1 ++ x.U ++ x._fixed2 ++ x.immh ++ x.immb ++ x.opcode ++ x._fixed3 ++ x.Rn ++ x.Rd
+
 inductive DataProcSFPInst where
   | Advanced_simd_two_reg_misc :
     Advanced_simd_two_reg_misc_cls → DataProcSFPInst
@@ -256,6 +296,10 @@ inductive DataProcSFPInst where
     FP_data_processing_three_source_cls → DataProcSFPInst
   | FP_compare :
     FP_compare_cls → DataProcSFPInst
+  | Advanced_simd_shift_by_immediate :
+    Advanced_simd_shift_by_immediate_cls → DataProcSFPInst
+  | Advanced_simd_scalar_shift_by_immediate :
+    Advanced_simd_scalar_shift_by_immediate_cls → DataProcSFPInst
 deriving DecidableEq, Repr
 
 instance : ToString DataProcSFPInst where toString a := toString (repr a)

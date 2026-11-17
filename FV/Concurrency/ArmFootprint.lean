@@ -188,6 +188,14 @@ theorem fp_data_processing_three_source (i) :
   unfold DPSFP.exec_fp_data_processing_three_source; memfree
 theorem fp_compare (i) : DPSFP.exec_fp_compare i (setMem m s) =
     setMem m (DPSFP.exec_fp_compare i s) := by unfold DPSFP.exec_fp_compare; memfree
+theorem advanced_simd_shift_by_immediate (i) :
+    DPSFP.exec_advanced_simd_shift_by_immediate i (setMem m s) =
+      setMem m (DPSFP.exec_advanced_simd_shift_by_immediate i s) := by
+  unfold DPSFP.exec_advanced_simd_shift_by_immediate; memfree
+theorem advanced_simd_scalar_shift_by_immediate (i) :
+    DPSFP.exec_advanced_simd_scalar_shift_by_immediate i (setMem m s) =
+      setMem m (DPSFP.exec_advanced_simd_scalar_shift_by_immediate i s) := by
+  unfold DPSFP.exec_advanced_simd_scalar_shift_by_immediate; memfree
 
 theorem reserved (i) : Reserved.exec_reserved i (setMem m s) =
     setMem m (Reserved.exec_reserved i s) := by unfold Reserved.exec_reserved; memfree
@@ -216,7 +224,8 @@ theorem exec_nonldst (ai : ArmInst) (h : ArmInst.isLDST ai = false) : MemFree (e
       advanced_simd_three_same, conversion_between_FP_and_Int, advanced_simd_across_lanes,
       fp_data_processing_one_source, fp_immediate, fp_conditional_select,
       advanced_simd_modified_immediate, fp_data_processing_two_source,
-      fp_data_processing_three_source, fp_compare]
+      fp_data_processing_three_source, fp_compare, advanced_simd_shift_by_immediate,
+      advanced_simd_scalar_shift_by_immediate]
   | RES i => simp only [exec_inst, reserved]
 
 /-- The instruction `stepi` executes in `s` (`none`: no instruction fetched or decoded). -/
