@@ -19,6 +19,7 @@ import FV.Link.SemanticCompileDefs
 import FV.Link.SemanticCompileT
 import FV.Link.TypedCompileModes
 import FV.Link.TypedStockShared
+import FV.E2E.StaticShare
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -69,3 +70,7 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms Link.TypedStockShared.stockSteps_fst
 #print axioms Link.TypedStockShared.stockSteps_placed
 #print axioms Link.TypedStockShared.attemptTFrom_eq
+
+-- link-check: the integer and typed Stock per-function checks from one evaluation
+#print axioms E2E.LinkCheck.semanticForOfNI_eq
+#print axioms E2E.LinkCheck.withTSOfNI_eq
