@@ -970,6 +970,130 @@ def checkW (f g : Function) (cert : Cert) : Bool :=
     blockOk C true b b' && (bs.zip bs').all fun (x, y) => blockOk C false x y
   | _, _ => false
 
+/-! ### `checkW` as the compiler runs it (#1074)
+
+`termOk` recomputes `C.T0` (`maxValueId`) and the two `freshValue`s at every `try_call` and
+`try_call_indirect`, and `freshValue g` once per pair component inside `C.comps.all`: a
+function's size times its `try_call`s times its pairs (ruint's `bits::tests::test_primitive_shifts`:
+105,241 instructions, 6,120 `try_call`s, did not finish in an hour). `checkWF` computes the three
+once per function; `checkW_eq_F` (`@[csimp]`) proves it equal. -/
+
+/-- `termOk` with `C.T0`, `C.f.freshValue` and `C.g.freshValue` given (`t0`, `ff`, `gf`). -/
+def termOkF (C : Ctx) (t0 ff gf : Nat) : Terminator → List Stmt → Terminator → Bool
+  | .jump bc, ts, .jump bc' => ts.isEmpty && bcOk C bc bc'
+  | .brif c t e, ts, .brif c' t' e' =>
+    bcOk C t t' && bcOk C e e' &&
+      match C.pair c with
+      | some (lo, hi) => C.fresh c' && pureOk C Pat.cond [lo, hi] [c'] ts
+      | none => ts.isEmpty && c' == c && C.plain c
+  | .brTable x d tbl, ts, .brTable x' d' tbl' =>
+    ts.isEmpty && x' == x && C.plain x && bcOk C d d' && tbl.length == tbl'.length &&
+      (tbl.zip tbl').all fun (a, b) => bcOk C a b
+  | .ret vs, ts, .ret vs' =>
+    ts.isEmpty &&
+      match groups C.f.sig.returns with
+      | some rg => expandArgs C rg vs == some vs'
+      | none => false
+  | .trap c, ts, .trap c' => ts.isEmpty && c' == c
+  | .tryCall fn args et, ts, .tryCall fn' args' et' =>
+    ts.isEmpty && fn' == fn && et'.sig == et.sig && et'.normal.block == et.normal.block &&
+      C.entryId? != some et.normal.block &&
+      decide (t0 ≤ ff) && decide (t0 ≤ gf) &&
+      decide (C.zero < gf) && C.comps.all (fun a => decide (a < gf)) &&
+      match C.f.extern? fn, C.g.sigDecls.lookup et.sig, C.f.block? et.normal.block with
+      | some e, some d', some B =>
+        match sigExp e.sig, groups e.sig.params, groups e.sig.returns with
+        | some s', some gs, some rg =>
+          C.g.extern? fn == some { e with sig := s' } &&
+            AbiParam.tys d'.params == AbiParam.tys s'.params &&
+            AbiParam.tys d'.returns == AbiParam.tys s'.returns &&
+            expandArgs C gs args == some args' &&
+            expandTry C rg et.normal.args B.params == some et'.normal.args
+        | _, _, _ => false
+      | _, _, _ => false
+  | .tryCallIndirect c args et, ts, .tryCallIndirect c' args' et' =>
+    ts.isEmpty && c' == c && C.plain c && et'.sig == et.sig &&
+      et'.normal.block == et.normal.block && C.entryId? != some et.normal.block &&
+      decide (t0 ≤ ff) && decide (t0 ≤ gf) &&
+      decide (C.zero < gf) && C.comps.all (fun a => decide (a < gf)) &&
+      match C.f.sigDecls.lookup et.sig, C.f.block? et.normal.block with
+      | some d, some B =>
+        match sigExp d, groups d.params, groups d.returns with
+        | some d', some gs, some rg =>
+          C.g.sigDecls.lookup et.sig == some d' &&
+            expandArgs C gs args == some args' &&
+            expandTry C rg et.normal.args B.params == some et'.normal.args
+        | _, _, _ => false
+      | _, _ => false
+  | _, _, _ => false
+
+theorem termOk_eq_F (C : Ctx) (t : Terminator) (ts : List Stmt) (t' : Terminator) :
+    termOk C t ts t' = termOkF C C.T0 C.f.freshValue C.g.freshValue t ts t' := by
+  cases t <;> cases t' <;> rfl
+
+/-- `codeOk` over `termOkF`. -/
+def codeOkF (C : Ctx) (t0 ff gf : Nat) : List Stmt → Terminator → List Stmt → Terminator → Bool
+  | [], t, ts, t' => termOkF C t0 ff gf t ts t'
+  | s :: ss, t, ts, t' =>
+    match planOf C s with
+    | some pl => segOk C s pl (ts.take pl.len) && codeOkF C t0 ff gf ss t (ts.drop pl.len) t'
+    | none => false
+
+theorem codeOk_eq_F (C : Ctx) : ∀ (ss : List Stmt) (t : Terminator) (ts : List Stmt)
+    (t' : Terminator), codeOk C ss t ts t' = codeOkF C C.T0 C.f.freshValue C.g.freshValue ss t ts t'
+  | [], t, ts, t' => by rw [codeOk, codeOkF, termOk_eq_F]
+  | s :: ss, t, ts, t' => by
+    rw [codeOk, codeOkF]
+    cases planOf C s with
+    | none => rfl
+    | some pl => simp only [codeOk_eq_F C ss]
+
+/-- `blockOk` over `codeOkF`. -/
+def blockOkF (C : Ctx) (t0 ff gf : Nat) (isEntry : Bool) (b b' : Block) : Bool :=
+  b'.id == b.id && decide (b'.params.map (·.1)).Nodup &&
+    if isEntry then
+      match groups C.f.sig.params, b'.body with
+      | some gs, z :: rest =>
+        entryParamsOk C gs b.params b'.params && z == C.zeroStmt &&
+          codeOkF C t0 ff gf b.body b.term rest b'.term
+      | _, _ => false
+    else paramsOk C b.params b'.params && codeOkF C t0 ff gf b.body b.term b'.body b'.term
+
+theorem blockOk_eq_F (C : Ctx) (isEntry : Bool) (b b' : Block) :
+    blockOk C isEntry b b' = blockOkF C C.T0 C.f.freshValue C.g.freshValue isEntry b b' := by
+  simp only [blockOk, blockOkF, codeOk_eq_F]
+
+/-- `certOk` with `C.T0` given. -/
+def certOkF (C : Ctx) (t0 : Nat) : Bool :=
+  decide (t0 ≤ C.zero) &&
+  C.cert.pairs.all (fun (_, a, b) =>
+    a != b && decide (t0 ≤ a) && decide (t0 ≤ b) && a != C.zero && b != C.zero) &&
+  C.cert.pairs.all fun (v, a, b) => C.cert.pairs.all fun (w, c, d) =>
+    v == w || (a != c && a != d && b != c && b != d)
+
+/-- `checkW` as the compiler runs it (`checkW_eq_F`, `@[csimp]`): `T0` and the two
+`freshValue`s once per function. -/
+def checkWF (f g : Function) (cert : Cert) : Bool :=
+  let C : Ctx := ⟨f, g, cert⟩
+  let t0 := C.T0
+  let ff := f.freshValue
+  let gf := g.freshValue
+  g.name == f.name && g.slots == f.slots && g.globals == f.globals &&
+  sigExp f.sig == some g.sig &&
+  decide ((defsOf f).map (·.1)).Nodup &&
+  (idsOf f).all (fun v => decide (v < t0)) &&
+  certOkF C t0 &&
+  g.blocks.length == f.blocks.length &&
+  match f.blocks, g.blocks with
+  | b :: bs, b' :: bs' =>
+    blockOkF C t0 ff gf true b b' && (bs.zip bs').all fun (x, y) => blockOkF C t0 ff gf false x y
+  | _, _ => false
+
+@[csimp] theorem checkW_eq_F : @checkW = @checkWF := by
+  funext f g cert
+  simp only [checkW, checkWF, blockOk_eq_F]
+  rfl
+
 /-- The domain of `check` before `i128` indirect calls were validated (S4): no
 `try_call_indirect`, and no `call_indirect` whose declared call-site signature has an `i128`
 parameter or return. -/
