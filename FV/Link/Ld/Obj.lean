@@ -50,6 +50,7 @@ def shtInitArray : Nat := 14
 def shtFiniArray : Nat := 15
 def shtPreinitArray : Nat := 16
 def shtGroup : Nat := 17
+def shtSymtabShndx : Nat := 18
 def shtNote : Nat := 7
 def shfWrite : Nat := 1
 def shfAlloc : Nat := 2
@@ -71,7 +72,10 @@ structure Sec where
   deriving Inhabited, Repr
 
 /-- A symbol of an input object (`bind`: `0` local, `1` global, `2` weak; `type`: `6` TLS,
-`3` section, `4` file; `shndx`: `0` undefined, `0xfff1` absolute, `0xfff2` common). -/
+`3` section, `4` file; `shndx`: `0` undefined, `0xfff1` absolute, `0xfff2` common, unless
+`xidx`). `xidx`: its `st_shndx` was `SHN_XINDEX` (`0xffff`) and `shndx` is its entry in the
+`SHT_SYMTAB_SHNDX` section, a section index (an object with more than `0xff00` sections, #1077:
+then the indices `0xff00` and above are sections too). -/
 structure Sym where
   name : String
   value : Nat
@@ -79,6 +83,7 @@ structure Sym where
   bind : Nat
   type : Nat
   shndx : Nat
+  xidx : Bool := false
   deriving Inhabited, Repr
 
 /-- A relocation with addend (`SHT_RELA`): offset in its section, type, symbol index. -/
@@ -137,15 +142,22 @@ def Obj.parse (name member : String) (data : ByteArray) : Except String Obj := d
     let st := secs[t]!
     let strO := (secs[st.link]!).off
     let n := st.size / 24
+    -- the symbols' extended section indices (`SHT_SYMTAB_SHNDX` linked to the symbol table)
+    let xs := secs.findIdx? fun s => s.type == shtSymtabShndx && s.link == t
     firstGlobal := st.info
     syms := Array.mkEmpty n
     for j in [0:n] do
       let o := st.off + 24 * j
       let info := rdLE data (o + 4) 1
+      let shndx0 := rdLE data (o + 6) 2
+      let (shndx, xidx) ← if shndx0 == 0xffff then
+          match xs with
+          | some x => pure (rdLE data ((secs[x]!).off + 4 * j) 4, true)
+          | none => throw s!"{name}: symbol {j} has st_shndx SHN_XINDEX and no SHT_SYMTAB_SHNDX section"
+        else pure (shndx0, false)
       syms := syms.push {
         name := cstrAt data (strO + rdLE data o 4), value := rdLE data (o + 8) 8,
-        size := rdLE data (o + 16) 8, bind := info >>> 4, type := info &&& 15,
-        shndx := rdLE data (o + 6) 2 }
+        size := rdLE data (o + 16) 8, bind := info >>> 4, type := info &&& 15, shndx, xidx }
   return { name, member, data, secs, syms, firstGlobal, relaOf }
 
 /-- The relocations applying to section `i`. -/

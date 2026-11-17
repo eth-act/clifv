@@ -52,8 +52,9 @@ structure St where
 def shnCommon : Nat := 0xfff2
 def shnAbs : Nat := 0xfff1
 
-/-- A symbol defined in a regular section of its file. -/
-def Sym.inSec (s : Sym) : Bool := s.shndx != 0 && s.shndx < 0xff00
+/-- A symbol defined in a regular section of its file: a nonzero index below `SHN_LORESERVE`
+(`0xff00`), or an extended index (`xidx`, #1077). -/
+def Sym.inSec (s : Sym) : Bool := s.shndx != 0 && (s.xidx || s.shndx < 0xff00)
 
 /-- Adds an object: COMDAT groups, then its global symbols. -/
 def St.addObj (st : St) (o : Obj) : Except String St := do
@@ -82,7 +83,7 @@ def St.addObj (st : St) (o : Obj) : Except String St := do
         if !weak then
           st := { st with syms := st.syms.insert sy.name (.undef false), queue := st.queue.push (a, m) }
       | _ => pure ()
-    else if sy.shndx == shnCommon then
+    else if !sy.xidx && sy.shndx == shnCommon then
       match cur with
       | some (.defd _ _ false) | some (.common _ _) => pure ()
       | _ => st := { st with syms := st.syms.insert sy.name (.common fi j) }
@@ -155,7 +156,7 @@ def St.target (st : St) (fi j : Nat) : Target :=
   let sy := o.syms[j]!
   let local_ (f : Nat) (s : Sym) : Target :=
     if s.inSec then .sec (f, s.shndx) s.value (s.type == 6)
-    else if s.shndx == shnAbs then .abs s.value
+    else if !s.xidx && s.shndx == shnAbs then .abs s.value
     else .undef s.name false
   if sy.bind == 0 || j < o.firstGlobal then local_ fi sy
   else match st.syms[sy.name]? with
