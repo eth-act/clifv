@@ -19,7 +19,9 @@ open Clif Opt.Legal Opt.Legal.X Opt.Legalize128
 
 /-! ## The source domain with unwinding, `try_call_indirect` included -/
 
-/-- **The source domain of a program `P` with unwinding, `try_call_indirect` included** over the base environment `B`: `ProgCtxT` of `B` without unwinding; where a function mentions `i128`, `B`'s contracts for its
+/-- **The source domain of a program `P` with unwinding, `try_call_indirect` included** over the
+base environment `B`: `ProgCtxT` of `B` without unwinding; where a function mentions `i128`, `B`'s
+contracts for its
 unwinding externs (`ExtLegalX`: an extern unwinds alike on the split arguments;
 `EnvKeepsAllocsX`; `ExnArityOk`); where the legalised program has indirect calls, `IndScopeX`
 (the externs keep the symbols when they unwind too); and the handler-edge check `exnOkT`
@@ -32,6 +34,18 @@ structure ProgCtxXT (P : Program) (B : XEnv) (syms : String → Option Nat) : Pr
   exn : ∀ f ∈ P.funcs, mentions128 f = true → ∀ g cert, function128Cert f = .ok (g, cert) →
     exnOkT f g cert = true
 
+/-- **The old source domain with unwinding is inside the new one** (`ProgCtx.toT`; on
+`legalOkB` an `i128` function has no `try_call_indirect`, so `exnOk` is `exnOkT`). -/
+theorem ProgCtxX.toT {P : Program} {B : XEnv} {syms : String → Option Nat}
+    (hC : ProgCtxX P B syms) : ProgCtxXT P B syms where
+  ctx := hC.ctx.toT
+  baseX := hC.baseX
+  indX := hC.indX
+  exn f hf hm g cert hc := by
+    refine exnOkT_of_exnOk (hC.exn f hf hm g cert hc) fun B hB c args et ht => ?_
+    rcases Complete.legalOkB_cases (hC.ctx.ok f hf) with ⟨hm', -, -⟩ | ⟨hp, -⟩
+    · rw [hm] at hm'; cases hm'
+    · exact hp.noTryInd B hB c args et ht
 
 namespace ProgCtxXT
 

@@ -7,6 +7,7 @@ import FV.E2E.LegalSourceT
 import FV.Link.SemanticExeSourceTB
 import FV.E2E.LegalUnwindTWitness
 import FVTest.Link.I128TryIndT
+import FV.E2E.LegalProgramTWitness
 
 -- #1076: `i128` functions with a `try_call_indirect` (`legalOkTB`, `SrcScopeTB`)
 #print axioms Opt.Legal.X.raise_sim
@@ -38,3 +39,6 @@ import FVTest.Link.I128TryIndT
 #print axioms Clif.Rust.LegalXTWitness.caught
 #print axioms Clif.Rust.LegalXTWitness.domains -- witness: native_decide
 #print axioms E2E.I128TryIndTWitness.correct_source_applies -- witness: native_decide
+#print axioms E2E.LegalProgram.ProgCtxX.toT
+#print axioms E2E.LegalProgram.Witness.add_refinesT
+#print axioms E2E.LegalProgram.XWitness.caught_refinesXT
