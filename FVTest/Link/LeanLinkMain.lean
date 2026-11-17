@@ -220,7 +220,11 @@ the program-level conditions (`scopeFails`) are premises of the integer route on
 `compileExeT`'s failures are listed on its own exit). So when the executable linked again takes
 the typed scope — `typed`, and a function left in fails `fnScopeInB` (it meets
 `fnScopeInTB`/`fnScopeInTCB`) — only the functions failing a per-function condition are left
-out; otherwise, as before, those failing `scopeFails` too (one link fewer). -/
+out, and of those failing `scopeFails` only the ones failing a call-site condition
+(`callScopeB:*`): the typed Stock route checks those call sites again on the compiled code
+(`callRegs/blrRegs`, `typedStockFails`), so leaving them in usually costs one more link (k256:
+all 56 functions failing `callScopeB:blrRegs` failed it there; crypto-bigint: 0 of 5).
+Otherwise, as before, every function failing `scopeFails` (one link fewer). -/
 def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (only : Bool := false)
     (typedNext : Bool := false) : Option (List String) :=
   let srcP := S.input0.srcProg
@@ -242,9 +246,10 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (onl
     let out : Std.HashSet String := .ofList (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name))
     let typedScope := typedNext && typed &&
       fs.any fun (g, _, i) => !i.isEmpty && !out.contains g.name
-    let scope := if typedScope then [] else
-      (P.funcs.zip (parMap (fun g => scopeFails (fun n => fm[n]?) P syms g) P.funcs)).filterMap
-        fun (g, s) => if s.isEmpty then none else some g.name
+    let scope := (P.funcs.zip (parMap (fun g => scopeFails (fun n => fm[n]?) P syms g)
+      P.funcs)).filterMap fun (g, s) =>
+        if s.isEmpty || (typedScope && !s.any (·.startsWith "callScopeB")) then none
+        else some g.name
     some (Front.dedupFirst (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name) ++ scope ++ extra))
 
 /-- The number of functions of `SC`'s compiled program failing a program-level input condition
