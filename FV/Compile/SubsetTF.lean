@@ -71,6 +71,19 @@ def instETFL (i : Inst) : Bool := instETF i || f64ConstET i
 theorem instETFL_of_instETF {i : Inst} (h : instETF i = true) : instETFL i = true := by
   simp [instETFL, h]
 
+/-- #35: an `fcopysign` of two operands at `f32`/`f64` (`instData` admits these; the root
+`rule_lower_685` is `Backend.Proof.lowerRulesCorrectCS_program`). -/
+def fCopysignET : Inst → Bool
+  | .float .fcopysign ty [_, _] => ty.isArithFloat
+  | _ => false
+
+/-- **The instructions of the typed scope with the proven float operations, the literal pool and
+`fcopysign`** (#35): `instETFL` or an `fCopysignET`. -/
+def instETFLC (i : Inst) : Bool := instETFL i || fCopysignET i
+
+theorem instETFLC_of_instETFL {i : Inst} (h : instETFL i = true) : instETFLC i = true := by
+  simp [instETFLC, h]
+
 /-- The operands in integer positions with the conversions: an `fcvt_from_*`'s operand is an
 integer (the CLIF verifier's typing). -/
 def intOperandsF : Inst → List Nat
