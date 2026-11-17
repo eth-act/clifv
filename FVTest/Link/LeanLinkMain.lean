@@ -248,7 +248,9 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (onl
       fs.any fun (g, _, i) => !i.isEmpty && !out.contains g.name
     let scope := (P.funcs.zip (parMap (fun g => scopeFails (fun n => fm[n]?) P syms g)
       P.funcs)).filterMap fun (g, s) =>
-        if s.isEmpty || (typedScope && !s.any (·.startsWith "callScopeB")) then none
+        -- SCRATCH (CallRegs1 diag): keep every function failing only `scopeFails` in, so the
+        -- call-site failures reach the typed Stock route's checks (measured there)
+        if s.isEmpty || typedScope then none
         else some g.name
     some (Front.dedupFirst (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name) ++ scope ++ extra))
 
@@ -326,6 +328,110 @@ def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP 
       linkChksWithTS C P e.1 e.2).filter (!·.2)).map (·.1))) R
   (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
 
+/-! SCRATCH (CallRegs1, #753 measurement; NOT for merge): per call site, why the typed check
+`callRegs/blrRegs` (`siteWithOkC`/`blrOkC`) and the integer route's `callScopeB` fail. -/
+
+def dReg : Backend.Reg → String
+  | .vreg n .int => s!"v{n}"
+  | .vreg n .float => s!"v{n}f"
+  | .x n => s!"x{n}"
+  | .xzr => "xzr"
+  | .sp => "sp"
+  | .v n => s!"q{n}"
+
+def dRegs (rs : List Backend.Reg) : String := "[" ++ ",".intercalate (rs.map dReg) ++ "]"
+
+def dParam (p : Clif.AbiParam) : String :=
+  let t := (reprStr p.ty).replace "Clif.Ty." ""
+  match p.purpose with
+  | .sret => s!"sret {t}"
+  | .sarg n => s!"sarg({n}) {t}"
+  | .vmctx => s!"vmctx {t}"
+  | .normal => t
+
+def dSig (s : Clif.Signature) : String :=
+  s!"({", ".intercalate (s.params.map dParam)}) -> ({", ".intercalate (s.returns.map dParam)})"
+
+def dPairs (ps : List (Backend.Reg × Backend.Reg)) : String :=
+  "[" ++ ",".intercalate (ps.map fun p => s!"{dReg p.1}:{dReg p.2}") ++ "]"
+
+open Backend in
+/-- SCRATCH: `g`'s failing compiled call sites and failing CLIF indirect-call sites. -/
+def diagFn (F : String → Option Clif.Function) (P : Clif.Program) (S : String → Option Nat)
+    (g : Clif.Function) (r : Except String Art) : List String :=
+  let Ds := declSet g
+  let D := fun n => Ds.contains n
+  let sigs := indSigs g
+  let ind := indFreeB g
+  let may := indToWithB S ind D sigs g
+  let why (h : Clif.Function) : String :=
+    (if D h.name && gotDeclB g h.name then "GOT-decl" else "") ++
+    (if indMatchWithB sigs h then "+IndSigMatch" else "")
+  let head := s!"{g.name}\tFN\tsig {dSig g.sig}\tindSigs {sigs.map dSig}\tdecl {g.externs.length} (non-colocated {(g.externs.filter (!·.2.colocated)).length})"
+  -- the CLIF indirect-call sites failing `indSiteB` (the integer route's `callScopeB:blrRegs`)
+  let clifSite (kind : String) (s : Clif.Signature) (args : List Nat) : Option String :=
+    let cr := callRegs s args
+    let bad := P.funcs.filter fun h => may h && (regLocs h.sig).length == cr.length &&
+      !decide (regLocs h.sig = cr)
+    if bad.isEmpty then none else
+    some s!"{g.name}\tCLIF {kind}\tsig {dSig s}\targs {args.length} callRegs {dRegs cr}\tfailing {bad.length} (GOT-decl only {(bad.filter fun h => !indMatchWithB sigs h).length})\t{"; ".intercalate ((bad.take 4).map fun h => s!"{h.name} [{why h}] {dSig h.sig} {dRegs (regLocs h.sig)}")}"
+  let clif := g.blocks.flatMap fun B =>
+    (B.body.filterMap fun st => match st.inst with
+      | .callIndirect sg _ args => (g.sigDecls.lookup sg).bind fun s => clifSite "call_indirect" s args
+      | _ => none) ++
+    match B.term with
+    | .tryCallIndirect _ args et => ((g.sigDecls.lookup et.sig).bind fun s =>
+        clifSite "try_call_indirect" s args).toList
+    | _ => []
+  match r with
+  | .error e => head :: s!"{g.name}\tPIPE-ERROR {e}" :: clif
+  | .ok a =>
+  let vc := a.vcp
+  let sites := (List.range vc.blocks.size).flatMap fun b =>
+    let vb := vc.blocks[b]!
+    (List.range vb.insts.size).filterMap fun k =>
+      let info? := match vb.insts[k]! with
+        | .call info => some (info, "call")
+        | .tryCall info _ => some (info, "tryCall")
+        | _ => none
+      match info? with
+      | none => none
+      | some (info, kind) =>
+        let ok := siteWithOkC F P g may vc info
+        let ctx := (List.range (min k 3)).reverse.map fun j => (reprStr vb.insts[k - 1 - j]!).take 200
+        let tag := if ok then "SITE-OK" else "SITE-FAIL"
+        some (match info.dest with
+          | .sym n =>
+            let hs := match F n with
+              | some h => s!"callee sig {dSig h.sig} regLocs {dRegs (regLocs h.sig)} retRegs {dRegs (sigRetRegs h.sig)} declared {declB g n}"
+              | none => "outside P"
+            s!"{g.name}\t{tag} {kind} b{b}.{k}\tbl {n}\tuses {dPairs info.uses}\tdefs {dPairs info.defs}\t{hs}"
+          | .reg rr =>
+            let got := match rr with
+              | .vreg t .int => E2E.gotOf vc t
+              | _ => none
+            let shape := s!"dest {dReg rr} usesVirt {info.uses.all (·.1.isVirtual)} defsVirt {info.defs.all (·.2.isVirtual)}"
+            let bad := P.funcs.filter fun h => may h &&
+              !(match got with | some n => h.name != n | none => false) &&
+              (regLocs h.sig).length == info.uses.length &&
+              !(decide (info.uses.map (·.2) = regLocs h.sig) && defsOkC h.sig info.defs)
+            let badS := (bad.take 6).map fun h =>
+              s!"{h.name} [{why h}] sig {dSig h.sig} regLocs {dRegs (regLocs h.sig)} retRegs {dRegs (sigRetRegs h.sig)} argsEq {decide (info.uses.map (·.2) = regLocs h.sig)} defsOk {defsOkC h.sig info.defs}"
+            s!"{g.name}\t{tag} {kind} b{b}.{k}\tblr {shape}\tgot {got}\tuses {dPairs info.uses}\tdefs {dPairs info.defs}\tfailing targets {bad.length} (GOT-decl only {(bad.filter fun h => !indMatchWithB sigs h).length}, IndSigMatch {(bad.filter (indMatchWithB sigs)).length})\t{"; ".intercalate badS}\tctx {ctx}")
+  head :: (sites ++ clif)
+
+/-- SCRATCH: `diagFn` on the typed Stock route's results for the functions `names`. -/
+def diagSites (lower : Clif.Function → Except String Backend.VCode) (SP : LinkSpec)
+    (names : List String) : List String :=
+  let I := SP.inputProductionWith lower true
+  let want : Std.HashSet String := .ofList names
+  let P : Clif.Program := { funcs := I.funcs.map (·.func) }
+  let fm := funcMap P
+  let sy := assocMap I.syms
+  let fis := I.funcs.filter fun fi => want.contains fi.func.name
+  (parMap (fun fi => diagFn (fun n => fm[n]?) P (fun n => sy[n]?) fi.func
+    (I.pipeProductionWith lower true fi)) fis).flatten
+
 /-- The error of the linkers when `outsideOkB` fails (`Link.leanLink`, `Link.leanLinkWithResults`). -/
 def outsideOkMsg : String :=
   "rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)"
@@ -392,7 +498,20 @@ def outsideFails (I : LinkInput) (D : List Clif.DataObject) (file0 : ByteArray) 
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := [])
     (only : Bool := false) (typedNext : Bool := false) : IO Unit :=
   match exclusions S SC typed extra only typedNext with
-  | some (n :: ns) => IO.eprintln s!"lean-link: {exe}: --verified: exclude: {" ".intercalate (n :: ns)}"
+  | some (n :: ns) => do
+    IO.eprintln s!"lean-link: {exe}: --verified: exclude: {" ".intercalate (n :: ns)}"
+    -- SCRATCH (CallRegs1 diag): the CLIF call sites of the excluded functions failing `callScopeB`
+    if let some f ← IO.getEnv "FV_SITE_FILE" then
+      let P := SC.input0.prog
+      let sy := assocMap SC.input0.syms
+      let fm := funcMap P
+      let h ← IO.FS.Handle.mk f .append
+      for m in n :: ns do
+        if let some g := fm[m]? then
+          let sc := scopeFails (fun x => fm[x]?) P (fun x => sy[x]?) g
+          if sc.any (·.startsWith "callScopeB") then
+            for l in diagFn (fun x => fm[x]?) P (fun x => sy[x]?) g (.error s!"excluded {sc}") do
+              h.putStrLn s!"{exe}\t{l}"
   | _ => pure ()
 
 /-- `--key VALUE` taken out of an argument list. -/
@@ -654,6 +773,13 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT): {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}"
         for (n, fs) in bad.take 50 do
           IO.eprintln s!"lean-link:   {n}: {fs}"
+        -- SCRATCH (CallRegs1 diag): per call site of the functions failing `callRegs/blrRegs`
+        if let some f ← IO.getEnv "FV_SITE_FILE" then
+          let names := (bad.filter (·.2.contains "callRegs/blrRegs")).map (·.1)
+          let h ← IO.FS.Handle.mk f .append
+          h.putStrLn s!"EXE\t{exe}\t{names.length} function(s) failing callRegs/blrRegs"
+          for l in diagSites routes[0]! SP names do
+            h.putStrLn s!"{exe}\t{l}"
         if e == outsideOkMsg then
           for l in outsideFails SP.input0 SP.data file0 SP.R SP.size do
             IO.eprintln s!"lean-link:   {l}"
