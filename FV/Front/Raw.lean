@@ -124,6 +124,7 @@ def rawFunction : P Function := do
     blocks := blocks.push (← block)
   expectPunct '}'
   if !(← atEnd) then malformed s!"unexpected {← describe} after function body"
+  checkDeferred
   return { name, sig, slots := slots.toList, globals := globals.toList,
            externs := externs.toList, sigDecls := sigDecls.toList, blocks := blocks.toList }
 
