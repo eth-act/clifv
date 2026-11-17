@@ -499,7 +499,14 @@ per-function condition (and the program-wide ones hold), it links the executable
 functions left out of the region (their cg_clif code stays, as a fallback's; std's indirect-call
 sites, docs/plans/std.md §2.1): every executable it writes is covered,
 and its input is one on which the compiler is proven total (`InScopeIn`,
-`Link.DeadCleanup.compileExe_total_reach_input`).
+`Link.DeadCleanup.compileExe_total_reach_input`). When the executable linked again takes the
+typed scope (its typed Stock route `attemptT_correct` has no per-function input premise, #754),
+only the functions failing a condition of the source domain or of the admission, or a call-site
+condition `callScopeB` (which that route checks again on the compiled code), are left out; those
+failing only another program-level condition (`indB`, `declSigB`/`outScopeB` of the compiled
+program: premises of the integer route) stay in (#1076). Such an executable is outside
+`InScopeInT`: `lean-link`'s coverage line counts those functions and makes no totality claim
+for it.
 
 With `--opt-proven-only`, `--lean-link` runs `lean-link --opt`: the optimising executable
 compiler `Link.DeadCleanup.compileExeOpt` (the same compiler on the functions the Lean mid-end
