@@ -249,6 +249,89 @@ def printDataItems : List DataItem → List String
     | t :: ts => if t.startsWith "%" then hexByte b :: t :: ts else (hexByte b ++ t) :: ts
     | [] => [hexByte b]
 
+/-- The token of an address item (`printDataItems`' `.addr` case). -/
+def addrToken (n : String) (off : Int) : String :=
+  s!"%{n}" ++ (if off == 0 then "" else if off > 0 then s!"+{off}" else s!"{off}")
+
+/-- `printDataItems` left to right in constant stack depth: the current run of bytes (`run`, its
+hex digits) is appended to in place and closed at an address item or the end (`printDataItems_eq_TR`,
+the compiler's implementation of `printDataItems`, which prepends each byte's digits to the rest of
+its run: quadratic in the run's length, #1071). -/
+def printDataItemsTR (l : List DataItem) : List String := go l "" #[]
+where
+  go : List DataItem → String → Array String → List String
+    | [], run, out => (if run.isEmpty then out else out.push run).toList
+    | .addr n off :: is, run, out =>
+      go is "" ((if run.isEmpty then out else out.push run).push (addrToken n off))
+    | .byte b :: is, run, out => go is (run ++ hexByte b) out
+
+/-- A run `r` of bytes' digits before the tokens `ts` (`printDataItems`' `.byte` case for one byte). -/
+private def glue (r : String) (ts : List String) : List String :=
+  if r.isEmpty then ts else match ts with
+    | t :: ts => if t.startsWith "%" then r :: t :: ts else (r ++ t) :: ts
+    | [] => [r]
+
+private theorem hexByte_startsWith (b : BitVec 8) (s : String) :
+    (hexByte b ++ s).startsWith "%" = false := by
+  have hm : ∀ c ∈ (['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'] : List Char),
+      c ≠ '%' := by decide
+  have hd : ∀ n : Nat, (['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'] : List Char)[n]?.getD '0' ≠ '%' := by
+    intro n
+    rcases h : (['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'] : List Char)[n]? with _ | c
+    · decide
+    · exact hm c (List.mem_of_getElem? h)
+  simp [hexByte, String.toList_append]
+  exact fun h => hd _ h.symm
+
+private theorem hexByte_ne (b : BitVec 8) (s : String) : (s ++ hexByte b).isEmpty = false := by
+  rw [String.isEmpty_eq_false_iff]
+  intro h
+  have := congrArg String.toList h
+  simp [hexByte, String.toList_append] at this
+
+private theorem addrToken_startsWith (n : String) (off : Int) : (addrToken n off).startsWith "%" = true := by
+  have : (toString "%" : String) = "%" := rfl
+  simp [addrToken, String.toList_append, this]
+
+private theorem glue_byte (r : String) (b : BitVec 8) (ts : List String) :
+    glue (r ++ hexByte b) ts = glue r (glue (hexByte b) ts) := by
+  have h1 : (hexByte b).isEmpty = false := by simpa using hexByte_ne b ""
+  by_cases hr : r.isEmpty
+  · have : r = "" := String.isEmpty_iff.1 hr
+    subst this
+    simp [glue]
+  · have h2 : (r ++ hexByte b).isEmpty = false := hexByte_ne b r
+    have hs := hexByte_startsWith b ""
+    simp only [String.append_empty] at hs
+    cases ts with
+    | nil => simp [glue, hr, h1, h2, hs]
+    | cons t ts =>
+      by_cases ht : t.startsWith "%" = true
+      · simp [glue, hr, h1, h2, hs, ht]
+      · simp [glue, hr, h1, h2, hexByte_startsWith, ht, String.append_assoc]
+
+private theorem printDataItems_byte (b : BitVec 8) (is : List DataItem) :
+    printDataItems (.byte b :: is) = glue (hexByte b) (printDataItems is) := by
+  have h1 : (hexByte b).isEmpty = false := by simpa using hexByte_ne b ""
+  simp only [printDataItems, glue, h1]
+  cases printDataItems is <;> rfl
+
+private theorem printDataItemsTR_go : ∀ (l : List DataItem) (run : String) (out : Array String),
+    printDataItemsTR.go l run out = out.toList ++ glue run (printDataItems l)
+  | [], run, out => by
+    by_cases hr : run.isEmpty <;> simp [printDataItemsTR.go, printDataItems, glue, hr]
+  | .addr n off :: is, run, out => by
+    rw [printDataItemsTR.go, printDataItemsTR_go is]
+    have ht := addrToken_startsWith n off
+    have hp : printDataItems (.addr n off :: is) = addrToken n off :: printDataItems is := rfl
+    by_cases hr : run.isEmpty <;> simp [hp, glue, hr, ht]
+  | .byte b :: is, run, out => by
+    rw [printDataItemsTR.go, printDataItemsTR_go is, printDataItems_byte, glue_byte]
+
+@[csimp] theorem printDataItems_eq_TR : @printDataItems = @printDataItemsTR := by
+  funext l
+  simp [printDataItemsTR, printDataItemsTR_go, glue]
+
 /-- A `; data:` directive. -/
 def dataObject (o : DataObject) : String :=
   s!"; data: %{o.name} align={o.align}{if o.writable then " writable" else ""} =" ++

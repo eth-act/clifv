@@ -522,7 +522,11 @@ condition `callScopeB` (which that route checks again on the compiled code), are
 failing only another program-level condition (`indB`, `declSigB`/`outScopeB` of the compiled
 program: premises of the integer route) stay in (#1076). Such an executable is outside
 `InScopeInT`: `lean-link`'s coverage line counts those functions and makes no totality claim
-for it.
+for it. The typed Stock route also accepts an input whose source program is only in
+`SrcScopeTB` (#1076: an `i128` function with a `try_call_indirect` at an `i128`-free signature,
+as Rust's `Box<dyn Any>::downcast`, meets `legalOkTB` but not `legalOkB`), covered by the
+legalisation's refinement `legalProg_refinesT` (and `attemptT_correct_sourceTB` where the route's
+input is in `SrcScopeTB`); on every other route those functions are left out.
 
 With `--opt-proven-only`, `--lean-link` runs `lean-link --opt`: the optimising executable
 compiler `Link.DeadCleanup.compileExeOpt` (the same compiler on the functions the Lean mid-end

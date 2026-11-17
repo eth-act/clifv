@@ -122,6 +122,9 @@ structure PState where
   aliases : List (ValueId × ValueId) := []
   externs : List (FnRef × ExtFunc) := []
   sigDecls : List (Nat × Signature) := []
+  /-- Operand checks of float conversions whose operand is defined later in the text
+  (`convOperand`), newest first; run when the body is read (`checkDeferred`). -/
+  deferred : List (String × ValueId) := []
 
 abbrev P := ReaderT (Array Tok) (StateT PState (Except ParseError))
 
@@ -308,6 +311,29 @@ def typeOf (v : ValueId) : P Ty := do
 
 def defineValue (v : ValueId) (t : Ty) : P Unit :=
   modify fun s => { s with types := (v, t) :: s.types }
+
+/-- The operand of a float conversion (`fcvt_*`, `fpromote`, `fdemote`) at type `t`: an i128
+or f16 operand is outside S. -/
+def convOperandOk (op : String) (t : Ty) : P Unit := do
+  if t == .i128 then unsupported s!"{op} with an i128 operand or result"
+  if t == .f16 then unsupported s!"{op} of an f16 (f16 values are only moved)"
+
+/-- Check the operand `x` of the float conversion `op`, or defer the check to the end of the
+body when `x` is defined later in the text (#1073: cg_clif writes blocks in creation order, so
+a use, directly or through an alias, may precede the definition; cranelift-reader accepts that
+for an instruction whose type is explicit). -/
+def convOperand (op : String) (x : ValueId) : P Unit := do
+  match (← get).types.lookup x with
+  | some t => convOperandOk op t
+  | none => modify fun s => { s with deferred := (op, x) :: s.deferred }
+
+/-- The deferred conversion operand checks (`convOperand`), in text order, once every value
+of the body is defined. -/
+def checkDeferred : P Unit := do
+  for (op, x) in (← get).deferred.reverse do
+    match (← get).types.lookup x with
+    | some t => convOperandOk op t
+    | none => malformed s!"cannot infer the type of v{x} (never defined)"
 
 def commaSep {α : Type} (p : P α) (close : Char) : P (List α) := do
   if ← isPunct close then return []
@@ -606,12 +632,14 @@ def item (op : String) (sfx : Option Ty) : P Item := do
       args := args.push (← value)
     let t ← if f.ctrlIsOperand then ctrl sfx x else needTy op sfx
     -- float ↔ i128 conversions are outside S: no Cranelift backend lowers them, and the
-    -- interpreter (the only oracle) clamps `fcvt_to_*.i128` to the i128 range
-    if !f.ctrlIsOperand && (t == .i128 || (← typeOf x) == .i128) then
-      unsupported s!"{op} with an i128 operand or result"
-    if t == .f16 then unsupported s!"{op} at f16 (f16 values are only moved)"
+    -- interpreter (the only oracle) clamps `fcvt_to_*.i128` to the i128 range. The operand's
+    -- type is looked up for the conversions only (the same-type operations take it from `t`),
+    -- and an operand defined later in the text is checked at the end of the body (#1073)
     if !f.ctrlIsOperand then
-      if (← typeOf x) == .f16 then unsupported s!"{op} of an f16 (f16 values are only moved)"
+      if t == .i128 || (← get).types.lookup x == some .i128 then
+        unsupported s!"{op} with an i128 operand or result"
+    if t == .f16 then unsupported s!"{op} at f16 (f16 values are only moved)"
+    if !f.ctrlIsOperand then convOperand op x
     return .inst (.float f t args.toList)
   match op with
   | "iconst" =>
@@ -830,6 +858,7 @@ def function : P Function := do
     blocks := blocks.push (← block)
   expectPunct '}'
   if !(← atEnd) then malformed s!"unexpected {← describe} after function body"
+  checkDeferred
   return { name, sig, slots := slots.toList, globals := globals.toList,
            externs := externs.toList, sigDecls := sigDecls.toList, blocks := blocks.toList }
 
@@ -936,6 +965,33 @@ def hexBytes? : List Char → Option (List (BitVec 8))
     let r ← hexBytes? rest
     pure (BitVec.ofNat 8 (16 * a + b) :: r)
   | [_] => none
+
+/-- `hexBytes?` in constant stack depth, the bytes collected in an array (`hexBytes?_eq_TR`,
+the compiler's implementation of `hexBytes?`): a 16 MiB data object is a 33,554,432-digit item,
+deeper than the native stack in the non-tail-recursive form (#1071). -/
+def hexBytesTR? (l : List Char) : Option (List (BitVec 8)) := go l #[]
+where
+  go : List Char → Array (BitVec 8) → Option (List (BitVec 8))
+    | [], acc => some acc.toList
+    | h :: l :: rest, acc => match hexDigit? h, hexDigit? l with
+      | some a, some b => go rest (acc.push (BitVec.ofNat 8 (16 * a + b)))
+      | _, _ => none
+    | [_], _ => none
+
+theorem hexBytesTR?_go : ∀ (l : List Char) (acc : Array (BitVec 8)),
+    hexBytesTR?.go l acc = (hexBytes? l).map (acc.toList ++ ·)
+  | [], acc => by simp [hexBytesTR?.go, hexBytes?]
+  | [_], acc => by simp [hexBytesTR?.go, hexBytes?]
+  | h :: l :: rest, acc => by
+    rcases ha : hexDigit? h with _ | a <;> rcases hb : hexDigit? l with _ | b <;>
+      simp only [hexBytesTR?.go, hexBytes?, ha, hb, Option.bind_none, Option.bind_some,
+        Option.map_none, Option.bind_eq_bind, Option.pure_def]
+    rw [hexBytesTR?_go rest]
+    cases hexBytes? rest <;> simp
+
+@[csimp] theorem hexBytes?_eq_TR : @hexBytes? = @hexBytesTR? := by
+  funext l
+  simp [hexBytesTR?, hexBytesTR?_go]
 
 def dataItems (w : String) : Except String (List DataItem) :=
   if w.startsWith "%" then
