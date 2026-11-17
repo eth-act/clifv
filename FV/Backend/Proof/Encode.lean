@@ -36,7 +36,7 @@ theorem decode_armBits (a : ArmInst) : decode_raw_inst (armBits a) = some a.norm
 
 theorem _root_.Arm.ArmInst.norm_norm (a : ArmInst) : a.norm.norm = a.norm := by
   cases a <;> rename_i x <;> cases x <;>
-    first | rfl | (simp only [ArmInst.norm]; split <;> simp_all [ArmInst.norm])
+    first | rfl | (rename_i y; by_cases h : y.immh = 0#4 <;> simp [ArmInst.norm, h])
 
 theorem Insn.toArmInst_norm {env : Env} {i : Insn} {a : ArmInst}
     (h : i.toArmInst env = .ok a) : a.norm = a := by
