@@ -358,6 +358,11 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
             pure (instDataV "FloatCompare"
               [opcodeV "Fcmp", .values [x, y], mkVariant TyId.FloatCC (floatccName cc)])
           else throw s!"fcmp.{ty.name} {cc.name}"
+        -- #35: `fcopysign` at `f32`/`f64` (`lower.isle:685`, `fcopy_sign`'s scalar rule
+        -- `inst.isle:4612`: `ushr` + `sli`); the vector rule is outside E
+        | .fcopysign =>
+          if ty.isArithFloat then pure (instDataV "Binary" [opcodeV "Fcopysign", .values [x, y]])
+          else throw s!"Fcopysign.{ty.name}"
         | _ => throw s!"`{op.name}` with two operands is not in the lowering"
     | [x] =>
       match fUnaryOpcode op with

@@ -92,7 +92,7 @@ theorem root_match_data {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} {
 /-- S11f: the `InstructionData` format name of a float operation `instData` builds (`""`
 for the others). -/
 def fFmt : Clif.FOp → String
-  | .fadd | .fsub | .fmul | .fdiv | .fmin | .fmax => "Binary"
+  | .fadd | .fsub | .fmul | .fdiv | .fmin | .fmax | .fcopysign => "Binary"
   | .sqrt | .fneg | .fabs | .fpromote | .fdemote | .ceil | .floor | .trunc | .nearest => "Unary"
   | .fcvtFromUint | .fcvtFromSint | .fcvtToUintSat | .fcvtToSintSat => "Unary"
   | .fcmp _ => "FloatCompare"
@@ -106,15 +106,18 @@ def fOpc : Clif.FOp → String
   | .trunc => "Trunc" | .nearest => "Nearest"
   | .fcvtFromUint => "FcvtFromUint" | .fcvtFromSint => "FcvtFromSint"
   | .fcvtToUintSat => "FcvtToUintSat" | .fcvtToSintSat => "FcvtToSintSat" | .fcmp _ => "Fcmp"
+  | .fcopysign => "Fcopysign"
   | _ => ""
 
 theorem fFmt_mem (op : Clif.FOp) : fFmt op ∈ ["Binary", "Unary", "FloatCompare", ""] := by
   cases op <;> simp [fFmt]
 
+/-- #35: restated with `"Fcopysign"` (`fOpc .fcopysign`); the old list is false
+(`FloatCopysignWitness.fOpc_mem_old_false`). -/
 theorem fOpc_mem (op : Clif.FOp) :
     fOpc op ∈ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
-      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", ""] := by
+      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", ""] := by
   cases op <;> simp [fOpc]
 
 /-! A float operation has none of the other instructions' names (`simp` closes the float case
@@ -128,16 +131,20 @@ of an inversion by `instNames` with these, the side condition by evaluation). -/
     (h : s ∉ ["Binary", "Unary", "FloatCompare", ""]) : s = fFmt op ↔ False :=
   ⟨fun e => h (e ▸ fFmt_mem op), False.elim⟩
 
+/-- #35: restated with `"Fcopysign"`; the old form is false
+(`FloatCopysignWitness.fOpc_eq_false_old_false`). -/
 @[simp] theorem fOpc_eq_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
-      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", ""]) : fOpc op = s ↔ False :=
+      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", ""]) : fOpc op = s ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
+/-- #35: restated with `"Fcopysign"`; the old form is false
+(`FloatCopysignWitness.eq_fOpc_false_old_false`). -/
 @[simp] theorem eq_fOpc_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
-      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", ""]) : s = fOpc op ↔ False :=
+      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", ""]) : s = fOpc op ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
 /-- The `InstructionData` format and opcode *names* `instData` uses for an instruction. An
