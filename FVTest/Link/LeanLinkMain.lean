@@ -247,6 +247,14 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (onl
         fun (g, s) => if s.isEmpty then none else some g.name
     some (Front.dedupFirst (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name) ++ scope ++ extra))
 
+/-- The number of functions of `SC`'s compiled program failing a program-level input condition
+(`scopeFails`): with one, the input is outside `InScopeIn`/`InScopeInT` (their `progScopeInB`). -/
+def progScopeFailsN (SC : LinkSpec) : Nat :=
+  let P := SC.input0.prog
+  let sy := assocMap SC.input0.syms
+  let fm := funcMap P
+  (parMap (fun g => !(scopeFails (fun n => fm[n]?) P (fun n => sy[n]?) g).isEmpty) P.funcs).count true
+
 /-- On a typed input (`--verified`) whose `compileExeT` fails: the functions failing the typed
 per-function conditions of `InScopePT` (`fnScopeTB`), and those whose compiled code fails the
 output checks (`OutOkTCleanup`; only when `InScopePT` holds), or, on the third branch (`tc`: the
@@ -628,7 +636,12 @@ def main (args0 : List String) : IO UInt32 := do
           match ← ldCheck SP file0 f with
           | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
           | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
-        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
+        -- the functions failing a program-level input condition (`scopeFails`; `attemptT` does not
+        -- need them, `exclusions`' `typedNext`): the executable is then outside `InScopeInT`
+        let progN := if verified then progScopeFailsN SC else 0
+        let progTot := if progN = 0 then "" else
+          s!"; {progN} function(s) fail a program-level input condition (scopeFails: declSigB/indB/callScopeB/outScopeB), so the executable is outside InScopeInT: no totality claim for it"
+        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim{progTot}"
         return 0
       if let .error e := att then
         let bad := typedStockFails routes[0]! SP
