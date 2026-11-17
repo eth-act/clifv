@@ -362,6 +362,121 @@ def outsideFails (I : LinkInput) (D : List Clif.DataObject) (file0 : ByteArray) 
     (symBad.take k).map symOne
   hdr ++ data ++ syms
 
+/-- A failing check's line (`tag: N of n fail`) and its first `k` objects. -/
+def failLines {α : Type} (k : Nat) (tag : String) (n : Nat) (bad : List α) (one : α → String) :
+    List String :=
+  if bad.isEmpty then [] else s!"{tag}: {bad.length} of {n} fail" :: (bad.take k).map one
+
+/-- `regionOkB file R n off`'s conditions that fail, each with its numbers (`linkFails`). -/
+def regionFails (file : ByteArray) (phs : List Phdr) (R n off : Nat) : List String :=
+  match ehdr (fileRd file) with
+  | none => ["regionOkB: no ELF header"]
+  | some e =>
+    let hdr := (if 64 ≤ off then [] else [s!"regionOkB: file offset {off} is inside the ELF header"]) ++
+      (if e.phoff + 56 * e.phnum ≤ off then [] else
+        [s!"regionOkB: the program headers end at {hex (e.phoff + 56 * e.phnum)}, after the region's file offset"]) ++
+      (if off + n ≤ file.size then [] else
+        [s!"regionOkB: the region's file bytes end {off + n - file.size} byte(s) past the end of the file"])
+    let seg := match segIn phs R with
+      | none => [s!"regionOkB: no PT_LOAD segment contains {hex R}"]
+      | some p =>
+        let others := phs.filter fun q => !(q == p || q.type != 1 || decide (q.vaddr + q.memsz ≤ R) ||
+          decide (R + n ≤ q.vaddr))
+        s!"regionOkB: segment {hex p.vaddr}..{hex (p.vaddr + p.filesz)} (memsz {hex p.memsz}, offset {hex p.offset}, flags {p.flags})" ::
+          ((if notW p then [] else ["regionOkB: the segment is writable"]) ++
+          (if R + n ≤ p.vaddr + p.filesz then [] else
+            [s!"regionOkB: the region ends {R + n - (p.vaddr + p.filesz)} byte(s) past the segment's file bytes"]) ++
+          (if p.filesz ≤ p.memsz then [] else ["regionOkB: the segment's filesz exceeds its memsz"]) ++
+          (if off = p.offset + (R - p.vaddr) then [] else
+            [s!"regionOkB: file offset {hex off}, the segment maps {hex R} at {hex (p.offset + (R - p.vaddr))}"]) ++
+          others.map fun q => s!"regionOkB: PT_LOAD segment {hex q.vaddr}..{hex (q.vaddr + q.memsz)} meets the region")
+    hdr ++ seg
+
+/-- On a link by `Link.leanLinkWithResults S file0 results` (`Link.leanLinkProductionWith`: the
+Stock routes and the typed Stock route `attemptT`) that fails: every region-level check of the
+linker that fails, each with what fails it (at most `k` entries per check, with the number
+failing), in the linker's order (#1075). The checks of one placed program: `placeOkB` (which
+condition), the pipeline (the functions it rejects, with the reason), `namesOkB`/`sizesOkB` (the
+functions whose compiled name or size is not the placement's), `relocsOkB` (the functions and
+the first failing relocation), `codeMapB` (the functions whose code-map conditions fail); the
+checks of rust-lld's output: `regionOkB` (the region `[R, R + n)`, the segment containing `R`
+and which condition fails), then, on the written file, `outsideOkB` (`outsideFails`). Where the
+checks of rust-lld's output fail, the functions whose placement is not rust-lld's layout of the
+units' code: `unitSizes` (the region object's sizes in words, the bundle's) and `marks` (the
+functions' addresses in rust-lld's output, the bundle's markers; a size that differs moves every
+later function). -/
+def linkFails (S : LinkSpec) (file0 : ByteArray) (results : LinkInput → Res)
+    (marks unitSizes : List (String × Nat) := []) (k : Nat := 10) : List String :=
+  match phdrs (fileRd file0) with
+  | none => ["phdrs: rust-lld's output has no program headers"]
+  | some phs =>
+    let I0 := S.input0
+    let Rs := results I0
+    let I := I0.withDepth Rs
+    let T := tabOf Rs
+    let P := T.take S.funcs.length
+    let tp := tpOff phs
+    let place :=
+      (if nodupB S.names then [] else ["placeOkB: two placed functions have one name"]) ++
+      (if S.names.length = S.funcs.length ∧ S.sizes.length = S.funcs.length then [] else
+        [s!"placeOkB: {S.funcs.length} function(s), {S.names.length} name(s), {S.sizes.length} size(s)"]) ++
+      failLines k "placeOkB: positive sizes" S.sizes.length ((S.names.zip S.sizes).filter (·.2 == 0))
+        (fun e => s!"placeOkB: {e.1}: size 0") ++
+      (if 0 < S.R ∧ S.R % 4 = 0 ∧ S.R + S.size < 2 ^ 64 then [] else
+        [s!"placeOkB: region {hex S.R} of {S.size} bytes: not nonzero, word-aligned and in the address space"]) ++
+      failLines k "placeOkB: outside symbols clear of the region" S.outside.length
+        (S.outside.filter fun e => !clearOfB S.R S.size [e]) (fun e => s!"placeOkB: {e.1} at {hex e.2}")
+    let why (r : Except String Art) : String := match r with
+      | .error m => m
+      | .ok _ => ""
+    let pipe := failLines k "pipeline" Rs.length (Rs.filter (!·.2.toBool)) fun e =>
+      s!"pipeline: {e.1.name}: {why e.2}"
+    let rows := (P.zip (S.names.zip S.sizes)).zipIdx
+    let names := failLines k "namesOkB" S.names.length (rows.filter fun r => r.1.1.1.name != r.1.2.1)
+      (fun r => s!"namesOkB: function {r.2} is {r.1.1.1.name}, placed as {r.1.2.1}") ++
+      (if P.length = S.names.length then [] else
+        [s!"namesOkB: {P.length} compiled function(s) for {S.names.length} placed"])
+    let sizes := failLines k "sizesOkB" S.sizes.length
+      (rows.filter fun r => r.1.1.2.fb.words.size != r.1.2.2) fun r =>
+        s!"sizesOkB: {r.1.1.1.name}: {r.1.1.2.fb.words.size} word(s) compiled, {r.1.2.2} placed"
+    let relocAt (a : Art) : String := match a.fb.relocs.find? (fun r => !relocOkB I tp a r) with
+      | some r => s!"relocation at offset {r.offset}"
+      | none => "two relocations at one offset"
+    let relocs := failLines k "relocsOkB" T.length (T.filter fun e => !relocsOkB I tp e.2) fun e =>
+      s!"relocsOkB: {e.1.name}: {relocAt e.2}"
+    let codeMap := if codeMapB I T then [] else
+      let byBase := (T.toArray.qsort fun a b => decide (a.2.base.toNat < b.2.base.toNat)).toList
+      failLines k "codeMapB: link-map addresses" T.length
+          (T.filter fun e => !(I.symAddr e.1.name 0 == e.2.base || noBlrB I T e.1.name))
+          (fun e => s!"codeMapB: {e.1.name}: code at {hex e.2.base.toNat}, link map {hex (I.symAddr e.1.name 0).toNat}") ++
+        failLines k "codeMapB: disjoint code (address order)" T.length
+          ((byBase.zip byBase.tail).filter fun p =>
+            decide (p.2.2.base.toNat < p.1.2.base.toNat + 4 * p.1.2.fb.words.size))
+          (fun p => s!"codeMapB: {p.1.1.name} ({hex p.1.2.base.toNat}, {p.1.2.fb.words.size} words) meets {p.2.1.name} ({hex p.2.2.base.toNat})")
+    let B := regionBytesA I tp S.aligns (P.map (·.2))
+    let n := B.length
+    let off := offsetOf phs S.R
+    let mk := assocMap marks
+    let us := assocMap unitSizes
+    let moved :=
+      failLines k "placed sizes as the region object's (bundle sizes)" S.names.length
+        ((S.names.zip S.sizes).filterMap fun e => match us[e.1]? with
+          | some u => if u == e.2 then none else some (e.1, e.2, u)
+          | none => none)
+        (fun e => s!"placement: {e.1}: {e.2.1} word(s), {e.2.2} in the region object") ++
+      failLines k "placed at rust-lld's addresses (markers)" S.progAddrs.length
+        (S.progAddrs.filterMap fun e => match mk[e.1]? with
+          | some m => if m == e.2 then none else some (e.1, e.2, m)
+          | none => none)
+        (fun e => s!"placement: {e.1} at {hex e.2.1}, rust-lld's at {hex e.2.2}")
+    let region := if regionOkB file0 S.R n off then [] else
+      s!"regionOkB: region {hex S.R}..{hex (S.R + n)} ({n} bytes, placement {S.size}) at file offset {hex off} of {file0.size}" ::
+        regionFails file0 phs S.R n off ++ moved
+    let outside := if !region.isEmpty then [] else
+      if outsideOkB I S.data (patch file0 off ⟨B.toArray⟩) then [] else
+        outsideFails I S.data file0 S.R n k ++ moved
+    place ++ pipe ++ names ++ sizes ++ relocs ++ codeMap ++ region ++ outside
+
 /-- Print `exclusions` (the line `cargo fv` reads). -/
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := [])
     (only : Bool := false) : IO Unit :=
@@ -621,8 +736,11 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT): {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}"
         for (n, fs) in bad.take 50 do
           IO.eprintln s!"lean-link:   {n}: {fs}"
-        if e == outsideOkMsg then
-          for l in outsideFails SP.input0 SP.data file0 SP.R SP.size do
+        -- the link's own checks (`leanLinkProductionWith`): name the failing check and its
+        -- objects, also where no function fails the typed checks (#1075)
+        if e != SemanticCompilerWith.outOkTSMsg then
+          for l in linkFails SP file0 (fun I => parResultsProductionWith routes[0]! I true)
+              b0.markers b0.sizes do
             IO.eprintln s!"lean-link:   {l}"
         -- leave out only the functions failing the typed checks when that set is the smallest
         -- (only those: `attemptT_correct` has no per-function input premise, #754)
