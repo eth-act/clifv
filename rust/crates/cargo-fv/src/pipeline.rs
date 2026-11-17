@@ -223,6 +223,8 @@ pub struct CguResult {
     pub changed: bool,
     /// The pipeline failed as a whole (all functions fall back).
     pub error: Option<String>,
+    /// An error that fails the build (a `lean-backend` run over `FV_FN_TIME_LIMIT`).
+    pub fatal: Option<String>,
 }
 
 /// data-export names `.LdataN` of the object `c_LdataN` (the dump directory is `c.clif`).
@@ -280,7 +282,7 @@ fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
 pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> CguResult {
     let syms = match read_syms(obj) {
         Ok(s) => s,
-        Err(e) => return CguResult { functions: vec![], changed: false, error: Some(e) },
+        Err(e) => return CguResult { functions: vec![], changed: false, error: Some(e), fatal: None },
     };
     let mut funcs: Vec<(String, Dump)> = index
         .by_symbol
@@ -424,7 +426,7 @@ fn compile_one(
                 drop(slot);
                 classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym, input)
             }
-            Ok(Run::TimedOut) => Compiled::Fallback(time_limit_reason(cfg.fn_time_limit)),
+            Ok(Run::TimedOut) => Compiled::TimedOut,
             Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
         }
     };
@@ -447,9 +449,15 @@ fn compile_one(
     c
 }
 
-/// The fallback reason of a function whose `lean-backend` run exceeded `FV_FN_TIME_LIMIT`.
-pub fn time_limit_reason(secs: u64) -> String {
-    format!("unverified (time limit {secs} s)")
+/// The build's error for the function `instance` (object symbol `symbol`) whose `lean-backend`
+/// run exceeded `FV_FN_TIME_LIMIT` (`secs`).
+pub fn time_limit_error(secs: u64, symbol: &str, instance: &str) -> String {
+    format!(
+        "{instance} ({symbol}): lean-backend did not finish within FV_FN_TIME_LIMIT={secs} s; the build stops \
+         (a time limit is never a fallback: what is verified must not depend on the machine's load). \
+         Skip the function with `[package.metadata.fv] skip = [\"{symbol}\"]` or `FV_SKIP={symbol}`, \
+         raise FV_FN_TIME_LIMIT, or report it at https://github.com/eth-act/clifv/issues"
+    )
 }
 
 /// A `lean-backend` run: its output, or killed at the time limit.
@@ -502,7 +510,7 @@ fn process_selected(
     funcs: Vec<(String, Dump)>,
 ) -> CguResult {
     if funcs.is_empty() {
-        return CguResult { functions: vec![], changed: false, error: None };
+        return CguResult { functions: vec![], changed: false, error: None, fatal: None };
     }
     let tag = tag_of(id);
     let work = cfg.tmp_dir.join(&tag);
@@ -516,8 +524,9 @@ fn process_selected(
         }
     }
     match r {
-        Ok((functions, changed)) => CguResult { functions, changed, error: None },
-        Err(e) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: Some(e) },
+        Ok((functions, changed)) => CguResult { functions, changed, error: None, fatal: None },
+        Err(CguFail::Fallback(e)) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: Some(e), fatal: None },
+        Err(CguFail::Fatal(e)) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: None, fatal: Some(e) },
     }
 }
 
@@ -609,6 +618,21 @@ fn trap_bodies(obj: &Path, names: &[String]) -> Result<(), String> {
 enum Compiled {
     Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool, clif: PathBuf },
     Fallback(String),
+    /// Killed at `FV_FN_TIME_LIMIT`: the build fails ([`time_limit_error`]).
+    TimedOut,
+}
+
+/// Why a codegen unit was not rewritten: a failure whose functions fall back, or an error that
+/// fails the build ([`CguResult::fatal`]).
+enum CguFail {
+    Fallback(String),
+    Fatal(String),
+}
+
+impl From<String> for CguFail {
+    fn from(e: String) -> CguFail {
+        CguFail::Fallback(e)
+    }
 }
 
 fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, input: &Path) -> Compiled {
@@ -825,7 +849,7 @@ fn process_in(
     funcs: &[(String, Dump)],
     tag: &str,
     work: &Path,
-) -> Result<(Vec<FnReport>, bool), String> {
+) -> Result<(Vec<FnReport>, bool), CguFail> {
     // cg_clif's dumps of the CGU's functions: links to them, copies when `cargo fv link-proof`
     // reads them later (`--keep-temps`: the bundle names the dump each function was compiled
     // from, and cargo may rewrite the originals)
@@ -913,6 +937,7 @@ fn process_in(
         };
         match c {
             Compiled::Fallback(why) => report(Status::Fallback, Some(why), false),
+            Compiled::TimedOut => return Err(CguFail::Fatal(time_limit_error(cfg.fn_time_limit, sym, &d.instance))),
             Compiled::Ok { obj: o, unverified, normal_returns, clif } => {
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
@@ -1035,7 +1060,7 @@ fn process_in(
             let n = final_name(s);
             let (a, b) = (m.at.get(&n), m.at.get(&format!("{MARKER}{n}")));
             if a.is_none() || a != b {
-                return Err(format!("internal: after the merge `{n}` does not resolve to the Lean code"));
+                return Err(format!("internal: after the merge `{n}` does not resolve to the Lean code").into());
             }
         }
         let loc = work.join("localize.txt");
@@ -1133,11 +1158,11 @@ mod tests {
         assert!(!o.status.success());
     }
 
-    /// The whole fallback path: a `lean-backend` that does not finish within `FV_FN_TIME_LIMIT`
-    /// leaves the function with cg_clif's code, reason `unverified (time limit N s)`, which the
-    /// report's grouping keeps as it is.
+    /// A `lean-backend` that does not finish within `FV_FN_TIME_LIMIT` is killed at the limit and
+    /// the function is `TimedOut` (never a fallback: `process_in` turns it into the build's
+    /// error), whose message names the function and how to skip it.
     #[test]
-    fn slow_backend_falls_back_with_the_time_limit_reason() {
+    fn slow_backend_is_a_build_error() {
         use std::os::unix::fs::PermissionsExt;
         let root = std::env::temp_dir().join(format!("cargo-fv-timelimit-{}", std::process::id()));
         let bin = root.join(".lake/build/bin");
@@ -1160,14 +1185,15 @@ mod tests {
         let d = Dump { stem: "f".into(), instance: "f".into() };
         let t = Instant::now();
         let c = compile_one(&test_config(&root, 1), &syms, &split, &outdir, 0, &d, "f");
-        assert!(t.elapsed().as_secs() < 10, "fell back after {:?}", t.elapsed());
-        match c {
-            Compiled::Fallback(why) => {
-                assert_eq!(why, "unverified (time limit 1 s)");
-                assert_eq!(crate::report::generalize(&time_limit_reason(1800)), "unverified (time limit 1800 s)");
-            }
-            Compiled::Ok { .. } => panic!("compiled"),
-        }
+        assert!(t.elapsed().as_secs() < 10, "killed after {:?}", t.elapsed());
+        assert!(matches!(c, Compiled::TimedOut));
+        let e = time_limit_error(1, "_RNxC1a1f", "a::f::<u8>");
+        assert!(e.starts_with("a::f::<u8> (_RNxC1a1f): lean-backend did not finish within FV_FN_TIME_LIMIT=1 s"));
+        assert!(e.contains("skip = [\"_RNxC1a1f\"]") && e.contains("FV_SKIP=_RNxC1a1f"));
+        // the same function within the limit: lean-backend's own result
+        fs::write(&backend, "#!/bin/sh\necho 'lean-backend: x.clif: %f: unsupported: test' >&2\n").unwrap();
+        let c = compile_one(&test_config(&root, 30), &syms, &split, &outdir, 0, &d, "f");
+        assert!(matches!(&c, Compiled::Fallback(why) if why == "unsupported: test"));
         fs::remove_dir_all(&root).unwrap();
     }
 }

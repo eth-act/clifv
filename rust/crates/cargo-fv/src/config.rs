@@ -96,9 +96,10 @@ pub struct Config {
     /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
     /// functions keep cg_clif's code.
     pub pkg_skip: Vec<(PathBuf, String)>,
-    /// Wall-time limit of one `lean-backend` run, in seconds (`FV_FN_TIME_LIMIT`; 0: none). On
-    /// expiry the run is killed and the function falls back to cg_clif's code with the reason
-    /// `unverified (time limit N s)` (#1074: one slow function must not block the build).
+    /// Wall-time watchdog of one `lean-backend` run, in seconds (`FV_FN_TIME_LIMIT`; 0: none).
+    /// On expiry the run is killed and the build FAILS, naming the function (#1074: a function
+    /// must not block a build forever). Never a fallback: a verdict that depended on the
+    /// machine's load would make the verified counts flap.
     pub fn_time_limit: u64,
 }
 
@@ -106,9 +107,9 @@ fn var(k: &str) -> Result<String, String> {
     std::env::var(k).map_err(|_| format!("{k} is not set (fv-rustc runs under `cargo fv`)"))
 }
 
-/// `FV_FN_TIME_LIMIT`'s default, in seconds: 30 min, ten times the slowest function known to
-/// finish (`proc_macro::quote::quote` of std, 165 s alone, 5 min 30 s under load).
-pub const DEFAULT_FN_TIME_LIMIT: u64 = 1800;
+/// `FV_FN_TIME_LIMIT`'s default, in seconds: 2 h, far above the slowest function known to
+/// finish (#1074).
+pub const DEFAULT_FN_TIME_LIMIT: u64 = 7200;
 
 /// `FV_FN_TIME_LIMIT`: seconds (`0` or `off`: no limit); unset: [`DEFAULT_FN_TIME_LIMIT`].
 pub fn parse_fn_time_limit(v: Option<&str>) -> Result<u64, String> {

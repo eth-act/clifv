@@ -58,9 +58,6 @@
 #   ln -s ../root/usr/bin/qemu-aarch64 clifv-tools/bin/qemu-aarch64-static
 set -u
 command -v qemu-aarch64-static > /dev/null || export PATH="${GATE_TOOLS:-/home/kev/work/clifv-tools/bin}:$PATH"
-# cargo fv's per-function time limit (#1074) is off on every gate line: a function's fallback
-# must not depend on the machine's load, or the pinned counts would flap
-export FV_FN_TIME_LIMIT=off
 GATE_DIR=${GATE_DIR:-/home/kev/work/clifv-main-gate}
 LOCK=/tmp/clifv-heavy.lock
 ISSUE=261

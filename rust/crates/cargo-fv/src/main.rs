@@ -70,10 +70,10 @@ Executables run under qemu-aarch64-static. After a build the report is in target
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json
 
-FV_FN_TIME_LIMIT=N: wall-time limit of one function's lean-backend run, in seconds (default
-1800; 0 or off: none). A function over it keeps cg_clif's code (fallback reason
-`unverified (time limit N s)`). cargo does not see FV_* variables: run `cargo clean` (or touch the
-crate) to recompile a crate under another limit.
+FV_FN_TIME_LIMIT=N: watchdog on one function's lean-backend run, in seconds (default 7200; 0 or
+off: none). A function over it fails the build with its name (never a fallback: what is verified
+must not depend on the machine's load); skip it with [package.metadata.fv] skip = [\"…\"] or
+FV_SKIP, or report it.
 
 `cargo fv link-proof` (after a build with --keep-temps): the input of the crate-level linking
 theorem for one executable's Lean-compiled functions, checked by `lake exe link-check`
