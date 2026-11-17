@@ -77,6 +77,39 @@ def exnOk (f g : Function) (cert : Cert) : Bool :=
   (f.blocks.all fun b => g.blocks.all fun b' => termExnOk C b.term b'.term) &&
     g.blocks.all fun b' => !isReturnCall b'.term
 
+/-! ### `exnOk` as the compiler runs it (#1074)
+
+`exnOk` relates every terminator of `f` to every terminator of `g`, and each `try_call` pair
+evaluates `termOk`, which recomputes `C.T0` (`maxValueId`) and the two `freshValue`s (passes over
+the whole function): `try_call`s² × size (num-bigint's `bigint_scalar::test_scalar_div_rem`'s
+`check_sub`: 3,119 `try_call`s, 31,015 instructions, over an hour). `exnOkF` computes the three
+once per function (`termOkF`); `exnOk_eq_F` (`@[csimp]`) proves it equal. -/
+
+/-- `termExnOk` with `C.T0`, `C.f.freshValue` and `C.g.freshValue` given (`t0`, `ff`, `gf`). -/
+def termExnOkF (C : Ctx) (t0 ff gf : Nat) : Terminator → Terminator → Bool
+  | .tryCall fn args et, .tryCall fn' args' et' =>
+    !termOkF C t0 ff gf (.tryCall fn args et) [] (.tryCall fn' args' et') ||
+      itemsOk C et.items et'.items
+  | _, _ => true
+
+theorem termExnOk_eq_F (C : Ctx) (t t' : Terminator) :
+    termExnOk C t t' = termExnOkF C C.T0 C.f.freshValue C.g.freshValue t t' := by
+  cases t <;> cases t' <;> rfl
+
+/-- `exnOk` as the compiler runs it (`exnOk_eq_F`, `@[csimp]`): `T0` and the two `freshValue`s
+once per function. -/
+def exnOkF (f g : Function) (cert : Cert) : Bool :=
+  let C : Ctx := ⟨f, g, cert⟩
+  let t0 := C.T0
+  let ff := f.freshValue
+  let gf := g.freshValue
+  (f.blocks.all fun b => g.blocks.all fun b' => termExnOkF C t0 ff gf b.term b'.term) &&
+    g.blocks.all fun b' => !isReturnCall b'.term
+
+@[csimp] theorem exnOk_eq_F : @exnOk = @exnOkF := by
+  funext f g cert
+  simp only [exnOk, exnOkF, termExnOk_eq_F]
+
 /-! ## Spec -/
 
 theorem exnOk_items {f g : Function} {cert : Cert} (h : exnOk f g cert = true) {B B' : Block}
