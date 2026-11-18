@@ -1,4 +1,5 @@
 import FV.E2E.ProductionPipelineWith
+import FV.E2E.LinkIdxT
 import FV.Backend.Lowering.StockVoidCallNI
 import FV.E2E.ReturnPinChecksWith
 import FVTest.E2E.ReturnPinLinkProofWith
@@ -12,6 +13,7 @@ import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.SemanticPipelineCheckT
 import FVTest.E2E.TypedRouteChoice
 import FV.Link.ConstPhiCompile
+import FV.E2E.StaticShare
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -115,7 +117,10 @@ def main (args : List String) : IO UInt32 := do
   -- the checks that do not depend on the rest of the program, once (`staticChks`: the
   -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
   let D0 := (R0I.map fun e => frameDrop (getOk e.2).af).foldl max 0
-  let statI := Link.parMap (fun e => (e.1.name, staticChksSemanticFor returnPinCallsExtra (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)) R0I
+  -- `staticChksSemanticNI` once per function: the integer checks `statI` from it
+  -- (`semanticForOfNI_eq`), the typed Stock checks `statS0` below too (`withTSOfNI_eq`)
+  let statNI := Link.parMap (fun e => staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2) R0I
+  let statI := (R0I.zip statNI).map fun (e, ni) => (e.1.name, semanticForOfNI returnPinCallsExtra e.1 e.2 ni)
   let failI := statI.filterMap fun e => if (bad e.2).isEmpty then none else some e.1
   -- the typed checks on the Stock route's results (#722, `Link.SemanticCompilerWith.attemptT`'s
   -- output, typed `--verified` when the units hold Stock code): the results `R0I` with
@@ -132,8 +137,8 @@ def main (args : List String) : IO UInt32 := do
   let stockTS : Option (Res × String × List (String × List (String × Bool)) × Nat) :=
     if !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
-      let statS0 := Link.parMap (fun e => (e.1.name, staticChksWithTS (productionStage o.deadCleanup)
-        { I0 with D := D0 } e.1 e.2)) R0I
+      let statS0 := Link.parMap (fun (p : (Clif.Function × Except String Art) × List (String × Bool)) =>
+        (p.1.1.name, withTSOfNI p.1.1 p.1.2 p.2)) (R0I.zip statNI)
       let choiceM : Std.HashMap String Nat := choices.foldl (fun m p => m.insert p.1 p.2) {}
       let reroute : List (String × Nat) := match phdrs (fileRd file) with
         | none => []
@@ -216,6 +221,9 @@ def main (args : List String) : IO UInt32 := do
     let P := progOf keep
     let T := tabOf keep
     let C := LinkCtx.of I P T
+    -- the program's scans per call site indexed (#1062: `linkChksWithI_of`, `linkChksWithTI_of`,
+    -- `linkChksWithTSI_of`)
+    let X := LinkIdx.of P C.ents
     let returnPins := ReturnPinCtx.of I keep
     let gl := bad (globalChksWith C I P T)
     -- typed: `chksWithT`'s call-site checks (`linkChksT`: a `blr` that enters no function of the
@@ -226,8 +234,8 @@ def main (args : List String) : IO UInt32 := do
         [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S g || g.sig.returns.all (·.ty.isInt))]
       else []
     let lc := fun (e : Clif.Function × Except String Art) =>
-      if typedS then linkChksWithTS C P e.1 e.2
-      else if typed then linkChksWithT C P e.1 e.2 else linkChksWith C P e.1 e.2 ++ [("returnPins", returnPinsWith returnPins e.1)]
+      if typedS then linkChksWithTSI C X P e.1 e.2
+      else if typed then linkChksWithTI C X P e.1 e.2 else linkChksWithI C X P e.1 e.2 ++ [("returnPins", returnPinsWith returnPins e.1)]
     let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
       match b with
       | [] => none

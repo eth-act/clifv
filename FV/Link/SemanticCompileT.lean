@@ -36,6 +36,25 @@ def attemptT (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) :
     leanLinkProductionWith lower S file0 true
   else .error outOkTSMsg
 
+/-- `attemptT` with the Stock route's pipeline run once (`attemptT_eq_fast`, `@[csimp]`): the
+results the typed checks accept are the results the writer writes (`inputProductionWith`'s
+depth does not change them), so the pipeline is not run again for the depth and the writer. -/
+def attemptTFast (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) :
+    Except String ByteArray :=
+  let R := S.input0.resultsProductionWith lower true
+  if okRWithTS (productionStage true) (S.input0.withDepth R) R then
+    leanLinkWithResults S file0 (fun _ => R)
+  else .error outOkTSMsg
+
+@[csimp] theorem attemptT_eq_fast : @attemptT = @attemptTFast := by
+  funext lower S file0
+  have hl : leanLinkProductionWith lower S file0 true =
+      leanLinkWithResults S file0 (fun _ => S.input0.resultsProductionWith lower true) :=
+    leanLinkWithResults_congr S file0 (parResultsProductionWith_eq lower S.input0 true)
+  have hr : (S.input0.withDepth (S.input0.resultsProductionWith lower true)).resultsProductionWith
+      lower true = S.input0.resultsProductionWith lower true := rfl
+  simp only [attemptT, attemptTFast, LinkSpec.inputProductionWith, hl, hr]
+
 theorem attemptT_spec {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) :
     SemanticStackBound.okBTS (input lower S true) = true ∧

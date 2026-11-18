@@ -1,4 +1,6 @@
+import FV.Front.CoverageT
 import FV.Link.TypedCompileSourceModes
+import FV.E2E.LinkIdxT
 import FV.Link.ReturnPinExeSourceWith
 import FV.Backend.Lowering.StockMemorySinkExtNI
 import FV.Link.Compile
@@ -9,7 +11,7 @@ import FV.Link.OptCompile
 import FV.Link.ConstPhiCompile
 import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
-import FV.E2E.SrcScopeDefsT
+import FV.E2E.SrcScopeFastT
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 import FV.E2E.LinkScopeInputDefsT
@@ -23,6 +25,8 @@ import FV.Link.ExeUCompile
 import FV.Link.SemanticCompileDefs
 import FV.Link.UnwReport
 import FV.Link.SemanticCompileT
+import FV.E2E.SrcScopeFast
+import FV.Link.TypedStockShared
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -55,8 +59,8 @@ rust-lld put every function at its placement, `symsOkB`) — and writes the resu
 executable. It prints the theorems covering the written executable (`coverage:`): the
 compiler's `compileExe_correct` (entries without a reachable call cycle) and
 `compileExe_correct_peak` (any entry), and, for an input in the source domain (`SrcScopeB`),
-`compileExe_correct_source` and `compileExe_correct_source_peak` about the original
-(pre-`i128`-legalisation) program. No per-crate proof needed.
+`compileExe_correct_sourceCp` and `compileExe_correct_source_peakCp` about the bundle's program
+(before the `i128` legalisation and constant-phi removal). No per-crate proof needed.
 
 Outside the compiler's input conditions, without `--verified`, the cleanup compiler (no `--opt`,
 no self tail calls) tries the typed scope (S11): first `Link.DeadCleanup.compileExeT3` (the
@@ -85,9 +89,13 @@ a function passes under either list) — but not all
 `fnScopeInB` is compiled by `Link.DeadCleanup.compileExeT` (the typed branches: on `InScopePT`
 `InScopePT`/`leanLink`/`OutOkTCleanup`, else the third branch `leanLink`/`okBCleanupT`), and the
 written executable is covered by the typed theorems
-`compileExeT_correct`, `compileExeT_correct_peak`, `compileExeT_correct_source`,
-`compileExeT_correct_source_peak` (returned values by class) and, through the frontend,
-`Front.bundle_correct_rawT{,_peak}`; totality is proven on `InScopeIn` only. `compileExeT`
+`compileExeT_correct`, `compileExeT_correct_peak`, `compileExeT_correct_sourceCp`,
+`compileExeT_correct_source_peakCp` (returned values by class) and, through the frontend,
+`Front.bundle_correct_rawT{,_peak}` only where their premises `buildSpec b = .ok S` (the bundle
+read, with the placed sizes) and `SrcScopeB` are decided of the spec compiled
+(`Front.rawTClause`, `Front.rawTNamed_premises`; never when constant-phi removal changed a
+function, `S0.cpChanged ≠ []`, #1088: the line then says no Front theorem is named and why);
+totality is proven on `InScopeIn` only. `compileExeT`
 lowers every function with `lowerFunction`, while the units hold the Stock routes' code
 (Cranelift's) where `lean-backend` took them; when some function differs (`stockDiffersB`, #691),
 the typed compiler on the Stock route (#722) `Link.SemanticCompilerWith.attemptT` (the Stock
@@ -111,15 +119,16 @@ each function after `Opt.ConstPhi.run` when `Opt.ConstPhi.keeps` holds (`FnInput
 `lean-backend` compiled, so its register allocations apply); every theorem named below is about
 that input, and `Link.cp_lift` lifts each to the bundle's program (`constant-phi removal:` line).
 The source domain `SrcScopeB` that `--verified` requires is decided on the bundle's program (as
-parsed, before the `i128` legalisation). The `_source` theorems named below are instantiated at
-the compiled input, whose source program holds each constant-phi-removed function as printed
-after the legalisation; where such a function has an `i128` parameter, return or declaration, its
-declarations and its neighbours' no longer agree (`declSigB`, #1042). So the routes that name them
-also need `SrcScopeB` of the compiled input, and under `--verified` the functions failing it there
-are left out of the region; the typed Stock route (`attemptT`), whose coverage is about the
-legalised program and names no `_source` theorem, does not need it. The typed Stock route also
-takes a bundle whose program is only in `SrcScopeTB` (#1076: `legalOkTB` instead of `legalOkB`,
-an `i128` function with a `try_call_indirect` at an `i128`-free signature, as Rust's
+parsed, before the `i128` legalisation), and the source theorems named below are about that
+program: the `…_sourceCp` theorems (#1052) compose the legalisation's refinement, constant-phi
+removal's (`Link.cpSource`, `cpSource_depth`) and the route's theorem at the compiled input,
+instantiated at `I0 = S0.input0` and the route's placement of `S0.cp` (`hcp`: its functions are
+`I0`'s constant-phi removals, by `rfl`). The `_source` theorems instantiated at the compiled input
+itself would need `SrcScopeB` of its source program, which holds each changed function as printed
+after the legalisation and fails `declSigB` where such a function meets an unchanged one at an
+`i128` signature (#1042); they are not named. The typed Stock route (`attemptT`) also takes a
+bundle whose program is only in `SrcScopeTB` (#1076: `legalOkTB` instead of `legalOkB`, an `i128`
+function with a `try_call_indirect` at an `i128`-free signature, as Rust's
 `Box<dyn Any>::downcast`), whose legalisation refines it there (`legalProg_refinesT`; at the
 route's input in `SrcScopeTB`, `attemptT_correct_sourceTB`); every other route then leaves out
 the functions failing `legalOkB` and links again.
@@ -130,8 +139,8 @@ mid-end optimised (`Link.LinkSpec.opt`: `Opt.optimizeExe` with the proven rule s
 optimised function printed to CLIF and used only when it parses back to itself; the functions
 where it does not keep their input and are listed, `optFallbacks:`). The input conditions are
 decided on the optimised input, the source domain on the original one; coverage:
-`compileExeOpt_correct`, `compileExeOpt_correct_peak`, `compileExeOpt_correct_source`,
-`compileExeOpt_correct_source_peak`, totality `compileExeOpt_total_reach_input`. The layout is
+`compileExeOpt_correct`, `compileExeOpt_correct_peak`, `compileExeOpt_correct_sourceCp`,
+`compileExeOpt_correct_source_peakCp`, totality `compileExeOpt_total_reach_input`. The layout is
 then the optimised functions' (`placedPar S.opt`, the theorem's `S.withSizes (sizesOf S.opt)`
 after `withSizes_opt`; `cargo fv --lean-link --opt-proven-only`, whose units `lean-backend
 --opt-proven-only` compiles with the same mid-end).
@@ -295,8 +304,9 @@ def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
     let P := progOf R
     let T := tabOf R
     let C := LinkCtx.of I P T
+    let X := LinkIdx.of P C.ents
     let rs := parMap (fun e => (e.1.name, ((staticChksWithT (fun _ => Backend.DeadCleanup.prune) I e.1 e.2 ++
-      linkChksWithT C P e.1 e.2 ++
+      linkChksWithTI C X P e.1 e.2 ++
       [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S e.1 ||
         e.1.sig.returns.all (·.ty.isInt))]).filter (!·.2)).map (·.1))) R
     rs.filter (!·.2.isEmpty)
@@ -312,34 +322,21 @@ def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
       (fun n => cs.contains n) anyInd P e.1 e.2).filter (!·.2)).map (·.1))) Rs
     rs.filter (!·.2.isEmpty)
 
-/-- Whether `lean-backend` compiled `g` with a Stock lowering other than `lowerFunction` (#691):
-as it does, `lower` (the Stock routes, `lowerCheckedParameterCfgNI`'s chain) on a function
-without `try_call` (`compileFileParameterCfgNIWhen`), and a different `VCode` from
-`lowerFunction`'s (`Stock.D0.defaultLower`, `pipeCleanupT`'s); a function on which `lower`
-fails takes `lowerFunction` in both. -/
-def stockDiffersB (lower : Clif.Function → Except String Backend.VCode) (g : Clif.Function) : Bool :=
-  !(g.blocks.any fun b => b.term.isTry) &&
-    match lower g with
-    | .error _ => false
-    | .ok vc => match Backend.Stock.D0.defaultLower g with
-      | .ok vl => !decide (vc = vl)
-      | .error _ => true
-
 /-- On a typed input whose `Link.SemanticCompilerWith.attemptT lower SP` fails (#722): the
-functions failing the per-function checks of `okRWithTS` on the Stock route's results
-(`chksWithTS` in `okRWithTSFast`'s std-sized form: `staticChksWithTS` and the class-aware
-`linkChksWithTS`, #742), with the failing conditions, and the failing global checks (as
-`<global>`). -/
-def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP : LinkSpec) :
-    List (String × List String) :=
-  let I := SP.inputProductionWith lower true
-  let R : Res := parMap (fun fi => (fi.func, I.pipeProductionWith lower true fi)) I.funcs
+functions failing the per-function checks of `okRWithTS` on the Stock route's results `R`
+(`SP.input0.resultsProductionWith lower true`, `TypedStockShared.stockRes_eq`; the input
+`SP.inputProductionWith lower true` is `SP.input0.withDepth R`) (`chksWithTS` in
+`okRWithTSFast`'s std-sized form: `staticChksWithTS` and the class-aware `linkChksWithTS`, #742),
+with the failing conditions, and the failing global checks (as `<global>`). -/
+def typedStockFails (SP : LinkSpec) (R : Res) : List (String × List String) :=
+  let I := SP.input0.withDepth R
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
+  let X := LinkIdx.of P C.ents
   let gl := ((globalChksWith C I P T).filter (!·.2)).map (·.1)
   let rs := parMap (fun e => (e.1.name, ((staticChksWithTS (productionStage true) I e.1 e.2 ++
-      linkChksWithTS C P e.1 e.2).filter (!·.2)).map (·.1))) R
+      linkChksWithTSI C X P e.1 e.2).filter (!·.2)).map (·.1))) R
   (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
 
 /-- The error of the linkers when `outsideOkB` fails (`Link.leanLink`, `Link.leanLinkWithResults`). -/
@@ -638,7 +635,10 @@ def main (args0 : List String) : IO UInt32 := do
   -- with the Lean compiler's layout (`placedPar = placed`: the totality theorems' layout)
   let tailOn := deadCleanup && !opt && S.funcs.any (fun fi => Opt.TailLoop.eligB fi.func)
   let SC0 := if opt then S.opt else if tailOn then S.tail else S
-  let SC := if deadCleanup then Link.DeadCleanup.placedPar SC0 else SC0.placedPar
+  -- the cleanup layout from the cleanup pipeline's results, kept for the typed Stock route below
+  -- (`TypedStockShared.cleanupArts_placed`: `DeadCleanup.placedPar SC0`)
+  let Ac := if deadCleanup then parMap TypedStockShared.cleanupArt SC0.funcs else []
+  let SC := if deadCleanup then TypedStockShared.placedFrom SC0 Ac else SC0.placedPar
   let names := SC.names
   let R := SC.R
   let file0 ← IO.FS.readBinFile exe
@@ -657,21 +657,18 @@ def main (args0 : List String) : IO UInt32 := do
     let fb := S.tailFallbacks
     IO.println s!"lean-link: {exe}: self tail calls as loops: {S.tailLoops.length} function(s) {S.tailLoops.take 5}, tailFallbacks: {fb.length} {fb.take 5}"
   -- the source domain `--verified` requires: the bundle's program (`S0`; `SrcScopeB` reads the
-  -- parsed functions only). The `_source` theorems named below are about the compiled input
-  -- `S0.cp`, whose source program holds the constant-phi-removed functions as printed after the
-  -- `i128` legalisation (`FnInput.cp`): they also need `SrcScopeB` there (`srcOkCp`, #1042)
-  let I := S.input0
-  let srcOk0 := SrcScopeB S0.input0
-  let srcOkCp := SrcScopeB I
-  let srcOk := srcOk0 && srcOkCp
+  -- parsed functions only). The source theorems named below are about it: the `…_sourceCp`
+  -- theorems, through the `i128` legalisation and constant-phi removal (`Link.cpSource`, #1052),
+  -- instantiated at `I0 = S0.input0` and the route's placement of `S0.cp` (`hcp` by `rfl`)
+  let srcOk := SrcScopeB S0.input0
   -- the typed scope under `--verified` (S11e6): the cleanup compiler `compileExeT`
   let typedOk := deadCleanup && !opt && !tailOn
   -- #1076: the typed Stock route (`attemptT`, chosen below) also takes a bundle whose program is
   -- only in `SrcScopeTB` (an `i128` function with a `try_call_indirect` at an `i128`-free
   -- signature: `legalOkTB`, not `legalOkB`); the legalisation refines it there
   -- (`legalProg_refinesT`, `attemptT_correct_sourceTB`). The other routes exit below (`srcT`).
-  let srcT := verified && !srcOk0 && typedOk && SrcScopeTB S0.input0
-  if verified && !srcOk0 && !srcT then
+  let srcT := verified && !srcOk && typedOk && SrcScopeTB S0.input0
+  if verified && !srcOk && !srcT then
     let P := S0.input0.srcProg
     let fmS := funcMap P
     let bad := P.funcs.filterMap fun g => match srcFails (fun n => fmS[n]?) g (tb := typedOk) with
@@ -700,7 +697,7 @@ def main (args0 : List String) : IO UInt32 := do
     if !addrSlotsInputB P syms then
       IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn): addrSlotsInputB fails (an indirect call, a function with an address and stack slots, no program callee with slots); not written"
       return 1
-    let bad := P.funcs.filterMap fun g => match fnScopeInFails g with
+    let bad := (P.funcs.zip (parMap fnScopeInFails P.funcs)).filterMap fun (g, fs) => match fs with
       | [] => none
       | fs => some (g.name, fs)
     -- per function: the `fnScopeInTB` causes it fails when it fails `fnScopeInTCB` too, and
@@ -745,11 +742,13 @@ def main (args0 : List String) : IO UInt32 := do
   let routes := [Backend.Stock.MemorySinkExt.lowerValidated,Backend.Stock.MemoryCapturedCopy.lowerValidated,Backend.Stock.MemoryLoadStore.lowerValidated,Backend.Stock.MemoryStoreCfg.lowerValidated,Backend.Stock.MemoryUnsigned.lowerValidated,Backend.Stock.MemoryCfg.lowerValidated,Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   -- #691: on a typed input, the functions `lean-backend` compiled with the Stock lowering
-  -- (`stockDiffersB`); when there are some, the typed Stock route `attemptT` below
-  let stockFnsT := if typedV then
-      (SC.funcs.zip (parMap (fun fi => stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
-        fun (fi, b) => if b then some fi.func.name else none
+  -- (`stockDiffersB`, computed with the Stock route's result per function: `stockSteps_fst`);
+  -- when there are some, the typed Stock route `attemptT` below
+  let steps := if typedV then
+      parMap (fun (p : FnInput × Except String Art) => TypedStockShared.stockStep routes[0]! p.1 p.2)
+        (SC0.funcs.zip Ac)
     else []
+  let stockFnsT := steps.filterMap fun s => if s.1 then some s.2.1.name else none
   -- #1076: a bundle only in `SrcScopeTB` is taken by the typed Stock route `attemptT` alone;
   -- every other route names `_source` theorems on `SrcScopeB`: leave out the functions failing
   -- it (`legalOkB`) and link again
@@ -763,20 +762,6 @@ def main (args0 : List String) : IO UInt32 := do
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     printExclusions exe S0 SC typedOk (typedNext := true)
-    return 1
-  -- #1042: every route below but `attemptT` names `_source` theorems, instantiated at the
-  -- compiled input `S0.cp`, so under `--verified` it needs `SrcScopeB` there too (`srcOkCp`):
-  -- leave out the functions failing it (`exclusions` on `S`)
-  if verified && !srcOkCp && !(typedV && !stockFnsT.isEmpty) then
-    let P := I.srcProg
-    let fmS := funcMap P
-    let bad := P.funcs.filterMap fun g => match srcFails (fun n => fmS[n]?) g with
-      | [] => none
-      | fs => some (g.name, fs)
-    IO.eprintln s!"lean-link: {exe}: --verified: outside the source domain of the compiled input (SrcScopeB of Link.LinkSpec.cp, the premise of the source theorems; the bundle's program is in it): {bad.length} function(s) failing legalOkB/linkFreeB/declSigB {(bad.take 3).map (·.1)}, helperFreeB {helperFreeB P}; not written"
-    for (n, fs) in bad do
-      IO.eprintln s!"lean-link:   {n}: {fs}"
-    printExclusions exe S SC typedOk
     return 1
   -- typed `--verified`: `compileExeT` (S11e6, #419)
   if typedV then
@@ -792,8 +777,11 @@ def main (args0 : List String) : IO UInt32 := do
     if !stockFns.isEmpty then
       -- #722: the typed compiler on the Stock route: the units' code (the Stock route's pipeline
       -- and placement), the typed checks per function
-      let SP := SC0.placedProductionWith routes[0]! true
-      let att := SemanticCompilerWith.attemptT routes[0]! SP file0
+      -- (`TypedStockShared.stockSteps_placed`: `SC0.placedProductionWith routes[0]! true`;
+      -- `TypedStockShared.attemptTFrom_eq`: `attemptT routes[0]! SP file0`)
+      let SP := TypedStockShared.placedStock SC0 steps
+      let RS := TypedStockShared.stockRes SP steps
+      let att := TypedStockShared.attemptTFrom SP file0 RS
       if let .ok file := att then
         IO.FS.writeBinFile exe file
         IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
@@ -807,16 +795,17 @@ def main (args0 : List String) : IO UInt32 := do
         let progTot := if progN = 0 then "" else
           s!"; {progN} function(s) fail a program-level input condition (scopeFails: declSigB/indB/callScopeB/outScopeB), so the executable is outside InScopeInT: no totality claim for it"
         -- #1076: name `attemptT_correct_sourceTB` only where its premise `SrcScopeTB` holds of the
-        -- route's input (the compiled input's source program)
+        -- route's input (the compiled input's source program; `SrcScopeTB` does not read the
+        -- route input's call-level stack, `SrcScopeTB_withDepth`: decided on `SP.input0`)
         let srcTB := if !srcT then "" else
-          let thmTB := if SrcScopeTB (SemanticCompilerWith.input routes[0]! SP true).toLinkInput then
+          let thmTB := if SrcScopeTB SP.input0 then
             ", Link.SemanticCompilerWith.attemptT_correct_sourceTB, Link.SemanticCompilerWith.attemptT_correct_source_peakTB"
             else ""
           s!"; the bundle's program is in SrcScopeTB, not SrcScopeB (#1076: i128 functions with a try_call_indirect at an i128-free signature): its legalisation refines it (E2E.LegalProgram.legalProg_refinesT{thmTB})"
         IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim{progTot}{srcTB}"
         return 0
       if let .error e := att then
-        let bad := typedStockFails routes[0]! SP
+        let bad := typedStockFails SP RS
         let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
         IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT): {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}"
         for (n, fs) in bad.take 50 do
@@ -855,7 +844,11 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok file =>
       IO.FS.writeBinFile exe file
       IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
-      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the original (pre-i128-legalisation) program, in SrcScopeB: Link.DeadCleanup.compileExeT_correct_source, Link.DeadCleanup.compileExeT_correct_source_peak; cg_clif's program: Front.bundle_correct_rawT, Front.bundle_correct_raw_peakT; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
+      -- #1088: the Front theorems only where their premises `buildSpec b = .ok SC` (the bundle
+      -- read, with the placed sizes) and `SrcScopeB` are decided of the spec compiled
+      -- (`Front.rawTNamed_premises`); never when constant-phi removal changed a function
+      let front := Front.rawTClause cpN.length { b0 with sizes := SC.names.zip SC.sizes } SC
+      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; {front}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
       IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
       return 0
@@ -886,7 +879,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
         | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
       let src := if srcOk then
-          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ReturnPinCompilerWith.attempt_correct_source, Link.ReturnPinCompilerWith.attempt_correct_source_peak"
+          "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.ReturnPinCompilerWith.attempt_correct_sourceCp, Link.ReturnPinCompilerWith.attempt_correct_source_peakCp"
         else "; outside SrcScopeB: about the legalised program only"
       IO.println s!"lean-link: {exe}: coverage: Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth{src}"
       return 0
@@ -906,7 +899,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB); retained legacy acceptance: Link.SemanticCompilerWith.compileWithRoutes_accepts_legacy"
         | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
       let src := if srcOk then
-          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.SemanticCompilerWith.attempt_correct_source, Link.SemanticCompilerWith.attempt_correct_source_peak"
+          "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.SemanticCompilerWith.attempt_correct_sourceCp, Link.SemanticCompilerWith.attempt_correct_source_peakCp"
         else "; outside SrcScopeB: about the legalised program only"
       let scope := if verified then "; input in InScopeIn (--verified)" else ""
       IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attempt_correct, Link.SemanticCompilerWith.attempt_correct_depth, Link.SemanticCompilerWith.attempt_correct_peak{src}{scope}"
@@ -916,7 +909,7 @@ def main (args0 : List String) : IO UInt32 := do
     IO.FS.writeBinFile exe file
     IO.println s!"lean-link: {exe}: {summary} written by {compilerName} ({theoremName})"
     let src := if srcOk then
-        s!"; the original (pre-i128-legalisation) program, in SrcScopeB: {thm s!"{exeName}_correct_source"}, {thm s!"{exeName}_correct_source_peak"}"
+        s!"; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: {thm s!"{exeName}_correct_sourceCp"}, {thm s!"{exeName}_correct_source_peakCp"}"
       else "; outside SrcScopeB: about the legalised program only"
     let total := if deadCleanup || opt then thm s!"{exeName}_total_reach_input" else "Link.compileExe_total_reach"
     -- `file0` linked by `lean-ld`: its plan against the link spec (`file0OkB_ld`)
@@ -967,7 +960,7 @@ def main (args0 : List String) : IO UInt32 := do
             | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
             | .error why => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {why}"
           let src := if srcOk then
-              "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.TypedCompilerWith.attempt_correct_source, Link.TypedCompilerWith.attempt_correct_source_peak"
+              "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.TypedCompilerWith.attempt_correct_sourceCp, Link.TypedCompilerWith.attempt_correct_source_peakCp"
             else "; outside SrcScopeB: about the legalised program only"
           IO.println s!"lean-link: {exe}: coverage: Link.TypedCompilerWith.attempt_correct, Link.TypedCompilerWith.attempt_correct_depth, Link.TypedCompilerWith.attempt_correct_peak{src}"
           return 0
@@ -1000,7 +993,7 @@ def main (args0 : List String) : IO UInt32 := do
     -- function) reproduce neither the units' code nor the layout rust-lld reserved for it; the
     -- bare Lean linker then links on the Stock placement (`compileWithRoutes`' routes in order)
     let stockFns := if !opt && !tailOn then
-        (SC.funcs.zip (parMap (fun fi => stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
+        (SC.funcs.zip (parMap (fun fi => TypedStockShared.stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
           fun (fi, b) => if b then some fi.func.name else none
       else []
     -- the typed scope (S11, #35; under `--verified` taken above when every function meets

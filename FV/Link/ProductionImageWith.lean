@@ -31,6 +31,19 @@ def LinkSpec.placedProductionWith (S : LinkSpec) (lower : ProductionLowering) (c
   S.withSizes (S.funcs.map fun fi =>
     (getOk (I.pipeProductionWith lower cleanup fi)).fb.words.size)
 
+/-- `LinkSpec.placedProductionWith` with the functions compiled in parallel tasks
+(`placedProductionWith_eq_par`, `@[csimp]`). -/
+def LinkSpec.placedProductionWithPar (S : LinkSpec) (lower : ProductionLowering) (cleanup : Bool) :
+    LinkSpec :=
+  let I : LinkInput := {S.input0 with addrs := []}
+  S.withSizes (parMap (fun fi => (getOk (I.pipeProductionWith lower cleanup fi)).fb.words.size)
+    S.funcs)
+
+@[csimp] theorem LinkSpec.placedProductionWith_eq_par :
+    @LinkSpec.placedProductionWith = @LinkSpec.placedProductionWithPar := by
+  funext S lower cleanup
+  simp only [LinkSpec.placedProductionWith, LinkSpec.placedProductionWithPar, parMap_eq]
+
 theorem LinkSpec.inputProductionWith_original (S : LinkSpec) (cleanup : Bool) :
     S.inputProductionWith Stock.Production.lower cleanup = S.inputProduction cleanup := rfl
 

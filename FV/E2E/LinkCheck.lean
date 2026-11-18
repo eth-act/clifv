@@ -31,6 +31,17 @@ externs), generalised: calls of externs outside the program are allowed (the bas
 `tls_value` is allowed (`baseTls`), the symbol tables are data.
 -/
 
+namespace Link
+
+/-- `l.map f`, each element in its own task (`parMap_eq`). -/
+def parMap {α β : Type} (f : α → β) (l : List α) : List β :=
+  (l.map fun x => Task.spawn fun _ => f x).map Task.get
+
+theorem parMap_eq {α β : Type} (f : α → β) (l : List α) : parMap f l = l.map f := by
+  simp only [parMap, List.map_map]; rfl
+
+end Link
+
 namespace E2E.LinkCheck
 
 open Backend Backend.Proof Backend.Proof.Driver
@@ -212,6 +223,27 @@ address. -/
 def LinkInput.resultsT (I : LinkInput) : Res :=
   I.funcs.map fun fi => let f := fi.func
     (f, pipeT f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))
+
+/-- `LinkInput.results` with the functions compiled in parallel tasks, each function parsed once
+(`results_eq_par`, `@[csimp]`: the compiler's implementation of `results`). -/
+def LinkInput.resultsPar (I : LinkInput) : Res :=
+  Link.parMap (fun fi => let f := fi.func
+    (f, cond I.fallback pipeT pipe f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j)))
+    I.funcs
+
+@[csimp] theorem LinkInput.results_eq_par : @LinkInput.results = @LinkInput.resultsPar := by
+  funext I
+  simp only [LinkInput.results, LinkInput.resultsPar, LinkInput.pipeOf, Link.parMap_eq]
+
+/-- `LinkInput.resultsT` with the functions compiled in parallel tasks (`resultsT_eq_par`,
+`@[csimp]`). -/
+def LinkInput.resultsTPar (I : LinkInput) : Res :=
+  Link.parMap (fun fi => let f := fi.func
+    (f, pipeT f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))) I.funcs
+
+@[csimp] theorem LinkInput.resultsT_eq_par : @LinkInput.resultsT = @LinkInput.resultsTPar := by
+  funext I
+  simp only [LinkInput.resultsT, LinkInput.resultsTPar, Link.parMap_eq]
 
 /-- **With `fallback`, the input's results are the compiler's** (`resultsT`): every theorem
 stated for `I.results` (`okB`, `okB_sound`, `BinOk`, the binary theorems) is then about the code
