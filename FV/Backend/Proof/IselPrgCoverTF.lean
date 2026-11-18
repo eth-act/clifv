@@ -120,7 +120,10 @@ theorem stmt_rootTF {f : Clif.Function} {ctx : Ctx} (hP : PInvTF f ctx) {ii : Na
       refine ⟨x, t, rfl, ht, ?_⟩
       rcases hflo x hx t ht with rfl | rfl <;> simp
     rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, zs⟩⟩⟩
-    · simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
+    · -- #35: no `instETF` float operation has no operand (`fma`'s arm of `instData` is not one)
+      exfalso
+      cases op <;> simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+        Compile.fArithET, Compile.fCvtET, Compile.fCmpET] at hF
     · cases op <;> simp only [instData, fUnaryOpcode, fCvtOpcode] at hd
       all_goals first
         | (simp [throw, throwThe, MonadExceptOf.throw] at hd; done)
@@ -176,8 +179,16 @@ theorem stmt_rootTF {f : Clif.Function} {ctx : Ctx} (hP : PInvTF f ctx) {ii : Na
                       (γL_cons' (hFl y (by simp [Compile.floatOperands])) γL_nil'))) (γL_cons' ?_ γL_nil')))
                   rw [mkVariant_floatccF]
                   exact ⟨[], rfl, trivial⟩)
+               | -- #35: `fcopysign` (`Binary`/`Fcopysign`) is outside `instETF`
+                 (exfalso
+                  simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+                    Compile.fArithET, Compile.fCvtET, Compile.fCmpET, fBinaryOpcode,
+                    fUnaryOpcode, fCvtOpcode] at hF)
            · simp [throw, throwThe, MonadExceptOf.throw] at hd)
-    · simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
+    · -- #35: three operands (`fma`) are outside `instETF`
+      exfalso
+      cases op <;> simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+        Compile.fArithET, Compile.fCvtET, Compile.fCmpET] at hF
   all_goals exact absurd (by simpa [Compile.instETF, Compile.instETA, Compile.fArithET,
     Compile.fCvtET, Compile.fCmpET] using hF) hET
 
