@@ -29,6 +29,14 @@ constant pool (`constant_f64`'s last rule, `emit_u64_le_const`); its `lower` roo
 the contexts of `InstScopeTFL` (`Backend.Proof.lowerRulesCorrectTL_program`). `instETF`,
 `functionETF` and the float scope's theorems (`LowerScopeTF`, #1002 part 1's
 `E2E.noPoolB_lowerTF`) are unchanged.
+
+#35: the statements of `functionETCF` may also be an `fcopysign` (`fCopysignET`) or an `fma`
+(`fFmaET`) at `f32`/`f64` (`instETFLO`). Cranelift lowers them with `ushr` + `sli`
+(`fcopy_sign`'s scalar rule) and with `fmadd`/`fmsub`/`fnmadd`/`fnmsub` (`fpu_rrrr`); their
+`lower` roots are proven over float-capable contexts (`Backend.Proof.lowerRulesCorrectCS_program`,
+`Backend.Proof.lowerRulesCorrectFM_program`), and the validator checks the scope
+`InstScopeTFLO` (`Backend.Proof.Driver.instScopeOkFLO`). `instETFL` and its theorems are
+unchanged.
 -/
 
 namespace Compile
@@ -121,11 +129,12 @@ def opsTypedTCF (f : Function) : Bool :=
 
 /-- **The typed scope with the proven float operations and float calls** (`functionETC` with
 `instETF`; S11g: without `callsE`, a `call`'s arguments in their classes, `opsTypedTCF`; #1002
-part 2: `instETFL`, an `f64const` from the literal pool among the statements). -/
+part 2: `instETFL`, an `f64const` from the literal pool among the statements; #35: `instETFLO`,
+`fcopysign` and `fma` among them). -/
 def functionETCF (f : Function) : Bool :=
   sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigET ·.2.sig) &&
     f.blocks.all (fun b =>
-      b.params.all (tyM ·.2) && b.body.all (instETFL ·.inst) && termE b.term) &&
+      b.params.all (tyM ·.2) && b.body.all (instETFLO ·.inst) && termE b.term) &&
     opsTypedTCF f && edgeClassOk f
 
 /-- **The scope with typed `try_call`s is in the scope with the float operations.** -/
@@ -136,7 +145,8 @@ theorem functionETCF_of_functionETC {f : Function} (h : functionETC f = true) :
   simp only [functionETCF, Bool.and_eq_true, List.all_eq_true]
   refine ⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, fun b hb' => ?_⟩, ?_⟩, he⟩
   · obtain ⟨⟨hp, hi⟩, ht⟩ := hb b hb'
-    exact ⟨⟨hp, fun s hs' => instETFL_of_instETF (instETF_of_instET (hi s hs'))⟩, ht⟩
+    exact ⟨⟨hp, fun s hs' => instETFLO_of_instETFL (instETFL_of_instETF (instETF_of_instET
+      (hi s hs')))⟩, ht⟩
   · simp only [opsTypedTC, opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at ho ⊢
     intro b hb'
     refine ⟨fun s hs' x hx => ?_, (ho b hb').2⟩

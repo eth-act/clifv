@@ -18,6 +18,10 @@ replacing the `try_call` vregs keep it).
 
 The validator with the literal pool gives `LowerShapeTCS InstScope.tfl`
 (`Driver.loweringTCF_of_check`). `LowerShapeTC` and its theorems are unchanged.
+
+#35: `InstScope.tflo` (`InstScopeTFLO`: `Compile.instETFLO`, `fcopysign` and `fma` also), the
+scope the validator checks since #35 (`Driver.loweringTCF_of_check` gives
+`LowerShapeTCS InstScope.tflo`).
 -/
 
 namespace Backend.Proof
@@ -54,6 +58,12 @@ def InstScope.tfl : InstScope := .ofInsts Compile.instETFL
 theorem InstScope.tf_P {ctx : Ctx} : InstScope.tf.P ctx ↔ InstScopeTF ctx := Iff.rfl
 
 theorem InstScope.tfl_P {ctx : Ctx} : InstScope.tfl.P ctx ↔ InstScopeTFL ctx := Iff.rfl
+
+/-- The scope with the proven float operations, the literal pool, `fcopysign` and `fma`
+(`InstScopeTFLO`, #35). -/
+def InstScope.tflo : InstScope := .ofInsts Compile.instETFLO
+
+theorem InstScope.tflo_P {ctx : Ctx} : InstScope.tflo.P ctx ↔ InstScopeTFLO ctx := Iff.rfl
 
 end Backend.Proof
 

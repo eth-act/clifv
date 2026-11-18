@@ -232,14 +232,15 @@ def instOpText (i : Clif.Inst) : String :=
 
 /-- **The conditions of the typed scope that `f` fails, by name** (#1015): the conjuncts of
 `Compile.functionETCF` in the order of its definition, then `Compile.storeTypedB`. The statement
-instructions outside `Compile.instETFL` are named by opcode (`instOpText`), under the label
+instructions outside `Compile.instETFLO` are named by opcode (`instOpText`), under the label
 `instETF:`. Diagnostics only: the verdict is `unverifiedReason?`'s condition. (S11g:
 `functionETCF` has no `callsE` conjunct and no integer position in a `call`'s arguments any more;
-#1002 part 2: its statements are `instETFL`, an `f64const` from the literal pool among them.) -/
+#1002 part 2: its statements are `instETFL`, an `f64const` from the literal pool among them;
+#35: `instETFLO`, `fcopysign` and `fma` at `f32`/`f64` among them.) -/
 def typedScopeFails (f : Clif.Function) : List String :=
   let c (b : Bool) (s : String) : List String := if b then [] else [s]
   let insts := (f.blocks.flatMap fun b => b.body.filterMap fun s =>
-    if Compile.instETFL s.inst then none else some (instOpText s.inst)).eraseDups
+    if Compile.instETFLO s.inst then none else some (instOpText s.inst)).eraseDups
   c (Compile.sigET f.sig) "sigET (own signature)" ++
   c (f.globals.all (Compile.globalE ·.2)) "globalE" ++
   c (f.externs.all (Compile.sigET ·.2.sig)) "sigET (an extern's signature)" ++
