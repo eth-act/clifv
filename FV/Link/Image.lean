@@ -4,6 +4,7 @@ import FV.E2E.Elf
 import FV.E2E.CodeMap
 import FV.E2E.CodeMapFast
 import FV.E2E.LinkScopeFast
+import FV.E2E.LinkScopeIdx
 import FV.Link.RelocFast
 
 /-! # Writing the program part into the executable (L2b)
