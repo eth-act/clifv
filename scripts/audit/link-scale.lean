@@ -101,3 +101,9 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.LinkCheck.progScopeInWithB_eq_fast
 #print axioms Link.TypedStockShared.stockFails_isEmpty
 #print axioms Link.TypedStockShared.attemptTFrom_stockFails
+#print axioms E2E.LinkCheck.blrFastC_eq
+#print axioms E2E.LinkCheck.indFastC_eq
+#print axioms E2E.LinkCheck.linkChksWithTSX_of
+#print axioms E2E.LinkCheck.allMay_eq
+#print axioms E2E.LinkCheck.anyMay_eq
+#print axioms E2E.LinkCheck.candFacts

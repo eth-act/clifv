@@ -1,5 +1,5 @@
 import FV.Link.TypedCompileSourceModes
-import FV.E2E.LinkIdxT
+import FV.E2E.LinkIdxSig
 import FV.Link.ReturnPinExeSourceWith
 import FV.Backend.Lowering.StockMemorySinkExtNI
 import FV.Link.Compile
@@ -176,6 +176,11 @@ open Lean E2E E2E.LinkCheck E2E.Elf Link
 def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
 open Backend in
+/-- More than 8 bytes of stack-passed parameters (or none computable): `indB`'s bound fails. -/
+def bigParamsB (t : Clif.Signature) : Bool :=
+  match sigParamBytes t with | .ok b => decide (b.length > 8) | .error _ => true
+
+open Backend in
 /-- The program-level per-function input conditions `g` fails (`progScopeB`'s conjuncts, the
 indirect-call scope `indB` and the call sites `callScopeB` split by cause); `F`: `P.func?` (a hash
 map, `funcMap`). -/
@@ -208,12 +213,98 @@ def scopeFails (F : String → Option Clif.Function) (P : Clif.Program) (S : Str
     | _ => []
   ((if declSigWithB F g then [] else ["declSigB"]) ++
     (if ind && P.funcs.any (fun h => mayWithB S (!ind) D h.name && indSigWithB D sigs h &&
-        (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true))
+        bigParamsB h.sig)
       then ["indB:calleeStack"] else []) ++
     (if ind && P.funcs.any (fun h => mayWithB S (!ind) D h.name && indSigWithB D sigs h &&
         !indRetsWithB sigs h)
       then ["indB:sretRets"] else []) ++
     sites ++ (if outScopeWithB F g then [] else ["outScopeB"])).eraseDups
+
+open Backend in
+/-- **`scopeFails` with the functions `g` may enter indexed** (`scopeFailsFast_eq`, #1108): the
+indirect-call sites (`callScopeB:blrRegs`) and the indirect-call scope (`indB:*`) test the
+functions `g` declares (`X.byName`) and the distinct signatures of the others it may enter
+(`SI`, `sigIdx`), instead of every function of `P` per site (ruint: 1,347 s). -/
+def scopeFailsFast (F : String → Option Clif.Function) (S : String → Option Nat) (X : LinkIdx)
+    (SI : Std.HashMap (List Clif.Ty) (List Clif.Signature)) (g : Clif.Function) : List String :=
+  let ind := !indFreeB g
+  let Ds := declSet g
+  let D := fun n => Ds.contains n
+  let sigs := indSigs g
+  let to := indToWithB S (indFreeB g) D sigs g
+  let M1 := g.externs.flatMap fun e => X.byName.getD e.2.name []
+  let cs := if indFreeB g then [] else sigCands SI sigs
+  let S2 := cs.filter (indMatchSig sigs)
+  let S3 := cs.filter (indSigMatchSig sigs)
+  let mi := fun h => mayWithB S (indFreeB g) D h.name && indSigWithB D sigs h
+  let site (s : Clif.Signature) (args : List Nat) : List String :=
+    let Q := fun (t : Clif.Signature) => decide ((regLocs t).length ≠ (callRegs s args).length) ||
+      decide (regLocs t = callRegs s args)
+    if M1.all (fun h => !to h || Q h.sig) && S2.all Q then [] else ["callScopeB:blrRegs"]
+  let sites := g.blocks.flatMap fun B =>
+    (B.body.flatMap fun st => match st.inst with
+      | .call fn args => match g.extern? fn with
+        | some e => if dirSiteWithB F e args then [] else ["callScopeB:dirSite"]
+        | none => []
+      | .callIndirect sg _ args => match g.sigDecls.lookup sg with
+        | some s => site s args
+        | none => []
+      | _ => []) ++
+    match B.term with
+    | .tryCall fn args _ => match g.extern? fn with
+      | some e => if dirSiteWithB F e args then [] else ["callScopeB:dirSite"]
+      | none => []
+    | .tryCallIndirect _ args et => match g.sigDecls.lookup et.sig with
+      | some s => site s args
+      | none => []
+    | _ => []
+  ((if declSigWithB F g then [] else ["declSigB"]) ++
+    (if ind && (M1.any (fun h => mi h && bigParamsB h.sig) || S3.any bigParamsB)
+      then ["indB:calleeStack"] else []) ++
+    (if ind && (M1.any (fun h => mi h && !indRetsSig sigs h.sig) || S3.any (fun t => !indRetsSig sigs t))
+      then ["indB:sretRets"] else []) ++
+    sites ++ (if outScopeWithB F g then [] else ["outScopeB"])).eraseDups
+
+open Backend in
+theorem scopeFailsFast_eq (F : String → Option Clif.Function) (P : Clif.Program)
+    (S : String → Option Nat) (g : Clif.Function) :
+    scopeFailsFast F S (LinkIdx.of P []) (sigIdx P S) g = scopeFails F P S g := by
+  obtain ⟨hM1, hD, hS1, hS2, hS3, hS4⟩ := candFacts P [] S g _ _ _ _ _ rfl rfl rfl rfl rfl
+  have hsite : ∀ (s : Clif.Signature) (args : List Nat),
+      ((g.externs.flatMap fun e => (LinkIdx.of P []).byName.getD e.2.name []).all
+          (fun h => !indToWithB S (indFreeB g) (fun n => (declSet g).contains n) (indSigs g) g h ||
+            (decide ((regLocs h.sig).length ≠ (callRegs s args).length) ||
+              decide (regLocs h.sig = callRegs s args))) &&
+        ((if indFreeB g = true then [] else sigCands (sigIdx P S) (indSigs g)).filter
+          (indMatchSig (indSigs g))).all (fun t =>
+            decide ((regLocs t).length ≠ (callRegs s args).length) ||
+              decide (regLocs t = callRegs s args))) =
+        indSiteWithB P (indToWithB S (indFreeB g) (fun n => (declSet g).contains n) (indSigs g) g)
+          s args := by
+    intro s args
+    rw [indSiteWithB]
+    simp only [Bool.or_assoc]
+    exact (allMay_eq _ hM1 hD hS1 hS2 _).symm
+  have hbig : ((g.externs.flatMap fun e => (LinkIdx.of P []).byName.getD e.2.name []).any
+        (fun h => (mayWithB S (indFreeB g) (fun n => (declSet g).contains n) h.name &&
+          indSigWithB (fun n => (declSet g).contains n) (indSigs g) h) && bigParamsB h.sig) ||
+      ((if indFreeB g = true then [] else sigCands (sigIdx P S) (indSigs g)).filter
+        (indSigMatchSig (indSigs g))).any bigParamsB) =
+      P.funcs.any (fun h => (mayWithB S (indFreeB g) (fun n => (declSet g).contains n) h.name &&
+          indSigWithB (fun n => (declSet g).contains n) (indSigs g) h) && bigParamsB h.sig) :=
+    (anyMay_eq _ hM1 hD hS3 hS4 bigParamsB).symm
+  have hrets : ((g.externs.flatMap fun e => (LinkIdx.of P []).byName.getD e.2.name []).any
+        (fun h => (mayWithB S (indFreeB g) (fun n => (declSet g).contains n) h.name &&
+          indSigWithB (fun n => (declSet g).contains n) (indSigs g) h) &&
+            !indRetsSig (indSigs g) h.sig) ||
+      ((if indFreeB g = true then [] else sigCands (sigIdx P S) (indSigs g)).filter
+        (indSigMatchSig (indSigs g))).any (fun t => !indRetsSig (indSigs g) t)) =
+      P.funcs.any (fun h => (mayWithB S (indFreeB g) (fun n => (declSet g).contains n) h.name &&
+          indSigWithB (fun n => (declSet g).contains n) (indSigs g) h) &&
+            !indRetsSig (indSigs g) h.sig) :=
+    (anyMay_eq _ hM1 hD hS3 hS4 (fun t => !indRetsSig (indSigs g) t)).symm
+  unfold scopeFailsFast scopeFails
+  simp only [Bool.not_not, indRetsWithB_sig, hsite, hbig, hrets]
 
 /-- The source-domain conditions (`SrcScopeB`'s per-function conjuncts; with `tb`,
 `SrcScopeTB`'s: `legalOkTB` instead of `legalOkB`, #1076) a parsed function `g` of the source
@@ -277,7 +368,10 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (onl
     let out : Std.HashSet String := .ofList (src ++ (fs.filter (!·.2.1.isEmpty)).map (·.1.name))
     let typedScope := typedNext && typed &&
       fs.any fun (g, _, i) => !i.isEmpty && !out.contains g.name
-    let scope := (P.funcs.zip (parMap (fun g => scopeFails (fun n => fm[n]?) P syms g)
+    -- `scopeFailsFast_eq` (#1108)
+    let X := LinkIdx.of P []
+    let SI := sigIdx P syms
+    let scope := (P.funcs.zip (parMap (fun g => scopeFailsFast (fun n => fm[n]?) syms X SI g)
       P.funcs)).filterMap fun (g, s) =>
         if s.isEmpty || (typedScope && !s.any (·.startsWith "callScopeB")) then none
         else some g.name
@@ -289,7 +383,11 @@ def progScopeFailsN (SC : LinkSpec) : Nat :=
   let P := SC.input0.prog
   let sy := assocMap SC.input0.syms
   let fm := funcMap P
-  (parMap (fun g => !(scopeFails (fun n => fm[n]?) P (fun n => sy[n]?) g).isEmpty) P.funcs).count true
+  let X := LinkIdx.of P []
+  let SI := sigIdx P (fun n => sy[n]?)
+  -- `scopeFailsFast_eq` (#1108)
+  (parMap (fun g => !(scopeFailsFast (fun n => fm[n]?) (fun n => sy[n]?) X SI g).isEmpty)
+    P.funcs).count true
 
 /-- On a typed input (`--verified`) whose `compileExeT` fails: the functions failing the typed
 per-function conditions of `InScopePT` (`fnScopeTB`), and those whose compiled code fails the
@@ -975,14 +1073,18 @@ def main (args0 : List String) : IO UInt32 := do
     let sy := assocMap SC.input0.syms
     let syms := fun n => sy[n]?
     let fm := funcMap P
-    let bad := P.funcs.filterMap fun g => match scopeFails (fun n => fm[n]?) P syms g with
+    -- `scopeFailsFast_eq`, in parallel (#1108)
+    let X := LinkIdx.of P []
+    let SI := sigIdx P syms
+    let bad := (P.funcs.zip (parMap (fun g => scopeFailsFast (fun n => fm[n]?) syms X SI g)
+      P.funcs)).filterMap fun (g, fs) => match fs with
       | [] => none
       | fs => some (g.name, fs)
     let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
     let scopeName := if e == outOfScopeInMsg then "InScopeIn" else "InScopeP"
     let fnScope := if e == outOfScopeInMsg then "fnScopeInB" else "fnScopeB"
     let what := if verified then "--verified: not written" else s!"linking with {linkerName} (outside {theoremName} scope)"
-    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions ({scopeName}): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {decide (P.funcs.map (·.name)).Nodup}, {if e == outOfScopeInMsg then s!"addrSlotsInputB {addrSlotsInputB P syms}" else s!"addrSlotsInB {addrSlotsInB P syms}"} (else {fnScope}); {what}"
+    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions ({scopeName}): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {namesNodupB (P.funcs.map (·.name))}, {if e == outOfScopeInMsg then s!"addrSlotsInputB {addrSlotsInputB P syms}" else s!"addrSlotsInB {addrSlotsInB P syms}"} (else {fnScope}); {what}"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     if verified then

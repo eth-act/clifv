@@ -444,4 +444,124 @@ theorem linkChksWithTSX_of (C : LinkCtx) (P : Clif.Program) (g : Clif.Function)
   obtain ⟨hb, hi⟩ := linkChksWithTSX_entries C P g _ _ _ _ _ _ rfl rfl rfl rfl rfl rfl
   simp only [linkChksWithTSX, linkChksWithTSI, hb, hi]
 
+/-! ## Scans of the functions `g` may enter, by signature (lean-link's `scopeFails`) -/
+
+/-- **A test of the signature of every function `may` admits**, over `M1` (the functions `g`
+declares) and the signatures `S2` of the others. -/
+theorem allMay_eq {P : Clif.Program} {may : Clif.Function → Bool} {M1 : List Clif.Function}
+    {S2 : List Clif.Signature} (D : String → Bool)
+    (hM1 : ∀ h ∈ M1, h ∈ P.funcs) (hD : ∀ h ∈ P.funcs, D h.name = true → h ∈ M1)
+    (hS1 : ∀ t ∈ S2, ∃ h ∈ P.funcs, may h = true ∧ h.sig = t)
+    (hS2 : ∀ h ∈ P.funcs, may h = true → D h.name = false → h.sig ∈ S2)
+    (Q : Clif.Signature → Bool) :
+    P.funcs.all (fun h => !may h || Q h.sig) =
+      (M1.all (fun h => !may h || Q h.sig) && S2.all Q) := by
+  apply Bool.eq_iff_iff.2
+  simp only [List.all_eq_true, Bool.and_eq_true]
+  constructor
+  · intro h
+    refine ⟨fun x hx => h x (hM1 x hx), fun t ht => ?_⟩
+    obtain ⟨x, hx, hm, rfl⟩ := hS1 t ht
+    have := h x hx
+    simpa [hm] using this
+  · rintro ⟨h1, h2⟩ x hx
+    cases hm : may x
+    · simp
+    · cases hd : D x.name
+      · simpa using h2 _ (hS2 x hx hm hd)
+      · have := h1 x (hD x hx hd)
+        rw [hm] at this
+        exact this
+
+/-- `allMay_eq` for `List.any`. -/
+theorem anyMay_eq {P : Clif.Program} {may : Clif.Function → Bool} {M1 : List Clif.Function}
+    {S2 : List Clif.Signature} (D : String → Bool)
+    (hM1 : ∀ h ∈ M1, h ∈ P.funcs) (hD : ∀ h ∈ P.funcs, D h.name = true → h ∈ M1)
+    (hS1 : ∀ t ∈ S2, ∃ h ∈ P.funcs, may h = true ∧ h.sig = t)
+    (hS2 : ∀ h ∈ P.funcs, may h = true → D h.name = false → h.sig ∈ S2)
+    (Q : Clif.Signature → Bool) :
+    P.funcs.any (fun h => may h && Q h.sig) =
+      (M1.any (fun h => may h && Q h.sig) || S2.any Q) := by
+  apply Bool.eq_iff_iff.2
+  simp only [List.any_eq_true, Bool.or_eq_true, Bool.and_eq_true]
+  constructor
+  · rintro ⟨x, hx, hm, hq⟩
+    cases hd : D x.name
+    · exact .inr ⟨x.sig, hS2 x hx hm hd, hq⟩
+    · exact .inl ⟨x, hD x hx hd, hm, hq⟩
+  · rintro (⟨x, hx, hm, hq⟩ | ⟨t, ht, hq⟩)
+    · exact ⟨x, hM1 x hx, hm, hq⟩
+    · obtain ⟨x, hx, hm, rfl⟩ := hS1 t ht
+      exact ⟨x, hx, hm, hq⟩
+
+/-- **What `g` may enter, through the indices of `P`**: the functions named by `g`'s
+declarations (`M1`) and the candidate signatures `cs`, filtered by `indMatchSig` (the functions
+`indToWithB` admits) and by `indSigMatchSig` (those `mayWithB && indSigWithB` admits). -/
+theorem candFacts (P : Clif.Program) (E : List RaEnt) (S : String → Option Nat)
+    (g : Clif.Function) (D : String → Bool) (sigs : List Clif.Signature) (ind : Bool)
+    (M1 : List Clif.Function) (cs : List Clif.Signature)
+    (eD : D = fun n => (declSet g).contains n) (es : sigs = indSigs g) (ei : ind = indFreeB g)
+    (eM : M1 = g.externs.flatMap fun e => (LinkIdx.of P E).byName.getD e.2.name [])
+    (ec : cs = if ind = true then [] else sigCands (sigIdx P S) sigs) :
+    (∀ h ∈ M1, h ∈ P.funcs) ∧ (∀ h ∈ P.funcs, D h.name = true → h ∈ M1) ∧
+    (∀ t ∈ cs.filter (indMatchSig sigs), ∃ h ∈ P.funcs,
+      indToWithB S ind D sigs g h = true ∧ h.sig = t) ∧
+    (∀ h ∈ P.funcs, indToWithB S ind D sigs g h = true → D h.name = false →
+      h.sig ∈ cs.filter (indMatchSig sigs)) ∧
+    (∀ t ∈ cs.filter (indSigMatchSig sigs), ∃ h ∈ P.funcs,
+      (mayWithB S ind D h.name && indSigWithB D sigs h) = true ∧ h.sig = t) ∧
+    (∀ h ∈ P.funcs, (mayWithB S ind D h.name && indSigWithB D sigs h) = true →
+      D h.name = false → h.sig ∈ cs.filter (indSigMatchSig sigs)) := by
+  subst eD es ei eM ec
+  have hcs : ∀ t ∈ (if indFreeB g = true then [] else sigCands (sigIdx P S) (indSigs g)),
+      indFreeB g = false ∧ ∃ h ∈ P.funcs, (S h.name).isSome = true ∧ h.sig = t := by
+    intro t ht
+    cases hi : indFreeB g
+    · rw [hi] at ht
+      simp only [Bool.false_eq_true, ite_false] at ht
+      obtain ⟨s, -, hs⟩ := mem_sigCands.1 ht
+      obtain ⟨h, hh, h1, h2, -⟩ := (mem_sigIdx P S t _).1 hs
+      exact ⟨rfl, h, hh, h1, h2⟩
+    · rw [hi] at ht; simp at ht
+  have hcs2 : ∀ h ∈ P.funcs, indFreeB g = false → (S h.name).isSome = true →
+      ∀ s ∈ indSigs g, s.abiMatch h.sig = true →
+        h.sig ∈ (if indFreeB g = true then [] else sigCands (sigIdx P S) (indSigs g)) := by
+    intro h hh hi hS s hs hm
+    rw [hi]
+    simp only [Bool.false_eq_true, ite_false]
+    exact mem_sigCands.2 ⟨s, hs, (mem_sigIdx P S h.sig _).2 ⟨h, hh, hS, rfl, tys_of_abiMatch hm⟩⟩
+  refine ⟨fun h hh => M1_sub P E g hh, fun h hh hd => M1_decl P E g hh hd, fun t ht => ?_,
+    fun h hh hm hd => ?_, fun t ht => ?_, fun h hh hm hd => ?_⟩
+  · obtain ⟨htc, hmt⟩ := List.mem_filter.1 ht
+    obtain ⟨hi, h, hh, hS, rfl⟩ := hcs t htc
+    refine ⟨h, hh, ?_, rfl⟩
+    simp only [indToWithB, mayWithB, hi, hS, indMatchWithB_sig, hmt, Bool.or_true,
+      Bool.not_false, Bool.true_and, Bool.and_true]
+  · simp only [indToWithB, mayWithB, hd, Bool.false_or, Bool.false_and, Bool.and_eq_true,
+      Bool.not_eq_true'] at hm
+    obtain ⟨⟨hi, hS⟩, hmw⟩ := hm
+    rw [indMatchWithB_sig] at hmw
+    refine List.mem_filter.2 ⟨?_, hmw⟩
+    obtain ⟨s, hs, hsm⟩ := List.any_eq_true.1 hmw
+    exact hcs2 h hh hi hS s hs (Bool.and_eq_true _ _ ▸ hsm).1
+  · obtain ⟨htc, hmt⟩ := List.mem_filter.1 ht
+    obtain ⟨hi, h, hh, hS, rfl⟩ := hcs t htc
+    refine ⟨h, hh, ?_, rfl⟩
+    simp only [mayWithB, hi, hS, indSigWithB, indSigMatchSig_eq, hmt, Bool.or_true, Bool.true_or,
+      Bool.not_false, Bool.true_and, Bool.and_self]
+  · simp only [mayWithB, hd, Bool.false_or, Bool.and_eq_true, Bool.not_eq_true'] at hm
+    obtain ⟨⟨hi, hS⟩, hs⟩ := hm
+    simp only [indSigWithB, indSigMatchSig_eq, hd, Bool.false_and, Bool.or_false] at hs
+    refine List.mem_filter.2 ⟨?_, hs⟩
+    obtain ⟨s, hsm, hab⟩ := List.any_eq_true.1 hs
+    exact hcs2 h hh hi hS s hsm hab
+
+/-- `indRetsWithB sigs h` from `h`'s signature `t`. -/
+def indRetsSig (sigs : List Clif.Signature) (t : Clif.Signature) : Bool :=
+  sigs.all fun s => !decide (Clif.AbiParam.tys t.params = Clif.AbiParam.tys s.params) ||
+    t.returns.length != s.returns.length || (sigRets t).length == (sigRets s).length
+
+theorem indRetsWithB_sig (sigs : List Clif.Signature) (h : Clif.Function) :
+    indRetsWithB sigs h = indRetsSig sigs h.sig := rfl
+
 end E2E.LinkCheck
