@@ -2,7 +2,9 @@ import FV.Link.Layout
 import FV.Link.Reloc
 import FV.E2E.Elf
 import FV.E2E.CodeMap
+import FV.E2E.CodeMapFast
 import FV.E2E.LinkScopeFast
+import FV.Link.RelocFast
 
 /-! # Writing the program part into the executable (L2b)
 
@@ -144,6 +146,46 @@ def dataFastB (I : LinkInput) (D : List Clif.DataObject) (ex : Excerpt) : Bool :
   | some phs => let am := addrMap I.addrs; D.all (objFastB am I (exRd ex) phs)
   | none => false
 
+/-- `itemBytes` with the link map in `C` (`itemBytesF_eq`). -/
+def itemBytesF (C : RelocCtx) : Clif.DataItem → List (BitVec 8)
+  | .byte b => [b]
+  | .addr n off =>
+    let v := BitVec.ofInt 64 ((C.addrOf n : Int) + off)
+    (List.range 8).map fun j => v.extractLsb' (8 * j) 8
+
+theorem itemBytesF_eq (I : LinkInput) : itemBytesF (RelocCtx.of I) = itemBytes I := by
+  funext d
+  cases d <;> simp only [itemBytesF, itemBytes, RelocCtx.addrOf_of]
+
+/-- `objFastB` with the data items' addresses looked up in `C` (`objFastF_eq`). -/
+def objFastF (am : Std.HashMap String Nat) (C : RelocCtx) (r : Rd) (phs : List Phdr)
+    (o : Clif.DataObject) : Bool :=
+  match am[o.name]? with
+  | none => false
+  | some a =>
+    let bs := (o.items.flatMap (itemBytesF C)).toArray
+    let at0 := BitVec.ofNat 64 a
+    (List.range bs.size).all fun i =>
+      let x := at0 + BitVec.ofNat 64 i
+      loadIn r phs x.toNat == some (bs[i]?.getD 0) && (o.writable || roB phs x || relroB phs x)
+
+theorem objFastF_eq (am : Std.HashMap String Nat) (I : LinkInput) (r : Rd) (phs : List Phdr) :
+    objFastF am (RelocCtx.of I) r phs = objFastB am I r phs := by
+  funext o
+  simp only [objFastF, objFastB, objBytes, itemBytesF_eq]
+
+/-- **`dataFastB` with the data items' addresses in a hash map** (`dataFastB` looks each one up
+in the link map's list, `LinkInput.addrOf`): `dataFastF_eq`, `@[csimp]`. -/
+def dataFastF (I : LinkInput) (D : List Clif.DataObject) (ex : Excerpt) : Bool :=
+  match phdrs (exRd ex) with
+  | some phs => let am := addrMap I.addrs; let C := RelocCtx.of I; D.all (objFastF am C (exRd ex) phs)
+  | none => false
+
+@[csimp] theorem dataFastB_eq_fast : @dataFastB = @dataFastF := by
+  funext I D ex
+  unfold dataFastB dataFastF
+  cases phdrs (exRd ex) <;> simp only [objFastF_eq]
+
 /-- **The checks of rust-lld's output** on the written file: static (`hdrB`), the CLIF data
 objects `D` in place (`dataFastB`, i.e. `dataB`), the symbol table (`symsOkB`). -/
 def outsideOkB (I : LinkInput) (D : List Clif.DataObject) (file : ByteArray) : Bool :=
@@ -172,6 +214,36 @@ def regionGo (I : LinkInput) (tp : Nat → Option Nat) : List Art → List Nat �
 def regionBytesA (I : LinkInput) (tp : Nat → Option Nat) (as : List Nat) (T : List Art) :
     List UInt8 :=
   regionGo I tp T as 0
+
+/-- `regionGo`'s bytes appended to `b`, with the lookups through `C` and each function's
+relocations indexed (`regionPush_toList`; tail-recursive). -/
+def regionPush (C : RelocCtx) (tp : Nat → Option Nat) :
+    List Art → List Nat → Nat → ByteArray → ByteArray
+  | [], _, _, b => b
+  | a :: T, as, o, b =>
+    regionPush C tp T as.tail (alignW o (as.headD 4) + 4 * a.fb.words.size + 4)
+      (artPush C tp a (pushAll b (List.replicate (alignW o (as.headD 4) - o) 0)))
+
+theorem regionPush_toList (I : LinkInput) (tp : Nat → Option Nat) :
+    ∀ (T : List Art) (as : List Nat) (o : Nat) (b : ByteArray),
+      (regionPush (RelocCtx.of I) tp T as o b).data.toList = b.data.toList ++ regionGo I tp T as o
+  | [], _, _, b => by simp [regionPush, regionGo]
+  | a :: T, as, o, b => by
+    rw [regionPush, regionPush_toList I tp T, artPush_toList, pushAll_toList, regionGo]
+    simp only [List.append_assoc]
+
+/-- **The region's bytes as a byte array** (`regionBA_eq`: `regionBytesA`'s, without the list
+of bytes and with the lookups indexed). -/
+def regionBA (I : LinkInput) (tp : Nat → Option Nat) (as : List Nat) (T : List Art) : ByteArray :=
+  regionPush (RelocCtx.of I) tp T as 0 ByteArray.empty
+
+theorem regionBA_eq (I : LinkInput) (tp : Nat → Option Nat) (as : List Nat) (T : List Art) :
+    regionBA I tp as T = ByteArray.mk (regionBytesA I tp as T).toArray := by
+  have h := regionPush_toList I tp T as 0 ByteArray.empty
+  have h0 : ByteArray.empty.data.toList = [] := rfl
+  rw [h0, List.nil_append] at h
+  unfold regionBA regionBytesA
+  rw [← h]
 
 /-- **The Lean linker**: the executable `file0` (the outside part, linked around a placeholder
 of the region) with the program part written into the region. -/
@@ -202,5 +274,54 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
         if !outsideOkB I S.data file then
           .error "rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)"
         else .ok file
+
+/-- **The writer's checks and bytes on a result table** `Rs` of the input `I0` (the part of
+`leanLink` after the pipeline), with the relocation checks (`relocsAllF`) and the region's
+bytes (`regionBA`) indexed; `codeMapB` and `outsideOkB` run their `@[csimp]` forms
+(`E2E.LinkCheck.codeMapB_eq_fast`, `dataFastB_eq_fast`). -/
+def writeTail (S : LinkSpec) (file0 : ByteArray) (phs : List Phdr) (I0 : LinkInput) (Rs : Res) :
+    Except String ByteArray :=
+  let I := I0.withDepth Rs
+  let T := tabOf Rs
+  let tp := tpOff phs
+  if !S.placeOkB then .error "the placement's conditions fail (placeOkB)"
+  else if !(Rs.all (·.2.toBool)) then .error "the compiler's pipeline rejects a function"
+  else if !(S.namesOkB T) then .error "the compiled functions' names are not the placement's (namesOkB)"
+  else if !(S.sizesOkB T) then .error "the compiled code's sizes are not the placement's (sizesOkB)"
+  else if !(relocsAllF I tp T) then .error "a relocation fails the checks (relocsOkB)"
+  else if !(codeMapB I T) then .error "the code map check fails (codeMapB)"
+  else
+    let B := regionBA I tp S.aligns ((T.take S.funcs.length).map (·.2))
+    let off := offsetOf phs S.R
+    if !regionOkB file0 S.R B.size off then
+      .error "the region is not a read-only part of one PT_LOAD segment (regionOkB)"
+    else
+      let file := patch file0 off B
+      if !outsideOkB I S.data file then
+        .error "rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)"
+      else .ok file
+
+/-- **The Lean linker's writer on the result table `results S.input0`**, indexed (`leanLink`,
+`DeadCleanup.leanLink` and `leanLinkWithResults` are this at their tables: `leanLink_eq_fast`,
+`DeadCleanup.leanLink_eq_fast`, `leanLinkWithResults_eq_fast`). -/
+def writeWith (S : LinkSpec) (file0 : ByteArray) (results : LinkInput → Res) :
+    Except String ByteArray :=
+  match phdrs (fileRd file0) with
+  | none => .error "no program headers"
+  | some phs => let I0 := S.input0; writeTail S file0 phs I0 (results I0)
+
+/-- `leanLink` through `writeWith` (`leanLink_eq_fast`). -/
+def leanLinkFast (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
+  writeWith S file0 parResultsT
+
+/-- **`leanLink`'s writer indexed** (#1108): the relocation checks, the region's bytes, the code
+map and the data objects without a scan of the link map or of a function's relocations per item,
+and without comparing every pair of functions. -/
+@[csimp] theorem leanLink_eq_fast : @leanLink = @leanLinkFast := by
+  funext S file0
+  unfold leanLink leanLinkFast writeWith writeTail
+  cases phdrs (fileRd file0) with
+  | none => rfl
+  | some phs => simp only [relocsAllF_eq, regionBA_eq]
 
 end Link

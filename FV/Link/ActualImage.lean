@@ -35,6 +35,14 @@ def leanLinkWithResults (S : LinkSpec) (file0 : ByteArray)
           .error "rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)"
         else .ok file
 
+/-- **The writer indexed** (#1108, `leanLink_eq_fast`). -/
+@[csimp] theorem leanLinkWithResults_eq_fast : @leanLinkWithResults = @writeWith := by
+  funext S file0 results
+  unfold leanLinkWithResults writeWith writeTail
+  cases phdrs (fileRd file0) with
+  | none => rfl
+  | some phs => simp only [relocsAllF_eq, regionBA_eq]
+
 /-- The writer reads its result table at the spec's input only. -/
 theorem leanLinkWithResults_congr (S : LinkSpec) (file0 : ByteArray) {f g : LinkInput → Res}
     (h : f S.input0 = g S.input0) :
