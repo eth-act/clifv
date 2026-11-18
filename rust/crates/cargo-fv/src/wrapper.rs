@@ -238,7 +238,6 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
         std: m.std,
         artifact: artifact.display().to_string(),
         mode: cfg.mode.name().into(),
-        theorem: cfg.mode.theorem().map(String::from),
         cgu_errors: vec![],
         functions: vec![],
         binary: None,
@@ -262,6 +261,8 @@ fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitRep
                             status: Status::Fallback,
                             reason: Some("no CLIF dump (cg_clif emitted none for this unit)".into()),
                             normal_returns: false,
+                            theorem: None,
+                            about: None,
                         });
                     }
                 }
@@ -703,7 +704,7 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     let _ = fs::remove_file(&exclude_file);
     let mut exclude: BTreeSet<String> = BTreeSet::new();
     let mut round = 0;
-    let (code, coverage, ld_args) = loop {
+    let (code, coverage, region, ld_args) = loop {
         round += 1;
         // `--lean-link`: the program part, one region the Lean linker writes after the link
         let part = if cfg.lean_link {
@@ -790,6 +791,7 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
             let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
         }
         let mut coverage = None;
+        let mut region = None;
         if code == 0 {
             if let Some((_, list)) = &part {
                 let t0 = std::time::Instant::now();
@@ -797,6 +799,7 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
                     Ok(text) => {
                         eprint!("{text}");
                         eprint_fv(&format!("{}: lean-link in {} ms", output.display(), t0.elapsed().as_millis()));
+                        region = leanlink::region_functions(&text);
                         coverage = leanlink::coverage(&text).map(|c| {
                             if exclude.is_empty() {
                                 c
@@ -841,11 +844,12 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
                 }
             }
         }
-        break (code, coverage, ld_args);
+        break (code, coverage, region, ld_args);
     };
     if code == 0 {
         let mut b = check_binary(&output);
         b.lean_link = coverage;
+        b.lean_link_region = region;
         if b.note.is_none() {
             match exe_origin(&cfg, &meta, &output, &map) {
                 Ok(o) => b.origin = Some(o),
