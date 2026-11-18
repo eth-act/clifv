@@ -1009,16 +1009,23 @@ and the backend (the switch is #990 part 5; translation validation: an untrusted
   `SrcScopeB` of the bundle's program only and names these. Witness:
   `Link.CpSourceWitness.correct_sourceCp_applies` (two functions at an `i128` declaration, one
   changed by constant-phi removal, on the ABI-aware route). Audit: `scripts/audit/cp-source.lean`.
-* **The frontend theorems on the typed route** (#1088, `FV/Front/CoverageT.lean`):
-  `Front.bundle_correct_rawT{,_peak}` take `buildSpec b = .ok S` and `compileExeT S file0 = .ok
-  file`, i.e. the bundle's own spec; `lean-link` compiles `DeadCleanup.placedPar S0.cp`, which is
-  `buildSpec` of no bundle when constant-phi removal changes a function. On the `compileExeT`
-  route `lean-link` therefore names them only when `Front.rawTNamed` holds: no function changed,
-  `buildSpec` of the bundle read with the placed sizes is (decided, `DecidableEq`) the spec
-  compiled, and that spec is in `SrcScopeB`; `Front.rawTNamed_premises` turns this into the
-  premises `hb` and `hsrc`. Otherwise its coverage line says `cg_clif's program: no Front theorem
-  is named (…)` with the reason. Test: `Crates.FrontendBundleCoverageT` (the three cases on a
-  real bundle). The theorems composing the frontend with `Link.cpSource` are not yet stated.
+* **The frontend theorems on the typed route** (#1088, `FV/Front/ExeTCp.lean`):
+  `Front.bundle_correct_rawT`/`raw_peakT` take `buildSpec b = .ok S` and `compileExeT S file0 = .ok
+  file`, i.e. the bundle's own spec; `lean-link` compiles the cleanup layout of `S0.cp`, which is
+  `buildSpec` of no bundle when constant-phi removal changes a function. New, under new names:
+  **`Front.bundle_correct_sourceTCp`**, **`Front.bundle_correct_source_peakTCp`**,
+  **`Front.bundle_correct_rawTCp`**, **`Front.bundle_correct_raw_peakTCp`**: for `buildSpec b = .ok
+  S0`, a compiled spec `S` with `hcp : S.funcs = S0.input0.funcs.map FnInput.cp`,
+  `compileExeT S file0 = .ok file` and `SrcScopeB S0.input0`, the statements of
+  `bundle_correct_{source,raw}{,_peak}T` about `S`'s compiled function `f'` named `f`'s linked
+  name (`compileExeT_correct_source{,_peak}Cp` composed with the renaming and `rawLink_eq_link`).
+  On the `compileExeT` route `lean-link` names `bundle_correct_rawTCp`, `bundle_correct_raw_peakTCp`:
+  `hb` is the `buildSpec` it ran, `hcp` is `rfl` (`Front.placedFrom_cp_funcs`), `hsrc` decided.
+  Until then (#1089) it named `bundle_correct_rawT`/`raw_peakT` only where their premises were
+  decided of the compiled spec, never when constant-phi removal changed a function. Witnesses:
+  `Crates.FrontendBundleWitnessTCp` (the four theorems on a real bundle whose functions
+  constant-phi removal keeps; `Link.CpSourceWitness` covers a changed function for the `…Cp`
+  theorems composed). Audit: `scripts/audit/cp-source.lean`.
 
 ### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
 
