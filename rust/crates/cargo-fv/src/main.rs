@@ -1,6 +1,6 @@
 //! `cargo fv build|run|test|report`: see docs/USAGE.md.
 use cargo_fv::config::{Config, Mode};
-use cargo_fv::report::{Report, Status, UnitReport};
+use cargo_fv::report::{BinaryCheck, Report, Status, UnitReport};
 use cargo_fv::{TARGET, TOOLCHAIN};
 use std::collections::HashSet;
 use std::os::unix::fs::MetadataExt;
@@ -561,7 +561,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         (a.dep, a.std, &a.package, &a.crate_name, &a.kind, &a.src, &a.unit)
             .cmp(&(b.dep, b.std, &b.package, &b.crate_name, &b.kind, &b.src, &b.unit))
     });
-    let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), &panic_desc, units);
+    let report = Report::new(&profile, mode.name(), &panic_desc, units);
     let rp = report_path(&target);
     let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
     if !out.status.success() {
@@ -585,6 +585,12 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         d.verified,
         rp.display()
     );
+    // #1096: what "verified" means per function: the theorem lean-backend named for it, every
+    // checkable premise of which it decided; the normal-returns-only ones separately
+    if !report.totals.by_theorem.is_empty() {
+        let per: Vec<String> = report.totals.by_theorem.iter().map(|(t, n)| format!("{n} {t}")).collect();
+        eprintln!("cargo fv: verified functions by theorem: {}", per.join("; "));
+    }
     if !exes.is_empty() {
         eprintln!(
             "cargo fv: checked {} linked executable(s): {} function symbols in total resolve to Lean-compiled code (\"Lean in exe\", members and dependencies)",
@@ -600,11 +606,15 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     // #1048: the verified functions `lean-link --verified` leaves out of an executable's region
     // (a per-function input condition fails): cg_clif's code is linked for them there, so the
     // binary check does not cover them. "Verified" above is per function; this says how many of
-    // them are not inside the executables' verified regions.
-    let covers: Vec<&String> = report.units.iter().filter_map(|u| u.unit.binary.as_ref()?.lean_link.as_ref()).collect();
-    if !covers.is_empty() {
+    // them are left out (the executables' exclusion lists, which the links ran without) and how
+    // many functions the regions hold (#1096 row B6: lean-link's own count per executable, not
+    // inferred as "verified minus left out", which counted a function the link dropped or no
+    // executable links as inside).
+    let linked: Vec<&BinaryCheck> =
+        report.units.iter().filter_map(|u| u.unit.binary.as_ref()).filter(|b| b.lean_link.is_some()).collect();
+    if !linked.is_empty() {
         let mut left: HashSet<String> = HashSet::new();
-        for c in &covers {
+        for c in linked.iter().filter_map(|b| b.lean_link.as_ref()) {
             if let Some(text) = left_out_file(c).and_then(|p| std::fs::read_to_string(p).ok()) {
                 left.extend(text.lines().filter(|l| !l.is_empty()).map(|l| unmangled(l).to_string()));
             }
@@ -615,11 +625,14 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             .flat_map(|u| u.unit.functions.iter())
             .filter(|f| matches!(f.status, Status::Verified) && left.contains(unmangled(&f.symbol)))
             .count();
+        let counted: Vec<usize> = linked.iter().filter_map(|b| b.lean_link_region).collect();
         eprintln!(
-            "cargo fv: --lean-link: {} of the {} verified functions are inside the regions of the linked executables, {} left out of a region with cg_clif's code linked (lean-link --verified: a per-function input condition fails)",
-            report.totals.verified - out,
-            report.totals.verified,
-            out
+            "cargo fv: --lean-link: the regions lean-link wrote hold {} function(s) (lean-link's count, summed over {} of the {} linked executable(s); a function in several executables counts in each); {} of the {} verified functions are left out of a region with cg_clif's code linked (lean-link --verified: a per-function input condition fails)",
+            counted.iter().sum::<usize>(),
+            counted.len(),
+            linked.len(),
+            out,
+            report.totals.verified
         );
     }
     if bin_check {

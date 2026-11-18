@@ -11,10 +11,11 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
 (**fallback**), so the build never fails because of the Lean backend. After each build,
 `target/fv-report.json` and a summary on stderr list every function as one of:
 
-* **verified**: compiled by the Lean backend and inside the end-to-end theorem
-  (`E2E.backend_correct_final`, or `E2E.backend_correct_opt_exe` with `--opt-proven-only`;
-  for `i128` functions `E2E.backend_correct_legal`, with `--opt-proven-only`
-  `E2E.backend_correct_legal_opt`);
+* **verified**: compiled by the Lean backend, and `lean-backend` named the per-function
+  theorem that covers it after deciding every premise of that theorem that is a fact about the
+  compiled objects (the report gives the theorem per function and the count per theorem; which
+  theorem for which function, and the hypotheses about the run that no tool decides: *What is
+  verified, and what is not*);
 * **compiled, unverified**: compiled by the Lean backend but outside the theorem (the reason
   is given, e.g. a special-purpose parameter other than one `sret` pointer, or any function
   under `--opt`),
@@ -25,7 +26,7 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
 $ cd examples/deps && cargo fv test
    Compiling deps-demo v0.1.0 (…/examples/deps)
 cargo fv report — aarch64-unknown-linux-musl debug profile, mode plain
-  verified = compiled by the Lean backend and inside E2E.backend_correct_final
+  verified = compiled by the Lean backend inside the per-function theorem lean-backend names, every checkable premise of which it decided on the code it emitted (run and environment hypotheses stay premises: docs/contracts/e2e.md); per theorem below
   package                kind  crate root             functions  verified unverified  fallback   Lean in exe
   deps-demo              test  tests/crates.rs             2358      2338          0        20         19808
   …
@@ -36,9 +37,16 @@ cargo fv report — aarch64-unknown-linux-musl debug profile, mode plain
   dependencies                                            16965     16793          3       169
   total                                                   21021     20821          3       197
   std (not compiled by us: prebuilt std/core/alloc rlibs, plus compiler_builtins and musl libc)
+  verified functions by theorem:
+    …  E2E.backend_correct_final_cleanup
+    …  E2E.backend_correct_pass_cleanup (T := Opt.ConstPhi.run)
+    …  E2E.backend_correct_world_niX_semantic_return_pins
+    …  E2E.backend_correct_world_niX_semantic_return_pins (about the compiled function)
+    …
   exe deps-demo (test tests/crates.rs): 21682 functions: Lean 19808 (your crate(s) 3052, dependencies 16756), cg_clif fallback 142, std (prebuilt) 1732, other not compiled by us 0
   …
 cargo fv: 20824 of 21021 functions compiled by the Lean backend (20821 verified): your crate(s) 4028 of 4056 (4028 verified), dependencies 16796 of 16965 (16793 verified); report: …/target/fv-report.json
+cargo fv: verified functions by theorem: … E2E.backend_correct_final_cleanup; … E2E.backend_correct_world_niX_semantic_return_pins; …
      Running unittests src/lib.rs (…)
 test tests::perms ... ok
 …
@@ -142,11 +150,11 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function cg_clif's dump whose decoding `lean-backend` compiled (copied into `c.clif/`), the register allocator's answers for it (`lean-backend` writes them to `$FV_RA_OUT`, in `lean-regalloc`'s schema), the unit's data objects (`data.clif`), the merge's linked names and the object's local symbols (`fv-link.json`), per executable the link map |
 | `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the patched cg_clif without its `unwinding` feature; own target directory; the configuration of the binary-level theorem: no unwinding through Lean frames) |
 | `--no-binary-check` | skip the per-executable binary check (see *The executable as a whole*); without it the build keeps what the check reads (the per-function CLIF and allocator answers, `fv-link.json`, the link maps; not the objects) in `target/fv/<mode>/tmp/` |
-| `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`; the Lean static linker `lean-ld` links the rest around it, rust-lld with `--rust-lld` or when `lean-ld` rejects the inputs) whose bytes `lake exe lean-link` computes with one of its executable compilers and writes into the executable. It tries the routes in a fixed order (section "The executable compiler" below) and prints the compiler that wrote the region (`written by …`) and the theorems that cover it (`coverage: …`, also recorded as `binary.lean_link` in the report and printed as `cargo fv: lean-link …: covered by …`), with no per-crate proof (L1, L1f). On the gate's executables the routes are the ABI-aware route `Link.ReturnPinCompilerWith.attempt` (fv-demo, survey; `attempt_correct`, `attempt_correct_depth`), the typed Stock route `Link.SemanticCompilerWith.attemptT` (deps, std, the typed survey crates; `attemptT_correct{,_depth,_peak}`) and `Link.SemanticCompilerWith.compileWithRoutes` (`attempt_correct{,_depth,_peak}`); the plain executable compiler `Link.DeadCleanup.compileExe` (`compileExe_correct`, `…_correct_peak`, totality `compileExe_total_reach_input`) writes an executable only when none of those routes applies. For a program in the source domain `SrcScopeB` each route names its `…_sourceCp`/`…_source_peakCp` theorems (the bundle's program, before the `i128` legalisation and constant-phi removal; #1052), the typed Stock route none (its line says `about the legalised program`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.DeadCleanup.leanLink` alone (`written by Link.DeadCleanup.leanLink`, `coverage: none`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
-| `--verified` | with `--lean-link`: fail closed. An executable whose Lean-compiled part is outside the source domain `SrcScopeB` or the input conditions `InScopeP` is a link error (`lean-link … --verified` names the failing functions and conditions and does not write it) instead of the bare-linker fallback, so every executable the build writes is covered by the theorems its `coverage:` line names: those of the route that wrote it (above), with the source theorems `…_sourceCp{,_peak}` on every route but the typed Stock route, and on the `compileExeT` route through the frontend `Front.bundle_correct_rawTCp`, `Front.bundle_correct_raw_peakTCp` (cg_clif's program through constant-phi removal, #1088). Totality is claimed only on the `compileExe`/`compileExeT`/`compileExeT3` routes (`Link.DeadCleanup.compileExe_total_reach_input` on `InScopeIn`); the Stock routes, which write the gate's executables, have no totality theorem, and `lean-link` says so. Functions failing only a per-function condition (`lean-link`'s `--verified: exclude:` line) are left out of the region and the executable is linked again (they keep cg_clif's code, outside code like a fallback; list in `target/fv/<mode>/tmp/exclude-<tag>.txt`, count in the report's `lean-link` line). Combine with `--no-fallback` to also require every member function in the Lean region. Own target directory |
+| `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`; the Lean static linker `lean-ld` links the rest around it, rust-lld with `--rust-lld` or when `lean-ld` rejects the inputs) whose bytes `lake exe lean-link` computes with one of its executable compilers and writes into the executable. It tries the routes in a fixed order (section "The executable compiler" below) and prints the compiler that wrote the region (`written by …`) and the theorems that cover it (`coverage: …`, also recorded as `binary.lean_link` in the report and printed as `cargo fv: lean-link …: covered by …`), with no per-crate proof (L1, L1f). On the gate's executables the routes are the ABI-aware route `Link.ReturnPinCompilerWith.attempt` (fv-demo, survey; `attempt_correct`, `attempt_correct_depth`), the typed Stock route `Link.SemanticCompilerWith.attemptT` (deps, std, the typed survey crates; `attemptT_correct{,_depth,_peak}`) and `Link.SemanticCompilerWith.compileWithRoutes` (`attempt_correct{,_depth,_peak}`); the plain executable compiler `Link.DeadCleanup.compileExe` (`compileExe_correct`, `…_correct_peak`, totality `compileExe_total_reach_input`) writes an executable only when none of those routes applies. For a program in the source domain `SrcScopeB` each route names its `…_sourceCp`/`…_source_peakCp` theorems (the bundle's program, before the `i128` legalisation and constant-phi removal; #1052), the typed Stock route since #1100 (`attemptT_correct_source{,_peak}Cp`; before, its line said only `about the legalised program`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.DeadCleanup.leanLink` alone (`written by Link.DeadCleanup.leanLink`, `coverage: none`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
+| `--verified` | with `--lean-link`: fail closed. An executable whose Lean-compiled part is outside the source domain `SrcScopeB` or the input conditions `InScopeP` is a link error (`lean-link … --verified` names the failing functions and conditions and does not write it) instead of the bare-linker fallback, so every executable the build writes is covered by the theorems its `coverage:` line names: those of the route that wrote it (above), with the source theorems `…_sourceCp{,_peak}` on every route (on the typed Stock route `attemptT` since #1100), and on the `compileExeT` route through the frontend `Front.bundle_correct_rawTCp`, `Front.bundle_correct_raw_peakTCp` (cg_clif's program through constant-phi removal, #1088). Totality is claimed only on the `compileExe`/`compileExeT`/`compileExeT3` routes (`Link.DeadCleanup.compileExe_total_reach_input` on `InScopeIn`); the Stock routes, which write the gate's executables, have no totality theorem, and `lean-link` says so. Functions failing only a per-function condition (`lean-link`'s `--verified: exclude:` line) are left out of the region and the executable is linked again (they keep cg_clif's code, outside code like a fallback; list in `target/fv/<mode>/tmp/exclude-<tag>.txt`, count in the report's `lean-link` line). Combine with `--no-fallback` to also require every member function in the Lean region. Own target directory |
 | `--lean-ld` | link every executable with the Lean static linker `lake exe lean-ld` (`Link.Ld.link`, docs/research/lean-linker.md §6) instead of rust-lld (the default with `--lean-link`): resolution, `--gc-sections`, layout, GOT, TLS relaxation, `.eh_frame_hdr` and the ELF writer in Lean; no debug sections are written. rust-lld still performs relocatable links (`ld -r`) and links an executable whose inputs `lean-ld` rejects (reported). With `--lean-link`, `lean-ld`'s output is the `file0` that `compileExe` checks; `Link.Ld.file0OkB_ld` proves `file0OkB` of it from the link spec's conditions on `lean-ld`'s plan (`Plan.specOkB`), so `Link.DeadCleanup.compileExe_total_ld` needs no check of the linker's output; `lean-link --ld` links again and decides `Plan.specOkB` against the executable's link spec, printing `lean-ld's plan meets the link spec` and adding `…_total_ld` to the `--verified` totality note. Needs `lake build lean-ld`. Own target directory |
 | `--rust-lld` | with `--lean-link`: link with rust-lld instead of `lean-ld` (the outside part's facts are then only `leanLink`'s checks of rust-lld's output, `file0OkB`) |
-| `--build-std` | compile the standard library like a dependency (cargo `-Zbuild-std=std,panic_unwind`, `panic_abort` with `--panic-abort`; cargo adds `test` for test harnesses) from the sources `scripts/build-cg-clif.sh` prepares: every std crate (std, core, alloc, test, proc_macro, panic_unwind and std's dependencies such as hashbrown, gimli, object) goes through cg_clif and the Lean backend; compiler_builtins stays on LLVM (cg_clif cannot compile its `f128` code) and musl libc prebuilt. The report counts the std crates as a third group (`std`); own target directory (`-std`). Measurements and limits (with `--lean-link --verified` some std/test functions fail a per-function condition of `InScopeIn` and are left out of the region; `lean-link` takes ~12 min and the binary check hours on the ~30k-function region, `--no-binary-check` skips it): docs/plans/std.md |
+| `--build-std` | compile the standard library like a dependency (cargo `-Zbuild-std=std,panic_unwind`, `panic_abort` with `--panic-abort`; cargo adds `test` for test harnesses) from the sources `scripts/build-cg-clif.sh` prepares: every std crate (std, core, alloc, test, proc_macro, panic_unwind and std's dependencies such as hashbrown, gimli, object) goes through cg_clif and the Lean backend; compiler_builtins stays on LLVM (cg_clif cannot compile its `f128` code) and musl libc prebuilt. The report counts the std crates as a third group (`std`); own target directory (`-std`). Measurements and limits (with `--lean-link --verified` some std/test functions fail a per-function condition and are left out of the region: a condition of `InScopeIn` on the integer routes, on the typed Stock route `attemptT`, which writes std's executables, its typed checks `okRWithTS`; `lean-link` takes ~12 min and the binary check hours on the ~30k-function region, `--no-binary-check` skips it): docs/plans/std.md |
 
 `cargo fv report` prints the summary of the last build again. `--functions` lists every
 function with its status and reason, and `--json` prints `target/fv-report.json`.
@@ -196,13 +204,26 @@ proc macros, `target/fv/<mode>/<profile>/`) do not depend on the Lean side and s
 `package`, `crate_name`, `kind`, `src` (crate root), `dep` (true for a dependency: not a
 workspace member), `counts`, and `functions`. Each function
 has `symbol`, `instance` (the Rust item, from cg_clif's dump), `status` (`verified`,
-`unverified` or `fallback`) and `reason`. The top level has `totals` and its split into
+`unverified` or `fallback`) and `reason`; a verified function also has `theorem` (the
+per-function theorem `lean-backend` named for it, fully qualified, with the pass it composes as
+`(T := …)` where there is one), `about` (`the source function`, or `the compiled function,
+after …` naming the transformations the theorem does not compose; `, compiled from cg_clif's
+optimised dump (.opt.clif)` for the `.opt.clif` retry) and, for a `try_call` function whose
+unwinding is not covered, `normal_returns: true`. `counts` (per unit and in the totals) has
+`by_theorem`: the verified functions per theorem, keyed by the theorem name, with
+` (about the compiled function)` appended when `about` is not the source function and
+` [normal returns only; unwinding trusted]` for `normal_returns` (its values add up to
+`verified`). The top level has `totals` and its split into
 `members` ("your crate(s)"), `deps` ("dependencies") and `std` (the standard library's crates,
 only with `--build-std`, where their units have `std: true`; without it std is prebuilt and has
 no function counts). Linked executables also have `binary`: how many function symbols in the
 executable resolve to Lean-compiled code (members and dependencies), plus any check failures,
 with `--lean-link` `lean_link` (the theorems covering the executable, `lean-link`'s
-`coverage:`), and `origin`: the executable's functions (distinct addresses) attributed through
+`coverage:`) and `lean_link_region` (the number of functions in the region `lean-link` wrote,
+its own count: the `N function(s), … written by` line; cargo fv's line `--lean-link: the regions
+lean-link wrote hold N function(s) …; X of the V verified functions are left out of a region` sums
+it over the executables, and X is read from the executables' exclusion lists, which the links ran
+without), and `origin`: the executable's functions (distinct addresses) attributed through
 the link map
 to Lean code of the members (`lean_members`), of the dependencies (`lean_deps`) or of the std
 crates (`lean_std`, with `--build-std`), per package `lean_by_package` (with `--lean-link` the
@@ -214,10 +235,13 @@ summary, dependency libraries are the rows of kind `dep` and std crates of kind 
 by the `your crate(s)` / `dependencies` / (`std (--build-std)`) / `total` rows, one `exe` line
 per executable with that attribution (`Lean in exe per dependency`, `per std crate`), and the
 unverified and fallback reasons by count, separately for your crate(s), the dependencies and
-std.
+std; after the rows, `verified functions by theorem:` lists `totals.by_theorem` (cargo fv also
+prints it as one line, `cargo fv: verified functions by theorem: N <key>; …`, after the
+`… functions compiled by the Lean backend (V verified)` line).
 The file covers the units of the last `cargo fv` command, fresh or rebuilt. The top-level
-`mode`, `profile` and `theorem` say what "verified" refers to, and `panic` the panic strategy
-and the codegen backend (also the second line of the summary).
+`mode` and `profile` say how the units were compiled (what "verified" refers to is per
+function: `theorem`), and `panic` the panic strategy and the codegen backend (also the second
+line of the summary).
 
 ## How it works
 
@@ -345,10 +369,12 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `tail`/`preserve_all` convention and exception-table `context` items are rejected
   (fallback); cg_clif emits neither.
 * **`try_call` is verified for normal returns** (agent/trycall-proof, agent/trycall-contract):
-  a function whose `try_call`s call externs is inside `E2E.backend_correct_final` for the path
+  a function whose `try_call`s call externs is inside `E2E.backend_correct_final_cleanup` (the
+  theorem `lean-backend` names, *What is verified*) for the path
   where every callee returns normally (the call, its results, the jump to the normal-return
   successor). **Since S10e (#232) its unwinding is verified too** when the unwinding theorem's
-  checks pass (`E2E.backend_correct_final_cleanup_unwind`: handler edges, payload, the frame
+  checks pass (`E2E.backend_correct_final_cleanup_unwind_any`, the form `lean-backend` names:
+  handler edges, payload, the frame
   unwound by the emitted CFI; docs/contracts/e2e.md, "`try_call` (the normal return)"). The
   report then counts it as plain **verified**. Otherwise it is labelled **`verified (normal
   returns; unwinding trusted)`** (counted among the verified functions, with a footnote giving
@@ -416,10 +442,48 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 ## What is verified, and what is not
 
 * **verified** = the function's machine code (Lean backend, register allocation checked by
-  the Lean checker, Lean encoder) refines its CLIF under `E2E.backend_correct_final`
-  (hypotheses: `docs/contracts/e2e.md`). Calls to other functions are extern calls in that
-  theorem: the proof assumes the callee behaves as its CLIF (the callee contract), whether the
-  callee is Lean-compiled, cg_clif-compiled or in std.
+  the Lean checker, Lean encoder) refines its CLIF under the per-function theorem `lean-backend`
+  names for it (`theorem` in the report), and `lean-backend` decided, on the objects it emitted,
+  every premise of that theorem that is a fact about the function and its compiled code
+  (`FVTest/Backend/FnVerdict.lean`; a failing one makes the function **compiled, unverified**
+  with that premise as the reason; until #1098 the report named `E2E.backend_correct_final` for
+  every function and `FormsCovered` was not decided, #1099). With dead cleanup (the default;
+  without it the names without `_cleanup`, the typed ones `finalT`/`finalTC`/`finalTCF`):
+
+  | path of the function | theorem named | decided by `lean-backend` |
+  | --- | --- | --- |
+  | Stock routes (no `--opt`, no `try_call` in the CLIF file), integer (subset E) | `E2E.backend_correct_world_niX_semantic_return_pins` | `unverifiedReason?` (`InSubset`), the route's lowering validator, `prepCheck`, `checkAlloc`, `formsCoveredB`, `lowerRFunc`, emission, layout |
+  | legacy (a file with a `try_call`; `--opt-proven-only`), integer | `E2E.backend_correct_final_cleanup`; where a transformation changed the function, composed with it: `backend_correct_pass_cleanup (T := Opt.ConstPhi.run)` (constant-phi removal), `backend_correct_legal_wide_cleanup` (`i128` legalisation), `backend_correct_legal_pass_wide_cleanup`, `backend_correct_opt_exe_cleanup`, `backend_correct_legal_opt_wide_cleanup` (the mid-end) | `InSubset`, `lowerFunction`, `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB`; `Opt.Legal.checkW`; `Opt.ConstPhi.keeps` and `InSubset` of the function before the pass; the proven rule sets |
+  | typed (outside subset E: floats, typed `call`s) | `E2E.backend_correct_final_cleanupT`, `E2E.backend_correct_world_cleanupTC`, `E2E.backend_correct_world_cleanupTCF` (by the validator branch) | `InSubsetT*`; `lowerFunction`, the typed validator `lowerCheckFor`, `prepare`, `checkAlloc`, `lowerRFunc` and the emission re-run and reproducing the emitted code; `formsCoveredB` |
+
+  On the Stock path the theorem's lowering premise `SemanticABI.checkCalls` comes from the
+  route's own validator (`SemanticNI.check`, `SemanticABI.check(Calls)` or `lowerCheck`, run
+  while compiling, each of which implies it): that implication is read from the code, not yet a
+  lemma (#1101). A `Stock.D0`-eligible function on the legacy path is also named under the Stock
+  theorem.
+
+  **About the source function, or about the compiled function** (`about`). "About the source
+  function": the theorem's CLIF function is the one in the CLIF file `cargo fv` handed to
+  `lean-backend` (cg_clif's dump, decoded), the transformations that changed it composed in.
+  "About the compiled function, after the `i128` legalisation / constant-phi removal / the
+  mid-end (not composed on this path)": the theorem is about the function those transformations
+  produced, because no per-function theorem composes them with the path (the Stock path: #1100;
+  constant-phi removal of a function whose source is outside the scope; unproven `--opt` rules).
+  Its relation to cg_clif's function is then the passes' program-level refinement, which the
+  executable-level theorems of `lean-link` state where they exist (*The executable compiler*,
+  the `_sourceCp` theorems). A function compiled from cg_clif's optimised dump (the `.opt.clif`
+  retry) says so. `by_theorem` counts these under their own key, `<theorem> (about the compiled
+  function)`.
+
+  **Hypotheses no tool decides** (premises of every theorem above, about the run and the code
+  outside the function; docs/contracts/e2e.md, "Final hypotheses" and "The per-function
+  verdict"): the callee contracts (`CalleeOk` of every call, `CalleeTryOk` at `try_call` sites:
+  a callee behaves as its CLIF, whether Lean-compiled, cg_clif-compiled or in std), the external
+  and indirect-call contracts (`XCallsOk`, `XCallsIndOk`), the TLS resolver (`TlsOk`), the
+  linked symbol addresses (`X.sym` = the linker's), the ABI entry and stack room (`ActEntry`:
+  `AbiCall`, `StackAvail`, `BodyEntryW`), the CLIF entry state and its relation to the machine
+  (`ClifEntry`, `RelW`, `ArgsAtEntry`), and `TrapsExplicit` (the CLIF run traps only at
+  explicit trap instructions).
 * **verified (normal returns; unwinding trusted)** = verified as above for a function with
   `try_call`s whose unwinding is not covered: the theorem covers the runs in which every callee
   of a `try_call` returns normally (with the callee contract `CalleeTryOk` for its results); the
@@ -429,8 +493,10 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   covers its exceptional edges too (a caught exception reaches the handler with the payload, an
   uncaught one returns to the caller with the exception object and the caller's frame as the
   ABI requires), with the Itanium unwinder/personality model and the decoding of the emitted
-  tables trusted. `lean-backend` prints `compiled, verified (try_call: unwinding by …)` for it,
-  and for a function failing a check the old label with `unwinding check failed: <check>`. An
+  tables trusted. `lean-backend` prints `compiled, verified by <theorem> (about …; decided: …);
+  unwinding by <unwinding theorem> (…)` for it, and for a function failing a check `compiled,
+  verified for normal returns by <theorem> (…); try_call: unwinding, landing pads and the LSDA
+  trusted (unwinding check failed: <check>)`. An
   `i128`-legalised `try_call` function is covered by `E2E.backend_correct_legal_unwind_any`
   (S10f) when, in addition, the handler-edge check `Opt.Legal.exnOk` accepts its legalisation.
   (The `_any` theorems drop the former check `lastCallsOk` on the calls of the last block,

@@ -5,12 +5,14 @@ use std::path::{Path, PathBuf};
 /// Which Lean pipeline compiles the functions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
-    /// Backend only: compiled functions outside `unverifiedReason?` are inside
-    /// `E2E.backend_correct_final_cleanup`.
+    /// Backend only. A compiled function is verified when lean-backend names its per-function
+    /// theorem (`FVTest/Backend/FnVerdict.lean`: the Stock routes'
+    /// `E2E.backend_correct_world_niX_semantic_return_pins`, the legacy route's
+    /// `E2E.backend_correct_final_cleanup` family, the typed scope's theorems).
     Plain,
     /// `--opt-proven-only`: the Lean mid-end (`Opt.optimizeExe`) with the proven rule set; the
-    /// end-to-end theorem is `E2E.backend_correct_opt_exe_cleanup` (`call_indirect` and
-    /// `try_call` included; `i128`-legalised functions: `E2E.backend_correct_legal_opt_cleanup`).
+    /// per-function theorem is `E2E.backend_correct_opt_exe_cleanup` (`i128`-legalised functions:
+    /// `E2E.backend_correct_legal_opt_wide_cleanup`), as lean-backend names it.
     OptProven,
     /// `--opt`: the Lean mid-end with every simplify rule, most of them unproven, so no
     /// function is reported verified.
@@ -39,14 +41,6 @@ impl Mode {
             Mode::Plain => &["--dead-cleanup"],
             Mode::OptProven => &["--opt-proven-only", "--dead-cleanup"],
             Mode::Opt => &["--opt", "--dead-cleanup"],
-        }
-    }
-    /// The theorem a "verified" function is inside.
-    pub fn theorem(self) -> Option<&'static str> {
-        match self {
-            Mode::Plain => Some("E2E.backend_correct_final_cleanup"),
-            Mode::OptProven => Some("E2E.backend_correct_opt_exe_cleanup"),
-            Mode::Opt => None,
         }
     }
 }
