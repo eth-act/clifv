@@ -27,6 +27,7 @@ import FV.Link.UnwReport
 import FV.Link.SemanticCompileT
 import FV.E2E.SrcScopeFast
 import FV.Link.TypedStockShared
+import FV.Front.BundleFast
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)

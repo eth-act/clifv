@@ -21,6 +21,7 @@ import FV.Link.TypedCompileModes
 import FV.Link.TypedStockShared
 import FV.E2E.StaticShare
 import FV.E2E.SrcScopeFastT
+import FV.Front.BundleFast
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -78,3 +79,16 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 -- link-check: the integer and typed Stock per-function checks from one evaluation
 #print axioms E2E.LinkCheck.semanticForOfNI_eq
 #print axioms E2E.LinkCheck.withTSOfNI_eq
+
+-- #1077: the bundle assembled with hash maps and in parallel (ruint, 232,604 functions)
+#print axioms Front.eraseDupsH_eq
+#print axioms Front.sortDedup_eq_F
+#print axioms Front.localIds_eq_F
+#print axioms Front.dataFnsOf_eq_F
+#print axioms Front.PCgu.finTab_fin
+#print axioms Front.finOfT_eq
+#print axioms Front.scopingB_eq_F
+#print axioms Front.mapM_eq_par
+#print axioms Front.parseUnit_eq_F
+#print axioms Front.assemble_eq_F
+#print axioms Front.buildSpec_eq_F
