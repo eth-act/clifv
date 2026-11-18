@@ -82,7 +82,7 @@ theorem opsOk_fpuRRIMod (d i n : Nat) :
     rcases j with _ | _ | _ | j <;> simp at hj <;> subst hj <;> cases h
     refine ⟨rfl, rfl, _, rfl, rfl, rfl, rfl, fun j' o' hj' h' => ?_⟩
     rcases j' with _ | _ | _ | j' <;> simp at hj' <;> subst hj' <;> cases h' <;> rfl
-  · intro c; cases c <;> simp [nScratch, scratch, freeRegs, fixedRegs, spillPool]
+  · intro c; cases c <;> simp [nScratch, scratch, freeRegs, fixedRegs, spillPool] <;> decide
   · simp
 
 /-- The tactic for one covered form: compute the operands, then `opsOk_simple`. -/
