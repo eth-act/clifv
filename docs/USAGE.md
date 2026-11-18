@@ -11,10 +11,11 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
 (**fallback**), so the build never fails because of the Lean backend. After each build,
 `target/fv-report.json` and a summary on stderr list every function as one of:
 
-* **verified**: compiled by the Lean backend and inside the end-to-end theorem
-  (`E2E.backend_correct_final`, or `E2E.backend_correct_opt_exe` with `--opt-proven-only`;
-  for `i128` functions `E2E.backend_correct_legal`, with `--opt-proven-only`
-  `E2E.backend_correct_legal_opt`);
+* **verified**: compiled by the Lean backend, and `lean-backend` named the per-function
+  theorem that covers it after deciding every premise of that theorem that is a fact about the
+  compiled objects (the report gives the theorem per function and the count per theorem; which
+  theorem for which function, and the hypotheses about the run that no tool decides: *What is
+  verified, and what is not*);
 * **compiled, unverified**: compiled by the Lean backend but outside the theorem (the reason
   is given, e.g. a special-purpose parameter other than one `sret` pointer, or any function
   under `--opt`),
@@ -25,7 +26,7 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
 $ cd examples/deps && cargo fv test
    Compiling deps-demo v0.1.0 (…/examples/deps)
 cargo fv report — aarch64-unknown-linux-musl debug profile, mode plain
-  verified = compiled by the Lean backend and inside E2E.backend_correct_final
+  verified = compiled by the Lean backend inside the per-function theorem lean-backend names, every checkable premise of which it decided on the code it emitted (run and environment hypotheses stay premises: docs/contracts/e2e.md); per theorem below
   package                kind  crate root             functions  verified unverified  fallback   Lean in exe
   deps-demo              test  tests/crates.rs             2358      2338          0        20         19808
   …
@@ -36,9 +37,16 @@ cargo fv report — aarch64-unknown-linux-musl debug profile, mode plain
   dependencies                                            16965     16793          3       169
   total                                                   21021     20821          3       197
   std (not compiled by us: prebuilt std/core/alloc rlibs, plus compiler_builtins and musl libc)
+  verified functions by theorem:
+    …  E2E.backend_correct_final_cleanup
+    …  E2E.backend_correct_pass_cleanup (T := Opt.ConstPhi.run)
+    …  E2E.backend_correct_world_niX_semantic_return_pins
+    …  E2E.backend_correct_world_niX_semantic_return_pins (about the compiled function)
+    …
   exe deps-demo (test tests/crates.rs): 21682 functions: Lean 19808 (your crate(s) 3052, dependencies 16756), cg_clif fallback 142, std (prebuilt) 1732, other not compiled by us 0
   …
 cargo fv: 20824 of 21021 functions compiled by the Lean backend (20821 verified): your crate(s) 4028 of 4056 (4028 verified), dependencies 16796 of 16965 (16793 verified); report: …/target/fv-report.json
+cargo fv: verified functions by theorem: … E2E.backend_correct_final_cleanup; … E2E.backend_correct_world_niX_semantic_return_pins; …
      Running unittests src/lib.rs (…)
 test tests::perms ... ok
 …
@@ -196,7 +204,16 @@ proc macros, `target/fv/<mode>/<profile>/`) do not depend on the Lean side and s
 `package`, `crate_name`, `kind`, `src` (crate root), `dep` (true for a dependency: not a
 workspace member), `counts`, and `functions`. Each function
 has `symbol`, `instance` (the Rust item, from cg_clif's dump), `status` (`verified`,
-`unverified` or `fallback`) and `reason`. The top level has `totals` and its split into
+`unverified` or `fallback`) and `reason`; a verified function also has `theorem` (the
+per-function theorem `lean-backend` named for it, fully qualified, with the pass it composes as
+`(T := …)` where there is one), `about` (`the source function`, or `the compiled function,
+after …` naming the transformations the theorem does not compose; `, compiled from cg_clif's
+optimised dump (.opt.clif)` for the `.opt.clif` retry) and, for a `try_call` function whose
+unwinding is not covered, `normal_returns: true`. `counts` (per unit and in the totals) has
+`by_theorem`: the verified functions per theorem, keyed by the theorem name, with
+` (about the compiled function)` appended when `about` is not the source function and
+` [normal returns only; unwinding trusted]` for `normal_returns` (its values add up to
+`verified`). The top level has `totals` and its split into
 `members` ("your crate(s)"), `deps` ("dependencies") and `std` (the standard library's crates,
 only with `--build-std`, where their units have `std: true`; without it std is prebuilt and has
 no function counts). Linked executables also have `binary`: how many function symbols in the
@@ -214,10 +231,13 @@ summary, dependency libraries are the rows of kind `dep` and std crates of kind 
 by the `your crate(s)` / `dependencies` / (`std (--build-std)`) / `total` rows, one `exe` line
 per executable with that attribution (`Lean in exe per dependency`, `per std crate`), and the
 unverified and fallback reasons by count, separately for your crate(s), the dependencies and
-std.
+std; after the rows, `verified functions by theorem:` lists `totals.by_theorem` (cargo fv also
+prints it as one line, `cargo fv: verified functions by theorem: N <key>; …`, after the
+`… functions compiled by the Lean backend (V verified)` line).
 The file covers the units of the last `cargo fv` command, fresh or rebuilt. The top-level
-`mode`, `profile` and `theorem` say what "verified" refers to, and `panic` the panic strategy
-and the codegen backend (also the second line of the summary).
+`mode` and `profile` say how the units were compiled (what "verified" refers to is per
+function: `theorem`), and `panic` the panic strategy and the codegen backend (also the second
+line of the summary).
 
 ## How it works
 
@@ -416,10 +436,48 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 ## What is verified, and what is not
 
 * **verified** = the function's machine code (Lean backend, register allocation checked by
-  the Lean checker, Lean encoder) refines its CLIF under `E2E.backend_correct_final`
-  (hypotheses: `docs/contracts/e2e.md`). Calls to other functions are extern calls in that
-  theorem: the proof assumes the callee behaves as its CLIF (the callee contract), whether the
-  callee is Lean-compiled, cg_clif-compiled or in std.
+  the Lean checker, Lean encoder) refines its CLIF under the per-function theorem `lean-backend`
+  names for it (`theorem` in the report), and `lean-backend` decided, on the objects it emitted,
+  every premise of that theorem that is a fact about the function and its compiled code
+  (`FVTest/Backend/FnVerdict.lean`; a failing one makes the function **compiled, unverified**
+  with that premise as the reason; until #1098 the report named `E2E.backend_correct_final` for
+  every function and `FormsCovered` was not decided, #1099). With dead cleanup (the default;
+  without it the names without `_cleanup`, the typed ones `finalT`/`finalTC`/`finalTCF`):
+
+  | path of the function | theorem named | decided by `lean-backend` |
+  | --- | --- | --- |
+  | Stock routes (no `--opt`, no `try_call` in the CLIF file), integer (subset E) | `E2E.backend_correct_world_niX_semantic_return_pins` | `unverifiedReason?` (`InSubset`), the route's lowering validator, `prepCheck`, `checkAlloc`, `formsCoveredB`, `lowerRFunc`, emission, layout |
+  | legacy (a file with a `try_call`; `--opt-proven-only`), integer | `E2E.backend_correct_final_cleanup`; where a transformation changed the function, composed with it: `backend_correct_pass_cleanup (T := Opt.ConstPhi.run)` (constant-phi removal), `backend_correct_legal_wide_cleanup` (`i128` legalisation), `backend_correct_legal_pass_wide_cleanup`, `backend_correct_opt_exe_cleanup`, `backend_correct_legal_opt_wide_cleanup` (the mid-end) | `InSubset`, `lowerFunction`, `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB`; `Opt.Legal.checkW`; `Opt.ConstPhi.keeps` and `InSubset` of the function before the pass; the proven rule sets |
+  | typed (outside subset E: floats, typed `call`s) | `E2E.backend_correct_final_cleanupT`, `E2E.backend_correct_world_cleanupTC`, `E2E.backend_correct_world_cleanupTCF` (by the validator branch) | `InSubsetT*`; `lowerFunction`, the typed validator `lowerCheckFor`, `prepare`, `checkAlloc`, `lowerRFunc` and the emission re-run and reproducing the emitted code; `formsCoveredB` |
+
+  On the Stock path the theorem's lowering premise `SemanticABI.checkCalls` comes from the
+  route's own validator (`SemanticNI.check`, `SemanticABI.check(Calls)` or `lowerCheck`, run
+  while compiling, each of which implies it): that implication is read from the code, not yet a
+  lemma (#1101). A `Stock.D0`-eligible function on the legacy path is also named under the Stock
+  theorem.
+
+  **About the source function, or about the compiled function** (`about`). "About the source
+  function": the theorem's CLIF function is the one in the CLIF file `cargo fv` handed to
+  `lean-backend` (cg_clif's dump, decoded), the transformations that changed it composed in.
+  "About the compiled function, after the `i128` legalisation / constant-phi removal / the
+  mid-end (not composed on this path)": the theorem is about the function those transformations
+  produced, because no per-function theorem composes them with the path (the Stock path: #1100;
+  constant-phi removal of a function whose source is outside the scope; unproven `--opt` rules).
+  Its relation to cg_clif's function is then the passes' program-level refinement, which the
+  executable-level theorems of `lean-link` state where they exist (*The executable compiler*,
+  the `_sourceCp` theorems). A function compiled from cg_clif's optimised dump (the `.opt.clif`
+  retry) says so. `by_theorem` counts these under their own key, `<theorem> (about the compiled
+  function)`.
+
+  **Hypotheses no tool decides** (premises of every theorem above, about the run and the code
+  outside the function; docs/contracts/e2e.md, "Final hypotheses" and "The per-function
+  verdict"): the callee contracts (`CalleeOk` of every call, `CalleeTryOk` at `try_call` sites:
+  a callee behaves as its CLIF, whether Lean-compiled, cg_clif-compiled or in std), the external
+  and indirect-call contracts (`XCallsOk`, `XCallsIndOk`), the TLS resolver (`TlsOk`), the
+  linked symbol addresses (`X.sym` = the linker's), the ABI entry and stack room (`ActEntry`:
+  `AbiCall`, `StackAvail`, `BodyEntryW`), the CLIF entry state and its relation to the machine
+  (`ClifEntry`, `RelW`, `ArgsAtEntry`), and `TrapsExplicit` (the CLIF run traps only at
+  explicit trap instructions).
 * **verified (normal returns; unwinding trusted)** = verified as above for a function with
   `try_call`s whose unwinding is not covered: the theorem covers the runs in which every callee
   of a `try_call` returns normally (with the callee contract `CalleeTryOk` for its results); the
@@ -429,8 +487,10 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   covers its exceptional edges too (a caught exception reaches the handler with the payload, an
   uncaught one returns to the caller with the exception object and the caller's frame as the
   ABI requires), with the Itanium unwinder/personality model and the decoding of the emitted
-  tables trusted. `lean-backend` prints `compiled, verified (try_call: unwinding by …)` for it,
-  and for a function failing a check the old label with `unwinding check failed: <check>`. An
+  tables trusted. `lean-backend` prints `compiled, verified by <theorem> (about …; decided: …);
+  unwinding by <unwinding theorem> (…)` for it, and for a function failing a check `compiled,
+  verified for normal returns by <theorem> (…); try_call: unwinding, landing pads and the LSDA
+  trusted (unwinding check failed: <check>)`. An
   `i128`-legalised `try_call` function is covered by `E2E.backend_correct_legal_unwind_any`
   (S10f) when, in addition, the handler-edge check `Opt.Legal.exnOk` accepts its legalisation.
   (The `_any` theorems drop the former check `lastCallsOk` on the calls of the last block,

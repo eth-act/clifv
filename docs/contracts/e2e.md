@@ -135,6 +135,59 @@ output; the witnesses discharge it by `lowerRFunc_frame` (`ArmAllocThread.Witnes
 `DeadCleanupLeafWitness.compiledL_exists` (a compiled function without a frame inhabits
 `CompiledCleanupL`, with `FormsCovered` and `InSubset`).
 
+### The per-function verdict (`lean-backend`, `cargo fv`'s "verified"; #1099)
+
+`lean-backend` reports a compiled function **verified** only by naming one per-function theorem
+(`FVTest/Backend/FnVerdict.lean`: the path the function took, the theorem, the checks) after
+deciding, on the objects it emitted, every premise of that theorem that is a fact about the
+function and its compiled code. A failing one names no theorem: `compiled, unverified (outside
+backend_correct): <premise>`. The line is `compiled, verified by <theorem> (about <what>;
+decided: <checks>)`; `cargo fv` records `theorem` and `about` per function and counts the verified
+functions per theorem (`by_theorem`, docs/USAGE.md "Report format"). Until #1098 `cargo fv`
+named `E2E.backend_correct_final_cleanup` for every verified function, although with the Stock
+routes enabled the code of many is a Stock route's, which that theorem (`CompiledCleanup`:
+`lowerFunction f = .ok vc`) does not describe, and `lean-backend` decided neither `FormsCovered`
+nor `checkAlloc` of the spill-fallback allocation (#1099; both held on all 320,176 functions
+measured there).
+
+| verdict class | theorem named (dead cleanup; without it the names without `_cleanup`, typed `finalT`/`finalTC`/`finalTCF`) | premises `lean-backend` decides |
+| --- | --- | --- |
+| Stock path (`compileFileReturnPinWhen` enabled: no `--opt`, no `try_call` in the file), subset E; on the legacy path a `Stock.D0`-eligible function | `E2E.backend_correct_world_niX_semantic_return_pins`, artifact `CompiledSemanticReturnPins.of_checks_calls` | `InSubset` (`unverifiedReason?`); the route's lowering validator, which implies `SemanticABI.checkCalls` (read from the `lowerChecked*` chain, not a lemma: #1101); `prepare` and `prepCheck` of `Stock.Arithmetic.stageF`; `checkAlloc`; `lowerRFunc`; `emitFunc`; layout; `formsCoveredB` (`FormsCovered`) |
+| legacy path (a file with a `try_call`; `--opt-proven-only`), subset E | `E2E.backend_correct_final_cleanup`; composed with what changed the function: `backend_correct_pass_cleanup (T := Opt.ConstPhi.run)` (with `--opt`: `T := Opt.ConstPhi.runOpt cfg`), `backend_correct_legal_wide_cleanup`, `backend_correct_legal_pass_wide_cleanup`, `backend_correct_opt_exe_cleanup`, `backend_correct_legal_opt_wide_cleanup` | `InSubset`; `lowerFunction`; `lowerCheck`; `prepCheck`; `checkAlloc`; `lowerRFunc`, emission, layout; `formsCoveredB`; per composition `Opt.Legal.checkW`, `Opt.ConstPhi.keeps` with `InSubset` of the function before the pass, the mid-end's proven rule sets |
+| typed scope (outside subset E) | `E2E.backend_correct_final_cleanupT`, `E2E.backend_correct_world_cleanupTC`, `E2E.backend_correct_world_cleanupTCF` (`lowerCheckFor`'s branch); `TypedRules` is `typedRules_program` | `InSubsetT`/`TC`/`TCF`; `lowerFunction`, `lowerCheckFor`, `prepare` with `prepCheck`, `checkAlloc`, `lowerRFunc` and `emitFunc` re-run on the function's allocation, reproducing the emitted code (a Stock route may have lowered it); `formsCoveredB` |
+| `try_call` function (legacy path) | as above for the normal returns; `unwinding by` the `_unwind_any` theorem composed with the same transformations when `unwindCheckFailure?` and the transformations' handler-edge checks pass, else `verified for normal returns` | the above, plus `unwCheck`/`unwCheckTC`, `savedCheck`, `padsNonzeroB`, `Opt.Legal.exnOk` |
+
+`checkAlloc` is decided on every allocation, the spill fallback's included (`AllocRecord`'s flag;
+the fallback is lowered without it otherwise). A function the allocator gave no `lowerRFunc`
+allocation for names no theorem.
+
+**About the source function or the compiled function.** `about the source function`: the
+theorem's CLIF function is the one `lean-backend` read (cg_clif's dump, decoded by `cargo fv`),
+with the transformations that changed it composed in. `about the compiled function, after <the
+i128 legalisation | constant-phi removal | the mid-end> (not composed on this path)`: the
+theorem is about the function those transformations produced, because no per-function theorem
+composes them with that path: the Stock path (#1100: `legal_wide`/`pass` forms of
+`backend_correct_world_niX_semantic_return_pins` do not exist yet), constant-phi removal of a
+function whose source is outside the scope, unproven `--opt` rules. For the functions of an
+executable that `lean-link --verified` writes on a route with a `_sourceCp` theorem, the
+executable-level theorem composes the passes ("Linking", `Link.cpSource`); on the typed Stock
+route `attemptT` it does not yet (#1100, audit row A18). A function compiled from cg_clif's
+optimised dump (`cargo fv`'s `.opt.clif` retry) is about that dump.
+
+**Hypotheses no tool decides** (premises of every theorem in the table; "Final hypotheses" above
+gives them in full): the callee contracts at the call sites of the compiled code (`CalleeOk`,
+for `try_call` sites `CalleeTryOk`; `ActEntry.calls`/`tries`), the external and indirect-call
+contracts (`XCallsOk`, `XCallsIndOk`), the TLS resolver (`TlsOk`, `ActEntry.tls`), the linked
+symbol addresses (`hsym`), the ABI entry state and stack room (`ActEntry.abi`, `stack`, `gfree`,
+`body`), the CLIF entry and its relation to the machine (`ClifEntry`, `RelW`, `ArgsAtEntry`), and
+`TrapsExplicit` (the CLIF run traps only at explicit traps). `hslot` is instantiated by the
+caller. For the unwinding theorems in addition the unwinder/personality model and the decoding
+of the emitted tables are trusted.
+
+`lean-link --verified` decides `formsCoveredB` and `checkAlloc` again for every function it puts
+in a region (`staticChksSemanticNI`, `okRWithTS`), so the executable-level theorems had them
+decided before #1098 too; the per-function count had not.
+
 ### `sret` (struct-return pointer)
 
 The ABI facts are the compiler's (`FV/Backend/Isel.lean`, differentially tested against
