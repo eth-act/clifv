@@ -560,7 +560,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         (a.dep, a.std, &a.package, &a.crate_name, &a.kind, &a.src, &a.unit)
             .cmp(&(b.dep, b.std, &b.package, &b.crate_name, &b.kind, &b.src, &b.unit))
     });
-    let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), &panic_desc, units);
+    let report = Report::new(&profile, mode.name(), &panic_desc, units);
     let rp = report_path(&target);
     let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
     if !out.status.success() {
@@ -584,6 +584,12 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         d.verified,
         rp.display()
     );
+    // #1096: what "verified" means per function: the theorem lean-backend named for it, every
+    // checkable premise of which it decided; the normal-returns-only ones separately
+    if !report.totals.by_theorem.is_empty() {
+        let per: Vec<String> = report.totals.by_theorem.iter().map(|(t, n)| format!("{n} {t}")).collect();
+        eprintln!("cargo fv: verified functions by theorem: {}", per.join("; "));
+    }
     if !exes.is_empty() {
         eprintln!(
             "cargo fv: checked {} linked executable(s): {} function symbols in total resolve to Lean-compiled code (\"Lean in exe\", members and dependencies)",

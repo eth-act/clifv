@@ -15,6 +15,7 @@ import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelUTry
 import FV.E2E.RegLevelLeafKeep
 import FV.E2E.DeadCleanupPipeline
+import FVTest.Backend.FnVerdict
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -176,9 +177,44 @@ def preUnverifiedOf (pre : Option String) (f : Clif.Function) : Option (String �
   | none, none => none
 
 /-- One function's allocation as the backend lowered it: the prepared VCode `vcp`, the
-allocation `rf` with `lowerRFunc vcp rf = .ok af` (`lowerAllocReady_eq`, `lowerAlloc_eq`), and
-`af`; `none` without an `RFunc` (the stack allocator) or when `prepare` failed. -/
-abbrev AllocRecord := Option (VCode × RFunc × AFunc)
+allocation `rf` with `lowerRFunc vcp rf = .ok af` (`lowerAllocReady_eq`, `lowerAlloc_eq`), `af`,
+and whether `checkAlloc vcp rf` accepted `rf` while allocating (`false` for the spill fallback,
+which `allocResult` lowers without the checker); `none` without an `RFunc` (the stack allocator)
+or when `prepare` failed. -/
+abbrev AllocRecord := Option (VCode × RFunc × AFunc × Bool)
+
+/-- `allocResult vcp ra` (the same choice, by its definition), with whether `checkAlloc` accepted
+the allocation it returns. -/
+def allocChecked (vcp : VCode) (ra : Except String RFunc) : RFunc × Bool :=
+  match ra with
+  | .ok rf =>
+    if (checkAlloc vcp rf).isOk then
+      match lowerRFunc vcp rf with
+      | .ok _ => (rf, true)
+      | .error _ => (spillAlloc vcp, false)
+    else (spillAlloc vcp, false)
+  | .error _ => (spillAlloc vcp, false)
+
+theorem allocChecked_fst (vcp : VCode) (ra : Except String RFunc) :
+    (allocChecked vcp ra).1 = allocResult vcp ra := by
+  unfold allocChecked allocResult
+  split
+  · split
+    · split <;> rfl
+    · rfl
+  · rfl
+
+/-- The flag is `checkAlloc`'s acceptance of the allocation returned. -/
+theorem allocChecked_snd {vcp : VCode} {ra : Except String RFunc}
+    (h : (allocChecked vcp ra).2 = true) : (checkAlloc vcp (allocChecked vcp ra).1).isOk = true := by
+  unfold allocChecked at h ⊢
+  split at h ⊢
+  · split at h ⊢
+    · split at h ⊢
+      · assumption
+      · cases h
+    · cases h
+  · cases h
 
 /-- Which allocation `lowerAllocReady vcp ra` lowers, and why (`FV_RA_DIAG`). -/
 def allocVerdict (vcp : VCode) (ra : Except String RFunc) : String :=
@@ -206,7 +242,7 @@ def allocRecording (a : Allocator) (vcs : Array VCode)
     let ps := vcs.map prepareChecked
     let afs := ps.map (·.bind fun vcp => lowerRFunc vcp (spillAlloc vcp))
     pure (afs, (ps.zip afs).map fun (p, af) => match p, af with
-      | .ok vcp, .ok af => some (vcp, spillAlloc vcp, af)
+      | .ok vcp, .ok af => some (vcp, spillAlloc vcp, af, false)
       | _, _ => none)
   | .regalloc2 bin env =>
     let prepared := vcs.map prepareChecked
@@ -233,7 +269,9 @@ def allocRecording (a : Allocator) (vcs : Array VCode)
         let ra := rs[j]?.getD (.error "lean-regalloc: missing result")
         let af := lowerAllocReady vcp ra
         out := out.push af
-        recs := recs.push (af.toOption.map (vcp, allocResult vcp (readyAnswer vcp ra), ·))
+        recs := recs.push (af.toOption.map fun a =>
+          let (rf, chk) := allocChecked vcp (readyAnswer vcp ra)
+          (vcp, rf, a, chk))
         ans := ans.push <| match ra with
           | .ok rf =>
             if raAnswerRoundTrip vcp rf then raAnswerJson vcp rf
@@ -264,7 +302,9 @@ def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode)
   if let some p ← IO.getEnv "FV_RA_OUT" then
     IO.FS.writeFile p ("{\"functions\":[" ++ ",".intercalate ans.toList ++ "]}\n")
   let recs := (vcs.zip afs).map fun (vc, af) => match prepareChecked vc, af with
-    | .ok vcp, .ok af => some (vcp, allocResult vcp (readyAnswer vcp (leanAlloc vcp)), af)
+    | .ok vcp, .ok af =>
+      let (rf, chk) := allocChecked vcp (readyAnswer vcp (leanAlloc vcp))
+      some (vcp, rf, af, chk)
     | _, _ => none
   pure (afs, recs)
 
@@ -289,11 +329,39 @@ def unwindCheckFailure? (f : Clif.Function) (rec : AllocRecord) (fa? : Option Fn
     if tc && !(Compile.functionETC f && Proof.Driver.unwCheckTC f vc) then some "unwCheckTC"
     else if !tc && !Proof.Driver.unwCheck f vc then some "unwCheck"
     else match rec, fa? with
-      | some (vcp, rf, af), some fa =>
+      | some (vcp, rf, af, _), some fa =>
         if !savedCheck vcp rf then some "savedCheck"
         else if !Proof.padsNonzeroB af fa then some "padsNonzeroB"
         else none
       | _, _ => some "no lowerRFunc allocation (allocator)"
+
+/-- The typed theorems' premises on the objects `lean-backend` emitted for a function `f` outside
+subset E (`FVTest.Backend.FnVerdict`, typed path): `lowerFunction f = .ok vc`, the typed validator
+`lowerCheckFor f vc` (`lowerCheckT`/`TC`/`TCF`), `prepare` of the cleanup stage with `prepCheck`
+(`prepareChecked`; outside subset E `cleanupStage f vc = DeadCleanup.prune vc`), `checkAlloc` of
+the function's allocation `rf` on that prepared code, `lowerRFunc`, and `emitFunc` at the
+function's index, whose code must be the emitted one (`FnAsm.text`): `none` when all hold, else
+the first that fails. The Stock routes' providers may lower a function of the typed scope too;
+this re-run makes the typed theorem's `lowerFunction` premise a decided fact, whatever the route. -/
+def typedRecheck (f : Clif.Function) (cleanup : Bool) (rec : AllocRecord) (fa : FnAsm) :
+    Option String :=
+  match lowerFunction f with
+  | .error e => some s!"lowerFunction fails ({e})"
+  | .ok vc =>
+    if !lowerCheckFor f vc then some "lowerCheckFor rejects lowerFunction's output"
+    else match prepareChecked (if cleanup then cleanupStage f vc else vc), rec with
+      | .error e, _ => some s!"prepare of lowerFunction's output ({e})"
+      | _, none => some "no allocation record"
+      | .ok vcp, some (_, rf, _, _) =>
+        if !(checkAlloc vcp rf).isOk then
+          some "checkAlloc rejects the allocation on lowerFunction's prepared code"
+        else match lowerRFunc vcp rf with
+          | .error e => some s!"lowerRFunc on lowerFunction's prepared code ({e})"
+          | .ok af => match emitFunc fa.k af with
+            | .error e => some s!"emitFunc ({e})"
+            | .ok fa' =>
+              if fa'.text == fa.text then none
+              else some "lowerFunction's pipeline does not reproduce the emitted code (a Stock route lowered it)"
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
@@ -446,6 +514,47 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   for n in coveredLeaves do
     IO.eprintln (s!"lean-backend: {input}: %{n}: frameless leaf, backend_correct_final_cleanup_leaf " ++
       "(normal-return form: FnAsm.leafChk admits no call, so no exception unwinds through it)")
+  -- The per-function verdict (#1096): a compiled function inside the theorems' scope is reported
+  -- verified only by the theorem whose checkable premises `lean-backend` decided on the objects it
+  -- emitted (`FVTest.Backend.FnVerdict`: the path, the theorem, the checks); a failing premise
+  -- (`formsCoveredB`, `checkAlloc` of the spill fallback, the typed re-run) makes it unverified.
+  -- The Stock routes run when `compileFileReturnPinWhen` is enabled (no `--opt`, no `try_call` in
+  -- the file, not `--pipeline-t`, not the stock-configured driver).
+  let passT := if o.opt.isSome then "Opt.ConstPhi.runOpt cfg" else "Opt.ConstPhi.run"
+  -- the pass changed the (legalised) source function
+  let cpOn (name : String) : Bool :=
+    ((lg.file.funcs.find? (·.name == name)).bind (·.func.toOption)).any (Opt.ConstPhi.keeps header)
+  let provenOpt : Bool := match o.opt with
+    | some c => c.rules == .cranelift && c.ruleAllow == .proven
+    | none => false
+  let recs ← records.get
+  let stockOn := !pipelineT && !o.opt.isSome && stock.isNone &&
+    !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))
+  let verdicts : List (String × FVTest.Backend.FnVerdict.Verdict) := pf.funcs.filterMap fun p =>
+    match p.func, fa.funcs.find? (·.name == p.name) with
+    | .ok f, some a =>
+      if fa.unverified.any (·.1 == p.name) || fa.unvalidated.any (·.1 == p.name) ||
+          coveredLeaves.contains p.name || rs0.any (·.1 == p.name) then none
+      else
+        let rec? := (recs.find? (·.1 == p.name)).bind (·.2)
+        let scope : FVTest.Backend.FnVerdict.Scope :=
+          if Compile.functionE f then .integer else if Compile.functionET f then .typedT
+          else if Compile.functionETC f then .typedTC else .typedTCF
+        let (record, alloc, covered) : Bool × Bool × Bool := match rec? with
+          | some (vcp, rf, af, chk) =>
+            (true, chk || (checkAlloc vcp rf).isOk, Proof.formsCoveredB ⟨a.k, af.slotBase⟩ vcp)
+          | none => (false, false, false)
+        let typed := if scope == .integer || !record then none
+          else typedRecheck f o.deadCleanup rec? a
+        let cpSrc := ((lg.file.funcs.find? (·.name == p.name)).bind (·.func.toOption)).any
+          fun g => (unverifiedReason? g).isNone
+        some (p.name, FVTest.Backend.FnVerdict.verdict
+          { scope, path := if stockOn then .stock else .legacy, cleanup := o.deadCleanup,
+            opt := o.opt.isSome, optProven := provenOpt, legal := lg.accepted.contains p.name,
+            cp := cpOn p.name, cpSrc, cpT := passT, d0 := Stock.D0.eligible f, record, alloc,
+            covered, typed })
+    | _, _ => none
+  let fa := { fa with unverified := fa.unverified ++ verdicts.filterMap fun (n, v) => v.fail.map (n, ·) }
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
@@ -533,26 +642,12 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- mid-end) is covered by the same theorems composed with the pass (`FV/E2E/PassX.lean`:
   -- `backend_correct_pass{,_cleanup}_unwind_any`, `backend_correct_legal_pass_unwind_any`, at
   -- `T := Opt.ConstPhi.run`, with `--opt` at `T := Opt.ConstPhi.runOpt cfg`).
-  let recs ← records.get
-  let thm := if o.deadCleanup then "backend_correct_final_cleanup_unwind_any"
-    else "backend_correct_final_unwind_any"
-  let optThm := if o.deadCleanup then "backend_correct_opt_exe_cleanup_unwind_any"
-    else "backend_correct_opt_exe_unwind_any"
-  let passThm := if o.deadCleanup then "backend_correct_pass_cleanup_unwind_any"
-    else "backend_correct_pass_unwind_any"
-  let passT := if o.opt.isSome then "Opt.ConstPhi.runOpt cfg" else "Opt.ConstPhi.run"
-  -- the pass changed the (legalised) source function
-  let cpOn (name : String) : Bool :=
-    ((lg.file.funcs.find? (·.name == name)).bind (·.func.toOption)).any (Opt.ConstPhi.keeps header)
   let legalUnwOk (name : String) (g : Clif.Function) : Bool :=
     match (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
     | some f => match Opt.Legalize128.function128Cert f with
       | .ok (g', cert) => Opt.ConstPhi.select header g' == g && Opt.Legal.check f g' cert &&
         Opt.Legal.exnOk f g' cert
       | .error _ => false
-    | none => false
-  let provenOpt : Bool := match o.opt with
-    | some c => c.rules == .cranelift && c.ruleAllow == .proven
     | none => false
   let optUnwOk (name : String) (g : Clif.Function) : Bool :=
     match o.opt, (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
@@ -566,41 +661,45 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         Opt.Legal.exnOk f g' cert
       | .error _ => false
     | _, _ => false
-  for p in pf.funcs do
-    if let .ok f := p.func then
-      if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) &&
-          !fa.unvalidated.any (·.1 == p.name) then
-        let legal := lg.accepted.contains p.name
-        let why? : Option String :=
-          if o.opt.isSome && !provenOpt then
-            some "--opt with unproven rule sets: no unwinding theorem composes them (--opt-proven-only)"
-          else if legal && !o.deadCleanup then
-            some "i128 legalized: no unwinding theorem composes the legalisation without dead cleanup"
-          else if o.opt.isSome && legal && !legalOptUnwOk p.name f then
-            some "--opt, i128 legalized: not Opt.optimizeExe of the constant-phi removal of the source function's legalisation accepted by Opt.Legal.check and Opt.Legal.exnOk"
-          else if o.opt.isSome && !legal && !optUnwOk p.name f then
-            some "--opt: the compiled function is not Opt.optimizeExe of the constant-phi removal of its source function"
-          else if o.opt.isNone && legal && !legalUnwOk p.name f then
-            some "i128 legalized: Opt.Legal.check (no try_call_indirect, no call_indirect at an i128 signature) or Opt.Legal.exnOk (the handler edges) rejects"
-          else (unwindCheckFailure? f ((recs.find? (·.1 == p.name)).bind (·.2))
-            (fa.funcs.find? (·.name == p.name))).map (s!"unwinding check failed: {·}")
-        let thm := if cpOn p.name then
-            (if legal then "backend_correct_legal_pass_unwind_any" else passThm) ++
-              s!" (T := {passT})"
-          else if legal && o.opt.isSome then "backend_correct_legal_opt_unwind_any"
-          else if legal then "backend_correct_legal_unwind_any"
-          else if o.opt.isSome then optThm else thm
-        match why? with
-        | none =>
-          IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified (try_call: unwinding by {thm}; the unwinder/personality model and the decoding of the emitted tables trusted)"
-        | some why =>
-          let rec? := (recs.find? (·.1 == p.name)).bind (·.2)
-          let fa? := fa.funcs.find? (·.name == p.name)
-          if why == "unwinding check failed: unwCheck" && Compile.functionETC f &&
-              (unwindCheckFailure? f rec? fa? (tc := true)).isNone then
-            IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call with float values: unwinding, landing pads and the LSDA trusted; the exceptional-edge conditions hold on the typed lowering (unwCheckTC, loweringUTC_of_check), no unwinding theorem covers typed try_calls yet)"
-          else
-            IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted; {why})"
+  let cpSrcOf (name : String) : Bool :=
+    ((lg.file.funcs.find? (·.name == name)).bind (·.func.toOption)).any
+      fun g => (unverifiedReason? g).isNone
+  for (name, v) in verdicts do
+    if v.thm.isNone then continue
+    let some f := (pf.funcs.find? (·.name == name)).bind (·.func.toOption) | continue
+    if !hasTryCall f then
+      IO.eprintln s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v}"
+      continue
+    let legal := lg.accepted.contains name
+    let why? : Option String :=
+      if o.opt.isSome && !provenOpt then
+        some "--opt with unproven rule sets: no unwinding theorem composes them (--opt-proven-only)"
+      else if legal && !o.deadCleanup then
+        some "i128 legalized: no unwinding theorem composes the legalisation without dead cleanup"
+      else if o.opt.isSome && legal && !legalOptUnwOk name f then
+        some "--opt, i128 legalized: not Opt.optimizeExe of the constant-phi removal of the source function's legalisation accepted by Opt.Legal.check and Opt.Legal.exnOk"
+      else if o.opt.isSome && !legal && !optUnwOk name f then
+        some "--opt: the compiled function is not Opt.optimizeExe of the constant-phi removal of its source function"
+      else if o.opt.isNone && legal && !legalUnwOk name f then
+        some "i128 legalized: Opt.Legal.check (no try_call_indirect, no call_indirect at an i128 signature) or Opt.Legal.exnOk (the handler edges) rejects"
+      else if cpOn name && !cpSrcOf name then
+        some "constant-phi removal: the source function is outside the scope, so no unwinding theorem composes the pass"
+      else (unwindCheckFailure? f ((recs.find? (·.1 == name)).bind (·.2))
+        (fa.funcs.find? (·.name == name))).map (s!"unwinding check failed: {·}")
+    let unwThm := FVTest.Backend.FnVerdict.unwindThm o.deadCleanup o.opt.isSome legal (cpOn name)
+      passT
+    let unw : Except String String := match why? with
+      | none =>
+        if Compile.functionE f then .ok unwThm
+        else .error "outside subset E: the unwinding theorems are about the integer lowering (lowerCheck), no unwinding theorem covers typed try_calls yet"
+      | some why =>
+        let rec? := (recs.find? (·.1 == name)).bind (·.2)
+        let fa? := fa.funcs.find? (·.name == name)
+        if why == "unwinding check failed: unwCheck" && Compile.functionETC f &&
+            (unwindCheckFailure? f rec? fa? (tc := true)).isNone then
+          .error "try_call with float values: the exceptional-edge conditions hold on the typed lowering (unwCheckTC, loweringUTC_of_check), no unwinding theorem covers typed try_calls yet"
+        else .error why
+    IO.eprintln s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v true unw}"
   return 0
 
 def main (args : List String) : IO UInt32 := do

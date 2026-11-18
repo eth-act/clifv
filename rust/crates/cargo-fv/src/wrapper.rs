@@ -238,7 +238,6 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
         std: m.std,
         artifact: artifact.display().to_string(),
         mode: cfg.mode.name().into(),
-        theorem: cfg.mode.theorem().map(String::from),
         cgu_errors: vec![],
         functions: vec![],
         binary: None,
@@ -262,6 +261,8 @@ fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitRep
                             status: Status::Fallback,
                             reason: Some("no CLIF dump (cg_clif emitted none for this unit)".into()),
                             normal_returns: false,
+                            theorem: None,
+                            about: None,
                         });
                     }
                 }
