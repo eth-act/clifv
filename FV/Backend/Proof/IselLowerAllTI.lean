@@ -74,20 +74,19 @@ theorem lowerRuleOk_of_fmtTI {isem : Sem} {MR : MemRelT} {env : Clif.Env}
   have := instData_fmt_ne hE hd
   omega
 
-/-- #35: a context whose instructions are in `Compile.instETF` (`InstScopeTF`, e.g. `CtxT`'s) has
-no `fma`, so it satisfies `FmaNegYFree`. -/
-theorem fmaNegYFree_of_scopeTF {ctx : Ctx} (h : InstScopeTF ctx) : FmaNegYFree ctx := by
-  intro ii info ty x y z hi hc
-  have := h ii info _ hi hc
-  simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE, Compile.fArithET,
-    Compile.fCvtET, Compile.fCmpET, fBinaryOpcode, fUnaryOpcode, fCvtOpcode] at this
-
-/-- #35: `LowerRuleOkTC FmaNegYFree` gives `LowerRuleOkTX` (`CtxT` contexts are in `InstScopeTF`). -/
-theorem LowerRuleOkTC.toTX {P : Clif.Inst → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} {p : Program} {r : Rule}
-    (h : LowerRuleOkTC FmaNegYFree isem MR env cp p r) : LowerRuleOkTX P isem MR env cp p r :=
-  fun f ctx hctx ii info inst hi hic _ =>
-    h f ctx hctx.inv (fmaNegYFree_of_scopeTF hctx.scope) ii info inst hi hic
+/-- #35: a root matching `Ternary`/`Fma` data (the `fma` roots, `fma_front`) never matches a
+subset-E instruction, so it is (vacuously) `LowerRuleOkTX` on them. -/
+theorem fmaRoot_okTI {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {r : Rule}
+    {tyPat xPat yPat zPat : Pattern}
+    (hargs : r.args = [.term 18 209 [tyPat, .term 152 2471 [.term 151 2402 [],
+      .term 148 1615 [xPat, yPat, zPat]]]]) :
+    LowerRuleOkTX (fun i => Compile.instE i = true) isem MR env cp program r := by
+  intro f ctx hctx ii info inst hi hic hE cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch _
+  exfalso
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨ty, x, y, z, rfl, -, -⟩ := fma_front data_program hctx.inv hi hic hargs
+    data_program.t2402 term_2402_kind hmatch
+  simp [Compile.instE] at hE
 
 /-- **The integer `lower` roots over typed contexts** (`LowerRulesCorrectTI`): every closure
 root of `lower` other than the call, indirect-call, memory, float-movement and float-arithmetic
@@ -152,9 +151,9 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
   · exfalso; simp [floatArithRootRule, h] at hfa
   · exfalso; simp [floatArithRootRule, h] at hfa
   · rw [lower_rule_eq hr (k := 107) (r0 := rule_lower_608) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
-    exact (fma_okT hp MR env cp hR hMR).toTX
+    exact fmaRoot_okTI rfl
   · rw [lower_rule_eq hr (k := 49) (r0 := rule_lower_609) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
-    exact (fma_fneg_okT hp MR env cp hR hMR).toTX
+    exact fmaRoot_okTI rfl
   · rw [lower_rule_eq hr (k := 215) (r0 := rule_lower_685) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     exact (copysign_okT hp MR env cp hR hMR).toTX
   · rw [lower_rule_eq hr (k := 220) (r0 := rule_lower_724) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
