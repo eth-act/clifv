@@ -182,6 +182,12 @@ inductive Insn where
   | fpuCmp (size : ScalarSize) (rn rm : Reg)
   /-- `frintm/frintp/frintz/frintn sd, sn` / `… dd, dn` (Cranelift `FpuRound`). -/
   | fpuRound (op : FpuRoundMode) (rd rn : Reg)
+  /-- `ushr vd.2s, vn.2s, #amount` (`uShr32`) / `ushr dd, dn, #amount` (`uShr64`) (Cranelift
+  `FpuRRI`). -/
+  | fpuRRI (op : FPUOpRI) (rd rn : Reg)
+  /-- `sli vd.2s, vn.2s, #amount` (`sli32`) / `sli dd, dn, #amount` (`sli64`) (Cranelift
+  `FpuRRIMod`): reads and writes `vd`/`dd`. -/
+  | fpuRRIMod (op : FPUOpRIMod) (rd rn : Reg)
   /-- `fcvtzs/fcvtzu wd/xd, sn/dn` (Cranelift `FpuToInt`). -/
   | fpuToInt (op : FpuToIntOp) (rd rn : Reg)
   /-- `scvtf/ucvtf sd/dd, wn/xn` (Cranelift `IntToFpu`). -/
@@ -563,6 +569,12 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
   | .fpuRRRR op s rd rn rm ra => one (.fpuRRRR op s rd rn rm ra)
   | .fpuCmp s rn rm => one (.fpuCmp s rn rm)
   | .fpuRound op rd rn => one (.fpuRound op rd rn)
+  -- `emit.rs` `FpuRRI`: one `ushr`; `FpuRRIMod`: one `sli`, which keeps the low `amount` bits of
+  -- each lane of `vd`; the allocation ties `rd` to `ri` (`debug_assert_eq!(rd.to_reg(), ri)`)
+  | .fpuRRI op rd rn => one (.fpuRRI op rd rn)
+  | .fpuRRIMod op rd ri rn =>
+    if rd != ri then throw s!"fpuRRIMod with distinct rd {repr rd} and ri {repr ri}"
+    else one (.fpuRRIMod op rd rn)
   | .fpuToInt op rd rn => one (.fpuToInt op rd rn)
   | .intToFpu op rd rn => one (.intToFpu op rd rn)
   -- `emit.rs` `LoadP64`/`StoreP64` with `PairAMode::SignedOffset`: one `ldp`/`stp` (the trap
@@ -1626,6 +1638,15 @@ def FpuRoundMode.size : FpuRoundMode → ScalarSize
   | .minus32 | .plus32 | .zero32 | .nearest32 => .size32
   | .minus64 | .plus64 | .zero64 | .nearest64 => .size64
 
+/-- A register operand of `ushr`/`sli` at lane size `lane` (Cranelift's `FpuRRI`/`FpuRRIMod`
+printing, `inst/mod.rs`): the `2s` arrangement for 32-bit lanes, the `d` scalar for 64. -/
+def fpuShiftReg (lane : Nat) (r : Reg) : String :=
+  if lane == 32 then s!"v{r.vnum}.2s" else ScalarSize.size64.fpreg r.vnum
+
+/-- An immediate as Cranelift's disassembly (Capstone) prints it: decimal up to 9, hex above
+(`ushr d4, d1, #0x3f`). -/
+def disasmImm (n : Nat) : String := if n > 9 then hex n else toString n
+
 /-- `(signed, float size, 64-bit integer)` of a float → integer conversion. -/
 def FpuToIntOp.parts : FpuToIntOp → Bool × ScalarSize × Bool
   | .f32ToU32 => (false, .size32, false) | .f32ToI32 => (true, .size32, false)
@@ -1749,6 +1770,10 @@ def Insn.asm (k : Nat) : Insn → String
     s!"{op.asm} {s.fpreg rd.vnum}, {s.fpreg rn.vnum}, {s.fpreg rm.vnum}, {s.fpreg ra.vnum}"
   | .fpuCmp s rn rm => s!"fcmp {s.fpreg rn.vnum}, {s.fpreg rm.vnum}"
   | .fpuRound op rd rn => s!"{op.asm} {op.size.fpreg rd.vnum}, {op.size.fpreg rn.vnum}"
+  | .fpuRRI op rd rn =>
+    s!"ushr {fpuShiftReg op.lane rd}, {fpuShiftReg op.lane rn}, #{disasmImm op.amount}"
+  | .fpuRRIMod op rd rn =>
+    s!"sli {fpuShiftReg op.lane rd}, {fpuShiftReg op.lane rn}, #{disasmImm op.amount}"
   | .fpuToInt op rd rn =>
     let (sg, fs, w) := op.parts
     s!"{if sg then "fcvtzs" else "fcvtzu"} {rd.gpr w}, {fs.fpreg rn.vnum}"
