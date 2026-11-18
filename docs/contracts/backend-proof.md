@@ -1039,6 +1039,15 @@ typed per-step contracts and the widened scope are the remaining S11e5 slices.
   (`lower.isle:564/575/586/597`, priority -1) stay unproven and unfired. Closure roots
   182→190 (`StockScopePartition`, after the S11f-cvt conversions' 166→182), excluded 335→327;
   with the two `fcmp` roots 192, excluded 325.
+* **`fcopysign`** (#35, `FV/Backend/Proof/IselFloatCopysign.lean`): the root `rule_lower_685`
+  (id 712, `lower.isle:685`) proven at `CtxInvT` (`copysign_okT`), its family
+  `LowerRulesCorrectCS`/`copysignRootRule` (`IselCopysignFamily`) by
+  `lowerRulesCorrectCS_program`. `fcopy_sign`'s scalar rule (`inst.isle:4612`; the vector rule
+  4619 needs `multi_lane`) emits `ushr tmp, y, #31/#63` (`fpu_rri`, `MInst.FpuRRI`) and
+  `sli dst, tmp` with `dst` reusing `x` (`MInst.FpuRRIMod`); on the low 32/64 bits that is
+  `FSem.copysign` (`copysign32_ushr_sli`, `copysign64_ushr_sli`, `copysign_holds`; at `f32` the
+  `2s` forms leave junk in lane 1, which `VHolds` never reads). Closure roots 192→193, excluded
+  325→324 (`StockScopePartition`; old forms false in `FloatCopysignWitness`).
 
 **Non-vacuity.** `FVTest/Backend/FloatArithCtxT.lean`: `ctxInvT_float_arith` (`ctxOkT_sound`,
 `native_decide`, witness only) for a function with all eleven operations, `lower` fires the
@@ -1048,6 +1057,12 @@ closure root and not a `floatArithRootRule`). Oracle: `FVTest/Backend/float_arit
 rounding operations, the eight roots fire on it (and not the generic-size ones, nor the
 `fcmp` root), and kernel-checked edge values (±0, ±0.5, ±1.5, `2^52-0.5`, `2^52+1`,
 ±∞, quiet NaN). Oracle: `FVTest/Backend/float_round.clif`.
+`FVTest/Backend/FloatCopysignCtxT.lean`: `ctxInvT_float_copysign` for a function with
+`fcopysign.f32`/`.f64`, the root fires on both through the scalar `fcopy_sign` rule (not the
+vector one) and appends exactly `lowerInstOk_fcopysign`'s `ushr` + `sli`,
+`float_copysign_root_applies` (`lowerRulesCorrectCS_program` on it), and kernel-checked edge
+values (±0, NaNs of both signs as either operand, ±∞, junk upper register bits). Oracle:
+`FVTest/Backend/float_copysign.clif`.
 
 **Boundary.** Since S11f's scope PR the per-function chain with typed `try_call`s consumes them
 with the conversions and the scalar comparisons: `CtxT.scope` and `Driver.LowerShapeTC.scope` are
