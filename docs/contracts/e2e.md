@@ -152,7 +152,7 @@ measured there).
 
 | verdict class | theorem named (dead cleanup; without it the names without `_cleanup`, typed `finalT`/`finalTC`/`finalTCF`) | premises `lean-backend` decides |
 | --- | --- | --- |
-| Stock path (`compileFileReturnPinWhen` enabled: no `--opt`, no `try_call` in the file), subset E; on the legacy path a `Stock.D0`-eligible function | `E2E.backend_correct_world_niX_semantic_return_pins`, artifact `CompiledSemanticReturnPins.of_checks_calls` | `InSubset` (`unverifiedReason?`); the route's lowering validator, which implies `SemanticABI.checkCalls` (read from the `lowerChecked*` chain, not a lemma: #1101); `prepare` and `prepCheck` of `Stock.Arithmetic.stageF`; `checkAlloc`; `lowerRFunc`; `emitFunc`; layout; `formsCoveredB` (`FormsCovered`) |
+| Stock path (`compileFileReturnPinWhen` enabled: no `--opt`, no `try_call` in the file `lean-backend` compiles), subset E; on the legacy path a `Stock.D0`-eligible function | `E2E.backend_correct_world_niX_semantic_return_pins`, artifact `CompiledSemanticReturnPins.of_checks_calls` | `InSubset` (`unverifiedReason?`); `SemanticABI.checkCalls` of the raw lowering, by the route's lowering validator while compiling, proved for the reported function by `Backend.compileFileReturnPinWhen_checkCalls` (#1101, below); `prepare` and `prepCheck` of `Stock.Arithmetic.stageF`; `checkAlloc`; `lowerRFunc`; `emitFunc`; layout; `formsCoveredB` (`FormsCovered`) |
 | legacy path (a file with a `try_call`; `--opt-proven-only`), subset E | `E2E.backend_correct_final_cleanup`; composed with what changed the function: `backend_correct_pass_cleanup (T := Opt.ConstPhi.run)` (with `--opt`: `T := Opt.ConstPhi.runOpt cfg`), `backend_correct_legal_wide_cleanup`, `backend_correct_legal_pass_wide_cleanup`, `backend_correct_opt_exe_cleanup`, `backend_correct_legal_opt_wide_cleanup` | `InSubset`; `lowerFunction`; `lowerCheck`; `prepCheck`; `checkAlloc`; `lowerRFunc`, emission, layout; `formsCoveredB`; per composition `Opt.Legal.checkW`, `Opt.ConstPhi.keeps` with `InSubset` of the function before the pass, the mid-end's proven rule sets |
 | typed scope (outside subset E) | `E2E.backend_correct_final_cleanupT`, `E2E.backend_correct_world_cleanupTC`, `E2E.backend_correct_world_cleanupTCF` (`lowerCheckFor`'s branch); `TypedRules` is `typedRules_program` | `InSubsetT`/`TC`/`TCF`; `lowerFunction`, `lowerCheckFor`, `prepare` with `prepCheck`, `checkAlloc`, `lowerRFunc` and `emitFunc` re-run on the function's allocation, reproducing the emitted code (a Stock route may have lowered it); `formsCoveredB` |
 | `try_call` function (legacy path) | as above for the normal returns; `unwinding by` the `_unwind_any` theorem composed with the same transformations when `unwindCheckFailure?` and the transformations' handler-edge checks pass, else `verified for normal returns` | the above, plus `unwCheck`/`unwCheckTC`, `savedCheck`, `padsNonzeroB`, `Opt.Legal.exnOk` |
@@ -160,6 +160,32 @@ measured there).
 `checkAlloc` is decided on every allocation, the spill fallback's included (`AllocRecord`'s flag;
 the fallback is lowered without it otherwise). A function the allocator gave no `lowerRFunc`
 allocation for names no theorem.
+
+**The Stock path's `SemanticABI.checkCalls` premise** (#1101; `FV/Backend/StockCheckCalls.lean`).
+`lean-backend` does not run `SemanticABI.checkCalls` again; the premise comes from the compiler's
+run, by theorems:
+
+* every per-function wrapper the file driver reaches, `lowerCheckedVoidCallABI` →
+  `lowerCheckedMemorySinkExtNI` → … → `lowerCheckedArithmeticNI` →
+  `lowerCheckedProductionWith Stock.ScalarAdd.lower` → `lowerChecked` (23), accepts a lowering with
+  `verify = true` only when `SemanticABI.checkCalls` accepts it, on subset E
+  (`lowerCheckedX_checkCalls`, each from the next one's; `lowerChecked`'s `lowerCheckFor` is
+  `lowerCheck` there);
+* the code `compileFileWithLowering` hands the allocator for such a lowering is
+  `Stock.Arithmetic.stageF cleanup f vc` of a `vc` with `SemanticABI.checkCalls f vc = true`
+  (`CallsRoute`, `lowerForAllocationX_callsRoute`), and the allocator receives exactly that code
+  (`compileFileWithLowering_alloc`);
+* the file driver `compileFileReturnPinWhen`, enabled or not, only runs `compileFileWithLowering L`
+  for those 23 lowerings (`RunsRoutes`, `compileFileReturnPinWhen_runsRoutes`, in any monad);
+* `compileFileReturnPinWhen_checkCalls`: a run (in `IO`, or any monad with `RunsReturn`) that
+  returns `fa` returned it from one `compileFileWithLowering L` run with `CallsRoute L`, and a
+  function `p` of the file in subset E that `fa` reports compiled and neither unverified nor
+  unvalidated was lowered with verification on (`verifyOf`), so its code is `stageF cleanup f vc`
+  with `SemanticABI.checkCalls f vc = true`.
+
+`FVTest/Backend/StockCheckCallsWitness.lean` instantiates `CompiledSemanticReturnPins.of_checks_calls`
+from the driver's run on two functions of the survey crate `a_arith` with no assumed
+`checkCalls` (the run's other facts by `native_decide`, a witness).
 
 **About the source function or the compiled function.** `about the source function`: the
 theorem's CLIF function is the one `lean-backend` read (cg_clif's dump, decoded by `cargo fv`),

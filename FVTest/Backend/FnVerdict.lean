@@ -14,8 +14,9 @@ Paths (`lean-backend`'s driver, `FVTest/Backend/Main.lean`):
 * **Stock** (`compileFileReturnPinWhen` enabled: no `--opt`, no `try_call` in the file): an
   integer function's lowering is one of the Stock routes' (`Backend.lowerCheckedVoidCallABI` and
   the providers below it) or the legacy one, each validated by a check that implies
-  `SemanticABI.checkCalls` (`SemanticNI.check`, `lowerCheck`); the theorem is
-  `E2E.backend_correct_world_niX_semantic_return_pins` with the artifact
+  `SemanticABI.checkCalls` (`SemanticNI.check`, `lowerCheck`): proved for the driver's own run by
+  `Backend.compileFileReturnPinWhen_checkCalls` (`FV/Backend/StockCheckCalls.lean`, #1101); the
+  theorem is `E2E.backend_correct_world_niX_semantic_return_pins` with the artifact
   `CompiledSemanticReturnPins.of_checks_calls`, about the compiled function.
 * **legacy** (the Stock routes disabled): the lowering is `Stock.D0.defaultLower`, i.e.
   `lowerFunction` unless `Stock.D0.eligible`; an integer function gets `backend_correct_final`'s
@@ -92,6 +93,10 @@ structure Verdict where
 /-- The Stock path's theorem: every route's validator implies `SemanticABI.checkCalls`. -/
 def stockThm : String := "E2E.backend_correct_world_niX_semantic_return_pins"
 
+/-- The theorem that gives the Stock path's `SemanticABI.checkCalls` premise from the driver's
+run (#1101). -/
+def stockCallsThm : String := "Backend.compileFileReturnPinWhen_checkCalls"
+
 /-- The transformations that ran compose with the legacy theorem: constant-phi removal only when
 the source function before it is in the scope, the mid-end only with the proven rule sets. -/
 def composable (x : Facts) : Bool := !(x.cp && !x.cpSrc) && !(x.opt && !x.optProven)
@@ -154,7 +159,8 @@ def verdict (x : Facts) : Verdict :=
               (if x.opt then ["Opt.optimizeExe with the proven rule sets"] else [])) }
     | .integer, .stock =>
       { thm := some stockThm, about := compiledAbout x,
-        checks := ["unverifiedReason? (InSubset)", "SemanticABI.checkCalls (the route's validator)",
+        checks := ["unverifiedReason? (InSubset)",
+          s!"SemanticABI.checkCalls (the route's validator: {stockCallsThm})",
           "prepCheck"] ++ common }
     | _, _ =>
       { thm := some (typedThm x), about := compiledAbout x,
