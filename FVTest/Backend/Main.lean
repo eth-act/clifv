@@ -197,24 +197,28 @@ def allocChecked (vcp : VCode) (ra : Except String RFunc) : RFunc × Bool :=
 
 theorem allocChecked_fst (vcp : VCode) (ra : Except String RFunc) :
     (allocChecked vcp ra).1 = allocResult vcp ra := by
-  unfold allocChecked allocResult
-  split
-  · split
-    · split <;> rfl
-    · rfl
-  · rfl
+  cases ra with
+  | error e => rfl
+  | ok rf =>
+    unfold allocChecked allocResult
+    by_cases hc : (checkAlloc vcp rf).isOk = true
+    · simp only [hc, ↓reduceIte]
+      cases lowerRFunc vcp rf <;> rfl
+    · simp only [hc, ↓reduceIte, Bool.false_eq_true]
 
 /-- The flag is `checkAlloc`'s acceptance of the allocation returned. -/
 theorem allocChecked_snd {vcp : VCode} {ra : Except String RFunc}
     (h : (allocChecked vcp ra).2 = true) : (checkAlloc vcp (allocChecked vcp ra).1).isOk = true := by
-  unfold allocChecked at h ⊢
-  split at h ⊢
-  · split at h ⊢
-    · split at h ⊢
-      · assumption
-      · cases h
-    · cases h
-  · cases h
+  cases ra with
+  | error e => simp [allocChecked] at h
+  | ok rf =>
+    unfold allocChecked at h ⊢
+    by_cases hc : (checkAlloc vcp rf).isOk = true
+    · simp only [hc, ↓reduceIte] at h ⊢
+      cases hl : lowerRFunc vcp rf with
+      | ok af => simpa [hl] using hc
+      | error e => simp [hl] at h
+    · simp [hc] at h
 
 /-- Which allocation `lowerAllocReady vcp ra` lowers, and why (`FV_RA_DIAG`). -/
 def allocVerdict (vcp : VCode) (ra : Except String RFunc) : String :=
@@ -554,7 +558,9 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
             cp := cpOn p.name, cpSrc, cpT := passT, d0 := Stock.D0.eligible f, record, alloc,
             covered, typed })
     | _, _ => none
-  let fa := { fa with unverified := fa.unverified ++ verdicts.filterMap fun (n, v) => v.fail.map (n, ·) }
+  let fails : List (String × String) :=
+    verdicts.filterMap fun (e : String × FVTest.Backend.FnVerdict.Verdict) => e.2.fail.map (e.1, ·)
+  let fa := { fa with unverified := fa.unverified ++ fails }
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")

@@ -48,7 +48,7 @@ def declOf (t : String) : String := (t.splitOn " (").headD t
 -- every theorem the verdict and the unwinding table name is a declared theorem
 run_cmd do
   let env ← getEnv
-  let names := (allFacts.filterMap (·.verdict.thm)) ++
+  let names := (allFacts.filterMap fun x => (verdict x).thm) ++
     (Id.run do
       let mut u := []
       for c in [true, false] do
