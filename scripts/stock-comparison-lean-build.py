@@ -29,7 +29,8 @@ Writes `--out`: {"run", "head_sha", "branch", "same_commit", "to_build", "cone",
 scripts/lake-serial-build.py, within memory and a time limit, see
 .github/scripts/stock-comparison-lean.sh). With --github-output, appends `run=<id or empty>` to
 $GITHUB_OUTPUT. A failed lookup (the API, git) exits non-zero: the job fails with that message
-instead of building everything.
+instead of building everything. Transient API failures are retried first
+(scripts/stock_comparison_gh.py).
 Needs `gh` with GH_TOKEN (actions: read) and a checkout of the tested commit as HEAD.
 
 `--print exes` / `--print roots` list the executables and their root modules (one per line).
@@ -43,6 +44,8 @@ import re
 import subprocess
 import sys
 import tomllib
+
+from stock_comparison_gh import gh_api
 
 HERE = Path(__file__).resolve().parent
 WORKFLOW = "full-gate.yml"
@@ -67,10 +70,6 @@ def load(name, file):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-def gh_api(path):
-    return subprocess.run(["gh", "api", path], check=True, capture_output=True).stdout
 
 
 def exe_roots(root):

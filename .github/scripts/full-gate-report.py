@@ -84,10 +84,8 @@ def drift_section(rep, scheds):
     spec.loader.exec_module(pu)
     ts = float(os.environ.get("TIME_SCALE") or 2.0)
     header, rows = pu.read_table(root / "scripts/lake-module-peaks.tsv")
-    meas = {}
-    for d in scheds:
-        for m, (mb, secs) in pu.read_sched(d).items():
-            meas[m] = (mb, secs / pu.scale_of(m, ts, [("FV.Opt.Proof.", 1.5)]))
+    # several shards build the same module; one paging to swap reads a lower RSS
+    meas = pu.collect(scheds, ts, [("FV.Opt.Proof.", 1.5)], max_peak=True)
     found = pu.drift(rows, meas)
     for _, m, _, _ in found:
         rows[m] = (meas[m][0], max(1.0, round(meas[m][1])))
