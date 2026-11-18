@@ -268,9 +268,9 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Numbers:** 2,228 instructions > 1 h → 2.4 s, 10,201 → 34 s (`FV/Backend/Asm.lean`).
 
 ### A `List.all` lambda recomputes a whole-function fold per element: bind it outside
-- **Problem:** with the above fixed, ruint's 105,241-instruction test function still ran > 30 min: 99 % in `Function.freshValue`'s fold under `Opt.Legal.termOk`. At every `try_call` (6,120) `C.comps.all (fun a => a < C.g.freshValue)` recomputed `freshValue` per pair component (the compiled code does not hoist it out of the lambda). Same pattern in `Opt.closedB` (per operand).
-- **Trick:** `checkWF` computes `T0` and both `freshValue`s once and passes them down (`termOkF`/`codeOkF`/`blockOkF`, each proved equal at those arguments); `closedBFast` binds `freshValue` with `let` (`rfl`). Both `@[csimp]`.
-- **Numbers:** ruint's function: does not finish in 1 h → 17 min 51 s (the remaining time is emission and the lowering's quadratic parts) (`FV/Opt/Legal.lean`, `FV/Opt/OptimizeX.lean`).
+- **Problem:** with the above fixed, ruint's 105,241-instruction test function still ran > 30 min: 99 % in `Function.freshValue`'s fold under `Opt.Legal.termOk`. At every `try_call` (6,120) `C.comps.all (fun a => a < C.g.freshValue)` recomputed `freshValue` per pair component (the compiled code does not hoist it out of the lambda). Same pattern in `Opt.closedB` (per operand), and worse in the handler-edge checks `Opt.Legal.exnOk`/`exnOkT`, which call `termOk` for every PAIR of `try_call`s (`try_call_indirect`s) of the function and its legalisation: try_calls² × size (num-bigint's `check_sub`: 3,119 try_calls, 99 % in `exnOk`).
+- **Trick:** `checkWF` computes `T0` and both `freshValue`s once and passes them down (`termOkF`/`codeOkF`/`blockOkF`, each proved equal at those arguments); `exnOkF`/`exnOkTF` do the same for the pair loops; `closedBFast` binds `freshValue` with `let` (`rfl`). All `@[csimp]`.
+- **Numbers:** ruint's function: does not finish in 1 h → 17 min 51 s (the remaining time is emission and the lowering's quadratic parts); num-bigint's `check_sub`: 561 → 191 CPU-s in `lean-backend`, its executable's `lean-link` 69 → 23 min (`FV/Opt/Legal.lean`, `FV/Opt/LegalExn.lean`, `FV/Opt/LegalExnT.lean`, `FV/Opt/OptimizeX.lean`).
 
 ## Verification tooling (anything that decides what counts as proved)
 
