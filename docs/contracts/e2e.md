@@ -2844,6 +2844,50 @@ concrete arguments, as `backend_correct_program_witness` does for `f 41`); the w
 PLAN.md §4 "M9": a guarantee about the executable file `cargo fv` produces. Each item has its
 subsection.
 
+#### What `cargo fv`'s binary check establishes (#1092, #1093)
+
+`cargo fv build`'s per-executable binary check runs `link-check --prune` on the executable's
+bundle. `link-check` takes the functions as `lean-backend` compiled them (constant-phi removal,
+the routes recovered from the bytes), selects a checker and decides, for the (pruned) program
+and the file, every premise of one executable-word theorem that is a fact about the program or
+the file, and prints the theorem (`theorem:`, `FVTest/E2E/BinVerdict.lean`) only when all hold:
+
+| `checker:` | decided premises (output line) | theorem (`_peak_` sibling for functions reaching a call cycle) |
+|---|---|---|
+| `integer` | `ReturnPinStackBound.okB` (`okB:`), `BinOkWithResults` (`binary:`), `codeMapB` (`code map:`), `SemanticExecBytes.GotOk` (`GOT:`), the stack bound (`stack:`) | `E2E.ReturnPinExecBytes.binary_correct_exec_proven` (`…_peak_proven`) |
+| `typed Stock (okRWithTS)` | `SemanticStackBound.okBTS`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk`, stack | `E2E.SemanticExecBytes.binary_correct_exec_provenTS` (`…_peak_provenTS`) |
+| `typed (okBCleanupT)` | `okBCleanupT`, `DeadCleanupBinCheck.BinOk`, `codeMapB`, `DeadCleanupExecBytes.GotOk`, stack | `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT` (`…_peak_provenT`) |
+
+`GotOk` is decided by `E2E.GotTab.gotTabB` on the whole file (`SemanticExecBytes.gotTabB_sound`,
+`DeadCleanupExecBytes.gotTabB_sound`: the slots of the GOT pairs whose second word is an `ldr`;
+`gotB` also checks the "slot" of a pair the linker relaxed to `adrp`/`add`, which `GotSlot` does
+not contain). A failing premise is `not verified: …` and `link-check` exits 1. Until #1092 the
+verdict named `E2E.Binary.binary_correct` for `checker: integer`, a theorem about the baseline
+pipeline's results (`E2E.LinkCheck.okB`), which this checker does not decide; and `codeMapB` was
+printed but not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdictTest` checks
+that every name exists and the verdicts; `scripts/bin-check-got-mutation.py` that a file whose
+GOT slots are writable is not verified.
+
+**`verified: <theorem>` is not unconditional.** The named theorem keeps these hypotheses, which
+are about the code outside the program and about a run, and which no tool decides:
+
+* `BaseOk (sys I B)`: the base environment (std, musl, fallback functions, TLS) meets the
+  contracts of the calls out of the program (`LinkSys.Ok`'s base premises, `FV/E2E/LinkCheck.lean`).
+* `HooksSim I B`: that outside code and the TLS sequence compute their effect from the registers
+  and the bytes outside the program's relocated words (`FV/E2E/*ExecStatic.lean`).
+* `Image.Intact r`: the machine state holds the executable's kept bytes (the loader mapped the
+  segments at their link addresses; read-only segments and relocation-read-only data unwritten).
+* `OutsideCall I roB f N r args cm`: the caller calls `f` per AAPCS64 with `args`, `N` bytes of
+  free stack, a return address outside the program, its CLIF-visible memory `cm` related to the
+  machine's (`FV/E2E/*Binary.lean`).
+* `OutsideAvoids (GotSlot I file) f N r args cm`: the GOT slots are not in the caller's free
+  stack, a stack argument, or a live CLIF allocation.
+* `ClifRun I B f r args cs`: the reference CLIF run starts from the state `cs` that corresponds
+  to `r` (arguments, memory, symbols).
+* `TrapsExplicit …`: the CLIF run traps only at explicit trap instructions (no stuck access).
+* `Clif.DepthLe … d cs` (`_peak_` theorems only): the CLIF run's call depth is at most `d`;
+  the caller provides `frameDrop + (D * d + pbMax)` bytes of stack (`OutsideCall`'s `N`).
+
 #### Code bytes, data objects, GOT and symbols (items 1–2; 2026-10-05, `agent/bin-bytes`)
 
 **The ELF reader** (`FV/E2E/Elf.lean`, namespace `E2E.Elf`). `cargo fv`'s executables are

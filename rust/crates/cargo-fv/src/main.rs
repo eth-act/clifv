@@ -35,8 +35,9 @@ Executables run under qemu-aarch64-static. After a build the report is in target
                       dependencies) with traps (proof that the tests run the Lean code; separate
                       target dir)
   --keep-temps        keep the per-codegen-unit work directories (target/fv/<mode>/tmp)
-  --no-binary-check   skip the per-executable binary check (E2E.Binary.binary_correct: the
-                      executable's code, data and symbols checked against the proven program)
+  --no-binary-check   skip the per-executable binary check (the executable's code, data,
+                      symbols, code map and GOT slots checked against the proven program; the
+                      theorem link-check names, e.g. E2E.ReturnPinExecBytes.binary_correct_exec_proven)
   --lean-link         the Lean linker writes the Lean-compiled code of every executable (L2b,
                       docs/research/lean-linker.md): placed as one region (`.text.fvlean`) and
                       compiled, relocated and written by `lake exe lean-link`
