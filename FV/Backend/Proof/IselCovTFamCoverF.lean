@@ -81,7 +81,8 @@ theorem famFloat_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
     have h' := h.1.2 s hsB
     first | rwa [hcs] at h' | rwa [← hcs] at h'
   rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩
-  · simp [instData, throw, throwThe, MonadExceptOf.throw] at hdata
+  · -- no operand: `instData` throws (#35: per operation, `fma` has its own message)
+    cases op <;> simp [instData, throw, throwThe, MonadExceptOf.throw] at hdata
   · -- one operand: arithmetic/rounding or a conversion
     simp only [instData] at hdata
     split at hdata
@@ -191,7 +192,12 @@ theorem famFloat_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
           Compile.fCvtET, Compile.fCmpET, Backend.fBinaryOpcode, Backend.fUnaryOpcode,
           Backend.fCvtOpcode]
       · cases hdata
-  · simp [instData, throw, throwThe, MonadExceptOf.throw] at hdata
+  · -- three or more operands: only `fma` (#35) has an `instData` arm, outside `instETF`
+    cases op <;> first
+      | (simp [instData, throw, throwThe, MonadExceptOf.throw] at hdata; done)
+      | (exfalso; revert hI; simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+        Compile.fArithET, Compile.fCvtET, Compile.fCmpET, Backend.fBinaryOpcode, Backend.fUnaryOpcode,
+        Backend.fCvtOpcode])
 
 /-- **Every statement of a float-scope function belongs to an instruction family.** -/
 theorem famCover_ofF {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
