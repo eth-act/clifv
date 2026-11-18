@@ -318,13 +318,17 @@ def fOpNames : List String :=
     "FcvtFromUint", "FcvtFromSint", "FcvtToUintSat", "FcvtToSintSat", "Ceil", "Floor", "Trunc",
     "Nearest", "Fcmp"]
 
+/-- #35: `fOpNames` with the opcode names of `fcopysign` and `fma` (`fOpc`). -/
+def fOpNamesO : List String := fOpNames ++ ["Fcopysign", "Fma"]
+
 /-- The opcode names `instData` gives (format-generic instructions): E's, `Bitcast` and the
-float operations'. -/
+float operations'. #35: restated with `fOpNamesO`; the old form (with `fOpNames`) is false
+(`FloatFmaWitness.instNames_snd_memT_old_false`). -/
 theorem instNames_snd_memT (cl : Clif.Inst) :
-    (instNames cl).2 ∈ eOpNames ++ ["Bitcast"] ++ fOpNames := by
+    (instNames cl).2 ∈ eOpNames ++ ["Bitcast"] ++ fOpNamesO := by
   cases cl
   case float op ty args =>
-    cases op <;> simp [instNames, fOpc, fOpNames, eOpNames]
+    cases op <;> simp [instNames, fOpc, fOpNamesO, fOpNames, eOpNames]
   all_goals simp only [instNames]
   all_goals try decide
   all_goals first
@@ -336,11 +340,12 @@ theorem instNames_snd_memT (cl : Clif.Inst) :
 
 /-- `opcode_absurd` over a float-capable context: an instruction reached through `def_inst` has
 an opcode `instData` produces (E's, `Bitcast`, a float operation's, or a float constant's,
-excluded by `hk`). -/
+excluded by `hk`). #35: restated with `fOpNamesO`; the old form (with `fOpNames`) is false
+(`FloatFmaWitness.opcode_absurdT_old_false`). -/
 theorem opcode_absurdT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {x j : Nat}
     {info : IInfo} (hd : ctx.defInst? x = some j) (hi : ctx.insts[j]? = some info) {kf ko : Nat}
     {fs : List V} (he : V.data 152 kf (V.data 151 ko [] :: fs) = info.data) {s : String}
-    (hs : (variantNames 151)[ko]? = some s) (hns : s ∉ eOpNames ++ ["Bitcast"] ++ fOpNames)
+    (hs : (variantNames 151)[ko]? = some s) (hns : s ∉ eOpNames ++ ["Bitcast"] ++ fOpNamesO)
     (hk : (kf ≠ 33 ∧ kf ≠ 34) ∨ (ko ≠ 59 ∧ ko ≠ 60) := by
       first | exact Or.inl (by decide) | exact Or.inr (by decide)) : False := by
   have hcl := hctx.defClif x j info hd hi
