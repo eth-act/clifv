@@ -40,8 +40,8 @@ cargo fv report — aarch64-unknown-linux-musl debug profile, mode plain
   verified functions by theorem:
     …  E2E.backend_correct_final_cleanup
     …  E2E.backend_correct_pass_cleanup (T := Opt.ConstPhi.run)
+    …  E2E.backend_correct_pass_semantic_return_pins (T := Opt.ConstPhi.run)
     …  E2E.backend_correct_world_niX_semantic_return_pins
-    …  E2E.backend_correct_world_niX_semantic_return_pins (about the compiled function)
     …
   exe deps-demo (test tests/crates.rs): 21682 functions: Lean 19808 (your crate(s) 3052, dependencies 16756), cg_clif fallback 142, std (prebuilt) 1732, other not compiled by us 0
   …
@@ -452,7 +452,7 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 
   | path of the function | theorem named | decided by `lean-backend` |
   | --- | --- | --- |
-  | Stock routes (no `--opt`, no `try_call` in the CLIF file), integer (subset E) | `E2E.backend_correct_world_niX_semantic_return_pins` | `unverifiedReason?` (`InSubset`), the route's lowering validator, `prepCheck`, `checkAlloc`, `formsCoveredB`, `lowerRFunc`, emission, layout |
+  | Stock routes (no `--opt`, no `try_call` in the CLIF file), integer (subset E) | `E2E.backend_correct_world_niX_semantic_return_pins`; where a transformation changed the function, composed with it (#1100, `FV/E2E/SemanticReturnPinsPass.lean`): `backend_correct_pass_semantic_return_pins (T := Opt.ConstPhi.run)` (constant-phi removal), `backend_correct_legal_wide_semantic_return_pins` (`i128` legalisation), `backend_correct_legal_pass_wide_semantic_return_pins` (both) | `unverifiedReason?` (`InSubset`), the route's lowering validator, `prepCheck`, `checkAlloc`, `formsCoveredB`, `lowerRFunc`, emission, layout; `Opt.Legal.checkW`; `Opt.ConstPhi.keeps` and `Backend.verifiable` of the function before the pass |
   | legacy (a file with a `try_call`; `--opt-proven-only`), integer | `E2E.backend_correct_final_cleanup`; where a transformation changed the function, composed with it: `backend_correct_pass_cleanup (T := Opt.ConstPhi.run)` (constant-phi removal), `backend_correct_legal_wide_cleanup` (`i128` legalisation), `backend_correct_legal_pass_wide_cleanup`, `backend_correct_opt_exe_cleanup`, `backend_correct_legal_opt_wide_cleanup` (the mid-end) | `InSubset`, `lowerFunction`, `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB`; `Opt.Legal.checkW`; `Opt.ConstPhi.keeps` and `InSubset` of the function before the pass; the proven rule sets |
   | typed (outside subset E: floats, typed `call`s) | `E2E.backend_correct_final_cleanupT`, `E2E.backend_correct_world_cleanupTC`, `E2E.backend_correct_world_cleanupTCF` (by the validator branch) | `InSubsetT*`; `lowerFunction`, the typed validator `lowerCheckFor`, `prepare`, `checkAlloc`, `lowerRFunc` and the emission re-run and reproducing the emitted code; `formsCoveredB` |
 
@@ -464,15 +464,16 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   unverified nor unvalidated, ran one of its 23 route lowerings with verification on for it, and
   that the code the allocator received is the stage `stageF` of a lowering `SemanticABI.checkCalls`
   accepts. A `Stock.D0`-eligible function on the legacy path is also named under the Stock theorem
-  (the same theorem covers the disabled driver).
+  (the same theorem covers the disabled driver), composed as on the Stock path without `--opt`.
 
   **About the source function, or about the compiled function** (`about`). "About the source
   function": the theorem's CLIF function is the one in the CLIF file `cargo fv` handed to
   `lean-backend` (cg_clif's dump, decoded), the transformations that changed it composed in.
   "About the compiled function, after the `i128` legalisation / constant-phi removal / the
   mid-end (not composed on this path)": the theorem is about the function those transformations
-  produced, because no per-function theorem composes them with the path (the Stock path: #1100;
-  constant-phi removal of a function whose source is outside the scope; unproven `--opt` rules).
+  produced, because no per-function theorem composes them with the path (constant-phi removal of
+  a function whose source is outside the scope: on the Stock path, not `Backend.verifiable`;
+  unproven `--opt` rules; the mid-end with the Stock theorem; the typed scope).
   Its relation to cg_clif's function is then the passes' program-level refinement, which the
   executable-level theorems of `lean-link` state where they exist (*The executable compiler*,
   the `_sourceCp` theorems). A function compiled from cg_clif's optimised dump (the `.opt.clif`
