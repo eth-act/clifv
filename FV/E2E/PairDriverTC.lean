@@ -29,6 +29,12 @@ literal pool among the instructions). `instCalls_pairTCFS` (the statement calls 
 `termCalls_pairTS`, `tryIndCalls_pairTS` (the `CtxTW` forms transported to `CtxTS S`,
 `ScopeTransport.lean`) give `vcode_niTCF`'s paired driver hypothesis (`DriverHypTCS`), its
 statement unchanged.
+
+#35: the validated shape is `LowerShapeTCS InstScope.tflo` (`fcopysign` and `fma` among the
+instructions). `instCalls_pairTCFSO` (the statement calls from `lowerInstOkP_runTermTFSO` at
+`csemGF`, the `fcopysign` and `fma` roots `lowerRulesCorrectCS_program`,
+`lowerRulesCorrectFM_program` over `FmaNegYFree`) gives `vcode_niTCF`'s paired statement calls,
+its statement unchanged; `instCalls_pairTCFS` is unchanged.
 -/
 
 namespace Backend.Proof
@@ -301,6 +307,47 @@ theorem instCalls_pairTCFS {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeT
   rw [hem, List.toList_toArray]
   exact hok
 
+/-- **`instCalls_pairTCFS` over a scope inside `InstScopeTFLO`** (#35: `fcopysign` and `fma` among
+the instructions; `lowerInstOkP_runTermTFSO` with `lowerRulesCorrectCS_program`,
+`lowerRulesCorrectFM_program` and the context's `FmaNegYFree`). -/
+theorem instCalls_pairTCFSO {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeTFLO ctx)
+    (hc : CompiledTCF f k vc vcp rf af fa fb) (hT : TypedRulesS S)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {ctx : Ctx} (hctx : CtxTS S f ctx) (hfn : FmaNegYFree ctx) (hst : StoresTyped ctx) :
+    InstCallsT f ctx (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
+      (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
+  intro ii info inst st rss st' tr hmem hi hcl hsig hemp hvb hrun
+  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
+  have hstk := callsStack_mono (callsStackTCF_of_check hc.lowerOk)
+    (outgoing_le_intBaseATCF hc.toA)
+  refine lowerInstOk_pairF hNI hTls (Γ := Γ) rfl hctx.inv.func hsig fun Rd Pc => ?_
+  obtain ⟨B, hB, stm, hstm, hst'⟩ := hmem
+  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermTFSO hS (lowerRulesCorrectTIS_program S)
+    lowerRulesCorrectT_program lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program
+    lowerRulesCorrectFC_program lowerRulesCorrectCS_program lowerRulesCorrectFM_program
+    (nonEUnmatchableTFSO_program hS) callRulesCorrectTFP_program
+    hT.ind (memRulesCorrectRTIS_program S) memRulesCorrectRT_program refines_csemGF
+    (mrStable_relW Γ f c)
+    (callsRefineP_csemGF hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (indCallsRefineP_csemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (memRefinesR_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
+    (memRefinesFP_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot) poolRefinesFP_csemGF
+    hctx hfn (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    (indStack_mono (indStackTCF_of_check hc.lowerOk) (outgoing_le_intBaseATCF hc.toA))
+    (hst ii info inst hi hcl)
+    (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
+  cases hov
+  rw [hemp, Array.empty_append] at hem
+  rw [hem, List.toList_toArray]
+  exact hok
+
 /-- **The typed `try_call` calls on pairs of worlds** (`TryCallsTC` of `pairSem`): the typed
 rule contracts with pinned calls at the guarded semantics with the float accesses `csemGF`,
 paired (`lowerTryOkC_pairF`). -/
@@ -383,21 +430,23 @@ theorem vcode_niTCF (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf af 
         SameWorld (fun b => F b ∨ D b) w w' := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hc.lowerOk
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
-  have hS : ∀ ctx, InstScope.tfl.P ctx → InstScopeTFL ctx := fun _ h => h
-  have H := driverHypTCFS_relW (S := InstScope.tfl) hS (c := c) hsub hc hX hXI hsym hslot hshape
-    hcert hbr
-  have hctxT : CtxTS InstScope.tfl f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
+  have hS : ∀ ctx, InstScope.tflo.P ctx → InstScopeTFLO ctx := fun _ h => h
+  have H := driverHypTCFSO_relW (S := InstScope.tflo) hS (c := c) hsub hc hX hXI hsym hslot
+    hshape hcert hbr
+  have hctxT : CtxTS InstScope.tflo f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
+  have hfn : FmaNegYFree ctx := fmaNegYFree_of_buildCtx (Compile.fmaNegYFree_of_functionETCF
+    hsub.subsetETCF) hshape.hctx.choose_spec hshape.ctxInvT
   have hmem : MemRefines F slotOff syms (csem F ⟨fa.k, af.slotBase⟩ X) :=
     memRefines_csem _ _ X hslot hsym
   have houtB := outgoing_le_intBaseATCF hc.toA
-  have hTS := typedRulesS_program InstScope.tfl
-  have HP : DriverHypTCS InstScope.tfl f vc ctx st0 R gn bl A
+  have hTS := typedRulesS_program InstScope.tflo
+  have HP : DriverHypTCS InstScope.tflo f vc ctx st0 R gn bl A
       (pairSem (csem F ⟨fa.k, af.slotBase⟩ X)) (MRP Γ f c D) env p := {
     shape := hshape
     cert := hcert
     dsem := driverSemG_pair F ⟨fa.k, af.slotBase⟩ X
-    insts := instCalls_pairTCFS hS hc hTS hX hXI hsym hslot hNI hTls hctxT hstT
+    insts := instCalls_pairTCFSO hS hc hTS hX hXI hsym hslot hNI hTls hctxT hfn hstT
     terms := termCalls_pairTS _ Γ rfl hTls ⟨fa.k, af.slotBase⟩ hTS hctxT
     ext := H.ext
     indSig := H.indSig

@@ -1048,6 +1048,21 @@ typed per-step contracts and the widened scope are the remaining S11e5 slices.
   `FSem.copysign` (`copysign32_ushr_sli`, `copysign64_ushr_sli`, `copysign_holds`; at `f32` the
   `2s` forms leave junk in lane 1, which `VHolds` never reads). Closure roots 192→193, excluded
   325→324 (`StockScopePartition`; old forms false in `FloatCopysignWitness`).
+* **`fma`** (#35, `FV/Backend/Proof/IselFloatFma.lean`): the roots `rule_lower_608` (id 693,
+  `lower (fma ty x y z)` → `fmadd`) and `rule_lower_609` (id 694, an `fneg` addend → `fnmsub`)
+  proven at `CtxInvT` with `FmaNegYFree` (`fma_okT`, `fma_fneg_okT`: `LowerRuleOkTC FmaNegYFree`),
+  their family `LowerRulesCorrectFM`/`fmaRootRule` (`IselFmaFamily`) by
+  `lowerRulesCorrectFM_program`. The helpers' scalar rules emit one `fpu_rrrr` (`MInst.FpuRRRR`,
+  `fmadd`/`fmsub`/`fnmadd`/`fnmsub`, meaning `fpu3Out`); an `fneg` on the first operand
+  (`fmadd`/`fnmsub` rule 2) or the addend is folded into the operand the Arm instruction
+  negates, exact on NaNs too (`fma_sem`). The fold of an `fneg` on the **second** operand (rule
+  3) negates the first multiplicand instead and differs on a NaN's sign
+  (`FloatFmaWitness.fmsub_negY_nan_differs`), so such functions are outside the verified scope:
+  `Compile.fmaNegYFree` (no `fma` whose second operand is an `fneg` result), sound for
+  `buildCtx`'s context by `fmaNegYFree_of_buildCtx`; `instData` itself admits every
+  three-operand `fma.f32/f64` (the unverified path keeps Cranelift's code). The vector rules
+  (`multi_lane`, `lower_fmla`) never match a scalar float type. Closure roots 193→195, excluded
+  324→322 (`StockScopePartition`).
 
 **Non-vacuity.** `FVTest/Backend/FloatArithCtxT.lean`: `ctxInvT_float_arith` (`ctxOkT_sound`,
 `native_decide`, witness only) for a function with all eleven operations, `lower` fires the
@@ -1063,6 +1078,12 @@ vector one) and appends exactly `lowerInstOk_fcopysign`'s `ushr` + `sli`,
 `float_copysign_root_applies` (`lowerRulesCorrectCS_program` on it), and kernel-checked edge
 values (±0, NaNs of both signs as either operand, ±∞, junk upper register bits). Oracle:
 `FVTest/Backend/float_copysign.clif`.
+`FVTest/Backend/FloatFmaCtxT.lean`: `ctxInvT_float_fma` and `fmaNegYFree_float_fma` for a
+function with `fma` at `f32`/`f64`, an `fneg` folded into the first operand, into the addend and
+into both; the roots fire through the helpers' scalar rules (never the vector ones) and append
+exactly one `FpuRRRR` (`MAdd`, `MSub`, `NMSub`, `NMAdd`); `float_fma_roots_apply`
+(`lowerRulesCorrectFM_program` on it); `fmaNegY_rejected` (an `fneg` second operand fails
+`Compile.fmaNegYFree`). Oracle: `FVTest/Backend/float_fma.clif`.
 
 **Boundary.** Since S11f's scope PR the per-function chain with typed `try_call`s consumes them
 with the conversions and the scalar comparisons: `CtxT.scope` and `Driver.LowerShapeTC.scope` are

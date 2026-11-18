@@ -751,6 +751,15 @@ the magnitude operand (`FpuRRIMod`); `copysign_holds` shows this is `FSem.copysi
 32/64 bits (lane 1 of the f32 `2s` forms is junk, never read). `StockScopePartition`: 193
 source-closure roots, 324 excluded. Witnesses: `FVTest/Backend/FloatCopysignCtxT.lean`; oracle
 `FVTest/Backend/float_copysign.clif` (±0, NaNs of both signs, ±∞, both sign operands).
+**`fma` (#35).** The roots `rule_lower_608` (lower.isle:608, id 693, `fmadd`) and
+`rule_lower_609` (lower.isle:609, id 694, `fnmsub` of an `fneg` addend) are proven in
+`FV/Backend/Proof/IselFloatFma.lean` (`fma_okT`, `fma_fneg_okT`, family
+`lowerRulesCorrectFM_program`) over contexts with `FmaNegYFree`: the helpers' rule 3 (`fneg` on
+the second operand → `fmsub`/`fnmadd`) is not NaN-sign exact, so `Compile.fmaNegYFree` keeps such
+functions out of the verified scope (none in the crate survey). `StockScopePartition`: 195
+source-closure roots, 322 excluded. Witnesses: `FVTest/Backend/FloatFmaCtxT.lean`,
+`FVTest/Backend/FloatFmaWitness.lean`; oracle `FVTest/Backend/float_fma.clif` (fused rounding,
+NaN propagation and default NaNs, signed zeros, the folded `fneg`s).
 **Deferred: `fcmp`.** `rule_lower_2176` (`fcmp` with `fp_cond_code`) is not a closure root
 (`closure.rs` `BACKEND_FLOAT_ROOTS`; `Closure.lean`: 195 roots, 330 excluded), `instData`
 rejects `fcmp`, and the `fcmp` arm of `is_nonzero_cmp_okT` stays absurd; `fpuCmp`'s `ispecFP`
@@ -1155,6 +1164,37 @@ left out 10 + 10 (the pins); encode-check 1,473 identical; crate proofs unchange
 `cargo fv` then word-aligned such objects (function bytes unchanged). #1061 replaced that: the
 Lean linker's placement `Link.offsA` starts each function at its object's alignment, so a pooled
 function starts 8-aligned, as in a stock build.
+
+**#35: `fcopysign` and `fma` verified (the scope layer).** The roots are `rule_lower_685`
+(`fcopysign`, `ushr` + `sli`; `copysignRootRule`, `lowerRulesCorrectCS_program`) and
+`rule_lower_608`/`609` (`fma`, `fmadd`/`fmsub`/`fnmadd`/`fnmsub` via `fpu_rrrr`; `fmaRootRule`,
+`lowerRulesCorrectFM_program`). Compiler side (statement rule (a)): `Compile.instETFLO :=
+instETFL || fCopysignET || fFmaET` (two-operand `fcopysign` and three-operand `fma` at
+`f32`/`f64`); `functionETCF` uses it and gains the conjunct `Compile.fmaNegYFree` (no `fma` whose
+second operand is an `fneg`'s result: Cranelift folds that `fneg` into `fmsub`/`fnmadd`
+negating the *first* multiplicand, which differs from CLIF on the sign of a NaN result, so such a
+function stays outside); the validator's check is `instScopeOkFLO` (`shapeOkTF`, so
+`lowerCheckTCF`); `typedScopeFails` names `fmaNegYFree` and the statements outside `instETFLO`.
+lean-link admits through `fnScopeInTCB`, which reads `functionETCF` and `lowerCheckTCF`; nothing
+else decides per opcode (cargo-fv neither). Proof side (no existing predicate, structure or
+theorem text changes beyond the three below): the scope `InstScopeTFLO`/`InstScope.tflo`
+(`ShapeS.lean`) with `instScopeOkFLO_sound`/`_complete`; the exclusion and non-E kernel
+decisions over the opcodes with `Fcopysign`/`Fma` (`IselScopeTFLO.lean`: `floatOpsFCO`,
+`exclOkTFCO_program`, `neFOpsFO`, `nonEOkFCO_program`, which exempts `copysignRootRule` and
+`fmaRootRule`; `lower_nonroot_nomatchTFCLO`, `NonEUnmatchableTFSO`,
+`nonEUnmatchableTFSO_program`); the dispatchers `lowerInstOkP_of_rulesTFSO`,
+`lowerInstOkP_runTermTFSO`, `lowerInstOk_runTermTFSO`, `instCallsTFSO_of_rules`
+(`LowerContractTFSO.lean`: premises `hCS : LowerRulesCorrectCS program`, `hFM :
+LowerRulesCorrectFM program` and the context's `FmaNegYFree`, from `Compile.fmaNegYFree` by
+`fmaNegYFree_of_buildCtx`); the E2E driver hypotheses and paired statement calls
+`driverHypTCFSO_relW_of`, `driverHypTCFSO_relW`, `driverHypTCFSO_relW_value`,
+`instCalls_pairTCFSO`, `instCalls_pair_valueTCFSO`, instantiated with B's and C's theorems.
+`iselSimTCF_of_rules`, `iselSim_relWTCF`, `vcode_niTCF`, `iselSim_relW_cleanupTCF`,
+`vcode_ni_valueTCF` and every final theorem keep their text and now cover the two operations
+through `functionETCF` and `lowerCheckTCF`. Statements changed, each shown false in its old form
+(`FVTest/Backend/FloatScopeFLOWitness.lean`, on `fcopysign.f64`): `shapeOkTF_eq_S` (check
+`instScopeOkFLO`), `lowerShapeTC_of_okF` and `loweringTCF_of_check` (shape
+`LowerShapeTCS InstScope.tflo`).
 
 ## 4. Known hazards
 

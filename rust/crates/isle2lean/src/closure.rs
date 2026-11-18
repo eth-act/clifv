@@ -82,6 +82,9 @@ pub const FLAG_OFF: &[&str] = &["use_lse"];
 /// `nearest` (600, 603).
 /// #35 adds the scalar `fcopysign` root (685, `fcopy_sign`'s scalar rule `inst.isle:4612`:
 /// `ushr` + `sli`, `FV/Backend/Proof/IselFloatCopysign.lean`); `instData` admits `f32`/`f64`.
+/// #35 adds the scalar `fma` roots (608 `fmadd`, 609 `fnmsub` of an `fneg` addend; the helpers'
+/// scalar rules emit `fpu_rrrr` `MAdd`/`MSub`/`NMSub`/`NMAdd`,
+/// `FV/Backend/Proof/IselFloatFma.lean`); `instData` admits `f32`/`f64`.
 pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_63",
     "rule_lower_68",
@@ -131,6 +134,8 @@ pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_1283",
     "rule_lower_2176",
     "rule_lower_685",
+    "rule_lower_608",
+    "rule_lower_609",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
