@@ -236,7 +236,7 @@ instructions outside `Compile.instETFLO` are named by opcode (`instOpText`), und
 `instETF:`. Diagnostics only: the verdict is `unverifiedReason?`'s condition. (S11g:
 `functionETCF` has no `callsE` conjunct and no integer position in a `call`'s arguments any more;
 #1002 part 2: its statements are `instETFL`, an `f64const` from the literal pool among them;
-#35: `instETFLO`, `fcopysign` and `fma` at `f32`/`f64` among them.) -/
+#35: `instETFLO`, `fcopysign` and `fma` at `f32`/`f64` among them, and `fmaNegYFree`.) -/
 def typedScopeFails (f : Clif.Function) : List String :=
   let c (b : Bool) (s : String) : List String := if b then [] else [s]
   let insts := (f.blocks.flatMap fun b => b.body.filterMap fun s =>
@@ -249,6 +249,7 @@ def typedScopeFails (f : Clif.Function) : List String :=
   c (f.blocks.all fun b => Compile.termE b.term) "termE (a terminator)" ++
   c (Compile.opsTypedTCF f) "opsTypedTCF (an integer position holds a float value)" ++
   c (Compile.edgeClassOk f) "edgeClassOk" ++
+  c (Compile.fmaNegYFree f) "fmaNegYFree (an fma's second operand is an fneg's result)" ++
   c (Compile.storeTypedB f) "storeTypedB"
 
 /-- Why a compiled function is outside the per-activation theorems (`E2E.InSubset`, and outside
