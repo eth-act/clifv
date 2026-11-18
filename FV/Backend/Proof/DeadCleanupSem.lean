@@ -11,6 +11,12 @@ the concrete semantics also has canonical-register bookkeeping. -/
 theorem mspec_pure {sb : Nat} {i : MInst} {us outs : List CV}
     {w w' : Arm.ArmState} {ctl : Ctl} (hp : pureForm i = true)
     (h : mspec sb i us w = some (outs, w', ctl)) : w' = w ∧ ctl = .next := by
+  -- the scalar `fneg` (#1117) runs by `ispecFP`: same world, `next`
+  by_cases hfr : ∃ op sz rd rn, i = .fpuRR op sz rd rn
+  · obtain ⟨op, sz, rd, rn, rfl⟩ := hfr
+    rcases us with _ | ⟨a, _ | ⟨b, us⟩⟩ <;> simp [mspec, ispec, ispecFP] at h
+    obtain ⟨_, _, _, rfl, rfl⟩ := h
+    exact ⟨rfl, rfl⟩
   unfold mspec at h
   split at h <;> try { simp_all [pureForm, pureAlu] }
   unfold ispec at h

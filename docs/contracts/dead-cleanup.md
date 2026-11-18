@@ -14,7 +14,9 @@ least one definition, and no live definition. The whitelist (`pureForm`) include
 moves/constants/address computations, non-flag-setting arithmetic and logical
 operations, multiply-add/subtract, the integer extensions (`uxtb`/`sxth`/…), the float
 constant moves (`fmov #imm`, `movi`; #967: they sit between the dead `fcmp` of
-`select_le_f32` and the `fcmp` of its `select`), and `cset` (it
+`select_le_f32` and the `fcmp` of its `select`), the scalar `fneg` (`fpuRR .neg`; #1117: the
+`fneg` that the `fma` rules fold into `fmsub`/`fnmsub`/`fnmadd` is dead afterwards; witnesses
+`FVTest/Backend/DeadFnegWitness.lean`), and `cset` (it
 reads the flags but writes only its definition; #552: the boolean of an `icmp` that the
 `brif`/`select` rule re-compares, which Cranelift does not lower because no lowered instruction
 uses it, `machinst/lower.rs` `lower_clif_block`). Other forms remain in place.

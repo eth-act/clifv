@@ -28,7 +28,9 @@ def pureNoFlags : MInst → Bool
 /-- The explicit whitelist excludes flag writers, memory accesses, calls, traps and control:
 `pureNoFlags`, the integer extensions (`uxtb`/`sxth`/…), the shifts (`shiftOp`) and the
 one-operand bit operations (`rbit`/`clz`/`cls`/`rev*`), the float constant moves (`fmov #imm`,
-`movi`, #967: they may sit between a dead `fcmp` and the `fcmp` of its `select`), and `cset`,
+`movi`, #967: they may sit between a dead `fcmp` and the `fcmp` of its `select`), the scalar
+`fneg` (`fpuRR .neg`, #1117: the `fneg` that the `fma` rules fold into `fmsub`/`fnmsub`/`fnmadd`,
+`isa/aarch64/lower.isle`, is dead afterwards; it writes only its def), and `cset`,
 which reads the flags but writes only its def. Cranelift does not lower an instruction none of
 whose results is used (`machinst/lower.rs`), e.g. the boolean of an `icmp` that the `brif` rule
 re-compares, with the operand extension of that compare (#552), or the `ishl` that the `bor`
@@ -41,7 +43,7 @@ def pureForm : MInst → Bool
   | .aluRRImm12 op .. | .aluRRImmLogic op .. | .aluRRRShift op .. | .aluRRRExtend op .. =>
     pureAlu op
   | .aluRRRR .mAdd .. | .aluRRRR .mSub .. => true
-  | .fpuMoveFPImm .. | .vecDupImm .. => true
+  | .fpuMoveFPImm .. | .vecDupImm .. | .fpuRR .neg .. => true
   | _ => false
 
 theorem pureForm_of_pureNoFlags {i : MInst} (h : pureNoFlags i = true) : pureForm i = true := by

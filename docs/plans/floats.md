@@ -759,7 +759,9 @@ the second operand → `fmsub`/`fnmadd`) is not NaN-sign exact, so `Compile.fmaN
 functions out of the verified scope (none in the crate survey). `StockScopePartition`: 195
 source-closure roots, 322 excluded. Witnesses: `FVTest/Backend/FloatFmaCtxT.lean`,
 `FVTest/Backend/FloatFmaWitness.lean`; oracle `FVTest/Backend/float_fma.clif` (fused rounding,
-NaN propagation and default NaNs, signed zeros, the folded `fneg`s).
+NaN propagation and default NaNs, signed zeros, the folded `fneg`s). The folded `fneg` itself
+is dead afterwards; Cranelift never lowers it, and `DeadCleanup.pureForm` now drops it
+(`fpuRR .neg`, #1117), so the folded shapes are byte-identical to stock.
 **Deferred: `fcmp`.** `rule_lower_2176` (`fcmp` with `fp_cond_code`) is not a closure root
 (`closure.rs` `BACKEND_FLOAT_ROOTS`; `Closure.lean`: 195 roots, 330 excluded), `instData`
 rejects `fcmp`, and the `fcmp` arm of `is_nonzero_cmp_okT` stays absurd; `fpuCmp`'s `ispecFP`
