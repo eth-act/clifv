@@ -279,7 +279,7 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
 /-- **The writer's checks and bytes on a result table** `Rs` of the input `I0` (the part of
 `leanLink` after the pipeline), with the relocation checks (`relocsAllF`) and the region's
 bytes (`regionBA`) indexed; `codeMapB` and `outsideOkB` run their `@[csimp]` forms
-(`E2E.LinkCheck.codeMapB_eq_fast`, `dataFastB_eq_fast`). -/
+(`E2E.LinkCheck.codeMapB_eq_lin`, `dataFastB_eq_fast`). -/
 def writeTail (S : LinkSpec) (file0 : ByteArray) (phs : List Phdr) (I0 : LinkInput) (Rs : Res) :
     Except String ByteArray :=
   let I := I0.withDepth Rs

@@ -129,8 +129,8 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms Link.leanLinkWithResults_eq_fast
 #print axioms E2E.LinkCheck.noBlrFastB_eq
 #print axioms E2E.LinkCheck.rangesChainB_pairs
-#print axioms E2E.LinkCheck.codeMapFastB_eq
-#print axioms E2E.LinkCheck.codeMapB_eq_fast
+#print axioms E2E.LinkCheck.codeMapLinB_eq
+#print axioms E2E.LinkCheck.codeMapB_eq_lin
 #print axioms E2E.LinkCheck.indSiteFastB_eq
 #print axioms E2E.LinkCheck.callScopeFastB_eq
 #print axioms E2E.LinkCheck.indFastX_eq

@@ -8,7 +8,8 @@ import FV.E2E.LinkIdx
 (`List.lookup`) and, where that is not its load address, scans the table for the functions
 declaring it (`noBlrB`): quadratic, about 5·10¹⁰ pairs on ruint's 232,604 functions (#1108).
 
-`codeMapFastB` decides the same (`codeMapFastB_eq`, `@[csimp] codeMapB_eq_fast`):
+`codeMapLinB` decides the same (`codeMapLinB_eq`, `@[csimp] codeMapB_eq_lin`; `link-check`'s
+`codeMapFastB`, `FV/E2E/BinCheckFast.lean`, keeps the scan over pairs):
 * the link-map addresses through a hash map of the link map (`assocMap_get`);
 * `noBlrB`, only where an address is not the load address, through the table grouped by the
   names the functions declare (`groupMulti`, `noBlrFastB_eq`) and a hash map of the CLIF image's
@@ -137,8 +138,8 @@ theorem all_and_eq {α : Type} (l : List α) (p q : α → Bool) :
     cases p x <;> cases q x <;> simp
 
 /-- **`codeMapB` in linear time** on a table whose code ranges follow each other and whose
-link-map addresses are the load addresses (`codeMapFastB_eq`). -/
-def codeMapFastB (I : LinkInput) (T : List (Clif.Function × Art)) : Bool :=
+link-map addresses are the load addresses (`codeMapLinB_eq`). -/
+def codeMapLinB (I : LinkInput) (T : List (Clif.Function × Art)) : Bool :=
   let A := assocMap I.addrs
   (T.all (addrIsBaseB A) ||
     (let Sm := assocMap I.syms
@@ -146,21 +147,21 @@ def codeMapFastB (I : LinkInput) (T : List (Clif.Function × Art)) : Bool :=
      T.all fun e => addrIsBaseB A e || noBlrFastB Sm G e.1.name)) &&
   (rangesChainB T || codePairsB T)
 
-theorem codeMapFastB_eq (I : LinkInput) (T : List (Clif.Function × Art)) :
-    codeMapFastB I T = codeMapB I T := by
+theorem codeMapLinB_eq (I : LinkInput) (T : List (Clif.Function × Art)) :
+    codeMapLinB I T = codeMapB I T := by
   have hA : ∀ e : Clif.Function × Art,
       addrIsBaseB (assocMap I.addrs) e = (I.symAddr e.1.name 0 == e.2.base) := by
     intro e
     simp only [addrIsBaseB, LinkInput.symAddr, LinkInput.addrOf, assocMap_get]
   have hA' : addrIsBaseB (assocMap I.addrs) = fun e : Clif.Function × Art =>
       (I.symAddr e.1.name 0 == e.2.base) := funext hA
-  unfold codeMapFastB
+  unfold codeMapLinB
   dsimp only
   rw [all_or_all, chain_codePairsB, codeMapB, all_and_eq, codePairsB]
   simp only [hA, hA', noBlrFastB_eq]
 
-@[csimp] theorem codeMapB_eq_fast : @codeMapB = @codeMapFastB := by
+@[csimp] theorem codeMapB_eq_lin : @codeMapB = @codeMapLinB := by
   funext I T
-  exact (codeMapFastB_eq I T).symm
+  exact (codeMapLinB_eq I T).symm
 
 end E2E.LinkCheck
