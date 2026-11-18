@@ -71,6 +71,7 @@ def fFmaUse : Clif.Function := fnOfText
 theorem ctxInvT_fmaUse : CtxInvT fFmaUse (ctxOf fFmaUse) :=
   ctxOkT_sound (by native_decide)
 
+set_option maxRecDepth 20000 in
 /-- The old `opcode_absurdT` (`hns` over `fOpNames`) is false: `v3` of `fFmaUse` is defined by an
 `fma` (`Ternary`/`Fma`, a name outside `eOpNames ++ ["Bitcast"] ++ fOpNames`). -/
 theorem opcode_absurdT_old_false :
@@ -81,13 +82,17 @@ theorem opcode_absurdT_old_false :
       (_hk : (kf ≠ 33 ∧ kf ≠ 34) ∨ (ko ≠ 59 ∧ ko ≠ 60)), False := fun h => by
   obtain ⟨info, hi⟩ : ∃ info, (ctxOf fFmaUse).insts[0]? = some info :=
     Option.isSome_iff_exists.mp (by native_decide)
-  have hd : info.data = .data 152 24 [.data 151 118 [], .values [0, 1, 2]] := by
-    have : ((ctxOf fFmaUse).insts[0]?.map (·.data)) =
-        some (.data 152 24 [.data 151 118 [], .values [0, 1, 2]]) := by native_decide
+  have hcl : info.clif = some (.float .fma .f32 [0, 1, 2]) := by
+    have : ((ctxOf fFmaUse).insts[0]?.bind (·.clif)) = some (.float .fma .f32 [0, 1, 2]) := by
+      native_decide
     rw [hi] at this
-    exact Option.some.inj this
-  exact h ctxInvT_fmaUse (x := 3) (j := 0) (by native_decide) hi hd.symm (s := "Fma") rfl
-    (by decide) (.inl (by decide))
+    exact this
+  have hd := ctxInvT_fmaUse.data 0 info _ hi hcl
+  have e : instData fFmaUse (.float .fma .f32 [0, 1, 2]) =
+      .ok (.data 152 24 [.data 151 118 [], .values [0, 1, 2]]) := rfl
+  rw [e] at hd
+  exact h ctxInvT_fmaUse (x := 3) (j := 0) (by native_decide) hi (Except.ok.inj hd) (s := "Fma")
+    rfl (by decide) (.inl (by decide))
 
 /-! ## 2. The `fneg` fold on the second operand: the NaN sign differs -/
 
