@@ -152,7 +152,7 @@ measured there).
 
 | verdict class | theorem named (dead cleanup; without it the names without `_cleanup`, typed `finalT`/`finalTC`/`finalTCF`) | premises `lean-backend` decides |
 | --- | --- | --- |
-| Stock path (`compileFileReturnPinWhen` enabled: no `--opt`, no `try_call` in the file `lean-backend` compiles), subset E; on the legacy path a `Stock.D0`-eligible function | `E2E.backend_correct_world_niX_semantic_return_pins`, artifact `CompiledSemanticReturnPins.of_checks_calls` | `InSubset` (`unverifiedReason?`); `SemanticABI.checkCalls` of the raw lowering, by the route's lowering validator while compiling, proved for the reported function by `Backend.compileFileReturnPinWhen_checkCalls` (#1101, below); `prepare` and `prepCheck` of `Stock.Arithmetic.stageF`; `checkAlloc`; `lowerRFunc`; `emitFunc`; layout; `formsCoveredB` (`FormsCovered`) |
+| Stock path (`compileFileReturnPinWhen` enabled: no `--opt`, no `try_call` in the file `lean-backend` compiles), subset E; on the legacy path a `Stock.D0`-eligible function | `E2E.backend_correct_world_niX_semantic_return_pins`, artifact `CompiledSemanticReturnPins.of_checks_calls`; composed with what changed the function (#1100, below): `backend_correct_pass_semantic_return_pins (T := Opt.ConstPhi.run)`, `backend_correct_legal_wide_semantic_return_pins`, `backend_correct_legal_pass_wide_semantic_return_pins` | `InSubset` (`unverifiedReason?`); `SemanticABI.checkCalls` of the raw lowering, by the route's lowering validator while compiling, proved for the reported function by `Backend.compileFileReturnPinWhen_checkCalls` (#1101, below); `prepare` and `prepCheck` of `Stock.Arithmetic.stageF`; `checkAlloc`; `lowerRFunc`; `emitFunc`; layout; `formsCoveredB` (`FormsCovered`); per composition `Opt.Legal.checkW`, `Opt.ConstPhi.keeps` with `Backend.verifiable` of the function before the pass (its `InSubset`, `InSubset.of_verifiable`) |
 | legacy path (a file with a `try_call`; `--opt-proven-only`), subset E | `E2E.backend_correct_final_cleanup`; composed with what changed the function: `backend_correct_pass_cleanup (T := Opt.ConstPhi.run)` (with `--opt`: `T := Opt.ConstPhi.runOpt cfg`), `backend_correct_legal_wide_cleanup`, `backend_correct_legal_pass_wide_cleanup`, `backend_correct_opt_exe_cleanup`, `backend_correct_legal_opt_wide_cleanup` | `InSubset`; `lowerFunction`; `lowerCheck`; `prepCheck`; `checkAlloc`; `lowerRFunc`, emission, layout; `formsCoveredB`; per composition `Opt.Legal.checkW`, `Opt.ConstPhi.keeps` with `InSubset` of the function before the pass, the mid-end's proven rule sets |
 | typed scope (outside subset E) | `E2E.backend_correct_final_cleanupT`, `E2E.backend_correct_world_cleanupTC`, `E2E.backend_correct_world_cleanupTCF` (`lowerCheckFor`'s branch); `TypedRules` is `typedRules_program` | `InSubsetT`/`TC`/`TCF`; `lowerFunction`, `lowerCheckFor`, `prepare` with `prepCheck`, `checkAlloc`, `lowerRFunc` and `emitFunc` re-run on the function's allocation, reproducing the emitted code (a Stock route may have lowered it); `formsCoveredB` |
 | `try_call` function (legacy path) | as above for the normal returns; `unwinding by` the `_unwind_any` theorem composed with the same transformations when `unwindCheckFailure?` and the transformations' handler-edge checks pass, else `verified for normal returns` | the above, plus `unwCheck`/`unwCheckTC`, `savedCheck`, `padsNonzeroB`, `Opt.Legal.exnOk` |
@@ -187,14 +187,38 @@ run, by theorems:
 from the driver's run on two functions of the survey crate `a_arith` with no assumed
 `checkCalls` (the run's other facts by `native_decide`, a witness).
 
+**The Stock path composed with the `i128` legalisation and constant-phi removal** (#1100;
+`FV/E2E/SemanticReturnPinsPass.lean`). `lean-backend` compiles cg_clif's function `f` after the
+legalisation (`g`, accepted by `Opt.Legal.checkW f g cert`) and constant-phi removal
+(`Opt.ConstPhi.run` when `Opt.ConstPhi.keeps`). The theorems take the Stock artifact
+`CompiledSemanticReturnPins` of the compiled function and conclude about every return of the run
+of `f` (the Stock theorem's conclusion; it has no trap clause):
+
+* `backend_correct_legal_wide_semantic_return_pins` (`Clif.Rust.env`; any environment with the
+  legalisation's contracts: `backend_correct_legal_env_wide_semantic_return_pins`): `g` compiled;
+  every return of `f`'s run is a return of `g`'s run (arguments split by the ABI groups, same
+  slots and memory) with the values expanded (`Opt.Legal.ExpRel`), by `Opt.Legal.checkW_refines`;
+* `backend_correct_pass_semantic_return_pins`: any pass `T` with `Opt.FunSimX` and `ShapeFacts`
+  (named at `T := Opt.ConstPhi.run`: `Opt.ConstPhi.run_simX`, `Opt.ConstPhi.run_shape`), `T f`
+  compiled, `InSubset` of the source `f`, `Opt.EnvKeepsSymbols env`; by `pass_entry`;
+* `backend_correct_legal_pass_wide_semantic_return_pins` (`Clif.Rust.env`; any environment:
+  `backend_correct_legal_pass_env_wide_semantic_return_pins`): `T g` compiled, `InSubset` of `g`.
+
+Their remaining premises are the legacy compositions' (`backend_correct_legal_wide_cleanup`,
+`backend_correct_pass_cleanup`, `backend_correct_legal_pass_wide_cleanup`): the programs' extern
+conditions (`hext`, `hext'`, `hind`, true of the function-free per-activation programs), the
+entries of both runs and their relation (`hexp`, `hsl`, `hmem`), `TrapsExplicit` of the source
+and of the transformed run. `FVTest/Backend/SemanticReturnPinsPassWitness.lean` instantiates one
+on a real function of the examples with every checkable premise proved.
+
 **About the source function or the compiled function.** `about the source function`: the
 theorem's CLIF function is the one `lean-backend` read (cg_clif's dump, decoded by `cargo fv`),
 with the transformations that changed it composed in. `about the compiled function, after <the
 i128 legalisation | constant-phi removal | the mid-end> (not composed on this path)`: the
 theorem is about the function those transformations produced, because no per-function theorem
-composes them with that path: the Stock path (#1100: `legal_wide`/`pass` forms of
-`backend_correct_world_niX_semantic_return_pins` do not exist yet), constant-phi removal of a
-function whose source is outside the scope, unproven `--opt` rules. For the functions of an
+composes them with that path: constant-phi removal of a function whose source is outside the
+scope (on the Stock path: not `Backend.verifiable`), unproven `--opt` rules, the mid-end on the
+Stock theorem's path, the typed scope. For the functions of an
 executable that `lean-link --verified` writes on a route with a `_sourceCp` theorem, the
 executable-level theorem composes the passes (`Link.cpSource`; the routes and their theorems:
 "Constant-phi removal" below, and `lean-link`'s `coverage:` line names them per executable). A function compiled from cg_clif's
