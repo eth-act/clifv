@@ -252,15 +252,19 @@ class CommandLineTests(Repo):
             self.assertEqual((r.returncode, r.stdout.split()), (0, expected), r.stderr)
 
     def test_a_failed_lookup_is_an_error_not_a_cold_build(self):
-        # no `gh` credentials and no such repository: the lookup fails; the script must not
-        # answer "no build" (which would build the whole cone)
-        out = self.root / "found.json"
-        env = {"PATH": "/usr/bin:/bin", "GITHUB_REPOSITORY": "eth-act/does-not-exist", "GH_TOKEN": "invalid",
-               "HOME": str(self.root), "GH_HOST": "invalid.invalid"}
+        # the API refuses the lookup (a `gh` that answers 404, which is not retried): the script
+        # must not answer "no build" (which would build the whole cone)
+        out, bin_dir = self.root / "found.json", self.root / "bin"
+        bin_dir.mkdir()
+        (bin_dir / "gh").write_text("#!/bin/sh\necho 'gh: Not Found (HTTP 404)' >&2\nexit 1\n")
+        (bin_dir / "gh").chmod(0o755)
+        env = {"PATH": f"{bin_dir}:/usr/bin:/bin", "GITHUB_REPOSITORY": "eth-act/does-not-exist", "HOME": str(self.root)}
         r = subprocess.run([sys.executable, str(HERE / "stock-comparison-lean-build.py"), "--root", str(self.root),
                             "--head", self.base, "--out", str(out)], capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
         self.assertIn("::error title=No stock-comparison result::", r.stdout)
+        self.assertIn("gh: Not Found (HTTP 404)", r.stderr)
+        self.assertNotIn("retrying", r.stderr)
         self.assertFalse(out.exists())
 
 
