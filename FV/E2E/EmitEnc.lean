@@ -583,6 +583,38 @@ theorem linesEnc_fpuRound {c : FnCtx} {op : FpuRoundMode} {d a : Nat} (hd : d < 
   simp [Insn.armFields, encV_v (show d ≤ 31 by omega), encV_v (show a ≤ 31 by omega), bind,
     Except.bind, pure, Except.pure]
 
+/-- The scalar fused multiply-add `fmadd`/`fmsub`/`fnmadd`/`fnmsub` (#35). -/
+theorem linesEnc_fpuRRRR {c : FnCtx} {s : ScalarSize} (hs : (s == .size32 || s == .size64) = true)
+    {d a b e : Nat} (hd : d < 32) (ha : a < 32) (hb : b < 32) (he : e < 32) (op : FPUOp3) :
+    LinesEnc c (.fpuRRRR op s (.v d) (.v a) (.v b) (.v e)) := by
+  rcases fpSz_of_beq hs with rfl | rfl <;>
+  · refine linesEnc_one (fun _ => rfl) ?_
+    rw [encodable_iff]
+    cases op <;>
+    simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show d ≤ 31 by omega),
+      encV_v (show a ≤ 31 by omega), encV_v (show b ≤ 31 by omega),
+      encV_v (show e ≤ 31 by omega), bind, Except.bind, pure, Except.pure]
+
+/-- `ushr vd.2s, vn.2s, #n` / `ushr dd, dn, #n` (#35): the amount in `FPURightShiftImm`'s range. -/
+theorem linesEnc_fpuRRI {c : FnCtx} {op : FPUOpRI} (hop : ushrImmOk op.amount op.lane = true)
+    {d a : Nat} (hd : d < 32) (ha : a < 32) : LinesEnc c (.fpuRRI op (.v d) (.v a)) := by
+  refine linesEnc_one (fun _ => rfl) ?_
+  rw [encodable_iff]
+  cases op <;>
+  simp [Insn.armFields, hop, encV_v (show d ≤ 31 by omega), encV_v (show a ≤ 31 by omega), bind,
+    Except.bind, pure, Except.pure]
+
+/-- `sli vd.2s, vn.2s, #n` / `sli dd, dn, #n` (#35): the amount in `FPULeftShiftImm`'s range; the
+expansion encodes `rd` and `rn` (the allocation ties `rd` to `ri`). -/
+theorem linesEnc_fpuRRIMod {c : FnCtx} {op : FPUOpRIMod} (hop : sliImmOk op.amount op.lane = true)
+    {d a : Nat} (ri : Reg) (hd : d < 32) (ha : a < 32) :
+    LinesEnc c (.fpuRRIMod op (.v d) ri (.v a)) := by
+  refine linesEnc_one (fun _ => rfl) ?_
+  rw [encodable_iff]
+  cases op <;>
+  simp [Insn.armFields, hop, encV_v (show d ≤ 31 by omega), encV_v (show a ≤ 31 by omega), bind,
+    Except.bind, pure, Except.pure]
+
 /-- The scalar float compare `fcmp` (S11f). -/
 theorem linesEnc_fpuCmp {c : FnCtx} {s : ScalarSize} (hs : (s == .size32 || s == .size64) = true)
     {a b : Nat} (ha : a < 32) (hb : b < 32) : LinesEnc c (.fpuCmp s (.v a) (.v b)) := by
@@ -646,6 +678,9 @@ theorem formOk_enc {c cx : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : A
     | exact linesEnc_fpuRR himm0 (by omega) (by omega)
     | exact linesEnc_fpuCmp himm0 (by omega) (by omega)
     | exact linesEnc_fpuRound (by omega) (by omega)
+    | exact linesEnc_fpuRRI himm0 (by omega) (by omega)
+    | exact linesEnc_fpuRRIMod himm0 _ (by omega) (by omega)
+    | exact linesEnc_fpuRRRR himm0 (by omega) (by omega) (by omega) (by omega) _
 
 /-- The literal-pool load (#565): `ldr s/d, <entry>`. -/
 theorem poolLoad_enc {c : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : Array Reg}

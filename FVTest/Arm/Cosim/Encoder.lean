@@ -449,6 +449,16 @@ def fpForms : List Spec :=
     .nearest64].map fun op =>
     simple s!"fpuRound {short op}" "enc-fp" do
       return some (.fpuRound op (← gV).2 (← gV).2, some ((short op).endsWith "64"))) ++
+  -- `ushr`/`sli` (#35, `fcopysign`): every amount Cranelift's `FPURightShiftImm` (`1 ≤ n ≤ lane`)
+  -- and `FPULeftShiftImm` (`n < lane`) allow
+  [simple "fpuRRI uShr32" "enc-simd" do
+     return some (.fpuRRI (.uShr32 (1 + (← below 32))) (← gV).2 (← gV).2, none),
+   simple "fpuRRI uShr64" "enc-simd" do
+     return some (.fpuRRI (.uShr64 (1 + (← below 64))) (← gV).2 (← gV).2, none),
+   simple "fpuRRIMod sli32" "enc-simd" do
+     return some (.fpuRRIMod (.sli32 (← below 32)) (← gV).2 (← gV).2, none),
+   simple "fpuRRIMod sli64" "enc-simd" do
+     return some (.fpuRRIMod (.sli64 (← below 64)) (← gV).2 (← gV).2, none)] ++
   ([FpuToIntOp.f32ToU32, .f32ToI32, .f32ToU64, .f32ToI64, .f64ToU32, .f64ToI32, .f64ToU64,
     .f64ToI64].map fun op =>
     simple s!"fpuToInt {short op}" "enc-fp" do
