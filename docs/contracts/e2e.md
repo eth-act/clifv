@@ -4624,7 +4624,8 @@ typed checks `okRWithTS` ("Typed checker on the Stock route" above). Coverage
 without `Cp` need the compiled input in `SrcScopeB`), for one only in `SrcScopeTB`
 `attemptT_correct_source{,_peak}TB` (#1076); no totality theorem covers `attemptT`.
 When `attemptT` fails, `lean-link` prints the failing functions with their conditions
-(`typedStockFails`; `cargo fv` repeats lean-link's `--verified:` lines) and leaves out of the
+(`TypedStockShared.stockFails`, the same evaluation of the checks that decided `attemptT`:
+`attemptTFrom_stockFails`, #1108; `cargo fv` repeats lean-link's `--verified:` lines) and leaves out of the
 region only those functions when they are fewer than the typed ones and the Stock-lowered ones;
 otherwise the #730 exclusion (the smaller of the two sets) applies. Witnesses:
 `FVTest/Link/FloatStockCompileT.lean` (an integer Stock function and an `f64` function: the
