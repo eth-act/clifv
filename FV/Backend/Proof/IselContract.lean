@@ -373,6 +373,27 @@ precision; the result zero-extended into the register (`write_sfp`). -/
   | .size64 => some ((fpu2Val op .b64 (a.setWidth 64) (b.setWidth 64)).setWidth 128)
   | _ => none
 
+/-- #35 (`fma`): the scalar fused multiply-add operations of `fpuRRRR op` on the product's
+operands `n`, `m` and the addend `a` (the Arm model's `exec_fp_data_processing_three_source`:
+`FPMulAdd(operanda, operand1, operand2)` with `FPNeg` on the addend for `o1 = 1` and on
+`operand1` for `o1 ≠ o0`, `FPCR = 0`): `fmadd` `a + n·m`, `fmsub` `a - n·m`, `fnmadd`
+`-a - n·m`, `fnmsub` `-a + n·m`, each rounded once. -/
+@[simp] def fpu3Val (op : FPUOp3) (f : IEEE.Fmt) (n m a : IEEE.Bits f) : IEEE.Bits f :=
+  match op with
+  | .mAdd => IEEE.mulAdd f .rne a n m
+  | .mSub => IEEE.mulAdd f .rne a (IEEE.neg f n) m
+  | .nMAdd => IEEE.mulAdd f .rne (IEEE.neg f a) (IEEE.neg f n) m
+  | .nMSub => IEEE.mulAdd f .rne (IEEE.neg f a) n m
+
+/-- #35 (`fma`): `fpuRRRR op` on 128-bit register values (`n`, `m`, `a` in `MInst.uses` order:
+`rn`, `rm`, `ra`) at single (`size32`) or double (`size64`) precision; the result zero-extended
+into the register (`write_sfp`). -/
+@[simp] def fpu3Out (op : FPUOp3) (sz : ScalarSize) (n m a : CV) : Option CV :=
+  match sz with
+  | .size32 => some ((fpu3Val op .b32 (n.setWidth 32) (m.setWidth 32) (a.setWidth 32)).setWidth 128)
+  | .size64 => some ((fpu3Val op .b64 (n.setWidth 64) (m.setWidth 64) (a.setWidth 64)).setWidth 128)
+  | _ => none
+
 /-- S11f: the unary scalar FP operations of `fpuRR` on a 128-bit register value (the Arm
 model's `exec_fp_data_processing_one_source`): `fabs`/`fneg`/`fsqrt` at single or double
 precision, `fcvt` single → double (`size` 32) and double → single (`size` 64); the result
@@ -486,6 +507,8 @@ heartbeats) keeps its size. -/
 @[simp] def ispecFP : Sem := fun i uses w =>
   match i, uses with
   | .fpuRRR op sz rd _ _, [a, b] => (fpu2Out op sz a b).map fun r => (defOut rd r, w, .next)
+  | .fpuRRRR op sz rd _ _ _, [n, m, a] =>
+    (fpu3Out op sz n m a).map fun r => (defOut rd r, w, .next)
   | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
   | .fpuRound op rd _, [a] => (fpuRoundOut op a).map fun r => (defOut rd r, w, .next)
   | .fpuRRI op rd _, [a] => (fpuRRIOut op a).map fun r => (defOut rd r, w, .next)

@@ -828,9 +828,36 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
       | .minus32 => (0, 10) | .minus64 => (1, 10) | .zero32 => (0, 11) | .zero64 => (1, 11)
     pure (.DPSFP (.FP_data_processing_one_source { M := 0, S := 0, ftype, opcode,
                                                    Rn := ← rn.encV, Rd := ← rd.encV }))
-  | .fpuRRI .. | .fpuRRIMod .. =>
-    -- `ushr`/`sli` (Cranelift `FpuRRI`/`FpuRRIMod`): the Arm encoding classes are not modelled yet
-    throw s!"{repr i}: not yet encodable"
+  | .fpuRRI op rd rn =>
+    -- C7.2 USHR: Advanced SIMD (scalar) shift by immediate, U 1, opcode 00000, `immh:immb =
+    -- 2·esize − amount` (Cranelift `FpuRRI`, `FPURightShiftImm::enc`); `uShr32` the vector form
+    -- with Q 0 (`.2s`), `uShr64` the scalar form (`d`)
+    if !ushrImmOk op.amount op.lane then throw s!"ushr #{op.amount} at lane size {op.lane}"
+    let imm : BitVec 7 := BitVec.ofNat 7 (2 * op.lane - op.amount)
+    match op with
+    | .uShr32 _ =>
+      pure (.DPSFP (.Advanced_simd_shift_by_immediate { Q := 0, U := 1,
+        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
+        Rn := ← rn.encV, Rd := ← rd.encV }))
+    | .uShr64 _ =>
+      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate { U := 1,
+        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
+        Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuRRIMod op rd rn =>
+    -- C7.2 SLI: Advanced SIMD (scalar) shift by immediate, U 1, opcode 01010, `immh:immb =
+    -- esize + amount` (Cranelift `FpuRRIMod`, `FPULeftShiftImm::enc`); `sli32` the vector form
+    -- with Q 0 (`.2s`), `sli64` the scalar form (`d`)
+    if !sliImmOk op.amount op.lane then throw s!"sli #{op.amount} at lane size {op.lane}"
+    let imm : BitVec 7 := BitVec.ofNat 7 (op.lane + op.amount)
+    match op with
+    | .sli32 _ =>
+      pure (.DPSFP (.Advanced_simd_shift_by_immediate { Q := 0, U := 1,
+        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0b01010,
+        Rn := ← rn.encV, Rd := ← rd.encV }))
+    | .sli64 _ =>
+      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate { U := 1,
+        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0b01010,
+        Rn := ← rn.encV, Rd := ← rd.encV }))
   | .fpuToInt op rd rn =>
     -- C7.2 FCVTZS (scalar, integer) rmode 11 opcode 000, FCVTZU rmode 11 opcode 001;
     -- sf = 64-bit integer, ftype = float size (Cranelift `FpuToInt`, `enc_fputoint`)
