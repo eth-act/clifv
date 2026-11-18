@@ -284,4 +284,57 @@ theorem attemptTFrom_eq (lower : ProductionLowering) (S : LinkSpec) (file0 : Byt
   rw [SemanticCompilerWith.attemptT_eq_fast, stockRes_eq]
   rfl
 
+/-- The names of the failing checks of `l`. -/
+def failNames (l : List (String × Bool)) : List String := (l.filter (!·.2)).map (·.1)
+
+theorem failNames_isEmpty (l : List (String × Bool)) : (failNames l).isEmpty = l.all (·.2) := by
+  apply Bool.eq_iff_iff.2
+  simp [failNames, List.filter_eq_nil_iff]
+
+/-- **The failing checks of `attemptTFrom`** (#1108): the failing global checks of `okRWithTS`
+(`okRWithTSFast`'s form) as `<global>`, then each function failing one of its per-function checks
+with those checks. `stockFails_isEmpty`: empty exactly when the typed checks hold, so `lean-link`
+decides `attemptTFrom` and reports its failures from one evaluation of the checks
+(`attemptTFrom_stockFails`). -/
+def stockFails (SP : LinkSpec) (R : Res) : List (String × List String) :=
+  let I := SP.input0.withDepth R
+  let P := progOf R
+  let T := tabOf R
+  let C := LinkCtx.of I P T
+  let X := LinkIdx.of P C.ents
+  let SI := sigIdx P C.S
+  let gl := failNames (globalChksWith C I P T)
+  let rs := parMap (fun e => (e.1.name, failNames (staticChksWithTS (productionStage true) I e.1 e.2 ++
+      linkChksWithTSX C X SI e.1 e.2))) R
+  (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
+
+theorem isEmpty_append' {α : Type} (a b : List α) : (a ++ b).isEmpty = (a.isEmpty && b.isEmpty) := by
+  cases a <;> rfl
+
+theorem isEmpty_ite_singleton {α : Type} (c : Bool) (x : α) :
+    (if c = true then [] else [x]).isEmpty = c := by
+  cases c <;> rfl
+
+theorem failsFilter_isEmpty {α : Type} (l : List α) (nm : α → String)
+    (f : α → List (String × Bool)) :
+    ((l.map fun e => (nm e, failNames (f e))).filter (!·.2.isEmpty)).isEmpty =
+      l.all fun e => (f e).all (·.2) := by
+  induction l with
+  | nil => rfl
+  | cons e l ih =>
+    simp only [List.map_cons, List.filter_cons, List.all_cons, failNames_isEmpty]
+    cases (f e).all (·.2) <;> simp [ih]
+
+theorem stockFails_isEmpty (SP : LinkSpec) (R : Res) :
+    (stockFails SP R).isEmpty = okRWithTS (productionStage true) (SP.input0.withDepth R) R := by
+  simp only [stockFails, okRWithTS, chksWithTS, linkChksWithTSX_of, linkChksWithTS_of,
+    globalChksWith_of, parMap_eq, isEmpty_append', isEmpty_ite_singleton, failsFilter_isEmpty,
+    failNames_isEmpty]
+
+/-- **`attemptTFrom` from its failing checks** (`stockFails_isEmpty`). -/
+theorem attemptTFrom_stockFails (SP : LinkSpec) (file0 : ByteArray) (R : Res) :
+    attemptTFrom SP file0 R = if (stockFails SP R).isEmpty then leanLinkWithResults SP file0 (fun _ => R)
+      else .error SemanticCompilerWith.outOkTSMsg := by
+  rw [attemptTFrom, stockFails_isEmpty]
+
 end Link.TypedStockShared

@@ -225,6 +225,57 @@ theorem progScopeInWithB_func? (P : Clif.Program) (S : String → Option Nat) :
   rw [progScopeInWithB, funext (progFnWithB_func? P S)]
   rfl
 
+/-! ### Distinct names with a hash set (#1108)
+
+`decide l.Nodup` compares every pair of names: 1,063 s for the 232,604 names of ruint's test
+executable (`globalChks`' first check), once in `okRWithTS` and again in its diagnosis.
+`namesNodupB` decides it with a hash set (`namesNodupB_eq`); the program-level checks evaluate it
+in its place (`@[csimp]`). -/
+
+/-- No name of `l` is in `s` or twice in `l`. -/
+def namesNodupGo : List String → Std.HashSet String → Bool
+  | [], _ => true
+  | x :: xs, s => !s.contains x && namesNodupGo xs (s.insert x)
+
+/-- `l` has no duplicates, decided with a hash set (`namesNodupB_eq`). -/
+def namesNodupB (l : List String) : Bool := namesNodupGo l {}
+
+theorem namesNodupGo_eq : ∀ (l : List String) (s : Std.HashSet String),
+    namesNodupGo l s = (decide l.Nodup && l.all fun x => !s.contains x)
+  | [], s => by simp [namesNodupGo]
+  | x :: xs, s => by
+    rw [namesNodupGo, namesNodupGo_eq xs (s.insert x)]
+    apply Bool.eq_iff_iff.2
+    simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_true_eq, List.all_eq_true,
+      Std.HashSet.contains_insert, Bool.or_eq_false_iff, beq_eq_false_iff_ne, List.nodup_cons,
+      List.mem_cons, forall_eq_or_imp, ne_eq]
+    constructor
+    · rintro ⟨hx, hn, ha⟩
+      exact ⟨⟨fun hm => (ha x hm).1 rfl, hn⟩, hx, fun y hy => (ha y hy).2⟩
+    · rintro ⟨⟨hm, hn⟩, hx, ha⟩
+      exact ⟨hx, hn, fun y hy => ⟨fun e => hm (e ▸ hy), ha y hy⟩⟩
+
+theorem namesNodupB_eq (l : List String) : namesNodupB l = decide l.Nodup := by
+  simp [namesNodupB, namesNodupGo_eq]
+
+/-- `progScopeWithB` with the names' check `namesNodupB` (`progScopeWithB_eq_fast`). -/
+def progScopeWithBFast (F : String → Option Clif.Function) (P : Clif.Program)
+    (S : String → Option Nat) : Bool :=
+  namesNodupB (P.funcs.map (·.name)) && P.funcs.all (progFnWithB F P S) && addrSlotsInB P S
+
+/-- `progScopeInWithB` with the names' check `namesNodupB` (`progScopeInWithB_eq_fast`). -/
+def progScopeInWithBFast (F : String → Option Clif.Function) (P : Clif.Program)
+    (S : String → Option Nat) : Bool :=
+  namesNodupB (P.funcs.map (·.name)) && P.funcs.all (progFnWithB F P S) && addrSlotsInputB P S
+
+@[csimp] theorem progScopeWithB_eq_fast : @progScopeWithB = @progScopeWithBFast := by
+  funext F P S
+  simp only [progScopeWithB, progScopeWithBFast, namesNodupB_eq]
+
+@[csimp] theorem progScopeInWithB_eq_fast : @progScopeInWithB = @progScopeInWithBFast := by
+  funext F P S
+  simp only [progScopeInWithB, progScopeInWithBFast, namesNodupB_eq]
+
 /-- **`progScopeB` with the program's functions in a hash map** (`progScopeFastB_eq`). -/
 def progScopeFastB (P : Clif.Program) (S : String → Option Nat) : Bool :=
   let m := funcMap P

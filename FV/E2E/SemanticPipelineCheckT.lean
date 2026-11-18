@@ -1,7 +1,7 @@
 import FV.Link.Image
 import FV.E2E.LinkArmT
 import FV.E2E.PreparedPipeline
-import FV.E2E.LinkIdxT
+import FV.E2E.LinkIdxSig
 
 /-! # The typed checks on any pipeline's results (#722)
 
@@ -93,21 +93,23 @@ def okRWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : R
 
 /-- `okRWithTS` with the lookups of `linkChksTS`/`globalChks` computed once (`LinkCtx.of`) and
 the per-function checks in parallel tasks (`Link.parMap`), the program's scans per call site
-indexed (`LinkIdx.of`, `linkChksWithTSI_of`, #1062). The compiler evaluates this in place of
+indexed (`LinkIdx.of`, #1062) and the signatures a `blr` site or an indirect call may enter
+indexed (`sigIdx`, `linkChksWithTSX_of`, #1108). The compiler evaluates this in place of
 `okRWithTS` (`okRWithTS_eq_fast`, `@[csimp]`). -/
 def okRWithTSFast (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
   let X := LinkIdx.of P C.ents
+  let SI := sigIdx P C.S
   (globalChksWith C I P T).all (·.2) &&
-    (Link.parMap (fun e => (staticChksWithTS stage I e.1 e.2 ++ linkChksWithTSI C X P e.1 e.2).all
+    (Link.parMap (fun e => (staticChksWithTS stage I e.1 e.2 ++ linkChksWithTSX C X SI e.1 e.2).all
       (·.2)) R).all id
 
 @[csimp] theorem okRWithTS_eq_fast : @okRWithTS = @okRWithTSFast := by
   funext stage I R
   simp only [okRWithTSFast, okRWithTS, chksWithTS, assocMap_fun, globalChksWith_of,
-    linkChksWithTSI_of, linkChksWithTS_of, Link.parMap_eq, List.all_map, Function.comp_def, id]
+    linkChksWithTSX_of, linkChksWithTS_of, Link.parMap_eq, List.all_map, Function.comp_def, id]
 
 /-- The facts of one function that `okRWithTS` establishes (`FactsWithT` without the lowering
 equation, which only the typed case has). -/
