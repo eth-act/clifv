@@ -4673,6 +4673,17 @@ The guarded semantics `csemGF` defines the pool load (`fspec`/`GuardFP` gain tha
 inputs unchanged). A function whose pool load is over 1 MiB from its entry still falls back
 (#744). `docs/plans/floats.md` (#1002 part 2) lists the statement changes.
 
+**`fcopysign` and `fma` (#35).** `Compile.functionETCF` and `lowerCheckTCF` admit `fcopysign`
+and `fma` at `f32`/`f64` (`Compile.instETFLO`), except an `fma` whose second operand is an
+`fneg`'s result (`Compile.fmaNegYFree`: Cranelift's fold of that `fneg` negates the other
+multiplicand, which changes the sign of a NaN result). Generated code is unchanged (`ushr` +
+`sli`; `fmadd`/`fmsub`/`fnmadd`/`fnmsub`). Such functions are reported verified, covered by
+`backend_correct_finalTCF` and the typed link route, and admitted into lean-link's regions
+through `fnScopeInTCB`. The proofs go through the scope-generic chain at `InstScope.tflo` with
+the dispatchers `…TFSO` (the root families `LowerRulesCorrectCS`, `LowerRulesCorrectFM`, the
+latter over contexts with `FmaNegYFree`). `docs/plans/floats.md` (#35) lists the statement
+changes.
+
 **Large functions inside the regions (#1057).** `fnScopeInTCB`'s size condition is
 `sizeOkB g || sizeOutB g`. `sizeOkB` is the totality proofs' input-side over-approximation of the
 emission size condition `spillSizeOkB` (1,200 words per statement plus 101 per result, against

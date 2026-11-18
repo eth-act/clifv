@@ -1156,7 +1156,7 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg â†
 theorem sigET_of_functionETCF {f : Clif.Function} (h : Compile.functionETCF f = true) :
     Compile.sigET f.sig = true := by
   simp only [Compile.functionETCF, Bool.and_eq_true] at h
-  exact h.1.1.1.1.1
+  exact h.1.1.1.1.1.1
 
 /-- **Entry**: the entry block's `Args` defines the register-passed parameters from their
 argument registers, then the loads the stack-passed ones from the caller's outgoing area. -/
