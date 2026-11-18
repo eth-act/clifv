@@ -18,7 +18,8 @@ Drift (printed one per line, `drift <kind> <module> <recorded> -> <measured>`):
     from the record would kill the module); lower peaks are reported as `memory-lower`;
   * new: no record.
 With --write, the table's rows for drifted and new modules are replaced by the measurements
-(--write-all: every measured module), keeping the header and sorting the rows.
+(--write-all: every measured module), keeping the header and sorting the rows. A module measured in
+several SCHED_DIRs takes the last one's numbers; with --max-peak, its highest peak.
 Exit status 0 (report only), also with drift.
 """
 import argparse, pathlib, re, sys
@@ -66,6 +67,19 @@ def scale_of(m, time_scale, prefix_scale):
     return f
 
 
+def collect(dirs, time_scale=1.0, prefix_scale=(), max_peak=False):
+    """{module: (peak MB, table-unit seconds)} over SCHED_DIRs; a module built in several keeps
+    the last one's numbers, or with `max_peak` its highest peak (a runner paging to swap reads a
+    lower RSS) and the last seconds."""
+    out = {}
+    for d in dirs:
+        for m, (mb, secs) in read_sched(d).items():
+            if max_peak and m in out:
+                mb = max(mb, out[m][0])
+            out[m] = (mb, secs / scale_of(m, time_scale, prefix_scale))
+    return out
+
+
 def drift(rows, measured, factor=2.0, min_secs=60.0, min_mb=1024):
     """[(kind, module, recorded, measured)] for measured (peak MB, table-unit seconds)."""
     out = []
@@ -102,14 +116,13 @@ def main():
     ap.add_argument("--no-new", action="store_true", help="do not list modules without a record")
     ap.add_argument("--write", action="store_true", help="replace drifted and new rows")
     ap.add_argument("--write-all", action="store_true", help="replace every measured row")
+    ap.add_argument("--max-peak", action="store_true",
+                    help="a module built in several SCHED_DIRs keeps its highest peak")
     a = ap.parse_args()
     prefix_scale = sorted(((p, float(x)) for p, x in (s.split("=", 1) for s in a.prefix_scale)),
                           key=lambda px: -len(px[0]))
     header, rows = read_table(a.table)
-    measured = {}
-    for d in a.dirs:
-        for m, (mb, secs) in read_sched(d).items():
-            measured[m] = (mb, secs / scale_of(m, a.time_scale, prefix_scale))
+    measured = collect(a.dirs, a.time_scale, prefix_scale, a.max_peak)
     found = drift(rows, measured, a.factor, a.min_secs, a.min_mb)
     for k, m, rec, meas in found:
         if not (a.no_new and k == "new"):

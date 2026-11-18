@@ -76,7 +76,11 @@ function the pass changed is covered by the theorems above composed with the pas
 (`FV/E2E/PassX.lean` at `T := Opt.ConstPhi.run`, with `--opt` at `T := Opt.ConstPhi.runOpt cfg`):
 `E2E.backend_correct_pass{,_cleanup}`, `backend_correct_pass_finalTCF`,
 `backend_correct_legal_pass_wide{,_cleanup}`, `backend_correct_pass{,_cleanup}_unwind_any`,
-`backend_correct_legal_pass_unwind_any`, and in general `E2E.pass_lift`.
+`backend_correct_legal_pass_unwind_any`, and in general `E2E.pass_lift`. On the Stock path
+(`compileFileReturnPinWhen` enabled) the Stock theorem `backend_correct_world_niX_semantic_return_pins`
+is composed with them (#1100, `FV/E2E/SemanticReturnPinsPass.lean`):
+`E2E.backend_correct_legal_wide_semantic_return_pins`, `backend_correct_pass_semantic_return_pins`
+and `backend_correct_legal_pass_wide_semantic_return_pins` (`FVTest.Backend.FnVerdict`).
 
 With `--settings <request.json> --settings-receipt <receipt.json>` (the proved settings mode),
 the settings of a Cranelift filetest (the `--stock-config` request schema) are compiler input:
@@ -552,12 +556,14 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
           | none => (false, false, false)
         let typed := if scope == .integer || !record then none
           else typedRecheck f o.deadCleanup rec? a
-        let cpSrc := ((lg.file.funcs.find? (·.name == p.name)).bind (·.func.toOption)).any
-          fun g => (unverifiedReason? g).isNone
+        let src? := (lg.file.funcs.find? (·.name == p.name)).bind (·.func.toOption)
+        let cpSrc := src?.any fun g => (unverifiedReason? g).isNone
+        -- the Stock compositions' `InSubset` of the source before constant-phi removal (#1100)
+        let cpSrcE := src?.any Backend.verifiable
         some (p.name, FVTest.Backend.FnVerdict.verdict
           { scope, path := if stockOn then .stock else .legacy, cleanup := o.deadCleanup,
             opt := o.opt.isSome, optProven := provenOpt, legal := lg.accepted.contains p.name,
-            cp := cpOn p.name, cpSrc, cpT := passT, d0 := Stock.D0.eligible f, record, alloc,
+            cp := cpOn p.name, cpSrc, cpSrcE, cpT := passT, d0 := Stock.D0.eligible f, record, alloc,
             covered, typed })
     | _, _ => none
   let fails : List (String × String) :=

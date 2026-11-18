@@ -18,6 +18,7 @@ import FV.E2E.LegalUnwind
 import FV.E2E.OptUnwind
 import FV.E2E.LegalOptUnwind
 import FV.Backend.StockCheckCalls
+import FV.E2E.SemanticReturnPinsPass
 
 /-! # Tests of `lean-backend`'s per-function verdict (#1096)
 
@@ -39,8 +40,9 @@ def allFacts : List Facts := Id.run do
             for legal in [true, false] do
               for cp in [true, false] do
                 for cpSrc in [true, false] do
-                  for d0 in [true, false] do
-                    out := { scope, path, cleanup, opt, optProven, legal, cp, cpSrc, d0 } :: out
+                  for cpSrcE in [true, false] do
+                    for d0 in [true, false] do
+                      out := { scope, path, cleanup, opt, optProven, legal, cp, cpSrc, cpSrcE, d0 } :: out
   return out
 
 /-- The declaration name of a printed theorem (without its `(T := …)`). -/
@@ -64,13 +66,25 @@ run_cmd do
     | some _ => throwError "{n} is not a theorem"
     | none => throwError "{n} does not exist"
 
--- the Stock path names the route-independent theorem, about the compiled function when a
--- transformation ran
+-- the Stock path names the route-independent theorem, composed with the transformations that
+-- changed the function (#1100)
 #guard (verdict { scope := .integer, path := .stock }).thm =
   some "E2E.backend_correct_world_niX_semantic_return_pins"
 #guard (verdict { scope := .integer, path := .stock }).about = "the source function"
-#guard (verdict { scope := .integer, path := .stock, legal := true }).about =
-  "the compiled function, after the i128 legalisation (not composed on this path)"
+#guard (verdict { scope := .integer, path := .stock, legal := true }).thm =
+  some "E2E.backend_correct_legal_wide_semantic_return_pins"
+#guard (verdict { scope := .integer, path := .stock, legal := true }).about = "the source function"
+#guard (verdict { scope := .integer, path := .stock, cp := true }).thm =
+  some "E2E.backend_correct_pass_semantic_return_pins (T := Opt.ConstPhi.run)"
+#guard (verdict { scope := .integer, path := .stock, cp := true, legal := true }).thm =
+  some "E2E.backend_correct_legal_pass_wide_semantic_return_pins (T := Opt.ConstPhi.run)"
+#guard (verdict { scope := .integer, path := .stock, cp := true }).checks.getLast? =
+  some "Backend.verifiable of the source function"
+-- not composed: the source before constant-phi removal is not `Backend.verifiable`
+#guard (verdict { scope := .integer, path := .stock, cp := true, cpSrcE := false }).thm =
+  some "E2E.backend_correct_world_niX_semantic_return_pins"
+#guard (verdict { scope := .integer, path := .stock, cp := true, legal := true, cpSrcE := false }).about =
+  "the compiled function, after the i128 legalisation and constant-phi removal (not composed on this path)"
 -- the legacy path: backend_correct_final_cleanup, composed with what ran
 #guard (verdict { scope := .integer, path := .legacy }).thm = some "E2E.backend_correct_final_cleanup"
 #guard (verdict { scope := .integer, path := .legacy, cleanup := false }).thm =
@@ -90,9 +104,14 @@ run_cmd do
   "the compiled function, after constant-phi removal (not composed on this path)"
 #guard (verdict { scope := .integer, path := .legacy, opt := true, optProven := false }).thm =
   some "E2E.backend_correct_final_cleanup"
--- a Stock.D0 function on the legacy path: the route-independent theorem
+-- a Stock.D0 function on the legacy path: the route-independent theorem, composed as on the Stock
+-- path without `--opt`
 #guard (verdict { scope := .integer, path := .legacy, d0 := true }).thm =
   some "E2E.backend_correct_world_niX_semantic_return_pins"
+#guard (verdict { scope := .integer, path := .legacy, d0 := true, legal := true }).thm =
+  some "E2E.backend_correct_legal_wide_semantic_return_pins"
+#guard (verdict { scope := .integer, path := .legacy, d0 := true, legal := true, opt := true }).about =
+  "the compiled function, after the i128 legalisation and the mid-end (not composed on this path)"
 -- the typed scope, on either path
 #guard (verdict { scope := .typedTCF, path := .stock }).thm = some "E2E.backend_correct_world_cleanupTCF"
 #guard (verdict { scope := .typedT, path := .legacy }).thm = some "E2E.backend_correct_final_cleanupT"
