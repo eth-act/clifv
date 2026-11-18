@@ -7,7 +7,8 @@ use std::fmt::Write as _;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Status {
-    /// Compiled by the Lean backend, inside the end-to-end theorem of the mode.
+    /// Compiled by the Lean backend, inside the per-function theorem lean-backend named
+    /// (`theorem`), every checkable premise of which it decided.
     Verified,
     /// Compiled by the Lean backend, outside the theorem (reason given).
     Unverified,
@@ -30,6 +31,29 @@ pub struct FnReport {
     /// `try_call` function passing the checks is plainly verified.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub normal_returns: bool,
+    /// A verified function's theorem (lean-backend's verdict, `FVTest/Backend/FnVerdict.lean`):
+    /// its fully qualified name, with the pass it composes (`(T := …)`) where there is one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theorem: Option<String>,
+    /// What the theorem is about: `the source function`, or the compiled function after the
+    /// transformations it does not compose (the `i128` legalisation, constant-phi removal, the
+    /// mid-end, Cranelift's optimiser for an `.opt.clif` retry).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub about: Option<String>,
+}
+
+impl FnReport {
+    /// The key the summary counts a verified function under: the theorem, `about the compiled
+    /// function` when it is not about the source function, and the normal-returns label.
+    pub fn theorem_key(&self) -> String {
+        let t = self.theorem.as_deref().unwrap_or("no theorem named");
+        let about = match self.about.as_deref() {
+            Some(a) if a != "the source function" => " (about the compiled function)",
+            _ => "",
+        };
+        let nr = if self.normal_returns { " [normal returns only; unwinding trusted]" } else { "" };
+        format!("{t}{about}{nr}")
+    }
 }
 
 /// The label of a verified function with a `try_call` whose unwinding is not covered.
@@ -55,6 +79,10 @@ pub struct BinaryCheck {
     /// lean-link`'s `coverage:`; `none (…)` for the bare-linker fallback outside `--verified`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lean_link: Option<String>,
+    /// `--lean-link`: the number of functions in the region the Lean linker wrote (`lean-link`'s
+    /// count: its `N function(s), … written by` line).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lean_link_region: Option<usize>,
 }
 
 /// The function symbols of a linked executable (distinct addresses), by origin.
@@ -100,7 +128,6 @@ pub struct UnitReport {
     /// The output rustc wrote (rlib or executable), for matching cargo's artifact messages.
     pub artifact: String,
     pub mode: String,
-    pub theorem: Option<String>,
     /// Codegen units whose pipeline failed as a whole (every function falls back).
     #[serde(default)]
     pub cgu_errors: Vec<String>,
@@ -118,6 +145,9 @@ pub struct Counts {
     /// Of `verified`: functions with a `try_call` (`NORMAL_RETURNS`).
     #[serde(default)]
     pub verified_normal_returns: usize,
+    /// Of `verified`: per theorem (`FnReport::theorem_key`), how many functions.
+    #[serde(default)]
+    pub by_theorem: BTreeMap<String, usize>,
 }
 
 impl Counts {
@@ -136,6 +166,7 @@ impl Counts {
                 if f.normal_returns {
                     self.verified_normal_returns += 1;
                 }
+                *self.by_theorem.entry(f.theorem_key()).or_default() += 1;
             }
             Status::Unverified => self.unverified += 1,
             Status::Fallback => self.fallback += 1,
@@ -147,6 +178,9 @@ impl Counts {
         self.unverified += o.unverified;
         self.fallback += o.fallback;
         self.verified_normal_returns += o.verified_normal_returns;
+        for (t, n) in &o.by_theorem {
+            *self.by_theorem.entry(t.clone()).or_default() += n;
+        }
     }
 }
 
@@ -156,8 +190,6 @@ pub struct Report {
     pub target: String,
     pub profile: String,
     pub mode: String,
-    /// The theorem "verified" refers to (none with `--opt`).
-    pub theorem: Option<String>,
     /// Panic strategy and codegen backend, e.g. `unwind (cg_clif with unwinding: …)`.
     #[serde(default)]
     pub panic: String,
@@ -181,7 +213,7 @@ pub struct UnitEntry {
 }
 
 impl Report {
-    pub fn new(profile: &str, mode: &str, theorem: Option<String>, panic: &str, units: Vec<UnitReport>) -> Report {
+    pub fn new(profile: &str, mode: &str, panic: &str, units: Vec<UnitReport>) -> Report {
         let mut totals = Counts::default();
         let mut members = Counts::default();
         let mut deps = Counts::default();
@@ -207,7 +239,6 @@ impl Report {
             target: crate::TARGET.into(),
             profile: profile.into(),
             mode: mode.into(),
-            theorem,
             panic: panic.into(),
             totals,
             members,
@@ -235,12 +266,16 @@ impl Report {
     /// Human summary; `functions` lists every function.
     pub fn summary(&self, functions: bool) -> String {
         let mut s = String::new();
-        let th = self.theorem.as_deref().unwrap_or("none: --opt runs unproven mid-end rules");
         let _ = writeln!(s, "cargo fv report — {} {} profile, mode {}", self.target, self.profile, self.mode);
         if !self.panic.is_empty() {
             let _ = writeln!(s, "  panic={}", self.panic);
         }
-        let _ = writeln!(s, "  verified = compiled by the Lean backend and inside {th}");
+        let _ = writeln!(
+            s,
+            "  verified = compiled by the Lean backend inside the per-function theorem lean-backend names, \
+             every checkable premise of which it decided on the code it emitted (run and environment \
+             hypotheses stay premises: docs/contracts/e2e.md); per theorem below"
+        );
         let row = |s: &mut String, pkg: &str, kind: &str, root: &str, c: &Counts, linked: &str| {
             let _ = writeln!(
                 s,
@@ -278,11 +313,17 @@ impl Report {
             let _ = writeln!(s, "  std (not compiled by us: prebuilt std/core/alloc rlibs, plus compiler_builtins and musl libc)");
         }
         let t = &self.totals;
+        if !t.by_theorem.is_empty() {
+            let _ = writeln!(s, "  verified functions by theorem:");
+            for (th, n) in &t.by_theorem {
+                let _ = writeln!(s, "    {n:>7}  {th}");
+            }
+        }
         if t.verified_normal_returns > 0 {
             let _ = writeln!(
                 s,
                 "  of the verified: {} {NORMAL_RETURNS}: functions with a try_call, the theorem \
-                 covers their normal returns; landing pads and the LSDA are trusted",
+                 covers their normal returns only; landing pads and the LSDA are trusted",
                 t.verified_normal_returns
             );
         }
@@ -360,7 +401,13 @@ impl Report {
                         Status::Unverified => "unverified",
                         Status::Fallback => "fallback",
                     };
-                    let r = f.reason.as_deref().map(|r| format!(" ({r})")).unwrap_or_default();
+                    let r = match (&f.reason, &f.theorem) {
+                        (Some(r), _) => format!(" ({r})"),
+                        (None, Some(t)) => {
+                            format!(" ({t}; about {})", f.about.as_deref().unwrap_or("the source function"))
+                        }
+                        (None, None) => String::new(),
+                    };
                     let _ = writeln!(s, "    {st:<10} {}{r}", f.instance);
                 }
             }
@@ -420,4 +467,42 @@ fn generalize(r: &str) -> String {
         prev = out.chars().last();
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn f(status: Status, theorem: Option<&str>, about: Option<&str>, normal: bool) -> FnReport {
+        FnReport {
+            symbol: "s".into(),
+            instance: "i".into(),
+            status,
+            reason: None,
+            normal_returns: normal,
+            theorem: theorem.map(String::from),
+            about: about.map(String::from),
+        }
+    }
+
+    #[test]
+    fn counts_per_theorem() {
+        let r = "E2E.backend_correct_world_niX_semantic_return_pins";
+        let c = Counts::of(&[
+            f(Status::Verified, Some(r), Some("the source function"), false),
+            f(Status::Verified, Some(r), Some("the compiled function, after the i128 legalisation (not composed on this path)"), false),
+            f(Status::Verified, Some("E2E.backend_correct_final_cleanup"), Some("the source function"), true),
+            f(Status::Unverified, None, None, false),
+        ]);
+        assert_eq!(c.verified, 3);
+        assert_eq!(c.verified_normal_returns, 1);
+        assert_eq!(c.by_theorem.get(r), Some(&1));
+        assert_eq!(c.by_theorem.get(&format!("{r} (about the compiled function)")), Some(&1));
+        assert_eq!(
+            c.by_theorem.get("E2E.backend_correct_final_cleanup [normal returns only; unwinding trusted]"),
+            Some(&1)
+        );
+        // the per-theorem counts add up to the verified count
+        assert_eq!(c.by_theorem.values().sum::<usize>(), c.verified);
+    }
 }

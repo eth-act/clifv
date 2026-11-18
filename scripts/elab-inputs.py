@@ -46,6 +46,9 @@ READERS = {
 # module -> why it reads nothing while it elaborates, and the syntax it defines reads nothing
 # where it is used, although `candidates` names it
 NOT_READERS = {
+    "FVTest.Backend.FnVerdictTest": "its `run_cmd` looks the per-function verdict's theorem names up in the "
+                                    "environment; the reading calls among its imports are run-time ones "
+                                    "(FV.Backend.Regalloc's lean-regalloc)",
     "FV.E2E.EmitEnc": "its elaborators (`destr`, `destr_all`, `cases_op`) are case splits in MetaM; the reading "
                       "call among its imports is FV.Backend.Regalloc's run-time call of lean-regalloc",
     "FV.E2E.LinkOwnFrames": "its elaborator `qs_priv%` builds the name of a constant; the reading call among "

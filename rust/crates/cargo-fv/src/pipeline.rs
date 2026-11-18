@@ -274,6 +274,8 @@ fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
             status: Status::Fallback,
             reason: Some(why.to_string()),
             normal_returns: false,
+            theorem: None,
+            about: None,
         })
         .collect()
 }
@@ -312,6 +314,8 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
             status: Status::Fallback,
             reason: Some(why.into()),
             normal_returns: false,
+            theorem: None,
+            about: None,
         });
         false
     });
@@ -441,9 +445,14 @@ fn compile_one(
             if why.contains("neither defines nor references") && opt.exists() {
                 let out_opt = outdir.join(format!("f{i}.opt.o"));
                 let c2 = run_backend(&opt, &out_opt);
-                if let Compiled::Ok { obj, unverified, normal_returns, clif } = c2 {
+                if let Compiled::Ok { obj, unverified, normal_returns, theorem, clif } = c2 {
                     if missing_ref(&obj, syms).is_none() {
-                        return Compiled::Ok { obj, unverified, normal_returns, clif };
+                        // the theorem is about the function as Cranelift's optimiser left it
+                        let theorem = theorem.map(|v| Verdict {
+                            about: format!("{}, compiled from cg_clif's optimised dump (.opt.clif)", v.about),
+                            ..v
+                        });
+                        return Compiled::Ok { obj, unverified, normal_returns, theorem, clif };
                     }
                 }
             }
@@ -617,9 +626,11 @@ fn trap_bodies(obj: &Path, names: &[String]) -> Result<(), String> {
 }
 
 /// How lean-backend classified one function (`normal_returns`: a `try_call` function the
-/// theorem covers for its normal returns only; `clif`: the file it compiled).
+/// theorem covers for its normal returns only; `theorem`: the per-function theorem lean-backend
+/// named with every checkable premise decided, and what it is about; `clif`: the file it
+/// compiled).
 enum Compiled {
-    Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool, clif: PathBuf },
+    Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool, theorem: Option<Verdict>, clif: PathBuf },
     Fallback(String),
     /// Killed at `FV_FN_TIME_LIMIT`: the build fails ([`time_limit_error`]).
     TimedOut,
@@ -643,6 +654,27 @@ fn kept_reason(u: &str) -> String {
     format!("unverified ({u}): cg_clif's code kept under --lean-link")
 }
 
+/// lean-backend's verdict line for a verified function (`FVTest/Backend/FnVerdict.lean`):
+/// `…: compiled, verified by <theorem> (about <what>; decided: <checks>)[; unwinding by …]` or
+/// `…: compiled, verified for normal returns by <theorem> (…)`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Verdict {
+    pub theorem: String,
+    pub about: String,
+}
+
+/// The verdict of one `lean-backend` stderr line, if it is a verdict line.
+pub(crate) fn verdict_of(line: &str) -> Option<(Verdict, bool)> {
+    let (rest, normal) = if let Some((_, r)) = line.split_once(": compiled, verified for normal returns by ") {
+        (r, true)
+    } else {
+        (line.split_once(": compiled, verified by ")?.1, false)
+    };
+    let (theorem, tail) = rest.split_once(" (about ")?;
+    let about = tail.split_once("; decided: ").map(|(a, _)| a).unwrap_or(tail);
+    Some((Verdict { theorem: theorem.to_string(), about: about.to_string() }, normal))
+}
+
 fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, input: &Path) -> Compiled {
     let strip = |l: &str| -> String {
         // `lean-backend: <input>: %name: …` / `lean-backend: <input>: …`
@@ -659,6 +691,7 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
     let mut unverified: Option<String> = None;
     let mut outside_closure: Option<String> = None;
     let mut normal_returns = false;
+    let mut theorem: Option<Verdict> = None;
     for l in stderr.lines() {
         // `--skip-unverified`: the reason the compiled function would get, and its fallback
         if let Some((_, rest)) = l.split_once(": not compiled (--skip-unverified), unverified (") {
@@ -669,8 +702,9 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
             };
             return Compiled::Fallback(kept_reason(&u));
         }
-        if l.contains(": compiled, verified for normal returns") {
-            normal_returns = true;
+        if let Some((v, normal)) = verdict_of(l) {
+            normal_returns |= normal;
+            theorem.get_or_insert(v);
         }
         if let Some((_, why)) = l.split_once(": unsupported: ") {
             return Compiled::Fallback(format!("unsupported: {why}"));
@@ -692,6 +726,11 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
         Ok(_) => return Compiled::Fallback("lean-backend emitted no code for the function".into()),
         Err(e) => return Compiled::Fallback(format!("lean-backend output unreadable: {e}")),
     }
+    // verified only with a named theorem (fail closed: a compiled function without a verdict line
+    // is outside every theorem lean-backend decided)
+    if unverified.is_none() && theorem.is_none() {
+        unverified = Some("lean-backend named no per-function theorem".into());
+    }
     if cfg.mode == Mode::Opt {
         let why = "--opt: the Lean mid-end ran unproven simplify rules";
         unverified = Some(match unverified {
@@ -699,7 +738,11 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
             None => why.into(),
         });
     }
-    Compiled::Ok { obj: out.to_path_buf(), unverified, normal_returns, clif: input.to_path_buf() }
+    if unverified.is_some() {
+        theorem = None;
+        normal_returns = false;
+    }
+    Compiled::Ok { obj: out.to_path_buf(), unverified, normal_returns, theorem, clif: input.to_path_buf() }
 }
 
 fn write_list(path: &Path, items: impl IntoIterator<Item = String>) -> Result<(), String> {
@@ -943,19 +986,25 @@ fn process_in(
     // mid-end (`--opt-proven-only`) removed the code referencing it
     let mut declared: BTreeSet<String> = BTreeSet::new();
     for ((sym, d), c) in funcs.iter().zip(results) {
-        let mut report = |status, reason: Option<String>, normal_returns: bool| {
+        let mut report = |status, reason: Option<String>, normal_returns: bool, theorem: Option<Verdict>| {
+            let (theorem, about) = match theorem {
+                Some(v) => (Some(v.theorem), Some(v.about)),
+                None => (None, None),
+            };
             reports.push(FnReport {
                 symbol: sym.clone(),
                 instance: d.instance.clone(),
                 status,
                 reason,
                 normal_returns,
+                theorem,
+                about,
             })
         };
         match c {
-            Compiled::Fallback(why) => report(Status::Fallback, Some(why), false),
+            Compiled::Fallback(why) => report(Status::Fallback, Some(why), false, None),
             Compiled::TimedOut => return Err(CguFail::Fatal(time_limit_error(cfg.fn_time_limit, sym, &d.instance))),
-            Compiled::Ok { obj: o, unverified, normal_returns, clif } => {
+            Compiled::Ok { obj: o, unverified, normal_returns, theorem, clif } => {
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
                 let extra: Vec<&String> = f.text.iter().filter(|(n, g)| **g && *n != sym).map(|(n, _)| n).collect();
@@ -973,7 +1022,7 @@ fn process_in(
                     }
                 }
                 match bad {
-                    Some(b) => report(Status::Fallback, Some(b), false),
+                    Some(b) => report(Status::Fallback, Some(b), false, None),
                     None => {
                         referenced_locals.extend(locals);
                         if cfg.lean_link {
@@ -998,8 +1047,8 @@ fn process_in(
                         }));
                         ours.push((sym.clone(), o));
                         match unverified {
-                            Some(u) => report(Status::Unverified, Some(u), false),
-                            None => report(Status::Verified, None, normal_returns),
+                            Some(u) => report(Status::Unverified, Some(u), false, None),
+                            None => report(Status::Verified, None, normal_returns, theorem),
                         }
                     }
                 }
@@ -1234,5 +1283,24 @@ mod tests {
             let c = classify(&cfg, line, true, &out, "f", &input);
             assert!(matches!(&c, Compiled::Fallback(r) if *r == kept_reason(why)), "{line}");
         }
+    }
+
+    #[test]
+    fn verdict_lines() {
+        let l = "lean-backend: x.clif: %f: compiled, verified by E2E.backend_correct_world_niX_semantic_return_pins (about the source function; decided: unverifiedReason? (InSubset), SemanticABI.checkCalls (the route's validator), prepCheck, formsCoveredB, checkAlloc)";
+        let (v, normal) = verdict_of(l).expect("a verdict line");
+        assert_eq!(v.theorem, "E2E.backend_correct_world_niX_semantic_return_pins");
+        assert_eq!(v.about, "the source function");
+        assert!(!normal);
+        let l = "lean-backend: x.clif: %f: compiled, verified for normal returns by E2E.backend_correct_final_cleanup (about the source function; decided: lowerCheck); try_call: unwinding, landing pads and the LSDA trusted (unwinding check failed: unwCheck)";
+        let (v, normal) = verdict_of(l).expect("a verdict line");
+        assert_eq!(v.theorem, "E2E.backend_correct_final_cleanup");
+        assert!(normal);
+        let l = "lean-backend: x.clif: %f: compiled, verified by E2E.backend_correct_pass_cleanup (T := Opt.ConstPhi.run) (about the source function; decided: Opt.ConstPhi.keeps); unwinding by E2E.backend_correct_pass_cleanup_unwind_any (T := Opt.ConstPhi.run) (trusted: …)";
+        let (v, _) = verdict_of(l).expect("a verdict line");
+        assert_eq!(v.theorem, "E2E.backend_correct_pass_cleanup (T := Opt.ConstPhi.run)");
+        // not verdict lines
+        assert!(verdict_of("lean-backend: x.clif: %f: compiled, unverified (outside backend_correct): formsCoveredB fails").is_none());
+        assert!(verdict_of("lean-backend: x.clif: %f: frameless leaf, backend_correct_final_cleanup_leaf").is_none());
     }
 }
