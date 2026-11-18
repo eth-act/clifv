@@ -570,11 +570,11 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
   | .fpuCmp s rn rm => one (.fpuCmp s rn rm)
   | .fpuRound op rd rn => one (.fpuRound op rd rn)
   -- `emit.rs` `FpuRRI`: one `ushr`; `FpuRRIMod`: one `sli`, which keeps the low `amount` bits of
-  -- each lane of `vd`; the allocation ties `rd` to `ri` (`debug_assert_eq!(rd.to_reg(), ri)`)
+  -- each lane of `vd`. The allocation ties `rd` to `ri` (`reg_reuse_def`, checked by the
+  -- allocation checker); `emit.rs` only `debug_assert_eq!(rd.to_reg(), ri)`s it and encodes `rd`
+  -- and `rn`, as for `MovK`, so `ri` is not read here either
   | .fpuRRI op rd rn => one (.fpuRRI op rd rn)
-  | .fpuRRIMod op rd ri rn =>
-    if rd != ri then throw s!"fpuRRIMod with distinct rd {repr rd} and ri {repr ri}"
-    else one (.fpuRRIMod op rd rn)
+  | .fpuRRIMod op rd _ rn => one (.fpuRRIMod op rd rn)
   | .fpuToInt op rd rn => one (.fpuToInt op rd rn)
   | .intToFpu op rd rn => one (.intToFpu op rd rn)
   -- `emit.rs` `LoadP64`/`StoreP64` with `PairAMode::SignedOffset`: one `ldp`/`stp` (the trap

@@ -65,8 +65,8 @@ macro_rules
        · veq_tac)
     | simp only [*]))
 
-/-- Proves `Corr F ctx env ops mk` for a concrete instruction form whose operands are all
-`reg`-constrained (no fixed / reuse). -/
+/-- Proves `Corr F ctx env ops mk` for a concrete instruction form whose operands are
+`reg`-constrained, except a `reuse` def tied to operand 0 or 1 (`movK`, `fpuRRIMod`; no fixed). -/
 syntax "corr_tac" : tactic
 set_option hygiene false in
 macro_rules
@@ -89,6 +89,7 @@ macro_rules
          simp [RegFits] at hf
          rcases hf with ⟨n0, rfl, hn0⟩)
     try (have hre := ha.reuse 1 0 rfl; simp at hre; subst hre)
+    try (have hre := ha.reuse 0 1 rfl; simp at hre; subst hre)
     have hfl : ∀ f, Arm.r (.FLAG f) w = Arm.r (.FLAG f) s :=
       fun f => (hw.1 (.FLAG f) (by simp [Masked])).symm
     have hsp : Arm.r (.GPR 31#5) w = Arm.r (.GPR 31#5) s :=
@@ -118,6 +119,7 @@ macro_rules
     try have f0 := le31_of hn0
     try have f1 := le31_of hn1
     try have f2 := le31_of hn2
+    try have f3 := le31_of hn3
     simp only [canonRegs, canonReg, canonBase, List.size_toArray, List.length_cons,
       List.length_nil, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
       List.map_cons, List.map_nil, List.getElem?_toArray, List.getElem?_cons_zero,

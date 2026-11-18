@@ -798,7 +798,7 @@ theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
     simp only [MInst.lines] at h
     split at h <;> simp [pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
     emitNear_fin
-  case movToVec | fpuRRIMod =>
+  case movToVec =>
     simp only [MInst.lines] at h
     split at h <;> simp [pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
     emitNear_fin

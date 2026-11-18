@@ -692,4 +692,63 @@ set_option maxHeartbeats 4000000 in
 theorem ref_intToFpu (op : IntToFpuOp) (d n : Nat) (a : CV) :
     RefAt F ctx (.intToFpu op (.vreg d .float) (.vreg n .int)) [a] := by
   cases op <;> ref_tac
+
+/-! ### #35: `fmadd`… (`fma`), `ushr`/`sli` (`fcopysign`) -/
+
+attribute [local simp] setWidth_b32N setWidth_b64N in
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuRRRR (op : FPUOp3) (sz : ScalarSize) (d n m a : Nat) (x y z : CV) :
+    RefAt F ctx (.fpuRRRR op sz (.vreg d .float) (.vreg n .float) (.vreg m .float) (.vreg a .float))
+      [x, y, z] := by
+  rcases sz with _ | _ | _ | _ | _
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · cases op <;> ref_tac
+  · cases op <;> ref_tac
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+
+/-- The canonical run of a one-instruction form whose run `execMInst` states in closed form
+(`hx`): `ispec`'s side as `ref_body` takes it (the amount's range as hypotheses, for `hx`),
+`ss_tac`'s set-up, the closed form, then `ref_body`'s matching. -/
+syntax "ref_closed " term : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| ref_closed $hx) => `(tactic| (
+    intro w outs w' ctl he h
+    simp (config := {decide := true}) [ispec] at h
+    revert h
+    try simp only [and_imp]
+    intros
+    subst_vars
+    ss_tac
+    all_goals (have hxc := $hx; rw [hxc])
+    all_goals (simp (config := {decide := true}) [csimp_rules, he, Arm.w_program, *])
+    all_goals ref_fin))
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuRRI (op : FPUOpRI) (d n : Nat) (a : CV) :
+    RefAt F ctx (.fpuRRI op (.vreg d .float) (.vreg n .float)) [a] := by
+  cases op with
+  | uShr32 k =>
+    by_cases hk : 0 < k ∧ k ≤ 32
+    · ref_closed (execMInst_ushr32 hk.1 hk.2 ctx env0 (d := 0) (m := 1) (by decide) (by decide))
+    · exact refAt_none' F ctx (fun w => by simp [ispec, fpuRRIOut, hk] <;> omega)
+  | uShr64 k =>
+    by_cases hk : 0 < k ∧ k ≤ 64
+    · ref_closed (execMInst_ushr64 hk.1 hk.2 ctx env0 (d := 0) (m := 1) (by decide) (by decide))
+    · exact refAt_none' F ctx (fun w => by simp [ispec, fpuRRIOut, hk] <;> omega)
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuRRIMod (op : FPUOpRIMod) (d i n : Nat) (x a : CV) :
+    RefAt F ctx (.fpuRRIMod op (.vreg d .float) (.vreg i .float) (.vreg n .float)) [x, a] := by
+  cases op with
+  | sli32 k =>
+    by_cases hk : k < 32
+    · ref_closed (execMInst_sli32 hk ctx env0 (d := 1) (m := 2) (.v 1) (by decide) (by decide))
+    · exact refAt_none' F ctx (fun w => by simp [ispec, fpuRRIModOut, hk] <;> omega)
+  | sli64 k =>
+    by_cases hk : k < 64
+    · ref_closed (execMInst_sli64 hk ctx env0 (d := 1) (m := 2) (.v 1) (by decide) (by decide))
+    · exact refAt_none' F ctx (fun w => by simp [ispec, fpuRRIModOut, hk] <;> omega)
+
 end Backend.Proof
