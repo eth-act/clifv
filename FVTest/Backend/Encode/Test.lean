@@ -293,6 +293,13 @@ def forms : List (String × G Insn) := [
   ("fpu_round", do
     pure (.fpuRound (← pick [.minus32, .minus64, .plus32, .plus64, .zero32, .zero64, .nearest32,
       .nearest64]) (← vr) (← vr))),
+  -- `ushr`: `1 ≤ amount ≤ lane` (`FPURightShiftImm`); `sli`: `amount < lane` (`FPULeftShiftImm`)
+  ("fpu_ushr", do
+    if ← coin then pure (.fpuRRI (.uShr32 (1 + (← rand 32))) (← vr) (← vr))
+    else pure (.fpuRRI (.uShr64 (1 + (← rand 64))) (← vr) (← vr))),
+  ("fpu_sli", do
+    if ← coin then pure (.fpuRRIMod (.sli32 (← rand 32)) (← vr) (← vr))
+    else pure (.fpuRRIMod (.sli64 (← rand 64)) (← vr) (← vr))),
   ("fpu_to_int", do
     pure (.fpuToInt (← pick [.f32ToU32, .f32ToI32, .f32ToU64, .f32ToI64, .f64ToU32, .f64ToI32,
       .f64ToU64, .f64ToI64]) (← gprZR) (← vr))),
