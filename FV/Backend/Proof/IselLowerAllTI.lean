@@ -79,8 +79,8 @@ no `fma`, so it satisfies `FmaNegYFree`. -/
 theorem fmaNegYFree_of_scopeTF {ctx : Ctx} (h : InstScopeTF ctx) : FmaNegYFree ctx := by
   intro ii info ty x y z hi hc
   have := h ii info _ hi hc
-  simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.fArithET, Compile.fCvtET,
-    Compile.fCmpET, fBinaryOpcode, fUnaryOpcode, fCvtOpcode] at this
+  simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE, Compile.fArithET,
+    Compile.fCvtET, Compile.fCmpET, fBinaryOpcode, fUnaryOpcode, fCvtOpcode] at this
 
 /-- #35: `LowerRuleOkTC FmaNegYFree` gives `LowerRuleOkTX` (`CtxT` contexts are in `InstScopeTF`). -/
 theorem LowerRuleOkTC.toTX {P : Clif.Inst → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
