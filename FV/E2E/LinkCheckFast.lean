@@ -240,4 +240,20 @@ theorem globalChksWith_of (I : LinkInput) (P : Clif.Program) (T : List (Clif.Fun
   simp only [globalChksWith, LinkCtx.of, assocMap_fun, funcMap_fun, ← addrs_all_eq]
   rfl
 
+/-- `globalChksWith` with the names' check `namesNodupB` (a hash set; `decide Nodup` compares
+every pair: 1,063 s on ruint's 232,604 functions, #1108) (`globalChksWith_eq_fast`). -/
+def globalChksWithFast (C : LinkCtx) (I : LinkInput) (P : Clif.Program)
+    (T : List (Clif.Function × Art)) : List (String × Bool) :=
+  [("names: distinct", namesNodupB (P.funcs.map (·.name))),
+   ("imgCode: the image reads back", imgB T),
+   ("raStar", raStarB T (BitVec.ofNat 64 I.raStar)),
+   ("symInj", P.funcs.all fun h => let a := (C.A h.name).getD 0
+      decide (a < 2 ^ 64) && a != 0 && (C.G.getD a []).all (· == h.name)),
+   ("symOk", I.syms.all fun e => (C.A e.1).getD 0 == e.2),
+   ("addrSlots", addrSlotsWithB C.F P T C.S)]
+
+@[csimp] theorem globalChksWith_eq_fast : @globalChksWith = @globalChksWithFast := by
+  funext C I P T
+  simp only [globalChksWith, globalChksWithFast, namesNodupB_eq]
+
 end E2E.LinkCheck

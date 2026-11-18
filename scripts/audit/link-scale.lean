@@ -92,3 +92,12 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms Front.parseUnit_eq_F
 #print axioms Front.assemble_eq_F
 #print axioms Front.buildSpec_eq_F
+
+-- #1108: distinct names with a hash set; the typed Stock route's checks evaluated once with
+-- their failures
+#print axioms E2E.LinkCheck.namesNodupB_eq
+#print axioms E2E.LinkCheck.globalChksWith_eq_fast
+#print axioms E2E.LinkCheck.progScopeWithB_eq_fast
+#print axioms E2E.LinkCheck.progScopeInWithB_eq_fast
+#print axioms Link.TypedStockShared.stockFails_isEmpty
+#print axioms Link.TypedStockShared.attemptTFrom_stockFails
