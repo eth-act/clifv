@@ -16,6 +16,7 @@ import FV.E2E.SemanticPipelineCheckT
 import FVTest.E2E.TypedRouteChoice
 import FV.Link.ConstPhiCompile
 import FV.E2E.StaticShare
+import FV.Front.BundleFast
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 

@@ -171,3 +171,30 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path, ld_args: Option<&Path>) -> R
 pub fn coverage(text: &str) -> Option<String> {
     text.lines().find_map(|l| l.split_once(": coverage: ").map(|(_, c)| c.to_string()))
 }
+
+/// The number of functions in the region `lake exe lean-link` wrote: the count its `written by`
+/// line starts with (`lean-link: <exe>: N function(s), D data object(s), region … written by …`:
+/// the functions of the spec it compiled and placed, every route).
+pub fn region_functions(text: &str) -> Option<usize> {
+    text.lines().find_map(|l| {
+        if !l.contains(" written by ") {
+            return None;
+        }
+        let (_, rest) = l.strip_prefix("lean-link: ")?.split_once(": ")?;
+        rest.split_once(" function(s), ")?.0.parse().ok()
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn region_count() {
+        let text = "lean-link: /t/out/deps-demo-0123: constant-phi removal: 3 of 907 function(s) [f]\n\
+                    lean-link: /t/out/deps-demo-0123: 904 function(s), 12 data object(s), region 0x1000..0x2000 (4096 bytes), 0 function(s) aligned beyond a word written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); 2 function(s) Stock-lowered\n\
+                    lean-link: /t/out/deps-demo-0123: coverage: Link.SemanticCompilerWith.attemptT_correct\n";
+        assert_eq!(region_functions(text), Some(904));
+        assert_eq!(region_functions("lean-link: /t/x: coverage: none (outside)\n"), None);
+    }
+}
