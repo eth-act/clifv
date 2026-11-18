@@ -29,6 +29,19 @@ class PeaksUpdate(unittest.TestCase):
             kinds = {(k, m) for k, m, _, _ in pu.drift(rows, measured)}
             self.assertEqual(kinds, {("slower", "A"), ("memory", "B"), ("new", "D")})
 
+    def test_collect_max_peak(self):
+        # two shards build M; the second pages to swap and reads a lower RSS (CI, 2026-11-18:
+        # StockMemoryIntegerAddress 11.1G and 9.1G)
+        with tempfile.TemporaryDirectory() as t:
+            dirs = []
+            for i, (secs, rss) in enumerate([(160, "11.1"), (224, "9.1")]):
+                d = pathlib.Path(t) / f"s{i}"
+                d.mkdir()
+                (d / "sched.log").write_text(f"10:00:00 done M rc=0 {secs}s maxrss={rss}G cgpeak=0.0G built -> ok\n")
+                dirs.append(d)
+            self.assertEqual(pu.collect(dirs, 2.0), {"M": (round(9.1 * 1024), 112.0)})
+            self.assertEqual(pu.collect(dirs, 2.0, max_peak=True), {"M": (round(11.1 * 1024), 112.0)})
+
 
 if __name__ == "__main__":
     unittest.main()
