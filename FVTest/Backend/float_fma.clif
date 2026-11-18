@@ -1,0 +1,100 @@
+test run
+target aarch64
+
+; The #35 scalar `fma` roots (`lower.isle:608` → `fmadd`, `lower.isle:609` → `fnmsub` of an
+; `fneg` addend; the helpers' `fneg` folds on the first operand → `fmsub`/`fnmadd`) behind
+; integer signatures (bit patterns in, bit patterns out via `bitcast`): one rounding (fused
+; cases that differ from `fmul` + `fadd`), NaN propagation (addend first, then the
+; multiplicands; signalling NaNs quietened; `0 * inf` and `inf - inf` give the default NaN),
+; signed zeros, infinities, and the folded `fneg`s (NaN signs included).
+
+function %fma32(i32, i32, i32) -> i32 {
+block0(v0: i32, v1: i32, v2: i32):
+    v3 = bitcast.f32 v0
+    v4 = bitcast.f32 v1
+    v5 = bitcast.f32 v2
+    v6 = fma v3, v4, v5
+    v7 = bitcast.i32 v6
+    return v7
+}
+; run: %fma32(0x3f800000, 0x40000000, 0x40400000) == 0x40a00000
+; run: %fma32(0x3f800800, 0x3f800800, 0xbf800000) == 0x3a000400
+; run: %fma32(0x7fc00001, 0x3f800000, 0x00000000) == 0x7fc00001
+; run: %fma32(0x3f800000, 0xffc00003, 0x00000000) == 0xffc00003
+; run: %fma32(0x7fc00001, 0x3f800000, 0x7fc00002) == 0x7fc00002
+; run: %fma32(0x7f800001, 0x3f800000, 0x00000000) == 0x7fc00001
+; run: %fma32(0x00000000, 0x7f800000, 0x3f800000) == 0x7fc00000
+; run: %fma32(0x00000000, 0x7f800000, 0x7fc00005) == 0x7fc00000
+; run: %fma32(0x7f800000, 0x3f800000, 0xff800000) == 0x7fc00000
+; run: %fma32(0x7f800000, 0x3f800000, 0x3f800000) == 0x7f800000
+; run: %fma32(0xbf800000, 0x3f800000, 0x3f800000) == 0x00000000
+; run: %fma32(0x80000000, 0x3f800000, 0x80000000) == 0x80000000
+; run: %fma32(0x00000000, 0xbf800000, 0x00000000) == 0x00000000
+; run: %fma32(0x7f7fffff, 0x40000000, 0xff7fffff) == 0x7f7fffff
+
+function %fma64(i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = bitcast.f64 v0
+    v4 = bitcast.f64 v1
+    v5 = bitcast.f64 v2
+    v6 = fma v3, v4, v5
+    v7 = bitcast.i64 v6
+    return v7
+}
+; run: %fma64(0x3ff0000000000000, 0x4000000000000000, 0x4008000000000000) == 0x4014000000000000
+; run: %fma64(0x3ff0000002000000, 0x3ff0000002000000, 0xbff0000000000000) == 0x3e50000001000000
+; run: %fma64(0x7ff8000000000001, 0x3ff0000000000000, 0x0000000000000000) == 0x7ff8000000000001
+; run: %fma64(0x7ff8000000000001, 0x3ff0000000000000, 0x7ff8000000000002) == 0x7ff8000000000002
+; run: %fma64(0x7ff0000000000001, 0x3ff0000000000000, 0x0000000000000000) == 0x7ff8000000000001
+; run: %fma64(0x0000000000000000, 0x7ff0000000000000, 0x3ff0000000000000) == 0x7ff8000000000000
+; run: %fma64(0x7ff0000000000000, 0x3ff0000000000000, 0xfff0000000000000) == 0x7ff8000000000000
+; run: %fma64(0xbff0000000000000, 0x3ff0000000000000, 0x3ff0000000000000) == 0x0000000000000000
+; run: %fma64(0x8000000000000000, 0x3ff0000000000000, 0x8000000000000000) == 0x8000000000000000
+
+; `fneg` on the first operand: `fmadd` rule 2 → `fmsub` of the `fneg`'s operand.
+function %fma32_negx(i32, i32, i32) -> i32 {
+block0(v0: i32, v1: i32, v2: i32):
+    v3 = bitcast.f32 v0
+    v4 = bitcast.f32 v1
+    v5 = bitcast.f32 v2
+    v6 = fneg v3
+    v7 = fma v6, v4, v5
+    v8 = bitcast.i32 v7
+    return v8
+}
+; run: %fma32_negx(0x3f800000, 0x40000000, 0x40400000) == 0x3f800000
+; run: %fma32_negx(0x7fc00001, 0x3f800000, 0x00000000) == 0xffc00001
+; run: %fma32_negx(0xffc00001, 0x3f800000, 0x00000000) == 0x7fc00001
+; run: %fma32_negx(0x3f800000, 0x3f800000, 0x3f800000) == 0x00000000
+
+; `fneg` on the addend: `rule_lower_609` → `fnmsub`.
+function %fma64_negz(i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = bitcast.f64 v0
+    v4 = bitcast.f64 v1
+    v5 = bitcast.f64 v2
+    v6 = fneg v5
+    v7 = fma v3, v4, v6
+    v8 = bitcast.i64 v7
+    return v8
+}
+; run: %fma64_negz(0x3ff0000000000000, 0x4000000000000000, 0x4008000000000000) == 0xbff0000000000000
+; run: %fma64_negz(0x3ff0000000000000, 0x3ff0000000000000, 0x7ff8000000000002) == 0xfff8000000000002
+; run: %fma64_negz(0x7ff8000000000001, 0x3ff0000000000000, 0x0000000000000000) == 0x7ff8000000000001
+; run: %fma64_negz(0x3ff0000000000000, 0x3ff0000000000000, 0x3ff0000000000000) == 0x0000000000000000
+
+; `fneg` on the first operand and the addend: `fnmsub` rule 2 → `fnmadd`.
+function %fma32_negxz(i32, i32, i32) -> i32 {
+block0(v0: i32, v1: i32, v2: i32):
+    v3 = bitcast.f32 v0
+    v4 = bitcast.f32 v1
+    v5 = bitcast.f32 v2
+    v6 = fneg v3
+    v7 = fneg v5
+    v8 = fma v6, v4, v7
+    v9 = bitcast.i32 v8
+    return v9
+}
+; run: %fma32_negxz(0x3f800000, 0x40000000, 0x40400000) == 0xc0a00000
+; run: %fma32_negxz(0x7fc00001, 0x3f800000, 0x00000000) == 0xffc00001
+; run: %fma32_negxz(0x3f800000, 0x3f800000, 0x7fc00002) == 0xffc00002

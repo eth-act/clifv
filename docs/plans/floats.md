@@ -751,6 +751,15 @@ the magnitude operand (`FpuRRIMod`); `copysign_holds` shows this is `FSem.copysi
 32/64 bits (lane 1 of the f32 `2s` forms is junk, never read). `StockScopePartition`: 193
 source-closure roots, 324 excluded. Witnesses: `FVTest/Backend/FloatCopysignCtxT.lean`; oracle
 `FVTest/Backend/float_copysign.clif` (±0, NaNs of both signs, ±∞, both sign operands).
+**`fma` (#35).** The roots `rule_lower_608` (lower.isle:608, id 693, `fmadd`) and
+`rule_lower_609` (lower.isle:609, id 694, `fnmsub` of an `fneg` addend) are proven in
+`FV/Backend/Proof/IselFloatFma.lean` (`fma_okT`, `fma_fneg_okT`, family
+`lowerRulesCorrectFM_program`) over contexts with `FmaNegYFree`: the helpers' rule 3 (`fneg` on
+the second operand → `fmsub`/`fnmadd`) is not NaN-sign exact, so `Compile.fmaNegYFree` keeps such
+functions out of the verified scope (none in the crate survey). `StockScopePartition`: 195
+source-closure roots, 322 excluded. Witnesses: `FVTest/Backend/FloatFmaCtxT.lean`,
+`FVTest/Backend/FloatFmaWitness.lean`; oracle `FVTest/Backend/float_fma.clif` (fused rounding,
+NaN propagation and default NaNs, signed zeros, the folded `fneg`s).
 **Deferred: `fcmp`.** `rule_lower_2176` (`fcmp` with `fp_cond_code`) is not a closure root
 (`closure.rs` `BACKEND_FLOAT_ROOTS`; `Closure.lean`: 195 roots, 330 excluded), `instData`
 rejects `fcmp`, and the `fcmp` arm of `is_nonzero_cmp_okT` stays absurd; `fpuCmp`'s `ispecFP`

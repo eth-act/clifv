@@ -268,7 +268,7 @@ theorem instData_fcmp_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
   have h2 : (instNames cl).2 = "Fcmp" := (Option.some.inj ho2).symm
   obtain ⟨op, ty, args, rfl⟩ := instNames_fcmp (s := "Fcmp") (hs := by simp) h2
   rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩
-  · simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
+  · cases op <;> simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
   · cases op <;>
       simp only [instData, fUnaryOpcode, fCvtOpcode, throw, throwThe, MonadExceptOf.throw,
         reduceCtorEq] at h
@@ -303,7 +303,16 @@ theorem instData_fcmp_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
              simp at hc
            · simp only [reduceCtorEq] at h)
         | simp only [reduceCtorEq] at h
-  · simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
+  · -- #35: the `fma` arm (three operands) builds `Ternary`, not `FloatCompare`
+    cases op <;> simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
+    all_goals
+      repeat' split at h
+      all_goals first
+        | (simp only [reduceCtorEq] at h; done)
+        | (simp only [pure, Except.pure, Except.ok.injEq] at h
+           obtain ⟨hc, -, -⟩ := mkVariant_eq_data h
+           rw [cmp_vn_FloatCompare] at hc
+           simp at hc)
 
 /-! ## The contract -/
 

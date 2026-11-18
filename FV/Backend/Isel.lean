@@ -375,7 +375,18 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
           if fCvtTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
           else throw s!"{n}.{ty.name}"
         | none => throw s!"`{op.name}` with one operand is not in the lowering"
-    | _ => throw s!"`{op.name}` is not in the lowering"
+    | _ =>
+      match op with
+      -- #35: `fma` of three operands at `f32`/`f64` (`InstructionData::Ternary`;
+      -- `lower.isle:608`/`609`, the helpers' scalar rules `fmadd`/`fmsub`/`fnmadd`/`fnmsub`);
+      -- the vector rules are outside E
+      | .fma =>
+        match args with
+        | [x, y, z] =>
+          if ty.isArithFloat then pure (instDataV "Ternary" [opcodeV "Fma", .values [x, y, z]])
+          else throw s!"Fma.{ty.name}"
+        | _ => throw s!"`fma` with {args.length} operands is not in the lowering"
+      | _ => throw s!"`{op.name}` is not in the lowering"
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)

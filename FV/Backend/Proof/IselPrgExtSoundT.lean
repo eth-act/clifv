@@ -1108,7 +1108,10 @@ private theorem fData_ofF (hP : PInvTF f ctx) {c : Clif.Inst} (hof : InstOf f c)
     have mTo : fDataTo ∈ fDataTF := List.mem_append_right _ (by simp)
     have mCmp : fDataCmp ∈ fDataTF := List.mem_append_right _ (by simp)
     rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, zs⟩⟩⟩
-    · simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
+    · -- #35: no `instETF` float operation has no operand (`fma`'s arm of `instData` is not one)
+      exfalso
+      cases op <;> simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+        Compile.fArithET, Compile.fCvtET, Compile.fCmpET] at hF
     · cases op <;> simp only [instData, fUnaryOpcode, fCvtOpcode] at hd
       all_goals first
         | (simp [throw, throwThe, MonadExceptOf.throw] at hd; done)
@@ -1129,10 +1132,6 @@ private theorem fData_ofF (hP : PInvTF f ctx) {c : Clif.Inst} (hof : InstOf f c)
     · cases op <;> simp only [instData, fBinaryOpcode] at hd
       all_goals first
         | (simp [throw, throwThe, MonadExceptOf.throw] at hd; done)
-        -- #35: `fcopysign` has its `instData` arm but is outside the float scope `instETF`
-        | (exfalso; simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
-            Compile.fArithET, Compile.fCvtET, Compile.fCmpET, fBinaryOpcode, fUnaryOpcode,
-            fCvtOpcode] at hF; done)
         | (split at hd
            · simp only [pure, Except.pure, Except.ok.injEq] at hd
              subst hd
@@ -1148,8 +1147,16 @@ private theorem fData_ofF (hP : PInvTF f ctx) {c : Clif.Inst} (hof : InstOf f c)
                       (γ_val_float (hT x (by simp)) (hflo x (by simp [Compile.floatOperands])))
                       (γL1 (γ_val_float (hT y (by simp)) (hflo y (by simp [Compile.floatOperands]))))⟩,
                     floatcc_mem hok.2, trivial⟩⟩)
+               | -- #35: `fcopysign` (`Binary`/`Fcopysign`) is outside `instETF`
+                 (exfalso
+                  simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+                    Compile.fArithET, Compile.fCvtET, Compile.fCmpET, fBinaryOpcode,
+                    fUnaryOpcode, fCvtOpcode] at hF)
            · simp [throw, throwThe, MonadExceptOf.throw] at hd)
-    · simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
+    · -- #35: three operands (`fma`) are outside `instETF`
+      exfalso
+      cases op <;> simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+        Compile.fArithET, Compile.fCvtET, Compile.fCmpET] at hF
   all_goals exact absurd (by simpa [Compile.instETF, Compile.instETA, Compile.fArithET,
     Compile.fCvtET, Compile.fCmpET] using hF) hET
 

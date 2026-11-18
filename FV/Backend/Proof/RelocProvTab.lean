@@ -257,8 +257,21 @@ def provTabCS : Tab :=
    (511, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
    (372, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩)]
 
+/-- Chunk of `provTab` for the #35 `fma` roots (`IselFloatFma`): `fmadd` 693, `fnmadd` 694,
+`fmsub` 695, `fnmsub` 696, `fpu_rrrr` 369, and the vector rules' `lower_fmla` 697 /
+`vec_rrr_mod` 365 / `vec_fmla_elem` 366 (every rule of a table term is checked). -/
+def provTabFM : Tab :=
+  [(693, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (694, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (695, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (696, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (369, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (697, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (365, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (366, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩)]
+
 /-- The summary table. -/
-def provTab : Tab := provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16 ++ provTabCS
+def provTab : Tab := provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16 ++ provTabCS ++ provTabFM
 
 set_option maxRecDepth 100000 in
 theorem provTab0_ok :
@@ -368,11 +381,17 @@ theorem provTabCS_ok :
       true := by
   decide +kernel
 
+set_option maxRecDepth 100000 in
+theorem provTabFM_ok :
+    provTabFM.all (fun e => (program.rulesOf e.1).all (aRule program provTab true e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
 /-- Every rule of every term of `provTab` checks (strictly). -/
 theorem provTab_ok : chkTab program provTab true = true := by
   unfold chkTab
-  show (provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16 ++ provTabCS).all
+  show (provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16 ++ provTabCS ++ provTabFM).all
     (fun e => (program.rulesOf e.1).all (aRule program provTab true e.2.1 e.2.2)) = true
-  simp only [List.all_append, provTab0_ok, provTab1_ok, provTab2_ok, provTab3_ok, provTab4_ok, provTab5_ok, provTab6_ok, provTab7_ok, provTab8_ok, provTab9_ok, provTab10_ok, provTab11_ok, provTab12_ok, provTab13_ok, provTab14_ok, provTab15_ok, provTab16_ok, provTabCS_ok, Bool.and_self]
+  simp only [List.all_append, provTab0_ok, provTab1_ok, provTab2_ok, provTab3_ok, provTab4_ok, provTab5_ok, provTab6_ok, provTab7_ok, provTab8_ok, provTab9_ok, provTab10_ok, provTab11_ok, provTab12_ok, provTab13_ok, provTab14_ok, provTab15_ok, provTab16_ok, provTabCS_ok, provTabFM_ok, Bool.and_self]
 
 end Backend.Proof.RelocProv
