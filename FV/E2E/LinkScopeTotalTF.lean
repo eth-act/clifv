@@ -94,14 +94,17 @@ theorem functionETCF_of_functionETF {f : Clif.Function} (h : Compile.functionETF
   simp only [Compile.functionETF, Bool.and_eq_true] at h
   obtain ⟨⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, hb⟩, ho⟩, he⟩, -⟩ := h
   simp only [Compile.functionETCF, Bool.and_eq_true]
-  refine ⟨⟨⟨⟨⟨hs, hg⟩, ?_⟩, ?_⟩, ?_⟩, he⟩
+  refine ⟨⟨⟨⟨⟨⟨hs, hg⟩, ?_⟩, ?_⟩, ?_⟩, he⟩, ?_⟩
   · exact List.all_eq_true.mpr fun p hp => Compile.sigET_of_sigE (List.all_eq_true.mp hx p hp)
   · simp only [List.all_eq_true, Bool.and_eq_true] at hb ⊢
-    exact fun b hb' => ⟨⟨(hb b hb').1.1, fun s hs => Compile.instETFL_of_instETF
-      ((hb b hb').1.2 s hs)⟩, (hb b hb').2⟩
+    exact fun b hb' => ⟨⟨(hb b hb').1.1, fun s hs => Compile.instETFLO_of_instETFL
+      (Compile.instETFL_of_instETF ((hb b hb').1.2 s hs))⟩, (hb b hb').2⟩
   · simp only [Compile.opsTypedTF, Compile.opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at ho ⊢
     exact fun b hb' => ⟨fun s hs x hx' => (ho b hb').1 s hs x (Compile.intOperandsFC_sub hx'),
       fun x hx' => (ho b hb').2 x (Compile.termIntOperandsC_sub _ x hx')⟩
+  · simp only [List.all_eq_true, Bool.and_eq_true] at hb
+    exact Compile.fmaNegYFree_of_instETFL fun b hb' s hs =>
+      Compile.instETFL_of_instETF ((hb b hb').1.2 s hs)
 
 /-- `driverInB` contains `driverInTCB`. -/
 theorem driverInTCB_of_driverInB {g : Clif.Function} (h : driverInB g = true) :

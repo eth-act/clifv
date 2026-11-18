@@ -416,7 +416,7 @@ theorem termIntPos_of_functionETCF {f : Clif.Function} (hT : Compile.functionETC
   simp only [Compile.functionETCF, Compile.opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at hT
   have hx' : x ∈ Compile.termIntOperandsC B.term := by
     cases h : B.term <;> rw [h] at hx <;> first | exact absurd h (hnt _ _ _) | exact hx
-  have := (hT.1.2 B hB).2 x hx'
+  have := (hT.1.1.2 B hB).2 x hx'
   simp [hfd] at this
 
 end Backend.Proof.Driver
