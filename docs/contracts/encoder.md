@@ -202,6 +202,8 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `fpuRRRR mAdd/mSub/nMAdd/nMSub` s/d | `DPSFP.FP_data_processing_three_source` (o1:o0 00/01/10/11) | FMADD, FMSUB, FNMADD, FNMSUB | `FpuRRRR`, `enc_fpurrrr` |
 | `fpuCmp` s/d | `DPSFP.FP_compare` (op 00, opcode2 00000) | FCMP (register) | `FpuCmp`, `enc_fcmp` |
 | `fpuRound` minus/plus/zero/nearest × 32/64 | `DPSFP.FP_data_processing_one_source` (opcode 001010/001001/001011/001000) | FRINTM, FRINTP, FRINTZ, FRINTN (scalar) | `FpuRound`, `enc_fround` |
+| `fpuRRI uShr32 n` (`ushr vd.2s, vn.2s, #n`, 1 ≤ n ≤ 32) / `uShr64 n` (`ushr dd, dn, #n`, 1 ≤ n ≤ 64); other amounts are an error | `DPSFP.Advanced_simd_shift_by_immediate` (Q 0, U 1, opcode 00000) / `Advanced_simd_scalar_shift_by_immediate` (U 1, opcode 00000); `immh:immb = 2·lane − n` | USHR (vector / scalar) | `FpuRRI`, `FPURightShiftImm::enc` |
+| `fpuRRIMod sli32 n` (`sli vd.2s, vn.2s, #n`, n < 32) / `sli64 n` (`sli dd, dn, #n`, n < 64); other amounts are an error; `ri` is not encoded (tied to `rd` by the allocation, as Cranelift's `debug_assert`) | same classes, opcode 01010; `immh:immb = lane + n` | SLI (vector / scalar) | `FpuRRIMod`, `FPULeftShiftImm::enc` |
 | `fpuToInt` f32/f64 → i32/u32/i64/u64 | `DPSFP.Conversion_between_FP_and_Int` (rmode 11, opcode 000/001; sf = 64-bit integer; Rd `w`/`x`, 31 = ZR) | FCVTZS, FCVTZU (scalar, integer) | `FpuToInt`, `enc_fputoint` |
 | `intToFpu` i32/u32/i64/u64 → f32/f64 | `DPSFP.Conversion_between_FP_and_Int` (rmode 00, opcode 010/011; Rn `w`/`x`, 31 = ZR) | SCVTF, UCVTF (scalar, integer) | `IntToFpu`, `enc_inttofpu` |
 
