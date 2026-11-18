@@ -106,7 +106,8 @@ route's pipeline and link `leanLinkProductionWith` on its placement `placedProdu
 the units' code, accepted by the typed checks `okRWithTS`: the Stock validator on an integer
 function, the typed validators on `lowerFunction`'s output) is tried instead; coverage
 `attemptT_correct`, `attemptT_correct_depth`, `attemptT_correct_peak` (returned values by
-class). When it fails, the smallest of: the functions failing its typed checks, the functions
+class), and for a bundle in `SrcScopeB` `attemptT_correct_sourceCp`, `attemptT_correct_source_peakCp`
+(#1100; `hcp` by `TypedStockShared.stockSteps_placed` and `rfl`). When it fails, the smallest of: the functions failing its typed checks, the functions
 whose placed code is not the units' (their span to the next function is not rust-lld's,
 `spanFails`, #1075; its link checks name the failing check and objects, `linkFails`), those
 Stock-lowered functions, or the typed ones (outside `fnScopeInB`; the executable then takes the
@@ -806,7 +807,14 @@ def main (args0 : List String) : IO UInt32 := do
             ", Link.SemanticCompilerWith.attemptT_correct_sourceTB, Link.SemanticCompilerWith.attemptT_correct_source_peakTB"
             else ""
           s!"; the bundle's program is in SrcScopeTB, not SrcScopeB (#1076: i128 functions with a try_call_indirect at an i128-free signature): its legalisation refines it (E2E.LegalProgram.legalProg_refinesT{thmTB})"
-        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
+        -- #1100: the bundle's program through the legalisation and constant-phi removal, at
+        -- `I0 = S0.input0` (`hsrc = srcOk`, decided above) and `SP` (`hcp`:
+        -- `TypedStockShared.stockSteps_placed`, `SP = SC0.placedProductionWith routes[0]! true`
+        -- with `SC0 = S0.cp` on this route, then `rfl`)
+        let srcCp := if srcOk then
+            "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.SemanticCompilerWith.attemptT_correct_sourceCp, Link.SemanticCompilerWith.attemptT_correct_source_peakCp"
+          else ""
+        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
         return 0
       if let .error e := att then
         let bad := typedStockFails SP RS
