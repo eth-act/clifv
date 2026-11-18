@@ -54,6 +54,7 @@ import FVTest.E2E.PoolConstFinalTCF
 import FV.Backend.Proof.IselScopeTFLO
 import FV.Backend.Proof.LowerContractTFSO
 import FVTest.Backend.FloatScopeFLOWitness
+import FVTest.E2E.FloatOpsFinalTCF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -534,3 +535,10 @@ import FVTest.Backend.FloatScopeFLOWitness
 #print axioms FloatScopeFLOWitness.lowerCheckTCF_cs -- witness: native_decide
 #print axioms FloatScopeFLOWitness.loweringTCF_of_check_old_false -- witness: native_decide
 #print axioms FloatScopeFLOWitness.lowerShapeTC_of_okF_old_false -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_cs -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_cs32 -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_fma -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_fmaNegZ -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_fmaNegX -- witness: native_decide
+#print axioms FloatOpsFinalTCF.backend_correct_finalTCF_cs -- witness: native_decide
+#print axioms FloatOpsFinalTCF.backend_correct_finalTCF_fmaNegZ -- witness: native_decide
