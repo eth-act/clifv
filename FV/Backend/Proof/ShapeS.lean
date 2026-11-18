@@ -16,7 +16,7 @@ replacing the `try_call` vregs keep it).
 * `Driver.LowerShapeTCS S`: `LowerShapeTC` with the scope `S.P` (`LowerShapeTC.toS`: the
   instance at `InstScope.tf`).
 
-The validator with the literal pool gives `LowerShapeTCS InstScope.tfl`
+With the literal pool (#1002 part 2) the validator gave `LowerShapeTCS InstScope.tfl`
 (`Driver.loweringTCF_of_check`). `LowerShapeTC` and its theorems are unchanged.
 
 #35: `InstScope.tflo` (`InstScopeTFLO`: `Compile.instETFLO`, `fcopysign` and `fma` also), the
