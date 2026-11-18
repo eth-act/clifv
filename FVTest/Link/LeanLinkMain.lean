@@ -816,6 +816,13 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link:   {n}: {fs}"
       printExclusions exe S0 SC typedOk (typedNext := true) (srcT := srcT)
       return 1
+  -- #1108: the input conditions every Stock route's `attempt` (and the return-pin attempt) checks
+  -- first, `inScopePar` (`inScopeInPar` without the cleanup) of its placed spec, do not read the
+  -- placement (`Link.inScopePar_withSizes`, `Link.inScopeInPar_withSizes`): decided at most
+  -- once, on the placement with zero sizes
+  let scope0 : Thunk Bool := Thunk.mk fun _ =>
+    let SZ := SC0.withSizes (SC0.funcs.map fun _ => 0)
+    if deadCleanup then inScopePar SZ.input0 else inScopeInPar SZ.input0
   -- The checked semantic provider handles a CFG function alongside retained
   -- try-call functions. Recompiling that mixed program only through the old
   -- provider can require a different region size from the emitted objects.
@@ -824,11 +831,10 @@ def main (args0 : List String) : IO UInt32 := do
   let hasCfg := SC0.funcs.any (fun fi => (((((((Backend.Stock.MemorySinkExt.eligible fi.func || Backend.Stock.MemoryCapturedCopy.eligible fi.func || Backend.Stock.MemoryLoadStore.eligible fi.func) || Backend.Stock.MemoryStoreCfg.eligible fi.func) || Backend.Stock.MemoryStore.eligible fi.func) || Backend.Stock.MemoryExtending.eligible fi.func) || Backend.Stock.MemoryUnsigned.eligible fi.func || Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
   let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((((((Backend.Stock.MemorySinkExt.eligible fi.func || Backend.Stock.MemoryCapturedCopy.eligible fi.func || Backend.Stock.MemoryLoadStore.eligible fi.func) || Backend.Stock.MemoryStoreCfg.eligible fi.func) || Backend.Stock.MemoryStore.eligible fi.func) || Backend.Stock.MemoryExtending.eligible fi.func) || Backend.Stock.MemoryUnsigned.eligible fi.func || Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)) &&
-    -- #739: every route's `attempt` first checks `inScopePar` (`inScopeInPar` without the
-    -- cleanup) of its placed spec, whose per-function conjunct `fnScopeB` (`fnScopeInB`) does not
-    -- read the placement; when it fails, all routes fail and `compileWithRoutes` is `compile SC`,
-    -- so skip the routes' placements (each one the full pipeline)
-    (parMap (if deadCleanup then fnScopeB else fnScopeInB) SC0.input0.prog.funcs).all id
+    -- #739, #1108: when the input conditions fail (`scope0`), all routes fail and
+    -- `compileWithRoutes` is `compile SC`, so skip the routes' placements (each one the full
+    -- pipeline)
+    scope0.get
   let routes := [Backend.Stock.MemorySinkExt.lowerValidated,Backend.Stock.MemoryCapturedCopy.lowerValidated,Backend.Stock.MemoryLoadStore.lowerValidated,Backend.Stock.MemoryStoreCfg.lowerValidated,Backend.Stock.MemoryUnsigned.lowerValidated,Backend.Stock.MemoryCfg.lowerValidated,Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   -- #691: on a typed input, the functions `lean-backend` compiled with the Stock lowering
@@ -964,7 +970,9 @@ def main (args0 : List String) : IO UInt32 := do
       return 1
   -- This complete-file attempt leaves every previous mode and retry action below intact.
   let returnPinEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
-    Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome)
+    Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome) &&
+    -- #1108: `ReturnPinCompilerWith.attempt` fails when the input conditions do (`scope0`)
+    scope0.get
   if returnPinEnabled then
     let lower := Backend.Stock.VoidCall.NI.lowerValidated
     let SP := SC0.placedProductionWith lower deadCleanup

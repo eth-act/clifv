@@ -22,6 +22,7 @@ import FV.Link.TypedStockShared
 import FV.E2E.StaticShare
 import FV.E2E.SrcScopeFastT
 import FV.Front.BundleFast
+import FV.Link.ScopePlacement
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -137,3 +138,9 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.LinkCheck.progFnFastB_eq
 #print axioms E2E.LinkCheck.progScopeFastB_eq_idx
 #print axioms E2E.LinkCheck.progScopeInFastB_eq_idx
+#print axioms E2E.LinkCheck.LinkInput.prog_eq_par
+-- the input conditions do not read the placement (`lean-link` decides them once)
+#print axioms E2E.LinkCheck.progScopeB_isSome
+#print axioms E2E.LinkCheck.progScopeInB_isSome
+#print axioms Link.inScopePar_withSizes
+#print axioms Link.inScopeInPar_withSizes

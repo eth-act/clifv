@@ -158,4 +158,12 @@ def progScopeInIdxB (P : Clif.Program) (S : String → Option Nat) : Bool :=
   rw [progScopeInWithB, namesNodupB_eq, Link.parMap_eq, List.all_map]
   simp only [Function.comp_def, id_eq, progFnFastB_eq]
 
+/-- `LinkInput.prog` with the functions parsed in parallel tasks (`LinkInput.prog_eq_par`): every
+`Link.inScopePar` parses the input's program (ruint: about 100 s one function after another). -/
+def LinkInput.progPar (I : LinkInput) : Clif.Program := { funcs := Link.parMap (·.func) I.funcs }
+
+@[csimp] theorem LinkInput.prog_eq_par : @LinkInput.prog = @LinkInput.progPar := by
+  funext I
+  simp only [LinkInput.prog, LinkInput.progPar, Link.parMap_eq]
+
 end E2E.LinkCheck
