@@ -2813,6 +2813,32 @@ concrete arguments, as `backend_correct_program_witness` does for `f 41`); the w
 PLAN.md §4 "M9": a guarantee about the executable file `cargo fv` produces. Each item has its
 subsection.
 
+#### What `cargo fv`'s binary check establishes (#1092, #1093)
+
+`cargo fv build`'s per-executable binary check runs `link-check --prune` on the executable's
+bundle. `link-check` takes the functions as `lean-backend` compiled them (constant-phi removal,
+the routes recovered from the bytes), selects a checker and decides, for the (pruned) program
+and the file, every premise of one executable-word theorem that is a fact about the program or
+the file, and prints the theorem (`theorem:`, `FVTest/E2E/BinVerdict.lean`) only when all hold:
+
+| `checker:` | decided premises (output line) | theorem (`_peak_` sibling for functions reaching a call cycle) |
+|---|---|---|
+| `integer` | `ReturnPinStackBound.okB` (`okB:`), `BinOkWithResults` (`binary:`), `codeMapB` (`code map:`), `SemanticExecBytes.GotOk` (`GOT:`), the stack bound (`stack:`) | `E2E.ReturnPinExecBytes.binary_correct_exec_proven` (`…_peak_proven`) |
+| `typed Stock (okRWithTS)` | `SemanticStackBound.okBTS`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk`, stack | `E2E.SemanticExecBytes.binary_correct_exec_provenTS` (`…_peak_provenTS`) |
+| `typed (okBCleanupT)` | `okBCleanupT`, `DeadCleanupBinCheck.BinOk`, `codeMapB`, `DeadCleanupExecBytes.GotOk`, stack | `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT` (`…_peak_provenT`) |
+
+`GotOk` is decided by `E2E.GotTab.gotTabB` on the whole file (`SemanticExecBytes.gotTabB_sound`,
+`DeadCleanupExecBytes.gotTabB_sound`: the slots of the GOT pairs whose second word is an `ldr`;
+`gotB` also checks the "slot" of a pair the linker relaxed to `adrp`/`add`, which `GotSlot` does
+not contain). A failing premise is `not verified: …` and `link-check` exits 1. The premises left
+are about runs: the base environment's contracts (`BaseOk`, `HooksSim`), the outside caller
+(`OutsideCall`, `OutsideAvoids`, `Image.Intact`), the CLIF run (`ClifRun`, `TrapsExplicit`) and,
+for the `_peak_` theorems, the stack of the run's call depth. Until #1092 the verdict named
+`E2E.Binary.binary_correct` for `checker: integer`, a theorem about the baseline pipeline's
+results (`E2E.LinkCheck.okB`), which this checker does not decide; and `codeMapB` was printed but
+not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdictTest` checks that every
+name exists and the verdicts.
+
 #### Code bytes, data objects, GOT and symbols (items 1–2; 2026-10-05, `agent/bin-bytes`)
 
 **The ELF reader** (`FV/E2E/Elf.lean`, namespace `E2E.Elf`). `cargo fv`'s executables are

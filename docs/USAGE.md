@@ -533,30 +533,34 @@ needed for the guarantee of `--lean-link` executables.
 ### The executable as a whole (binary check)
 
 After the build, `cargo fv build`/`test`/`run` checks every linked executable with
-Lean-compiled code against the binary-level theorem `E2E.Binary.binary_correct_of_checks`
-(docs/contracts/e2e.md, "Binary level (M9)"): it runs `cargo fv link-proof` on the executable
-(into `target/fv/<mode>/bin-check/<tag>/`) and `link-check --prune`, which decide the crate
-checker (`LinkSys.Ok`), the binary checks (the executable's code is the compiled code with
+Lean-compiled code against an executable-word theorem (docs/contracts/e2e.md, "Binary level
+(M9)", "What `cargo fv`'s binary check establishes"): it runs `cargo fv link-proof` on the
+executable (into `target/fv/<mode>/bin-check/<tag>/`) and `link-check --prune`, which decide the
+checker of the program's results (`okB:`; `checker:` integer, i.e. the return-pin production
+checks, or a typed one), the binary checks (the executable's code is the compiled code with
 resolved relocations — `cargo fv` links with lld's `--no-relax` so the address pairs stay as
-emitted —, its data objects and symbols are the program's) and the stack bound, and prints one
-verdict per executable:
+emitted —, its data objects and symbols are the program's), the code map (`codeMapB`), the GOT
+slots (`GotOk`) and the stack bound, and name the theorem these instantiate (`theorem:`);
+one verdict per executable:
 
 ```
-cargo fv: binary …/values-5203fc787ef73bb4: verified: E2E.Binary.binary_correct holds for its 493 Lean-compiled functions; stack: 3008 bytes at most (no call cycle)
-cargo fv: binary …/fv_demo: verified: E2E.Binary.binary_correct (binary_correct_depth for the functions whose calls reach a call cycle: their stack stays a premise) holds for its 551 Lean-compiled functions; stack: recursive: the calls of 26 function(s) reach a call cycle (their stack stays a premise); the other 525: 1744 bytes at most
+cargo fv: binary …/values-5203fc787ef73bb4: verified: E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 493 Lean-compiled functions; stack: 3008 bytes at most (no call cycle)
+cargo fv: binary …/deps: verified: E2E.SemanticExecBytes.binary_correct_exec_provenTS (E2E.SemanticExecBytes.binary_correct_exec_peak_provenTS for the functions whose calls reach a call cycle: their stack stays a premise) holds for its 17243 Lean-compiled functions; stack: recursive: the calls of 1832 function(s) reach a call cycle (their stack stays a premise); the other 15411: 61968 bytes at most
 cargo fv: binary check: 18 of 18 executable(s) verified (docs/contracts/e2e.md, "Binary level (M9)")
 ```
 
-or `not verified: …` with the failing check (`binary check failed: FAIL code=… — BIN …`, or the
-first function failing `LinkSys.Ok`, the others still covered). *Verified* means: whenever code
-outside the program calls one of these functions per AAPCS64 and its contract (`OutsideCall`:
-arguments, free stack of the printed size, its CLIF-visible memory related to the machine's), in
-a machine state holding the executable's read-only bytes, the machine refines the
-whole-program CLIF run; the premises left are the contracts of the code outside the program
-(std, musl, fallback functions) and that CLIF traps only explicitly. The verdict is computed by
-`link-check` (compiled Lean); for a kernel-checked certificate generate the proof with `cargo fv
-link-proof --lean` (below). `--no-binary-check` skips it (its cost grows with the number of
-Lean-compiled functions of each executable: under a second per survey executable).
+or `not verified: …` with the failing check (`binary check failed: FAIL code=… — BIN …`, the
+code map, the GOT check, or the first function failing the checker, the others still covered).
+*Verified* means: whenever code outside the program calls one of these functions per AAPCS64
+and its contract (`OutsideCall`: arguments, free stack of the printed size, its CLIF-visible
+memory related to the machine's), in a machine state holding the executable's read-only bytes,
+the executable's own words refine the whole-program CLIF run; the premises left are the
+contracts of the code outside the program (std, musl, fallback functions) and that CLIF traps
+only explicitly. The verdict is computed by `link-check` (compiled Lean); for a kernel-checked
+certificate generate the proof with `cargo fv link-proof --lean` (below; its proof files state
+the linked machine model's theorem, `backend_correct_program`, not the executable-word one).
+`--no-binary-check` skips it (its cost grows with the number of Lean-compiled functions of each
+executable: under a second per survey executable).
 
 ## Proving a crate (`cargo fv link-proof`, optional)
 

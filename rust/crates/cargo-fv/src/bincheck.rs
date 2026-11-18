@@ -1,9 +1,11 @@
 //! `cargo fv build`'s per-executable binary check (docs/contracts/e2e.md, "Binary level (M9)"):
 //! after a build, every linked executable's Lean-compiled functions go through `cargo fv
 //! link-proof` (its directory under `target/fv/<mode>/bin-check/`) and `lake exe link-check
-//! --prune`, which decides the premises of `E2E.Binary.binary_correct`: `LinkSys.Ok` (`okB`),
-//! the executable's code, data and symbols against the proven program (`binary:`), and the stack
-//! bound (`stack:`). The verdict is printed next to the per-function report.
+//! --prune`, which decides the premises of an executable-word theorem about the program's results
+//! in its checker: the checker (`okB:`), the executable's code, data and symbols against the
+//! proven program (`binary:`), the code map (`code map:`), the GOT slots (`GOT:`) and the stack
+//! bound (`stack:`), and names the theorem they instantiate (`theorem:`, `FVTest/E2E/BinVerdict.lean`).
+//! The verdict is printed next to the per-function report.
 use std::path::Path;
 use std::process::Command;
 
@@ -11,7 +13,7 @@ use crate::pipeline::tag_of;
 
 /// The verdict on one executable.
 pub struct Verdict {
-    /// `binary_correct` holds for every Lean-compiled function of the executable.
+    /// The theorem `link-check` names holds for every Lean-compiled function of the executable.
     pub verified: bool,
     /// One line: what holds, or the failing check.
     pub summary: String,
@@ -89,27 +91,31 @@ pub fn verdict_of(out: &str, ok: bool, exe: &str) -> Verdict {
         }
     }
     if !ok || field(out, "okB: ") != Some("true") {
+        // link-check's exit status also covers the code map and the GOT check (#1093)
+        if field(out, "okB: ") == Some("true") {
+            if field(out, "code map: ") != Some("ok") {
+                return not("not verified: the code map check fails (codeMapB)".into());
+            }
+            if !field(out, "GOT: ").is_some_and(|g| g.starts_with("ok")) {
+                return not(format!("not verified: the GOT check fails (GotOk): {}", field(out, "GOT: ").unwrap_or("no GOT line")));
+            }
+        }
         return not(format!("not verified: the crate checker fails (okB){}", first_fail.map(|f| format!(": {f}")).unwrap_or_default()));
     }
+    // the theorem link-check's checks instantiate, named by link-check next to them (#1092,
+    // `FVTest/E2E/BinVerdict.lean`): only when every premise it decides holds
+    let which = match field(out, "theorem: ") {
+        Some(t) if !t.starts_with("none") => t,
+        Some(t) => return not(format!("not verified: {t}")),
+        None => return not("not verified: link-check names no theorem".into()),
+    };
     if pass < total {
         return not(format!(
-            "not verified: {} of {total} Lean-compiled functions fail (first: {}); binary_correct holds for the other {pass}{stack}",
+            "not verified: {} of {total} Lean-compiled functions fail (first: {}); {which} holds for the other {pass}{stack}",
             total - pass,
             first_fail.unwrap_or_else(|| "?".into())
         ));
     }
-    let recursive = field(out, "stack: ").is_some_and(|s| s.starts_with("recursive"));
-    // link-check's typed checkers: on the cleanup results (`okBCleanupT`, S11e6 #615) or on the
-    // Stock route's results (`okRWithTS`, #722, `Link.SemanticCompilerWith.attemptT`'s output)
-    let checker = field(out, "checker: ").unwrap_or("");
-    let which = match (checker.starts_with("typed Stock"), checker.starts_with("typed"), recursive) {
-        (true, _, true) => "E2E.SemanticExecBytes.binary_correct_exec_provenTS (typed checker okRWithTS on the Stock route's results; binary_correct_exec_peak_provenTS for the functions whose calls reach a call cycle: their stack stays a premise)",
-        (true, _, false) => "E2E.SemanticExecBytes.binary_correct_exec_provenTS (typed checker okRWithTS on the Stock route's results)",
-        (false, true, true) => "E2E.DeadCleanupExecBytes.binary_correct_exec_provenT (typed checker okBCleanupT; binary_correct_exec_peak_provenT for the functions whose calls reach a call cycle: their stack stays a premise)",
-        (false, true, false) => "E2E.DeadCleanupExecBytes.binary_correct_exec_provenT (typed checker okBCleanupT)",
-        (false, false, true) => "E2E.Binary.binary_correct (binary_correct_depth for the functions whose calls reach a call cycle: their stack stays a premise)",
-        (false, false, false) => "E2E.Binary.binary_correct",
-    };
     Verdict { verified: true, summary: format!("verified: {which} holds for its {total} Lean-compiled functions{stack}") }
 }
 
@@ -178,16 +184,43 @@ mod tests {
     #[test]
     fn verified_and_failing() {
         let ok = format!(
-            "link-check: {EXE}\n  okB: true\n  --prune: 74 of 74 functions pass (0 dropped)\n  binary: ok\n  stack: no call cycle\n"
+            "link-check: {EXE}\n  checker: integer\n  okB: true\n  --prune: 74 of 74 functions pass (0 dropped)\n  binary: ok\n  code map: ok\n  GOT: ok (0 GOT pair(s) with an ldr; 0 ms)\n  stack: 352 bytes at most (no call cycle)\n  theorem: E2E.ReturnPinExecBytes.binary_correct_exec_proven\n"
         );
         let v = verdict_of(&ok, true, EXE);
         assert!(v.verified, "{}", v.summary);
-        assert!(v.summary.starts_with("verified: E2E.Binary.binary_correct holds for its 74 Lean-compiled functions"), "{}", v.summary);
+        assert!(v.summary.starts_with("verified: E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 74 Lean-compiled functions"), "{}", v.summary);
         let pruned = ok.replace("74 of 74 functions pass (0 dropped)", "71 of 74 functions pass (3 dropped)");
         let v = verdict_of(&pruned, true, EXE);
         assert!(!v.verified);
         assert!(v.summary.starts_with("not verified: 3 of 74 Lean-compiled functions fail"), "{}", v.summary);
+        assert!(v.summary.contains("E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for the other 71"), "{}", v.summary);
         let v = verdict_of(&ok.replace("binary: ok", "binary: FAIL 2 excerpts"), true, EXE);
         assert!(v.summary.starts_with("not verified: binary check failed: FAIL 2 excerpts"), "{}", v.summary);
+    }
+
+    /// #1093: a failing code map or GOT check is not verified; link-check then names no theorem
+    /// and exits 1.
+    #[test]
+    fn code_map_and_got() {
+        let ok = format!(
+            "link-check: {EXE}\n  checker: typed Stock (okRWithTS)\n  okB: true\n  --prune: 5 of 5 functions pass (0 dropped)\n  binary: ok\n  code map: ok\n  GOT: ok (0 GOT pair(s) with an ldr; 0 ms)\n  stack: 64 bytes at most (no call cycle)\n  theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS\n"
+        );
+        assert!(verdict_of(&ok, true, EXE).verified);
+        let cm = ok
+            .replace("code map: ok", "code map: FAIL (codeMapB)")
+            .replace("theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS", "theorem: none (codeMapB fails)");
+        let v = verdict_of(&cm, false, EXE);
+        assert!(!v.verified);
+        assert_eq!(v.summary, "not verified: the code map check fails (codeMapB)");
+        let got = ok
+            .replace("GOT: ok (0", "GOT: FAIL (GotOk) (1")
+            .replace("theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS", "theorem: none (GotOk fails)");
+        let v = verdict_of(&got, false, EXE);
+        assert!(!v.verified);
+        assert!(v.summary.starts_with("not verified: the GOT check fails (GotOk)"), "{}", v.summary);
+        // an older link-check without the theorem line: not verified
+        let v = verdict_of(&ok.replace("  theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS\n", ""), true, EXE);
+        assert!(!v.verified);
+        assert_eq!(v.summary, "not verified: link-check names no theorem");
     }
 }
