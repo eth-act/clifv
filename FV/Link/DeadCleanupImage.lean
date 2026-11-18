@@ -65,5 +65,16 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
           .error "rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)"
         else .ok file
 
+/-- `leanLink` through `Link.writeWith` (`leanLink_eq_fast`). -/
+def leanLinkFast (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
+  writeWith S file0 parResultsCleanupT
+
+/-- **`leanLink`'s writer indexed** (#1108, `Link.leanLink_eq_fast`). -/
+@[csimp] theorem leanLink_eq_fast : @Link.DeadCleanup.leanLink = @Link.DeadCleanup.leanLinkFast := by
+  funext S file0
+  unfold Link.DeadCleanup.leanLink leanLinkFast writeWith writeTail
+  cases phdrs (fileRd file0) with
+  | none => rfl
+  | some phs => simp only [relocsAllF_eq, regionBA_eq]
 
 end Link.DeadCleanup

@@ -22,6 +22,7 @@ import FV.Link.TypedStockShared
 import FV.E2E.StaticShare
 import FV.E2E.SrcScopeFastT
 import FV.Front.BundleFast
+import FV.Link.ScopePlacement
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -107,3 +108,39 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.LinkCheck.allMay_eq
 #print axioms E2E.LinkCheck.anyMay_eq
 #print axioms E2E.LinkCheck.candFacts
+
+-- #1108: the writer indexed (relocations, region bytes, data objects: the link map in hash maps,
+-- each function's relocations by offset; the code map without comparing every pair), and the
+-- program-level input conditions through the indirect-call index
+#print axioms Link.RelocCtx.addrOf_of
+#print axioms Link.RelocCtx.baseOf_of
+#print axioms Link.RelocCtx.symAddr_of
+#print axioms Link.relocIdx_getD
+#print axioms Link.offsNodupB_eq
+#print axioms Link.relocOkF_eq
+#print axioms Link.relocsOkF_eq
+#print axioms Link.relocsAllF_eq
+#print axioms Link.resolveWordF_eq
+#print axioms Link.artPush_toList
+#print axioms Link.regionPush_toList
+#print axioms Link.regionBA_eq
+#print axioms Link.dataFastB_eq_fast
+#print axioms Link.leanLink_eq_fast
+#print axioms Link.DeadCleanup.leanLink_eq_fast
+#print axioms Link.leanLinkWithResults_eq_fast
+#print axioms E2E.LinkCheck.noBlrFastB_eq
+#print axioms E2E.LinkCheck.rangesChainB_pairs
+#print axioms E2E.LinkCheck.codeMapLinB_eq
+#print axioms E2E.LinkCheck.codeMapB_eq_lin
+#print axioms E2E.LinkCheck.indSiteFastB_eq
+#print axioms E2E.LinkCheck.callScopeFastB_eq
+#print axioms E2E.LinkCheck.indFastX_eq
+#print axioms E2E.LinkCheck.progFnFastB_eq
+#print axioms E2E.LinkCheck.progScopeFastB_eq_idx
+#print axioms E2E.LinkCheck.progScopeInFastB_eq_idx
+#print axioms E2E.LinkCheck.LinkInput.prog_eq_par
+-- the input conditions do not read the placement (`lean-link` decides them once)
+#print axioms E2E.LinkCheck.progScopeB_isSome
+#print axioms E2E.LinkCheck.progScopeInB_isSome
+#print axioms Link.inScopePar_withSizes
+#print axioms Link.inScopeInPar_withSizes
