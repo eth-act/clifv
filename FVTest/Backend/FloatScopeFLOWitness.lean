@@ -4,6 +4,8 @@ import FVTest.Backend.FloatArithCtxT
 import FV.E2E.LinkCheck
 import FV.Backend.Proof.LowerCompleteTCF
 import FV.E2E.EmitSize
+import FVTest.Backend.FnVerdict
+import FV.E2E.LinkScopeInputDefsTC
 
 /-!
 Witnesses of the typed scope with `fcopysign` and `fma` (#35, `Compile.instETFLO`).
@@ -69,6 +71,18 @@ def fFmaNegY : Clif.Function := fnOfTextA
 -- an `fma` whose second operand is an `fneg` is outside, by `fmaNegYFree` only
 #guard !Compile.fmaNegYFree fFmaNegY && !Compile.functionETCF fFmaNegY
 #guard typedScopeFails fFmaNegY == ["fmaNegYFree (an fma's second operand is an fneg's result)"]
+-- `lean-backend`'s verdict (`FnVerdict`, `Main.lean`'s scope choice): outside `functionE`,
+-- `functionET`, `functionETC`, so the scope `typedTCF`, whose theorem is
+-- `E2E.backend_correct_world_cleanupTCF` (with dead cleanup) / `E2E.backend_correct_finalTCF`
+#guard [fCs, fCs32, fFma, fFmaNegZ, fFmaNegX].all fun f =>
+  !Compile.functionE f && !Compile.functionET f && !Compile.functionETC f
+#guard (FVTest.Backend.FnVerdict.verdict { scope := .typedTCF, path := .stock }).thm =
+  some "E2E.backend_correct_world_cleanupTCF"
+#guard (FVTest.Backend.FnVerdict.verdict { scope := .typedTCF, path := .stock, cleanup := false }).thm =
+  some "E2E.backend_correct_finalTCF"
+-- lean-link's admission predicate admits them (`fnScopeInTCB`), not `fFmaNegY`
+#guard [fCs, fCs32, fFma, fFmaNegZ, fFmaNegX].all E2E.LinkCheck.fnScopeInTCB
+#guard !E2E.LinkCheck.fnScopeInTCB fFmaNegY
 
 /-- `shapeOkTF` accepts `f`'s lowering, and `shapeOkTS` at the check `instScopeOkFL` rejects it
 (an instruction outside `Compile.instETFL`). -/
