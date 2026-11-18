@@ -9,8 +9,8 @@ the local `wrapping_mul` of the survey crate `g_u128`), `compileExeT S file0 = .
 `S` is its own constant-phi removal (`hcp`, evaluated) and the bundle-level premises of
 `Front.bundle_correct_{source,raw}{,_peak}TCp` (`buildSpec bw = .ok S`, `hcp`, the compiler's
 success, `SrcScopeB S.input0`, the parsed units and the scoping / raw naming) are discharged; the
-instantiated theorems (`*_spec`) are witnesses. `Link.CpSourceWitness` covers a function the pass
-changes, for the `…_sourceCp` theorems these compose.
+instantiated theorems (`*_spec`) are witnesses. `Crates.FrontendBundleWitnessTCpChanged`
+instantiates the same theorems where constant-phi removal changes the compiled function.
 -/
 
 namespace Crates.FrontendBundleWitnessTCp

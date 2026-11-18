@@ -40,7 +40,8 @@ import FV.Front.ExeTCp
 #print axioms Link.CpSourceWitness.correct_sourceCp_applies -- witness: native_decide
 
 -- #1088: the typed frontend theorems through constant-phi removal (lean-link names them on the
--- compileExeT route; witnesses: Crates.FrontendBundleWitnessTCp)
+-- compileExeT route; witnesses: Crates.FrontendBundleWitnessTCp, unchanged functions, and
+-- Crates.FrontendBundleWitnessTCpChanged, a function constant-phi removal changes, in crate-proofs/)
 #print axioms Front.placedFrom_cp_funcs
 #print axioms Front.bundle_correct_sourceTCp
 #print axioms Front.bundle_correct_source_peakTCp
