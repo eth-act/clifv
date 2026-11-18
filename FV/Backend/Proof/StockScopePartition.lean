@@ -9,9 +9,11 @@ semantics and execution of the retained closure are separate obligations. -/
 def sourceClosureRoots : List Rule := (program.rulesOf TId.lower).filter closureRoot
 def excludedSourceRoots : List Rule := (program.rulesOf TId.lower).filter (fun r => !closureRoot r)
 /-- Kernel evaluation of the real generated rule list gives the exact
-partition; these numbers are not whole-driver execution-proof coverage. -/
+partition; these numbers are not whole-driver execution-proof coverage.
+#35: 193/324 with the `fcopysign` root (the 192/325 form is false:
+`FloatCopysignWitness.stock_source_root_partition_counts_old_false`). -/
 theorem stock_source_root_partition_counts : (program.rulesOf TId.lower).length = 517 ∧
-    sourceClosureRoots.length = 192 ∧ excludedSourceRoots.length = 325 := by
+    sourceClosureRoots.length = 193 ∧ excludedSourceRoots.length = 324 := by
   rw [sourceClosureRoots,excludedSourceRoots,show TId.lower = 686 from rfl,data_program.r686]
   decide +kernel
 /-- Every actual selected ordinary source root belongs to the remaining real
@@ -27,10 +29,12 @@ The float ↔ integer conversion roots (`IselFloatCvt`, #140: `fcvt_from_{s,u}in
 `fcvt_to_{s,u}int_sat`, 16 rules) are part of the source-closure root set
 (the 166→182 bump); the eight `ceil`/`floor`/`trunc`/`nearest` roots (`IselFloatRound`,
 #35: rules 567…603) bring it to 190 (excluded 335→327), and the two `fcmp` roots
-(`IselFloatCmp`, #35: rules 1283 and 2176) to 192 (excluded 327→325). -/
+(`IselFloatCmp`, #35: rules 1283 and 2176) to 192 (excluded 327→325), and the `fcopysign` root
+(`IselFloatCopysign`, #35: rule 685) to 193 (excluded 325→324; the 192/325 forms are false:
+`FloatCopysignWitness.stock_source_root_partition_witness_old_false`). -/
 theorem stock_source_root_partition_witness : rule_lower_53 ∈ sourceClosureRoots ∧
     rule_lower_58 ∈ excludedSourceRoots ∧ (program.rulesOf TId.lower).length = 517 ∧
-    sourceClosureRoots.length = 192 ∧ excludedSourceRoots.length = 325 := by
+    sourceClosureRoots.length = 193 ∧ excludedSourceRoots.length = 324 := by
   refine ⟨?_,?_,stock_source_root_partition_counts⟩
   · rw [sourceClosureRoots,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel
   · rw [excludedSourceRoots,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel
