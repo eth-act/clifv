@@ -55,7 +55,9 @@ def leAll : List FA → List FA → Bool
 
 /-! ## Transfer functions -/
 
-/-- Extern extractors whose outputs hold no register, value, instruction nor MInst data. -/
+/-- Extern extractors whose outputs hold no register, value, instruction nor MInst data.
+#35: `shuffle32_from_imm`/`shuffle64_from_imm` (lane indices of a shuffle immediate, reached by
+`lower_fmla`'s vector rules of the `fma` closure; `externExtract` does not model them). -/
 def clean0Ext : List TermId :=
   [TId.value_type, TId.i64_from_iconst, TId.little_or_native_endian, TId.u64_from_imm64,
    TId.nonzero_u64_from_imm64, TId.imm12_from_u64, TId.i32_from_i64, TId.u8_from_u64,
@@ -63,7 +65,7 @@ def clean0Ext : List TermId :=
    TId.block_array_2, TId.func_ref_data, TId.multi_lane, TId.dynamic_lane, TId.not_i64x2,
    TId.use_lse, TId.use_dotprod, TId.use_i8mm, TId.sign_return_address_disabled, TId.tls_model,
    TId.exception_sig, TId.offset32, TId.u32_from_ieee32, TId.u64_from_ieee64, TId.u16_from_u32,
-   TId.u32_from_u64, TId.u64_low32_bits_unset]
+   TId.u32_from_u64, TId.u64_low32_bits_unset, TId.shuffle32_from_imm, TId.shuffle64_from_imm]
 
 /-- Extern extractors whose outputs are CLIF values or instructions reached from input values. -/
 def valueExt : List TermId :=

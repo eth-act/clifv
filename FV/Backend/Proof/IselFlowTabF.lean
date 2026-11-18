@@ -238,8 +238,21 @@ def flowTabCS : Tab :=
    (511, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (372, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
+/-- Chunk of `flowTab` for the #35 `fma` roots (`IselFloatFma`): `fmadd` 693, `fnmadd` 694,
+`fmsub` 695, `fnmsub` 696, `fpu_rrrr` 369, and the vector rules' `lower_fmla` 697 /
+`vec_rrr_mod` 365 / `vec_fmla_elem` 366 (every rule of a table term is checked). -/
+def flowTabFM : Tab :=
+  [(693, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (694, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (695, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (696, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (369, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (697, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (365, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (366, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
+
 /-- The summary table. -/
-def flowTab : Tab := flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ flowTab15 ++ flowTabCS
+def flowTab : Tab := flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ flowTab15 ++ flowTabCS ++ flowTabFM
 
 set_option maxRecDepth 100000 in
 theorem flowTab0_ok :
@@ -343,11 +356,17 @@ theorem flowTabCS_ok :
       true := by
   decide +kernel
 
+set_option maxRecDepth 100000 in
+theorem flowTabFM_ok :
+    flowTabFM.all (fun e => (program.rulesOf e.1).all (aRule program flowTab false e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
 /-- Every rule of every term of `flowTab` checks. -/
 theorem flowTab_ok : chkTab program flowTab false = true := by
   unfold chkTab
-  show (flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ flowTab15 ++ flowTabCS).all
+  show (flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ flowTab15 ++ flowTabCS ++ flowTabFM).all
     (fun e => (program.rulesOf e.1).all (aRule program flowTab false e.2.1 e.2.2)) = true
-  simp only [List.all_append, flowTab0_ok, flowTab1_ok, flowTab2_ok, flowTab3_ok, flowTab4_ok, flowTab5_ok, flowTab6_ok, flowTab7_ok, flowTab8_ok, flowTab9_ok, flowTab10_ok, flowTab11_ok, flowTab12_ok, flowTab13_ok, flowTab14_ok, flowTab15_ok, flowTabCS_ok, Bool.and_self]
+  simp only [List.all_append, flowTab0_ok, flowTab1_ok, flowTab2_ok, flowTab3_ok, flowTab4_ok, flowTab5_ok, flowTab6_ok, flowTab7_ok, flowTab8_ok, flowTab9_ok, flowTab10_ok, flowTab11_ok, flowTab12_ok, flowTab13_ok, flowTab14_ok, flowTab15_ok, flowTabCS_ok, flowTabFM_ok, Bool.and_self]
 
 end Backend.Proof.Flow
