@@ -1136,6 +1136,100 @@ def repAt (af : AFunc) (own : Label → Bool) (L : Array Line) : Nat → Label �
      | some x => repAt af own L fuel x j
      | none => false)
 
+/-- `repAt`'s scan of the label lines from `j` on for block `t`'s own label line (`fuel`
+bounds it). -/
+def repScan (L : Array Line) : Nat → Label → Nat → Bool
+  | 0, _, _ => false
+  | fuel + 1, t, j =>
+    match L[j]? with
+    | some (.label (.block l)) => l == t || repScan L fuel t (j + 1)
+    | some (.label _) => repScan L fuel t (j + 1)
+    | _ => false
+
+/-- `repAt` as the compiler runs it (`repAt_eq_chain`, `@[csimp]`, #1074): follow `s`'s
+forwarding chain once and scan the label lines from `j` at each block of the chain that may
+represent itself. `repAt` branches into both the next label line and the forwarding target at
+every step, so a query that fails walks every interleaving of a forwarding chain with a run of
+label lines: exponential in their lengths (crypto-bigint's `traits::tests::test_*`, 2,228 to
+10,201 instructions, ran for hours in `AFunc.fwd?`). Here a query costs the chain's length
+times the run's. -/
+def repChain (af : AFunc) (own : Label → Bool) (L : Array Line) : Nat → Label → Nat → Bool
+  | 0, _, _ => false
+  | fuel + 1, s, j =>
+    match af.fwd? s with
+    | some x => (own s && repScan L (fuel + 1) s j) || repChain af own L fuel x j
+    | none => repScan L (fuel + 1) s j
+
+theorem repScan_label {L : Array Line} {j : Nat} {lb : Lbl} (h : L[j]? = some (.label lb))
+    (fuel : Nat) (t : Label) (ht : repScan L fuel t (j + 1) = true) :
+    repScan L (fuel + 1) t j = true := by
+  cases lb <;> simp [repScan, h, ht]
+
+theorem repChain_label {af : AFunc} {own : Label → Bool} {L : Array Line} {j : Nat} {lb : Lbl}
+    (h : L[j]? = some (.label lb)) :
+    ∀ (fuel : Nat) (x : Label), repChain af own L fuel x (j + 1) = true →
+      repChain af own L (fuel + 1) x j = true
+  | 0, _, hx => by simp [repChain] at hx
+  | fuel + 1, x, hx => by
+    cases hf : af.fwd? x with
+    | none =>
+      simp only [repChain, hf] at hx ⊢
+      exact repScan_label h _ x hx
+    | some y =>
+      simp only [repChain, hf, Bool.or_eq_true, Bool.and_eq_true] at hx ⊢
+      rcases hx with ⟨ho, hs⟩ | hc
+      · exact .inl ⟨ho, repScan_label h _ x hs⟩
+      · exact .inr (repChain_label h fuel y hc)
+
+theorem repChain_none {af : AFunc} {own : Label → Bool} {L : Array Line} {s : Label}
+    (hs : af.fwd? s = none) (fuel j : Nat) : repChain af own L fuel s j = repScan L fuel s j := by
+  cases fuel <;> simp [repChain, repScan, hs]
+
+/-- Under a label line at `j`, a block `s` forwarding to `x` that may represent itself:
+`repAt`'s step to line `j + 1` at `s` adds nothing to `repScan` beyond the step to `x`. -/
+theorem repChain_own {af : AFunc} {own : Label → Bool} {L : Array Line} {s x : Label} {j : Nat}
+    {lb : Lbl} (hs : af.fwd? s = some x) (ho : own s = true) (h : L[j]? = some (.label lb))
+    (fuel : Nat) :
+    (repChain af own L fuel s (j + 1) || repChain af own L fuel x j) =
+      (repScan L fuel s (j + 1) || repChain af own L fuel x j) := by
+  cases fuel with
+  | zero => simp [repChain, repScan]
+  | succ g =>
+    have hstep := repChain_label (af := af) (own := own) h g x
+    generalize repChain af own L (g + 1) x j = c at *
+    simp only [repChain, hs, ho, Bool.true_and]
+    generalize repScan L (g + 1) s (j + 1) = a at *
+    generalize repChain af own L g x (j + 1) = b at *
+    cases a <;> cases b <;> cases c <;> simp_all
+
+theorem repAt_eq_repChain (af : AFunc) (own : Label → Bool) (L : Array Line) :
+    ∀ fuel s j, repAt af own L fuel s j = repChain af own L fuel s j
+  | 0, _, _ => rfl
+  | fuel + 1, s, j => by
+    have ih := repAt_eq_repChain af own L fuel
+    cases hs : af.fwd? s with
+    | none =>
+      simp only [repAt, repChain, repScan, hs, ih, repChain_none hs, Option.isNone_none,
+        Bool.true_or, Bool.true_and, Bool.or_false]
+    | some x =>
+      simp only [repAt, repChain, repScan, hs, ih, Option.isNone_some, Bool.false_or]
+      cases ho : own s with
+      | false => simp
+      | true =>
+        simp only [Bool.true_and]
+        cases hj : L[j]? with
+        | none => simp
+        | some ln =>
+          cases ln with
+          | label lb =>
+            have hown := repChain_own hs ho hj fuel
+            cases lb <;> simp only [Bool.or_assoc, hown]
+          | _ => simp
+
+@[csimp] theorem repAt_eq_chain : @repAt = @repChain := by
+  funext af own L fuel s j
+  exact repAt_eq_repChain af own L fuel s j
+
 /-- A branch to `l'` reaches block `s`: `l'` is a block label whose line (`idx`) represents `s`
 (`rep`). -/
 def repLbl (rep : Label → Nat → Bool) (idx : LabelIdx) (s : Label) (l' : Lbl) :
@@ -1517,6 +1611,27 @@ def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
     if let .ins _ (some code) := ln then traps := traps.push ⟨off, code⟩
     off := off + ln.size
   pure { name := af.name, k, lines, size := off, traps := traps.toList, alias := emitAlias k af }
+
+/-- `emitFunc` as the compiler runs it (`emitFunc_eq_fast`, `@[csimp]`, #1074): `emitPre` and
+`emitAlias` each compute `emitPlan` (the `MachBuffer` simulation and its branch check); here it
+is computed once. -/
+def emitFuncFast (k : Nat) (af : AFunc) : Except String FnAsm := do
+  let p ← emitPlan k af
+  let pre := p.lines.toArray.toList
+  let body := relaxLines (relaxOf pre) pre
+  let pool := poolLines (poolUses body) (body.foldl (· + ·.size) 0)
+  let lines := (body ++ pool).toArray
+  let mut off := 0
+  let mut traps : Array TrapSite := #[]
+  for ln in lines do
+    if let .ins _ (some code) := ln then traps := traps.push ⟨off, code⟩
+    off := off + ln.size
+  pure { name := af.name, k, lines, size := off, traps := traps.toList, alias := p.alias }
+
+@[csimp] theorem emitFunc_eq_fast : @emitFunc = @emitFuncFast := by
+  funext k af
+  unfold emitFunc emitFuncFast emitPre emitAlias
+  cases emitPlan k af <;> rfl
 
 /-! ## Assembly text (GNU/LLVM syntax) -/
 

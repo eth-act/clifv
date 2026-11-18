@@ -35,8 +35,9 @@ Executables run under qemu-aarch64-static. After a build the report is in target
                       dependencies) with traps (proof that the tests run the Lean code; separate
                       target dir)
   --keep-temps        keep the per-codegen-unit work directories (target/fv/<mode>/tmp)
-  --no-binary-check   skip the per-executable binary check (E2E.Binary.binary_correct: the
-                      executable's code, data and symbols checked against the proven program)
+  --no-binary-check   skip the per-executable binary check (the executable's code, data,
+                      symbols, code map and GOT slots checked against the proven program; the
+                      theorem link-check names, e.g. E2E.ReturnPinExecBytes.binary_correct_exec_proven)
   --lean-link         the Lean linker writes the Lean-compiled code of every executable (L2b,
                       docs/research/lean-linker.md): placed as one region (`.text.fvlean`) and
                       compiled, relocated and written by `lake exe lean-link`
@@ -69,6 +70,11 @@ Executables run under qemu-aarch64-static. After a build the report is in target
                       report counts the std crates separately; separate target dir
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json
+
+FV_FN_TIME_LIMIT=N: watchdog on one function's lean-backend run, in seconds (default 7200; 0 or
+off: none). A function over it fails the build with its name (never a fallback: what is verified
+must not depend on the machine's load); skip it with [package.metadata.fv] skip = [\"…\"] or
+FV_SKIP, or report it.
 
 `cargo fv link-proof` (after a build with --keep-temps): the input of the crate-level linking
 theorem for one executable's Lean-compiled functions, checked by `lake exe link-check`
@@ -423,6 +429,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         lean_link_verified: verified,
         lean_ld,
         pkg_skip,
+        fn_time_limit: cargo_fv::config::parse_fn_time_limit(std::env::var("FV_FN_TIME_LIMIT").ok().as_deref())
+            .unwrap_or_else(|e| die(&e)),
     };
     let wrapper = std::env::current_exe()
         .ok()

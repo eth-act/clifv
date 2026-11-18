@@ -31,6 +31,39 @@ def exnOkT (f g : Function) (cert : Cert) : Bool :=
   exnOk f g cert &&
     f.blocks.all fun b => g.blocks.all fun b' => termExnOkT ⟨f, g, cert⟩ b.term b'.term
 
+/-! ### `exnOkT` as the compiler runs it (#1074)
+
+`termExnOkT` evaluates `termOk` for every pair of `try_call_indirect` terminators, which recomputes
+`C.T0` (`maxValueId`) and the two `freshValue`s (passes over the whole function): the cost
+`exnOk` had (`exnOk_eq_F`). `exnOkTF` computes the three once per function, for both loops
+(`termOkF`); `exnOkT_eq_F` (`@[csimp]`) proves it equal. -/
+
+/-- `termExnOkT` with `C.T0`, `C.f.freshValue` and `C.g.freshValue` given (`t0`, `ff`, `gf`). -/
+def termExnOkTF (C : Ctx) (t0 ff gf : Nat) : Terminator → Terminator → Bool
+  | .tryCallIndirect c args et, .tryCallIndirect c' args' et' =>
+    !termOkF C t0 ff gf (.tryCallIndirect c args et) [] (.tryCallIndirect c' args' et') ||
+      itemsOk C et.items et'.items
+  | _, _ => true
+
+theorem termExnOkT_eq_F (C : Ctx) (t t' : Terminator) :
+    termExnOkT C t t' = termExnOkTF C C.T0 C.f.freshValue C.g.freshValue t t' := by
+  cases t <;> cases t' <;> rfl
+
+/-- `exnOkT` as the compiler runs it (`exnOkT_eq_F`, `@[csimp]`): `T0` and the two `freshValue`s
+once per function. -/
+def exnOkTF (f g : Function) (cert : Cert) : Bool :=
+  let C : Ctx := ⟨f, g, cert⟩
+  let t0 := C.T0
+  let ff := f.freshValue
+  let gf := g.freshValue
+  ((f.blocks.all fun b => g.blocks.all fun b' => termExnOkF C t0 ff gf b.term b'.term) &&
+    g.blocks.all fun b' => !isReturnCall b'.term) &&
+  f.blocks.all fun b => g.blocks.all fun b' => termExnOkTF C t0 ff gf b.term b'.term
+
+@[csimp] theorem exnOkT_eq_F : @exnOkT = @exnOkTF := by
+  funext f g cert
+  simp only [exnOkT, exnOkTF, exnOk, termExnOk_eq_F, termExnOkT_eq_F]
+
 /-! ## Spec -/
 
 theorem exnOkT_exnOk {f g : Function} {cert : Cert} (h : exnOkT f g cert = true) :

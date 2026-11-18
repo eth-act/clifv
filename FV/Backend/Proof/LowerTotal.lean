@@ -110,6 +110,18 @@ def driverInB (f : Clif.Function) : Bool :=
   aapcsConv f.sig.callConv && decide (f.sig.returns.length ≤ 8) &&
   f.blocks.all fun B => B.body.all (stmtInB f) && termInB f B.term
 
+/-- `driverInB` as the compiler runs it (`driverInB_eq_F`, `@[csimp]`, #1074): the declared `i64`
+values (`ptrSet`) once per function, not `valTysOf f` at every `load` and `store`. -/
+def driverInBF (f : Clif.Function) : Bool :=
+  let ps := ptrSet f
+  aapcsConv f.sig.callConv && decide (f.sig.returns.length ≤ 8) &&
+  f.blocks.all fun B => B.body.all (stmtInBW f (ps.contains ·)) && termInB f B.term
+
+@[csimp] theorem driverInB_eq_F : @driverInB = @driverInBF := by
+  funext f
+  simp only [driverInB, driverInBF, ptrSet_contains]
+  rfl
+
 /-! ## Loops -/
 
 /-- A loop whose body yields on every element, keeping an invariant indexed by the number of

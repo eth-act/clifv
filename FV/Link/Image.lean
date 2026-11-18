@@ -2,6 +2,7 @@ import FV.Link.Layout
 import FV.Link.Reloc
 import FV.E2E.Elf
 import FV.E2E.CodeMap
+import FV.E2E.LinkScopeFast
 
 /-! # Writing the program part into the executable (L2b)
 
@@ -26,6 +27,24 @@ section `.text.fvlean`); `leanLink S file0` writes the program part's bytes over
   for the program's functions this is that rust-lld put them at their placement, through which
   the outside part calls them).
 -/
+
+namespace Link
+
+open E2E.LinkCheck in
+/-- `LinkSpec.input0` with the CLIF image's symbols looked up in a hash map of the link map
+(`input0_eq_fast`, `@[csimp]`): `List.lookup` per symbol name is quadratic in the program. -/
+def LinkSpec.input0Fast (S : LinkSpec) : LinkInput :=
+  let a := S.addrs
+  let m := assocMap a
+  { funcs := S.funcs, addrs := a, syms := S.symNames.filterMap fun n => m[n]?.map (n, ·),
+    raStar := S.R + S.size, D := 0, aliases := [], fallback := true }
+
+open E2E.LinkCheck in
+@[csimp] theorem LinkSpec.input0_eq_fast : @LinkSpec.input0 = @LinkSpec.input0Fast := by
+  funext S
+  simp only [LinkSpec.input0, LinkSpec.input0Fast, assocMap_get]
+
+end Link
 
 namespace Link
 
@@ -130,13 +149,6 @@ objects `D` in place (`dataFastB`, i.e. `dataB`), the symbol table (`symsOkB`). 
 def outsideOkB (I : LinkInput) (D : List Clif.DataObject) (file : ByteArray) : Bool :=
   let ex : Excerpt := [(0, file)]
   hdrB ex && dataFastB I D ex && symsOkB I file
-
-/-- `l.map f`, each element in its own task (`parMap_eq`). -/
-def parMap {α β : Type} (f : α → β) (l : List α) : List β :=
-  (l.map fun x => Task.spawn fun _ => f x).map Task.get
-
-theorem parMap_eq {α β : Type} (f : α → β) (l : List α) : parMap f l = l.map f := by
-  simp only [parMap, List.map_map]; rfl
 
 /-- `LinkInput.resultsT`, the functions compiled in parallel (`parResultsT_eq`). -/
 def parResultsT (I : LinkInput) : Res :=

@@ -988,6 +988,37 @@ and the backend (the switch is #990 part 5; translation validation: an untrusted
   `S.cp`'s program from an entry (e.g. any route theorem's `ExecRefines` at `S.cp`) holds for every
   run of `S`'s program from the entry with the same registers, slots and memory; `withSizes_cp`.
   Witness: `Link.ConstPhiExeWitness.source_returns`.
+* **The bundle's program** (#1052, `FV/Link/CpSource.lean`): `FnInput.cp` prints a changed
+  function after the `i128` legalisation, so the source program of `S.cp` (`LinkInput.srcProg`)
+  is not the bundle's, and is outside `SrcScopeB` where a changed and an unchanged function meet
+  at an `i128` signature (`declSigB`; shape: `Link.ConstPhiSrcScopeWitness`). For inputs `I0`,
+  `I` with `I.funcs = I0.funcs.map FnInput.cp`: `LinkInput.cpRel` (`OptRel I0.prog I.prog`),
+  `srcCtx_cp` (`ProgCtx I0.srcProg` from `SrcScopeB I0` and `I.prog`'s linked-system facts),
+  **`cpSource`** / **`cpSource_depth`** (a source run of `I0` that returns or traps without a
+  load/store trap is a run of `I.prog` from the compiled function's entry on the ABI-split
+  arguments, with the split results and the same memory; keeping the call depth). Composed with
+  each route that `lean-link` names a source theorem for, under new names (premises `hcp :
+  S.funcs = I0.funcs.map FnInput.cp`, `hsrc : SrcScopeB I0`, `hkeep : Opt.EnvKeepsSymbols B.env`):
+  `Link.ReturnPinCompilerWith.attempt_correct_source{,_peak}Cp`,
+  `Link.SemanticCompilerWith.attempt_correct_source{,_peak}Cp`,
+  `Link.TypedCompilerWith.attempt_correct_source{,_peak}Cp`,
+  `Link.{,DeadCleanup.}compileExe_correct_source{,_peak}Cp`,
+  `Link.DeadCleanup.compileExe_correct_source{,_peak}_okTCp`,
+  `Link.DeadCleanup.compileExeT_correct_source{,_peak}Cp`,
+  `Link.{,DeadCleanup.}compileExeOpt_correct_source{,_peak}Cp`. `lean-link --verified` requires
+  `SrcScopeB` of the bundle's program only and names these. Witness:
+  `Link.CpSourceWitness.correct_sourceCp_applies` (two functions at an `i128` declaration, one
+  changed by constant-phi removal, on the ABI-aware route). Audit: `scripts/audit/cp-source.lean`.
+* **The frontend theorems on the typed route** (#1088, `FV/Front/CoverageT.lean`):
+  `Front.bundle_correct_rawT{,_peak}` take `buildSpec b = .ok S` and `compileExeT S file0 = .ok
+  file`, i.e. the bundle's own spec; `lean-link` compiles `DeadCleanup.placedPar S0.cp`, which is
+  `buildSpec` of no bundle when constant-phi removal changes a function. On the `compileExeT`
+  route `lean-link` therefore names them only when `Front.rawTNamed` holds: no function changed,
+  `buildSpec` of the bundle read with the placed sizes is (decided, `DecidableEq`) the spec
+  compiled, and that spec is in `SrcScopeB`; `Front.rawTNamed_premises` turns this into the
+  premises `hb` and `hsrc`. Otherwise its coverage line says `cg_clif's program: no Front theorem
+  is named (…)` with the reason. Test: `Crates.FrontendBundleCoverageT` (the three cases on a
+  real bundle). The theorems composing the frontend with `Link.cpSource` are not yet stated.
 
 ### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
 
@@ -2812,6 +2843,50 @@ concrete arguments, as `backend_correct_program_witness` does for `f 41`); the w
 
 PLAN.md §4 "M9": a guarantee about the executable file `cargo fv` produces. Each item has its
 subsection.
+
+#### What `cargo fv`'s binary check establishes (#1092, #1093)
+
+`cargo fv build`'s per-executable binary check runs `link-check --prune` on the executable's
+bundle. `link-check` takes the functions as `lean-backend` compiled them (constant-phi removal,
+the routes recovered from the bytes), selects a checker and decides, for the (pruned) program
+and the file, every premise of one executable-word theorem that is a fact about the program or
+the file, and prints the theorem (`theorem:`, `FVTest/E2E/BinVerdict.lean`) only when all hold:
+
+| `checker:` | decided premises (output line) | theorem (`_peak_` sibling for functions reaching a call cycle) |
+|---|---|---|
+| `integer` | `ReturnPinStackBound.okB` (`okB:`), `BinOkWithResults` (`binary:`), `codeMapB` (`code map:`), `SemanticExecBytes.GotOk` (`GOT:`), the stack bound (`stack:`) | `E2E.ReturnPinExecBytes.binary_correct_exec_proven` (`…_peak_proven`) |
+| `typed Stock (okRWithTS)` | `SemanticStackBound.okBTS`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk`, stack | `E2E.SemanticExecBytes.binary_correct_exec_provenTS` (`…_peak_provenTS`) |
+| `typed (okBCleanupT)` | `okBCleanupT`, `DeadCleanupBinCheck.BinOk`, `codeMapB`, `DeadCleanupExecBytes.GotOk`, stack | `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT` (`…_peak_provenT`) |
+
+`GotOk` is decided by `E2E.GotTab.gotTabB` on the whole file (`SemanticExecBytes.gotTabB_sound`,
+`DeadCleanupExecBytes.gotTabB_sound`: the slots of the GOT pairs whose second word is an `ldr`;
+`gotB` also checks the "slot" of a pair the linker relaxed to `adrp`/`add`, which `GotSlot` does
+not contain). A failing premise is `not verified: …` and `link-check` exits 1. Until #1092 the
+verdict named `E2E.Binary.binary_correct` for `checker: integer`, a theorem about the baseline
+pipeline's results (`E2E.LinkCheck.okB`), which this checker does not decide; and `codeMapB` was
+printed but not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdictTest` checks
+that every name exists and the verdicts; `scripts/bin-check-got-mutation.py` that a file whose
+GOT slots are writable is not verified.
+
+**`verified: <theorem>` is not unconditional.** The named theorem keeps these hypotheses, which
+are about the code outside the program and about a run, and which no tool decides:
+
+* `BaseOk (sys I B)`: the base environment (std, musl, fallback functions, TLS) meets the
+  contracts of the calls out of the program (`LinkSys.Ok`'s base premises, `FV/E2E/LinkCheck.lean`).
+* `HooksSim I B`: that outside code and the TLS sequence compute their effect from the registers
+  and the bytes outside the program's relocated words (`FV/E2E/*ExecStatic.lean`).
+* `Image.Intact r`: the machine state holds the executable's kept bytes (the loader mapped the
+  segments at their link addresses; read-only segments and relocation-read-only data unwritten).
+* `OutsideCall I roB f N r args cm`: the caller calls `f` per AAPCS64 with `args`, `N` bytes of
+  free stack, a return address outside the program, its CLIF-visible memory `cm` related to the
+  machine's (`FV/E2E/*Binary.lean`).
+* `OutsideAvoids (GotSlot I file) f N r args cm`: the GOT slots are not in the caller's free
+  stack, a stack argument, or a live CLIF allocation.
+* `ClifRun I B f r args cs`: the reference CLIF run starts from the state `cs` that corresponds
+  to `r` (arguments, memory, symbols).
+* `TrapsExplicit …`: the CLIF run traps only at explicit trap instructions (no stuck access).
+* `Clif.DepthLe … d cs` (`_peak_` theorems only): the CLIF run's call depth is at most `d`;
+  the caller provides `frameDrop + (D * d + pbMax)` bytes of stack (`OutsideCall`'s `N`).
 
 #### Code bytes, data objects, GOT and symbols (items 1–2; 2026-10-05, `agent/bin-bytes`)
 

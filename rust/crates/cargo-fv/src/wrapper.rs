@@ -245,8 +245,9 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
     }
 }
 
-/// Process CGU objects in place, appending to the report.
-fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitReport) -> Vec<bool> {
+/// Process CGU objects in place, appending to the report; the errors that fail the build
+/// (`CguResult::fatal`) go to `fatal`.
+fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitReport, fatal: &mut Vec<String>) -> Vec<bool> {
     let mut changed = Vec::new();
     // cg_clif writes no CLIF dump dir when the unit has no functions (e.g. a macro-only
     // crate like cfg-if): no dumps to process, every text symbol keeps cg_clif's code.
@@ -283,6 +284,7 @@ fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitRep
         if let Some(e) = res.error {
             r.cgu_errors.push(format!("{name}: {e}"));
         }
+        fatal.extend(res.fatal);
         r.functions.extend(res.functions);
         changed.push(res.changed);
     }
@@ -290,7 +292,7 @@ fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitRep
     changed
 }
 
-fn process_rlib(cfg: &Config, m: &UnitMeta, rlib: &Path) -> UnitReport {
+fn process_rlib(cfg: &Config, m: &UnitMeta, rlib: &Path, fatal: &mut Vec<String>) -> UnitReport {
     let mut r = new_report(cfg, m, rlib);
     let tmp = cfg.tmp_dir.join(format!("rlib-{}", pipeline::tag_of(&m.unit)));
     let _ = fs::remove_dir_all(&tmp);
@@ -319,7 +321,7 @@ fn process_rlib(cfg: &Config, m: &UnitMeta, rlib: &Path) -> UnitReport {
             return Err(format!("llvm-ar x {} failed", rlib.display()));
         }
         let objs: Vec<PathBuf> = members.iter().map(|n| tmp.join(n)).collect();
-        let changed = process_objects(cfg, m, &objs, &mut r);
+        let changed = process_objects(cfg, m, &objs, &mut r, fatal);
         let upd: Vec<&PathBuf> = objs.iter().zip(changed).filter(|(_, c)| *c).map(|(o, _)| o).collect();
         if !upd.is_empty() {
             let st = Command::new(&cfg.ar).arg("r").arg(rlib).args(&upd).status().map_err(|e| e.to_string())?;
@@ -406,14 +408,21 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
     }
     if !inv.links {
         let rlib = inv.out_dir.join(format!("lib{}.rlib", inv.unit));
+        let mut fatal = Vec::new();
         let r = if rlib.exists() {
-            process_rlib(&cfg, &meta, &rlib)
+            process_rlib(&cfg, &meta, &rlib, &mut fatal)
         } else {
             let mut r = new_report(&cfg, &meta, &rlib);
             r.cgu_errors.push(format!("{} not found", rlib.display()));
             r
         };
         write_report(&cfg, &r);
+        if !fatal.is_empty() {
+            for e in &fatal {
+                eprint_fv(e);
+            }
+            return 1;
+        }
     }
     code
 }
@@ -676,8 +685,15 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
         .filter(|p| p.file_name().is_some_and(|n| n.to_string_lossy().starts_with(&prefix)))
         .collect();
     let mut r = new_report(&cfg, &meta, &output);
-    process_objects(&cfg, &meta, &objs, &mut r);
+    let mut fatal = Vec::new();
+    process_objects(&cfg, &meta, &objs, &mut r, &mut fatal);
     write_report(&cfg, &r);
+    if !fatal.is_empty() {
+        for e in &fatal {
+            eprint_fv(e);
+        }
+        return 1;
+    }
     // the link map attributes every function of the executable to its input object
     let _ = fs::create_dir_all(&cfg.tmp_dir);
     let map = cfg.tmp_dir.join(format!("link-{}.map", pipeline::tag_of(&output.display().to_string())));

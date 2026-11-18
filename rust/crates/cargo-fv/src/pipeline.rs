@@ -223,6 +223,8 @@ pub struct CguResult {
     pub changed: bool,
     /// The pipeline failed as a whole (all functions fall back).
     pub error: Option<String>,
+    /// An error that fails the build (a `lean-backend` run over `FV_FN_TIME_LIMIT`).
+    pub fatal: Option<String>,
 }
 
 /// data-export names `.LdataN` of the object `c_LdataN` (the dump directory is `c.clif`).
@@ -280,7 +282,7 @@ fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
 pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> CguResult {
     let syms = match read_syms(obj) {
         Ok(s) => s,
-        Err(e) => return CguResult { functions: vec![], changed: false, error: Some(e) },
+        Err(e) => return CguResult { functions: vec![], changed: false, error: Some(e), fatal: None },
     };
     let mut funcs: Vec<(String, Dump)> = index
         .by_symbol
@@ -412,18 +414,22 @@ fn compile_one(
         cmd.arg(input)
             .arg(out)
             .args(cfg.mode.backend_args())
-            .args(["--personality", "rust_eh_personality"]);
+            .args(["--personality", "rust_eh_personality"])
+            // `--lean-link` keeps cg_clif's code for an unverified function: one unverified
+            // before it is compiled is not compiled (#1074)
+            .args(cfg.lean_link.then_some("--skip-unverified"));
         // `--keep-temps`: keep the register allocator's answers next to the object (`cargo fv
         // link-proof` and `lean-link` rebuild the allocations from them in Lean): lean-backend
         // writes regalloc2's answers to `$FV_RA_OUT` (`FVTest/Backend/Main.lean`)
         if cfg.keep_link() {
             cmd.env(crate::linkproof::RA_OUT, out.with_extension("ra.json"));
         }
-        match cmd.output() {
-            Ok(o) => {
+        match output_with_limit(&mut cmd, cfg.fn_time_limit) {
+            Ok(Run::Done(o)) => {
                 drop(slot);
                 classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym, input)
             }
+            Ok(Run::TimedOut) => Compiled::TimedOut,
             Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
         }
     };
@@ -446,6 +452,55 @@ fn compile_one(
     c
 }
 
+/// The build's error for the function `instance` (object symbol `symbol`) whose `lean-backend`
+/// run exceeded `FV_FN_TIME_LIMIT` (`secs`).
+pub fn time_limit_error(secs: u64, symbol: &str, instance: &str) -> String {
+    format!(
+        "{instance} ({symbol}): lean-backend did not finish within FV_FN_TIME_LIMIT={secs} s; the build stops \
+         (a time limit is never a fallback: what is verified must not depend on the machine's load). \
+         Skip the function with `[package.metadata.fv] skip = [\"{symbol}\"]` or `FV_SKIP={symbol}`, \
+         raise FV_FN_TIME_LIMIT, or report it at https://github.com/eth-act/clifv/issues"
+    )
+}
+
+/// A `lean-backend` run: its output, or killed at the time limit.
+pub enum Run {
+    Done(std::process::Output),
+    TimedOut,
+}
+
+/// `cmd.output()`, killed (`SIGKILL`) after `limit_secs` seconds of wall time (0: no limit).
+/// A watchdog thread waits for the end of the run up to the limit and kills the process when
+/// it has not ended; the run counts as timed out only when the watchdog fired and the process
+/// died of that signal.
+pub fn output_with_limit(cmd: &mut Command, limit_secs: u64) -> std::io::Result<Run> {
+    use std::os::unix::process::ExitStatusExt;
+    use std::process::Stdio;
+    use std::sync::mpsc;
+    if limit_secs == 0 {
+        return cmd.output().map(Run::Done);
+    }
+    let child = cmd.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+    let pid = child.id().to_string();
+    let (done, ended) = mpsc::channel::<()>();
+    let watchdog = std::thread::spawn(move || {
+        // the child is not reaped before `done` is sent, so its pid cannot be reused meanwhile
+        if let Err(mpsc::RecvTimeoutError::Timeout) = ended.recv_timeout(std::time::Duration::from_secs(limit_secs)) {
+            let _ = Command::new("kill").args(["-KILL", &pid]).stdout(Stdio::null()).stderr(Stdio::null()).status();
+            return true;
+        }
+        false
+    });
+    let out = child.wait_with_output();
+    let _ = done.send(());
+    let fired = watchdog.join().unwrap_or(false);
+    let out = out?;
+    if fired && out.status.signal() == Some(9) {
+        return Ok(Run::TimedOut);
+    }
+    Ok(Run::Done(out))
+}
+
 /// `all`: every function of the CGU (the decoding input: the unit's declarations are read from
 /// all its dumps); `funcs`: the ones to compile.
 fn process_selected(
@@ -458,7 +513,7 @@ fn process_selected(
     funcs: Vec<(String, Dump)>,
 ) -> CguResult {
     if funcs.is_empty() {
-        return CguResult { functions: vec![], changed: false, error: None };
+        return CguResult { functions: vec![], changed: false, error: None, fatal: None };
     }
     let tag = tag_of(id);
     let work = cfg.tmp_dir.join(&tag);
@@ -472,8 +527,9 @@ fn process_selected(
         }
     }
     match r {
-        Ok((functions, changed)) => CguResult { functions, changed, error: None },
-        Err(e) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: Some(e) },
+        Ok((functions, changed)) => CguResult { functions, changed, error: None, fatal: None },
+        Err(CguFail::Fallback(e)) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: Some(e), fatal: None },
+        Err(CguFail::Fatal(e)) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: None, fatal: Some(e) },
     }
 }
 
@@ -565,6 +621,26 @@ fn trap_bodies(obj: &Path, names: &[String]) -> Result<(), String> {
 enum Compiled {
     Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool, clif: PathBuf },
     Fallback(String),
+    /// Killed at `FV_FN_TIME_LIMIT`: the build fails ([`time_limit_error`]).
+    TimedOut,
+}
+
+/// Why a codegen unit was not rewritten: a failure whose functions fall back, or an error that
+/// fails the build ([`CguResult::fatal`]).
+enum CguFail {
+    Fallback(String),
+    Fatal(String),
+}
+
+impl From<String> for CguFail {
+    fn from(e: String) -> CguFail {
+        CguFail::Fallback(e)
+    }
+}
+
+/// The fallback reason of a function `lean-backend` lists unverified (`u`) under `--lean-link`.
+fn kept_reason(u: &str) -> String {
+    format!("unverified ({u}): cg_clif's code kept under --lean-link")
 }
 
 fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, input: &Path) -> Compiled {
@@ -584,6 +660,15 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
     let mut outside_closure: Option<String> = None;
     let mut normal_returns = false;
     for l in stderr.lines() {
+        // `--skip-unverified`: the reason the compiled function would get, and its fallback
+        if let Some((_, rest)) = l.split_once(": not compiled (--skip-unverified), unverified (") {
+            let u = match rest.split_once("): ") {
+                Some(("validation budget", why)) => format!("validation budget: {why}"),
+                Some((_, why)) => why.to_string(),
+                None => rest.to_string(),
+            };
+            return Compiled::Fallback(kept_reason(&u));
+        }
         if l.contains(": compiled, verified for normal returns") {
             normal_returns = true;
         }
@@ -781,7 +866,7 @@ fn process_in(
     funcs: &[(String, Dump)],
     tag: &str,
     work: &Path,
-) -> Result<(Vec<FnReport>, bool), String> {
+) -> Result<(Vec<FnReport>, bool), CguFail> {
     // cg_clif's dumps of the CGU's functions: links to them, copies when `cargo fv link-proof`
     // reads them later (`--keep-temps`: the bundle names the dump each function was compiled
     // from, and cargo may rewrite the originals)
@@ -869,6 +954,7 @@ fn process_in(
         };
         match c {
             Compiled::Fallback(why) => report(Status::Fallback, Some(why), false),
+            Compiled::TimedOut => return Err(CguFail::Fatal(time_limit_error(cfg.fn_time_limit, sym, &d.instance))),
             Compiled::Ok { obj: o, unverified, normal_returns, clif } => {
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
@@ -883,7 +969,7 @@ fn process_in(
                 // keeps cg_clif's code (the outside part)
                 if bad.is_none() && cfg.lean_link {
                     if let Some(u) = &unverified {
-                        bad = Some(format!("unverified ({u}): cg_clif's code kept under --lean-link"));
+                        bad = Some(kept_reason(u));
                     }
                 }
                 match bad {
@@ -991,7 +1077,7 @@ fn process_in(
             let n = final_name(s);
             let (a, b) = (m.at.get(&n), m.at.get(&format!("{MARKER}{n}")));
             if a.is_none() || a != b {
-                return Err(format!("internal: after the merge `{n}` does not resolve to the Lean code"));
+                return Err(format!("internal: after the merge `{n}` does not resolve to the Lean code").into());
             }
         }
         let loc = work.join("localize.txt");
@@ -1029,4 +1115,124 @@ fn process_in(
             .map_err(|e| format!("{}: {e}", p.display()))?;
     }
     Ok((reports, true))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Instant;
+
+    fn test_config(root: &Path, limit: u64) -> Config {
+        Config {
+            root: root.to_path_buf(),
+            mode: Mode::Plain,
+            members: vec![],
+            members_only: false,
+            skip_deps: vec![],
+            report_dir: root.join("units"),
+            tmp_dir: root.join("tmp"),
+            rust_lld: "rust-lld".into(),
+            objcopy: "objcopy".into(),
+            ar: "ar".into(),
+            jobs: 1,
+            keep_temps: false,
+            bin_check: false,
+            trap_replaced: false,
+            lean_link: false,
+            lean_link_verified: false,
+            lean_ld: false,
+            pkg_skip: vec![],
+            fn_time_limit: limit,
+        }
+    }
+
+    /// #1074: a run over the limit is killed and reported as timed out, at the limit.
+    #[test]
+    fn run_over_the_limit_is_killed() {
+        let t = Instant::now();
+        let r = output_with_limit(Command::new("sleep").arg("30"), 1).unwrap();
+        assert!(matches!(r, Run::TimedOut));
+        assert!(t.elapsed().as_secs() < 10, "killed after {:?}", t.elapsed());
+    }
+
+    /// A run within the limit (or without one) gives its output.
+    #[test]
+    fn run_within_the_limit_is_kept() {
+        for limit in [0, 30] {
+            let r = output_with_limit(Command::new("sh").args(["-c", "echo out; echo err >&2; exit 3"]), limit).unwrap();
+            let Run::Done(o) = r else { panic!("limit {limit}: timed out") };
+            assert_eq!(String::from_utf8_lossy(&o.stdout), "out\n");
+            assert_eq!(String::from_utf8_lossy(&o.stderr), "err\n");
+            assert_eq!(o.status.code(), Some(3));
+        }
+    }
+
+    /// A process killed by someone else is not a time-limit fallback (its own failure).
+    #[test]
+    fn foreign_kill_is_not_a_timeout() {
+        let r = output_with_limit(Command::new("sh").args(["-c", "kill -KILL $$"]), 30).unwrap();
+        let Run::Done(o) = r else { panic!("timed out") };
+        assert!(!o.status.success());
+    }
+
+    /// A `lean-backend` that does not finish within `FV_FN_TIME_LIMIT` is killed at the limit and
+    /// the function is `TimedOut` (never a fallback: `process_in` turns it into the build's
+    /// error), whose message names the function and how to skip it.
+    #[test]
+    fn slow_backend_is_a_build_error() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = std::env::temp_dir().join(format!("cargo-fv-timelimit-{}", std::process::id()));
+        let bin = root.join(".lake/build/bin");
+        fs::create_dir_all(&bin).unwrap();
+        let backend = bin.join("lean-backend");
+        fs::write(&backend, "#!/bin/sh\nexec sleep 30\n").unwrap();
+        fs::set_permissions(&backend, fs::Permissions::from_mode(0o755)).unwrap();
+        let split = root.join("split");
+        let outdir = root.join("o");
+        fs::create_dir_all(&split).unwrap();
+        fs::create_dir_all(&outdir).unwrap();
+        fs::write(split.join("f.unopt.clif"), "function %f() {\nblock0:\n    return\n}\n").unwrap();
+        let syms = ObjSyms {
+            text: HashMap::new(),
+            defined: BTreeSet::new(),
+            local_count: HashMap::new(),
+            undefined: BTreeSet::new(),
+            at: HashMap::new(),
+        };
+        let d = Dump { stem: "f".into(), instance: "f".into() };
+        let t = Instant::now();
+        let c = compile_one(&test_config(&root, 1), &syms, &split, &outdir, 0, &d, "f");
+        assert!(t.elapsed().as_secs() < 10, "killed after {:?}", t.elapsed());
+        assert!(matches!(c, Compiled::TimedOut));
+        let e = time_limit_error(1, "_RNxC1a1f", "a::f::<u8>");
+        assert!(e.starts_with("a::f::<u8> (_RNxC1a1f): lean-backend did not finish within FV_FN_TIME_LIMIT=1 s"));
+        assert!(e.contains("skip = [\"_RNxC1a1f\"]") && e.contains("FV_SKIP=_RNxC1a1f"));
+        // the same function within the limit: lean-backend's own result
+        fs::write(&backend, "#!/bin/sh\necho 'lean-backend: x.clif: %f: unsupported: test' >&2\n").unwrap();
+        let c = compile_one(&test_config(&root, 30), &syms, &split, &outdir, 0, &d, "f");
+        assert!(matches!(&c, Compiled::Fallback(why) if why == "unsupported: test"));
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    /// #1074: a function `lean-backend --skip-unverified` did not compile falls back with the
+    /// reason the compiled function gets under `--lean-link`.
+    #[test]
+    fn skipped_unverified_keeps_the_reason() {
+        let root = std::env::temp_dir().join(format!("cargo-fv-skip-{}", std::process::id()));
+        let cfg = test_config(&root, 0);
+        let (out, input) = (root.join("f0.o"), root.join("f.unopt.clif"));
+        for (line, why) in [
+            (
+                "lean-backend: x.clif: %f: not compiled (--skip-unverified), unverified (validation budget): 9 instructions × values > 1, lowerCheck not run",
+                "validation budget: 9 instructions × values > 1, lowerCheck not run",
+            ),
+            (
+                "lean-backend: x.clif: %f: not compiled (--skip-unverified), unverified (outside backend_correct): i128 legalized (outside backend_correct: validation budget: 9 instructions × values > 1, Opt.Legal.checkW not run)",
+                "i128 legalized (outside backend_correct: validation budget: 9 instructions × values > 1, Opt.Legal.checkW not run)",
+            ),
+        ] {
+            let c = classify(&cfg, line, true, &out, "f", &input);
+            assert!(matches!(&c, Compiled::Fallback(r) if *r == kept_reason(why)), "{line}");
+        }
+    }
 }
