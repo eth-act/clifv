@@ -64,6 +64,58 @@ def stmtInB (f : Clif.Function) (s : Clif.Stmt) : Bool :=
   | .load _ _ _ p _ | .store _ _ _ _ p _ => (valTysOf f).contains (p, .i64)
   | _ => true
 
+/-! ### `stmtInB` as the compiler runs it (#1074)
+
+`stmtInB`'s `load`/`store` case recomputes `valTysOf f` (every statement's result types, with
+their callee and signature lookups) at every `load` and `store`: a function's size times its
+memory accesses (num-bigint's `bigint_scalar::test_scalar_div_rem` `check_sub`, 31,015
+instructions). `stmtInBW` takes the address test as an argument; the drivers' conditions
+(`driverInB`, `E2E.LinkCheck.driverInTCB`) pass `ptrSet f`, the declared `i64` values as a hash
+set built once per function (`ptrSet_contains`, `stmtInB_eq_W`). -/
+
+/-- `stmtInB` with the address test `ptr` (`stmtInB_eq_W`). -/
+def stmtInBW (f : Clif.Function) (ptr : Clif.ValueId → Bool) (s : Clif.Stmt) : Bool :=
+  (match s.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
+    | some tys => tys.length == s.results.length
+    | none => false) &&
+  match s.inst with
+  | .symbolValue _ gv => match f.globals.lookup gv with
+    | some (.symbol ..) => true
+    | _ => false
+  | .tlsValue _ gv => match f.globals.lookup gv with
+    | some (.tlsSymbol _ 0 _) => true
+    | _ => false
+  | .call fn _ => match f.extern? fn with
+    | some e => aapcsConv e.sig.callConv && sigIntB e.sig
+    | none => false
+  | .callIndirect sig _ _ => match f.sigDecls.lookup sig with
+    | some s => s.returns.all (eTy ·.ty) && sigIntB s
+    | none => false
+  | .load _ _ _ p _ | .store _ _ _ _ p _ => ptr p
+  | _ => true
+
+theorem stmtInB_eq_W (f : Clif.Function) (s : Clif.Stmt) :
+    stmtInB f s = stmtInBW f (fun p => (valTysOf f).contains (p, .i64)) s := rfl
+
+/-- The values `valTysOf f` declares `i64`, as a hash set. -/
+def ptrSet (f : Clif.Function) : Std.HashSet Clif.ValueId :=
+  Std.HashSet.ofList ((valTysOf f).filterMap fun (v, t) => if t == .i64 then some v else none)
+
+theorem ptrSet_contains (f : Clif.Function) (p : Clif.ValueId) :
+    (ptrSet f).contains p = (valTysOf f).contains (p, .i64) := by
+  rw [ptrSet, Std.HashSet.contains_ofList, Bool.eq_iff_iff, List.contains_iff_mem,
+    List.contains_iff_mem, List.mem_filterMap]
+  constructor
+  · rintro ⟨⟨v, t⟩, hm, h⟩
+    by_cases ht : t = .i64
+    · subst ht
+      simp only [beq_self_eq_true, ite_true, Option.some.injEq] at h
+      subst h
+      exact hm
+    · simp [ht] at h
+  · intro h
+    exact ⟨(p, .i64), h, by simp⟩
+
 /-! ## Loops that always yield -/
 
 /-- A loop whose body yields `g b a` on every element is the fold. -/

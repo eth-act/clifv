@@ -89,6 +89,33 @@ def driverInTCB (g : Clif.Function) : Bool :=
   aapcsConv g.sig.callConv && decide (g.sig.returns.length ≤ 8) &&
   g.blocks.all fun B => B.body.all (stmtInTCB g)
 
+/-- `stmtInTCB` with `stmtInB`'s address test `ptr` (`stmtInTCB_eq_W`). -/
+def stmtInTCBW (f : Clif.Function) (ptr : Clif.ValueId → Bool) (s : Clif.Stmt) : Bool :=
+  stmtInBW f ptr s || match s.inst with
+    | .call fn _ =>
+      (match s.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
+        | some tys => tys.length == s.results.length
+        | none => false) &&
+      (match f.extern? fn with
+        | some e => aapcsConv e.sig.callConv
+        | none => false)
+    | _ => false
+
+theorem stmtInTCB_eq_W (f : Clif.Function) (s : Clif.Stmt) :
+    stmtInTCB f s = stmtInTCBW f (fun p => (valTysOf f).contains (p, .i64)) s := rfl
+
+/-- `driverInTCB` as the compiler runs it (`driverInTCB_eq_F`, `@[csimp]`, #1074): the declared
+`i64` values (`ptrSet`) once per function (`driverInB_eq_F`). -/
+def driverInTCBF (g : Clif.Function) : Bool :=
+  let ps := ptrSet g
+  aapcsConv g.sig.callConv && decide (g.sig.returns.length ≤ 8) &&
+  g.blocks.all fun B => B.body.all (stmtInTCBW g (ps.contains ·))
+
+@[csimp] theorem driverInTCB_eq_F : @driverInTCB = @driverInTCBF := by
+  funext g
+  simp only [driverInTCB, driverInTCBF, ptrSet_contains]
+  rfl
+
 /-- **The run-time size decider of the typed-try_call scope's admission predicate** (#1057):
 `lowerFunction` succeeds and the prepared code meets the size condition `spillSizeOkB` (the
 spill allocation's code below `2 ^ 24` words, its literal loads in reach), decided on the
