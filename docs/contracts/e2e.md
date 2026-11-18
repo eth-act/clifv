@@ -2830,14 +2830,32 @@ the file, and prints the theorem (`theorem:`, `FVTest/E2E/BinVerdict.lean`) only
 `GotOk` is decided by `E2E.GotTab.gotTabB` on the whole file (`SemanticExecBytes.gotTabB_sound`,
 `DeadCleanupExecBytes.gotTabB_sound`: the slots of the GOT pairs whose second word is an `ldr`;
 `gotB` also checks the "slot" of a pair the linker relaxed to `adrp`/`add`, which `GotSlot` does
-not contain). A failing premise is `not verified: …` and `link-check` exits 1. The premises left
-are about runs: the base environment's contracts (`BaseOk`, `HooksSim`), the outside caller
-(`OutsideCall`, `OutsideAvoids`, `Image.Intact`), the CLIF run (`ClifRun`, `TrapsExplicit`) and,
-for the `_peak_` theorems, the stack of the run's call depth. Until #1092 the verdict named
-`E2E.Binary.binary_correct` for `checker: integer`, a theorem about the baseline pipeline's
-results (`E2E.LinkCheck.okB`), which this checker does not decide; and `codeMapB` was printed but
-not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdictTest` checks that every
-name exists and the verdicts.
+not contain). A failing premise is `not verified: …` and `link-check` exits 1. Until #1092 the
+verdict named `E2E.Binary.binary_correct` for `checker: integer`, a theorem about the baseline
+pipeline's results (`E2E.LinkCheck.okB`), which this checker does not decide; and `codeMapB` was
+printed but not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdictTest` checks
+that every name exists and the verdicts; `scripts/bin-check-got-mutation.py` that a file whose
+GOT slots are writable is not verified.
+
+**`verified: <theorem>` is not unconditional.** The named theorem keeps these hypotheses, which
+are about the code outside the program and about a run, and which no tool decides:
+
+* `BaseOk (sys I B)`: the base environment (std, musl, fallback functions, TLS) meets the
+  contracts of the calls out of the program (`LinkSys.Ok`'s base premises, `FV/E2E/LinkCheck.lean`).
+* `HooksSim I B`: that outside code and the TLS sequence compute their effect from the registers
+  and the bytes outside the program's relocated words (`FV/E2E/*ExecStatic.lean`).
+* `Image.Intact r`: the machine state holds the executable's kept bytes (the loader mapped the
+  segments at their link addresses; read-only segments and relocation-read-only data unwritten).
+* `OutsideCall I roB f N r args cm`: the caller calls `f` per AAPCS64 with `args`, `N` bytes of
+  free stack, a return address outside the program, its CLIF-visible memory `cm` related to the
+  machine's (`FV/E2E/*Binary.lean`).
+* `OutsideAvoids (GotSlot I file) f N r args cm`: the GOT slots are not in the caller's free
+  stack, a stack argument, or a live CLIF allocation.
+* `ClifRun I B f r args cs`: the reference CLIF run starts from the state `cs` that corresponds
+  to `r` (arguments, memory, symbols).
+* `TrapsExplicit …`: the CLIF run traps only at explicit trap instructions (no stuck access).
+* `Clif.DepthLe … d cs` (`_peak_` theorems only): the CLIF run's call depth is at most `d`;
+  the caller provides `frameDrop + (D * d + pbMax)` bytes of stack (`OutsideCall`'s `N`).
 
 #### Code bytes, data objects, GOT and symbols (items 1–2; 2026-10-05, `agent/bin-bytes`)
 
