@@ -170,8 +170,8 @@ composes them with that path: the Stock path (#1100: `legal_wide`/`pass` forms o
 `backend_correct_world_niX_semantic_return_pins` do not exist yet), constant-phi removal of a
 function whose source is outside the scope, unproven `--opt` rules. For the functions of an
 executable that `lean-link --verified` writes on a route with a `_sourceCp` theorem, the
-executable-level theorem composes the passes ("Linking", `Link.cpSource`); on the typed Stock
-route `attemptT` it does not yet (#1100, audit row A18). A function compiled from cg_clif's
+executable-level theorem composes the passes (`Link.cpSource`; the routes and their theorems:
+"Constant-phi removal" below, and `lean-link`'s `coverage:` line names them per executable). A function compiled from cg_clif's
 optimised dump (`cargo fv`'s `.opt.clif` retry) is about that dump.
 
 **Hypotheses no tool decides** (premises of every theorem in the table; "Final hypotheses" above
