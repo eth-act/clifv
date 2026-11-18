@@ -48,6 +48,6 @@ theorem fmaNegYFree_sound {f : Function} (h : fmaNegYFree f = true) {b : Block}
   have hm : y ∈ fnegDefs f := by
     simp only [fnegDefs, List.mem_flatMap]
     exact ⟨b', hb', s', hs', by rw [hi']; exact hy⟩
-  simp [List.contains_iff_mem, hm] at h1
+  simp [hm] at h1
 
 end Compile

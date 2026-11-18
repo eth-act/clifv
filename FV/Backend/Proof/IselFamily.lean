@@ -96,6 +96,7 @@ def fFmt : Clif.FOp → String
   | .sqrt | .fneg | .fabs | .fpromote | .fdemote | .ceil | .floor | .trunc | .nearest => "Unary"
   | .fcvtFromUint | .fcvtFromSint | .fcvtToUintSat | .fcvtToSintSat => "Unary"
   | .fcmp _ => "FloatCompare"
+  | .fma => "Ternary"
   | _ => ""
 
 /-- S11f: the opcode name of a float operation `instData` builds (`""` for the others). -/
@@ -106,45 +107,52 @@ def fOpc : Clif.FOp → String
   | .trunc => "Trunc" | .nearest => "Nearest"
   | .fcvtFromUint => "FcvtFromUint" | .fcvtFromSint => "FcvtFromSint"
   | .fcvtToUintSat => "FcvtToUintSat" | .fcvtToSintSat => "FcvtToSintSat" | .fcmp _ => "Fcmp"
-  | .fcopysign => "Fcopysign"
+  | .fcopysign => "Fcopysign" | .fma => "Fma"
   | _ => ""
 
-theorem fFmt_mem (op : Clif.FOp) : fFmt op ∈ ["Binary", "Unary", "FloatCompare", ""] := by
+/-- #35: restated with `"Ternary"` (`fFmt .fma`); the old list is false
+(`FloatFmaWitness.fFmt_mem_old_false`). -/
+theorem fFmt_mem (op : Clif.FOp) :
+    fFmt op ∈ ["Binary", "Unary", "FloatCompare", "Ternary", ""] := by
   cases op <;> simp [fFmt]
 
-/-- #35: restated with `"Fcopysign"` (`fOpc .fcopysign`); the old list is false
-(`FloatCopysignWitness.fOpc_mem_old_false`). -/
+/-- #35: restated with `"Fcopysign"` (`fOpc .fcopysign`) and `"Fma"` (`fOpc .fma`); the old list
+is false (`FloatCopysignWitness.fOpc_mem_old_false`). -/
 theorem fOpc_mem (op : Clif.FOp) :
     fOpc op ∈ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
-      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", ""] := by
+      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", "Fma", ""] := by
   cases op <;> simp [fOpc]
 
 /-! A float operation has none of the other instructions' names (`simp` closes the float case
 of an inversion by `instNames` with these, the side condition by evaluation). -/
 
+/-- #35: restated with `"Ternary"`; the old form is false
+(`FloatFmaWitness.fFmt_eq_false_old_false`). -/
 @[simp] theorem fFmt_eq_false {op : Clif.FOp} {s : String}
-    (h : s ∉ ["Binary", "Unary", "FloatCompare", ""]) : fFmt op = s ↔ False :=
+    (h : s ∉ ["Binary", "Unary", "FloatCompare", "Ternary", ""]) : fFmt op = s ↔ False :=
   ⟨fun e => h (e ▸ fFmt_mem op), False.elim⟩
 
+/-- #35: restated with `"Ternary"`; the old form is false
+(`FloatFmaWitness.eq_fFmt_false_old_false`). -/
 @[simp] theorem eq_fFmt_false {op : Clif.FOp} {s : String}
-    (h : s ∉ ["Binary", "Unary", "FloatCompare", ""]) : s = fFmt op ↔ False :=
+    (h : s ∉ ["Binary", "Unary", "FloatCompare", "Ternary", ""]) : s = fFmt op ↔ False :=
   ⟨fun e => h (e ▸ fFmt_mem op), False.elim⟩
 
-/-- #35: restated with `"Fcopysign"`; the old form is false
+/-- #35: restated with `"Fcopysign"` and `"Fma"`; the old form is false
 (`FloatCopysignWitness.fOpc_eq_false_old_false`). -/
 @[simp] theorem fOpc_eq_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
-      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", ""]) : fOpc op = s ↔ False :=
+      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", "Fma", ""]) : fOpc op = s ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
-/-- #35: restated with `"Fcopysign"`; the old form is false
+/-- #35: restated with `"Fcopysign"` and `"Fma"`; the old form is false
 (`FloatCopysignWitness.eq_fOpc_false_old_false`). -/
 @[simp] theorem eq_fOpc_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
-      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", ""]) : s = fOpc op ↔ False :=
+      "FcvtToUintSat", "FcvtToSintSat", "Fcmp", "Fcopysign", "Fma", ""]) : s = fOpc op ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
 /-- The `InstructionData` format and opcode *names* `instData` uses for an instruction. An
