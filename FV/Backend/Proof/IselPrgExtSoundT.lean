@@ -1147,6 +1147,11 @@ private theorem fData_ofF (hP : PInvTF f ctx) {c : Clif.Inst} (hof : InstOf f c)
                       (γ_val_float (hT x (by simp)) (hflo x (by simp [Compile.floatOperands])))
                       (γL1 (γ_val_float (hT y (by simp)) (hflo y (by simp [Compile.floatOperands]))))⟩,
                     floatcc_mem hok.2, trivial⟩⟩)
+               | -- #35: `fcopysign` (`Binary`/`Fcopysign`) is outside `instETF`
+                 (exfalso
+                  simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+                    Compile.fArithET, Compile.fCvtET, Compile.fCmpET, fBinaryOpcode,
+                    fUnaryOpcode, fCvtOpcode] at hF)
            · simp [throw, throwThe, MonadExceptOf.throw] at hd)
     · -- #35: three operands (`fma`) are outside `instETF`
       exfalso
