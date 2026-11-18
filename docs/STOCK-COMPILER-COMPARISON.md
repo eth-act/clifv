@@ -92,7 +92,9 @@ Lean source change. Instead:
 A pull request that changes Lean sources is measured before its own Full gate
 run exists, so its changed modules and their importers are built in step 3;
 when only the lookup itself fails (an API error), the job fails rather than
-building everything.
+building everything. Both lookups (this one and the baseline below) retry a
+transient API failure (HTTP 5xx, a rate limit, a lost connection) up to four
+attempts, 2, 8 and 30 s apart (`scripts/stock_comparison_gh.py`, #1072).
 
 **No result is a failed check.** A measurement that fails, runs out of time
 (`STOCK_LEAN_LIMIT_S`, `STOCK_COMPARE_LIMIT_S`) or loses its runner fails

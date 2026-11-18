@@ -12,6 +12,7 @@ there is nothing to compare. A baseline that exists but could not be retrieved o
 (`failed: true`) fails the lost-match check, since a lost match cannot be ruled out without it.
 The script itself always exits 0, so the measurement still runs and is published.
 Needs `gh` with GH_TOKEN (actions: read) and the full git history of the tested commit and main.
+Transient API failures are retried first (scripts/stock_comparison_gh.py).
 """
 import argparse
 import io
@@ -22,15 +23,13 @@ import re
 import subprocess
 import zipfile
 
+from stock_comparison_gh import gh_api
+
 WORKFLOW = "stock-compiler-comparison.yml"
 PREFIX = "stock-comparison-summary-"
 MEMBER = "ci-comparison.ci-summary.json"
 LIMIT = 1024 * 1024
 RUNS = 100
-
-
-def gh_api(path):
-    return subprocess.run(["gh", "api", path], check=True, capture_output=True).stdout
 
 
 def is_ancestor(sha, head):
