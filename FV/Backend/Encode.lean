@@ -836,13 +836,13 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     let imm : BitVec 7 := BitVec.ofNat 7 (2 * op.lane - op.amount)
     match op with
     | .uShr32 _ =>
-      pure (.DPSFP (.Advanced_simd_shift_by_immediate { Q := 0, U := 1,
-        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
-        Rn := ← rn.encV, Rd := ← rd.encV }))
+      pure (.DPSFP (.Advanced_simd_shift_by_immediate
+        { Q := 0, U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
+          Rn := ← rn.encV, Rd := ← rd.encV }))
     | .uShr64 _ =>
-      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate { U := 1,
-        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
-        Rn := ← rn.encV, Rd := ← rd.encV }))
+      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate
+        { U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
+          Rn := ← rn.encV, Rd := ← rd.encV }))
   | .fpuRRIMod op rd rn =>
     -- C7.2 SLI: Advanced SIMD (scalar) shift by immediate, U 1, opcode 01010, `immh:immb =
     -- esize + amount` (Cranelift `FpuRRIMod`, `FPULeftShiftImm::enc`); `sli32` the vector form
@@ -851,13 +851,13 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     let imm : BitVec 7 := BitVec.ofNat 7 (op.lane + op.amount)
     match op with
     | .sli32 _ =>
-      pure (.DPSFP (.Advanced_simd_shift_by_immediate { Q := 0, U := 1,
-        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0b01010,
-        Rn := ← rn.encV, Rd := ← rd.encV }))
+      pure (.DPSFP (.Advanced_simd_shift_by_immediate
+        { Q := 0, U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3,
+          opcode := 0b01010, Rn := ← rn.encV, Rd := ← rd.encV }))
     | .sli64 _ =>
-      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate { U := 1,
-        immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0b01010,
-        Rn := ← rn.encV, Rd := ← rd.encV }))
+      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate
+        { U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0b01010,
+          Rn := ← rn.encV, Rd := ← rd.encV }))
   | .fpuToInt op rd rn =>
     -- C7.2 FCVTZS (scalar, integer) rmode 11 opcode 000, FCVTZU rmode 11 opcode 001;
     -- sf = 64-bit integer, ftype = float size (Cranelift `FpuToInt`, `enc_fputoint`)
