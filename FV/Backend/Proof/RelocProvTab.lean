@@ -247,8 +247,18 @@ def provTab16 : Tab :=
    (630, [⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (631, [⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩)]
 
+/-- Chunk of `provTab` for the #35 `fcopysign` root (`IselFloatCopysign`): `fcopy_sign` 624,
+`max_shift` 623, `fpu_rri` 367, and the vector rule's `ushr_vec_imm` 511 / `vec_shift_imm` 372
+(every rule of a table term is checked). -/
+def provTabCS : Tab :=
+  [(624, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (623, [⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (367, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (511, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (372, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩)]
+
 /-- The summary table. -/
-def provTab : Tab := provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16
+def provTab : Tab := provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16 ++ provTabCS
 
 set_option maxRecDepth 100000 in
 theorem provTab0_ok :
@@ -352,11 +362,17 @@ theorem provTab16_ok :
       true := by
   decide +kernel
 
+set_option maxRecDepth 100000 in
+theorem provTabCS_ok :
+    provTabCS.all (fun e => (program.rulesOf e.1).all (aRule program provTab true e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
 /-- Every rule of every term of `provTab` checks (strictly). -/
 theorem provTab_ok : chkTab program provTab true = true := by
   unfold chkTab
-  show (provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16).all
+  show (provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14 ++ provTab15 ++ provTab16 ++ provTabCS).all
     (fun e => (program.rulesOf e.1).all (aRule program provTab true e.2.1 e.2.2)) = true
-  simp only [List.all_append, provTab0_ok, provTab1_ok, provTab2_ok, provTab3_ok, provTab4_ok, provTab5_ok, provTab6_ok, provTab7_ok, provTab8_ok, provTab9_ok, provTab10_ok, provTab11_ok, provTab12_ok, provTab13_ok, provTab14_ok, provTab15_ok, provTab16_ok, Bool.and_self]
+  simp only [List.all_append, provTab0_ok, provTab1_ok, provTab2_ok, provTab3_ok, provTab4_ok, provTab5_ok, provTab6_ok, provTab7_ok, provTab8_ok, provTab9_ok, provTab10_ok, provTab11_ok, provTab12_ok, provTab13_ok, provTab14_ok, provTab15_ok, provTab16_ok, provTabCS_ok, Bool.and_self]
 
 end Backend.Proof.RelocProv

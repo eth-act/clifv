@@ -743,6 +743,14 @@ one function pass `ctxOkT`, the eight roots fire on it and not the generic-size 
 the deferred `fcmp` root; kernel-checked edge values ±0, ±0.5, ±1.5, `2^52-0.5` (largest f64
 half-integer, a `nearest` tie), `2^52+1`, huge `2^63` f32, ±∞, quiet NaN). Oracle:
 `FVTest/Backend/float_round.clif` through `scripts/lean-backend-filetests.sh`.
+**`fcopysign` (#35).** The root `rule_lower_685` (lower.isle:685, id 712) is proven in
+`FV/Backend/Proof/IselFloatCopysign.lean` (`copysign_okT`, family `lowerRulesCorrectCS_program`):
+`fcopy_sign`'s scalar rule (inst.isle:4612) emits `ushr` (`fpu_rri`, `FpuRRI`) of the sign
+operand by `max_shift` (31/63) into a fresh `tmp`, then `sli` of `tmp` into `dst`, which reuses
+the magnitude operand (`FpuRRIMod`); `copysign_holds` shows this is `FSem.copysign` on the low
+32/64 bits (lane 1 of the f32 `2s` forms is junk, never read). `StockScopePartition`: 193
+source-closure roots, 324 excluded. Witnesses: `FVTest/Backend/FloatCopysignCtxT.lean`; oracle
+`FVTest/Backend/float_copysign.clif` (±0, NaNs of both signs, ±∞, both sign operands).
 **Deferred: `fcmp`.** `rule_lower_2176` (`fcmp` with `fp_cond_code`) is not a closure root
 (`closure.rs` `BACKEND_FLOAT_ROOTS`; `Closure.lean`: 195 roots, 330 excluded), `instData`
 rejects `fcmp`, and the `fcmp` arm of `is_nonzero_cmp_okT` stays absurd; `fpuCmp`'s `ispecFP`
