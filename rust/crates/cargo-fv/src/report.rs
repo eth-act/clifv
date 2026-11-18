@@ -79,6 +79,10 @@ pub struct BinaryCheck {
     /// lean-link`'s `coverage:`; `none (…)` for the bare-linker fallback outside `--verified`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lean_link: Option<String>,
+    /// `--lean-link`: the number of functions in the region the Lean linker wrote (`lean-link`'s
+    /// count: its `N function(s), … written by` line).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lean_link_region: Option<usize>,
 }
 
 /// The function symbols of a linked executable (distinct addresses), by origin.

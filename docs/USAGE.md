@@ -219,7 +219,11 @@ only with `--build-std`, where their units have `std: true`; without it std is p
 no function counts). Linked executables also have `binary`: how many function symbols in the
 executable resolve to Lean-compiled code (members and dependencies), plus any check failures,
 with `--lean-link` `lean_link` (the theorems covering the executable, `lean-link`'s
-`coverage:`), and `origin`: the executable's functions (distinct addresses) attributed through
+`coverage:`) and `lean_link_region` (the number of functions in the region `lean-link` wrote,
+its own count: the `N function(s), … written by` line; cargo fv's line `--lean-link: the regions
+lean-link wrote hold N function(s) …; X of the V verified functions are left out of a region` sums
+it over the executables, and X is read from the executables' exclusion lists, which the links ran
+without), and `origin`: the executable's functions (distinct addresses) attributed through
 the link map
 to Lean code of the members (`lean_members`), of the dependencies (`lean_deps`) or of the std
 crates (`lean_std`, with `--build-std`), per package `lean_by_package` (with `--lean-link` the
