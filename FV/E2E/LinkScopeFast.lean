@@ -179,6 +179,14 @@ def callScopeWithB (F : String → Option Clif.Function) (P : Clif.Program)
 def outScopeWithB (F : String → Option Clif.Function) (g : Clif.Function) : Bool :=
   g.externs.all fun e => !(F e.2.name).isSome || outFitsB e.2.sig (callStack g)
 
+/-- `outScopeWithB` as the compiler runs it (`outScopeWithB_eq_fast`, `@[csimp]`, #1074):
+`callStack g` (a lookup per call of `g`) once, not once per extern. -/
+def outScopeWithBFast (F : String → Option Clif.Function) (g : Clif.Function) : Bool :=
+  let cs := callStack g
+  g.externs.all fun e => !(F e.2.name).isSome || outFitsB e.2.sig cs
+
+@[csimp] theorem outScopeWithB_eq_fast : @outScopeWithB = @outScopeWithBFast := rfl
+
 theorem callScopeWithB_eq (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) :
     callScopeWithB P.func? P (indToB S g) g = callScopeB P S g := rfl
 

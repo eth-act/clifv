@@ -96,10 +96,28 @@ pub struct Config {
     /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
     /// functions keep cg_clif's code.
     pub pkg_skip: Vec<(PathBuf, String)>,
+    /// Wall-time watchdog of one `lean-backend` run, in seconds (`FV_FN_TIME_LIMIT`; 0: none).
+    /// On expiry the run is killed and the build FAILS, naming the function (#1074: a function
+    /// must not block a build forever). Never a fallback: a verdict that depended on the
+    /// machine's load would make the verified counts flap.
+    pub fn_time_limit: u64,
 }
 
 fn var(k: &str) -> Result<String, String> {
     std::env::var(k).map_err(|_| format!("{k} is not set (fv-rustc runs under `cargo fv`)"))
+}
+
+/// `FV_FN_TIME_LIMIT`'s default, in seconds: 2 h, far above the slowest function known to
+/// finish (#1074).
+pub const DEFAULT_FN_TIME_LIMIT: u64 = 7200;
+
+/// `FV_FN_TIME_LIMIT`: seconds (`0` or `off`: no limit); unset: [`DEFAULT_FN_TIME_LIMIT`].
+pub fn parse_fn_time_limit(v: Option<&str>) -> Result<u64, String> {
+    match v.map(str::trim) {
+        None | Some("") => Ok(DEFAULT_FN_TIME_LIMIT),
+        Some("off") => Ok(0),
+        Some(s) => s.parse().map_err(|_| format!("FV_FN_TIME_LIMIT={s}: not a number of seconds (or `off`)")),
+    }
 }
 
 impl Config {
@@ -139,6 +157,7 @@ impl Config {
             ("FV_LEAN_LINK".into(), if self.lean_link { "1" } else { "0" }.into()),
             ("FV_LEAN_LINK_VERIFIED".into(), if self.lean_link_verified { "1" } else { "0" }.into()),
             ("FV_LEAN_LD".into(), if self.lean_ld { "1" } else { "0" }.into()),
+            ("FV_FN_TIME_LIMIT".into(), self.fn_time_limit.to_string()),
             (
                 "FV_PKG_SKIP".into(),
                 self.pkg_skip.iter().map(|(d, p)| format!("{}\t{p}", d.display())).collect::<Vec<_>>().join("\n"),
@@ -169,6 +188,7 @@ impl Config {
                 lean_link: var("FV_LEAN_LINK")? == "1",
                 lean_link_verified: var("FV_LEAN_LINK_VERIFIED")? == "1",
                 lean_ld: var("FV_LEAN_LD")? == "1",
+                fn_time_limit: var("FV_FN_TIME_LIMIT")?.parse().map_err(|_| "FV_FN_TIME_LIMIT: not a number".to_string())?,
                 pkg_skip: var("FV_PKG_SKIP")?
                     .lines()
                     .filter_map(|l| l.split_once('\t').map(|(d, p)| (PathBuf::from(d), p.to_string())))

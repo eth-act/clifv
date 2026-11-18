@@ -156,6 +156,7 @@ Environment variables:
 | variable | effect |
 |---|---|
 | `FV_JOBS` | `lean-backend` processes at a time in the whole build, across all crates cargo compiles in parallel (default: number of CPUs; file-lock slots in `target/fv/<mode>/tmp/slots/`) |
+| `FV_FN_TIME_LIMIT` | watchdog on one function's `lean-backend` run, in seconds (default 7200; `0` or `off`: none). A run over it is killed and the build **fails** with the function's name and how to skip it (`skip` below or `FV_SKIP`); never a fallback, so what is verified does not depend on the machine's load (#1074) |
 | `FV_SKIP_DEPS=a,b` | dependency packages (Cargo package names) that keep plain cg_clif |
 | `FV_SKIP=pat,…` / `FV_ONLY=pat,…` | debugging: functions whose symbol or Rust path contains a pattern fall back / only those are compiled |
 | `FV_TOOLCHAIN` | the nightly (default `nightly-2026-09-26`) |
@@ -450,8 +451,23 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   function with more than 1000000000 instructions × values (`Backend.validationBudget`):
   such a function is compiled and reported **compiled, unverified** with the reason
   `validation budget: N instructions × values > 1000000000, lowerCheck not run`
-  (`lean-backend` prints `compiled, unverified (validation budget): …`). No function of std or
-  `examples/` reaches it.
+  (`lean-backend` prints `compiled, unverified (validation budget): …`). The `i128`
+  legalisation's validator (`Opt.Legal.checkW`) has the same budget on the legalised function
+  (`Opt.Legalize128.overCheckBudget?`): over it, the function is reported unverified with
+  `i128 legalized (outside backend_correct: validation budget: N instructions × values >
+  1000000000, Opt.Legal.checkW not run)`. No function of std or `examples/` reaches it; ruint's
+  macro-generated `bits::tests::test_primitive_shifts` (105,241 instructions, 7.4 × 10⁹) does.
+  Both verdicts are known before the function is compiled, and under `--lean-link` (which keeps
+  cg_clif's code for every unverified function) `cargo fv` passes `--skip-unverified`:
+  `lean-backend` does not compile such a function (`not compiled (--skip-unverified),
+  unverified (…)`), and the report gives it the same fallback and reason as a compiled one.
+* **Compile budget.** A function with more than 20000000000 instructions × blocks is not
+  compiled (`unsupported: compile budget: N instructions × blocks > 20000000000`; cg_clif's
+  code): a deterministic bound on the steps whose time grows faster than the function (the
+  emission check's branch queries, `MachBuffer`'s erasures, branch relaxation; #1074). The
+  largest function measured, ruint's `bits::tests::test_primitive_shifts` (2.2 × 10⁹), compiles
+  in about 18 min; crypto-bigint's largest test function (10,201 instructions, 2.6 × 10⁷) in
+  34 s.
 * Not verified (trusted): rustc and cg_clif with its patch (Rust → CLIF and the dumps'
   external-name tables, docs/contracts/frontend.md), `clif-data-export` (the object's data
   objects), the object surgery above and the linker (both checked, for the
