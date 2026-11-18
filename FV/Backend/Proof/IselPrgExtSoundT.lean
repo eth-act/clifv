@@ -1129,6 +1129,10 @@ private theorem fData_ofF (hP : PInvTF f ctx) {c : Clif.Inst} (hof : InstOf f c)
     · cases op <;> simp only [instData, fBinaryOpcode] at hd
       all_goals first
         | (simp [throw, throwThe, MonadExceptOf.throw] at hd; done)
+        -- #35: `fcopysign` has its `instData` arm but is outside the float scope `instETF`
+        | (exfalso; simp [Compile.instETF, Compile.instETA, Compile.instET, Compile.instE,
+            Compile.fArithET, Compile.fCvtET, Compile.fCmpET, fBinaryOpcode, fUnaryOpcode,
+            fCvtOpcode] at hF; done)
         | (split at hd
            · simp only [pure, Except.pure, Except.ok.injEq] at hd
              subst hd
