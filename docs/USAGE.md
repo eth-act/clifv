@@ -456,11 +456,15 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   | legacy (a file with a `try_call`; `--opt-proven-only`), integer | `E2E.backend_correct_final_cleanup`; where a transformation changed the function, composed with it: `backend_correct_pass_cleanup (T := Opt.ConstPhi.run)` (constant-phi removal), `backend_correct_legal_wide_cleanup` (`i128` legalisation), `backend_correct_legal_pass_wide_cleanup`, `backend_correct_opt_exe_cleanup`, `backend_correct_legal_opt_wide_cleanup` (the mid-end) | `InSubset`, `lowerFunction`, `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB`; `Opt.Legal.checkW`; `Opt.ConstPhi.keeps` and `InSubset` of the function before the pass; the proven rule sets |
   | typed (outside subset E: floats, typed `call`s) | `E2E.backend_correct_final_cleanupT`, `E2E.backend_correct_world_cleanupTC`, `E2E.backend_correct_world_cleanupTCF` (by the validator branch) | `InSubsetT*`; `lowerFunction`, the typed validator `lowerCheckFor`, `prepare`, `checkAlloc`, `lowerRFunc` and the emission re-run and reproducing the emitted code; `formsCoveredB` |
 
-  On the Stock path the theorem's lowering premise `SemanticABI.checkCalls` comes from the
-  route's own validator (`SemanticNI.check`, `SemanticABI.check(Calls)` or `lowerCheck`, run
-  while compiling, each of which implies it): that implication is read from the code, not yet a
-  lemma (#1101). A `Stock.D0`-eligible function on the legacy path is also named under the Stock
-  theorem.
+  On the Stock path the theorem's lowering premise `SemanticABI.checkCalls` is decided by the
+  route's own validator while compiling (`SemanticNI.check`, `SemanticABI.checkCalls` or
+  `lowerCheck`, each of which implies it), and the link from that run to the reported function is
+  proved (#1101): `Backend.compileFileReturnPinWhen_checkCalls` (`FV/Backend/StockCheckCalls.lean`)
+  states that a run of the file driver that reports a function of subset E compiled, neither
+  unverified nor unvalidated, ran one of its 23 route lowerings with verification on for it, and
+  that the code the allocator received is the stage `stageF` of a lowering `SemanticABI.checkCalls`
+  accepts. A `Stock.D0`-eligible function on the legacy path is also named under the Stock theorem
+  (the same theorem covers the disabled driver).
 
   **About the source function, or about the compiled function** (`about`). "About the source
   function": the theorem's CLIF function is the one in the CLIF file `cargo fv` handed to

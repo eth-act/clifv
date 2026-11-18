@@ -17,6 +17,7 @@ import FV.E2E.FinalUnwind
 import FV.E2E.LegalUnwind
 import FV.E2E.OptUnwind
 import FV.E2E.LegalOptUnwind
+import FV.Backend.StockCheckCalls
 
 /-! # Tests of `lean-backend`'s per-function verdict (#1096)
 
@@ -48,7 +49,7 @@ def declOf (t : String) : String := (t.splitOn " (").headD t
 -- every theorem the verdict and the unwinding table name is a declared theorem
 run_cmd do
   let env ← getEnv
-  let names := (allFacts.filterMap fun x => (verdict x).thm) ++
+  let names := (allFacts.filterMap fun x => (verdict x).thm) ++ [stockCallsThm] ++
     (Id.run do
       let mut u := []
       for c in [true, false] do

@@ -523,7 +523,9 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- emitted (`FVTest.Backend.FnVerdict`: the path, the theorem, the checks); a failing premise
   -- (`formsCoveredB`, `checkAlloc` of the spill fallback, the typed re-run) makes it unverified.
   -- The Stock routes run when `compileFileReturnPinWhen` is enabled (no `--opt`, no `try_call` in
-  -- the file, not `--pipeline-t`, not the stock-configured driver).
+  -- the file the driver compiles, `pfc`, not `--pipeline-t`, not the stock-configured driver; #1107:
+  -- the same condition as the driver's). Their `SemanticABI.checkCalls` premise is
+  -- `Backend.compileFileReturnPinWhen_checkCalls` (#1101).
   let passT := if o.opt.isSome then "Opt.ConstPhi.runOpt cfg" else "Opt.ConstPhi.run"
   -- the pass changed the (legalised) source function
   let cpOn (name : String) : Bool :=
@@ -533,7 +535,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | none => false
   let recs ← records.get
   let stockOn := !pipelineT && !o.opt.isSome && stock.isNone &&
-    !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))
+    !(pfc.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))
   let verdicts : List (String × FVTest.Backend.FnVerdict.Verdict) := pf.funcs.filterMap fun p =>
     match p.func, fa.funcs.find? (·.name == p.name) with
     | .ok f, some a =>

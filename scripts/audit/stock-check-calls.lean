@@ -1,0 +1,65 @@
+import FV.Backend.StockCheckCalls
+import FVTest.Backend.StockCheckCallsWitness
+
+-- #1101: the Stock path's `SemanticABI.checkCalls` premise (FV/Backend/StockCheckCalls.lean)
+#print axioms Backend.lowerCheckedVoidCallABI_checkCalls
+#print axioms Backend.lowerCheckedMemorySinkExtNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryCapturedCopyNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryLoadStoreNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryStoreCfgNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryStoreNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryExtLoadNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryIntegerNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryCfgNI_checkCalls
+#print axioms Backend.lowerCheckedMemoryNI_checkCalls
+#print axioms Backend.lowerCheckedParameterCfgNI_checkCalls
+#print axioms Backend.lowerCheckedConditionalForwardCfgNI_checkCalls
+#print axioms Backend.lowerCheckedConditionalCfgNI_checkCalls
+#print axioms Backend.lowerCheckedForwardCfgNI_checkCalls
+#print axioms Backend.lowerCheckedLinearCfgNI_checkCalls
+#print axioms Backend.lowerCheckedTwoBlockEntryNI_checkCalls
+#print axioms Backend.lowerCheckedTwoBlockNI_checkCalls
+#print axioms Backend.lowerCheckedScalarNI_checkCalls
+#print axioms Backend.lowerCheckedLogicalNI_checkCalls
+#print axioms Backend.lowerCheckedMixedNI_checkCalls
+#print axioms Backend.lowerCheckedArithmeticNI_checkCalls
+#print axioms Backend.lowerCheckedProductionWith_checkCalls
+#print axioms Backend.lowerChecked_checkCalls
+#print axioms Backend.lowerCheckedProductionWith_lowerCheck
+#print axioms Backend.lowerForAllocationVoidCallABI_callsRoute
+#print axioms Backend.lowerForAllocationMemorySinkExtNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryCapturedCopyNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryLoadStoreNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryStoreCfgNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryStoreNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryExtLoadNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryIntegerNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryCfgNI_callsRoute
+#print axioms Backend.lowerForAllocationMemoryNI_callsRoute
+#print axioms Backend.lowerForAllocationParameterCfgNI_callsRoute
+#print axioms Backend.lowerForAllocationConditionalForwardCfgNI_callsRoute
+#print axioms Backend.lowerForAllocationConditionalCfgNI_callsRoute
+#print axioms Backend.lowerForAllocationForwardCfgNI_callsRoute
+#print axioms Backend.lowerForAllocationLinearCfgNI_callsRoute
+#print axioms Backend.lowerForAllocationTwoBlockEntryNI_callsRoute
+#print axioms Backend.lowerForAllocationTwoBlockNI_callsRoute
+#print axioms Backend.lowerForAllocationScalarNI_callsRoute
+#print axioms Backend.lowerForAllocationLogicalNI_callsRoute
+#print axioms Backend.lowerForAllocationMixedNI_callsRoute
+#print axioms Backend.lowerForAllocationArithmeticNI_callsRoute
+#print axioms Backend.lowerForAllocationProductionWith_callsRoute
+#print axioms Backend.lowerForAllocation_callsRoute
+#print axioms Backend.callsRoute_stageV
+#print axioms Backend.compileFileWithLowering_alloc
+#print axioms Backend.mem_loweredOf
+#print axioms Backend.RunsRoutes.ret
+#print axioms Backend.RunsRoutes.wrapper
+#print axioms Backend.compileFileVoidCallABIWhen_runsRoutes
+#print axioms Backend.compileFileReturnPinWhen_runsRoutes
+#print axioms Backend.compileFileWithLowering_verify
+#print axioms Backend.compileFileReturnPinWhen_checkCalls
+#print axioms FVTest.Backend.StockCheckCallsWitness.witness
+#print axioms FVTest.Backend.StockCheckCallsWitness.facts0 -- witness: native_decide
+#print axioms FVTest.Backend.StockCheckCallsWitness.facts1 -- witness: native_decide
+#print axioms FVTest.Backend.StockCheckCallsWitness.witness0 -- witness: native_decide
+#print axioms FVTest.Backend.StockCheckCallsWitness.witness1 -- witness: native_decide
