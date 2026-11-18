@@ -670,18 +670,9 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let cpSrcOf (name : String) : Bool :=
     ((lg.file.funcs.find? (·.name == name)).bind (·.func.toOption)).any
       fun g => (unverifiedReason? g).isNone
-  -- `FV_VERDICT_DIAG` (measurement aid, #1096): per verified function of subset E, whether the
-  -- legacy pipeline (`lowerFunction`, `lowerCheck`, the cleanup stage, the function's allocation)
-  -- reproduces the emitted code, i.e. whether `backend_correct_final{,_cleanup}`'s artifact
-  -- premises hold of it too (no: a Stock route lowered it)
-  let diag := (← IO.getEnv "FV_VERDICT_DIAG").isSome
   for (name, v) in verdicts do
     if v.thm.isNone then continue
     let some f := (pf.funcs.find? (·.name == name)).bind (·.func.toOption) | continue
-    if diag && Compile.functionE f then
-      if let some a := fa.funcs.find? (·.name == name) then
-        let r := typedRecheck f o.deadCleanup ((recs.find? (·.1 == name)).bind (·.2)) a
-        IO.eprintln s!"lean-backend: {input}: %{name}: diag: legacy pipeline reproduces the emitted code: {r.isNone}{(r.map (s!" ({·})")).getD ""}"
     if !hasTryCall f then
       IO.eprintln s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v}"
       continue
