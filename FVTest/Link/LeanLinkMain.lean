@@ -16,6 +16,7 @@ import FV.E2E.LinkScopeInputDefs
 import FV.E2E.LinkScopeInputDefsT
 import FV.E2E.LinkScopeInputDefsTC
 import FV.Link.Ld.Spec
+import FV.Link.Ld.DataFast
 import FV.Link.ReachCheck
 import FV.Link.Ld.SpecTotal
 import FV.Link.Ld.RelsFast

@@ -24,6 +24,7 @@ import FV.E2E.StaticShare
 import FV.E2E.SrcScopeFastT
 import FV.Front.BundleFast
 import FV.Link.ScopePlacement
+import FV.Link.Ld.DataFast
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -156,3 +157,16 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.LinkCheck.returnPinSiteIdx_eq
 #print axioms E2E.LinkCheck.returnPinsIdx_eq
 #print axioms E2E.LinkCheck.okRReturnPinCalls_eq_fast
+-- #1109: `lean-ld`'s plan checked against the data objects with the pieces indexed (the piece of
+-- an address by binary search, each piece's relocation chain once, relocations from an offset)
+#print axioms Link.Ld.itemsB_congr
+#print axioms Link.Ld.objPlanWith_eq
+#print axioms Link.Ld.relsFrom_drop
+#print axioms Link.Ld.tailsArr_get
+#print axioms Link.Ld.sfx_relsFrom
+#print axioms Link.Ld.search_spec
+#print axioms Link.Ld.find_spec
+#print axioms Link.Ld.dataPlanF_eq
+#print axioms Link.Ld.dataPlanB_eq_fast
+#print axioms Link.Ld.Plan.specOkF_eq
+#print axioms Link.Ld.specOkB_eq_fast
