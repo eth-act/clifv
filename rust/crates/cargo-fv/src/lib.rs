@@ -10,7 +10,7 @@
 //! * `cargo fv link-proof` ([`linkproof`]): the input of the crate-level linking theorem from a
 //!   `--keep-temps` build.
 //! * the per-executable binary check of `cargo fv build` ([`bincheck`]): `link-proof` and
-//!   `link-check` on every linked executable (`E2E.Binary.binary_correct`).
+//!   `link-check` on every linked executable (the executable-word theorem `link-check` names).
 //! * `--lean-link` ([`leanlink`]): the Lean linker (`lake exe lean-link`) writes the program
 //!   part of every executable.
 //!

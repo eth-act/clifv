@@ -53,6 +53,8 @@ NOT_READERS = {
                       "call among its imports is FV.Backend.Regalloc's run-time call of lean-regalloc",
     "FV.E2E.LinkOwnFrames": "its elaborator `qs_priv%` builds the name of a constant; the reading call among "
                             "its imports is FV.Backend.Regalloc's run-time call of lean-regalloc",
+    "FVTest.E2E.BinVerdictTest": "its `run_cmd` looks the binary check's theorem names up in the environment; the "
+                                 "reading calls among its imports are run-time ones (FV.Backend.Regalloc's lean-regalloc)",
 }
 WASMTIME = "third_party/wasmtime"
 WASMTIME_READ = "cranelift/codegen"  # the part of the Wasmtime sources FVTest.Isle.Pretty reads

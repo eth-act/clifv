@@ -1,4 +1,3 @@
-import FV.Front.CoverageT
 import FV.Link.TypedCompileSourceModes
 import FV.E2E.LinkIdxT
 import FV.Link.ReturnPinExeSourceWith
@@ -73,11 +72,15 @@ lowering (`stockDiffersB`, #734), the typed compilers and `leanLink` (`lowerFunc
 are not tried: the bare linker links on the Stock placement (`Link.leanLinkProductionWith`, the
 routes of `compileWithRoutes` in order; no compiler theorem). **`--verified`** fails closed: an input outside `SrcScopeB`, outside
 the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) or outside
-`InScopeP` is an error and the executable is not written, so every executable it writes is
-covered by the four theorems above and its input is in `InScopeIn` (`InScopeP`'s program-level
-conditions with `fnScopeInB`), on which the compiler is proven total
+`InScopeP` is an error and the executable is not written. Every executable it writes is covered
+by the theorems its `coverage:` line names for the route that wrote it (#1096): the ReturnPin
+route `Link.ReturnPinCompilerWith.attempt_correct{,_depth}`, the Stock routes
+`Link.SemanticCompilerWith.attempt_correct{,_depth,_peak}`, the typed Stock route
+`…attemptT_correct{,_depth,_peak}`, the typed fallback `Link.TypedCompilerWith.attempt_correct…`,
+the plain compiler the four theorems above (each with its `…Cp` source theorems where
+printed); only the plain compiler's input is claimed in `InScopeIn` with a totality theorem
 (`Link.DeadCleanup.compileExe_total_reach_input`, `Link.compileExe_total_reach`, given the
-layout, reach and `file0` conditions). **Typed `--verified`** (S11e6, #419; the cleanup compiler
+layout, reach and `file0` conditions): the routes have none. **Typed `--verified`** (S11e6, #419; the cleanup compiler
 without `--opt` and self tail calls): an input whose functions all meet the typed per-function
 conditions `fnScopeInTB` (`InScopeInT`'s; float data movement, float parameters and returns)
 — or, for functions with direct `try_call`s taking `f32`/`f64` parameters or returning
@@ -91,10 +94,10 @@ a function passes under either list) — but not all
 written executable is covered by the typed theorems
 `compileExeT_correct`, `compileExeT_correct_peak`, `compileExeT_correct_sourceCp`,
 `compileExeT_correct_source_peakCp` (returned values by class) and, through the frontend,
-`Front.bundle_correct_rawT{,_peak}` only where their premises `buildSpec b = .ok S` (the bundle
-read, with the placed sizes) and `SrcScopeB` are decided of the spec compiled
-(`Front.rawTClause`, `Front.rawTNamed_premises`; never when constant-phi removal changed a
-function, `S0.cpChanged ≠ []`, #1088: the line then says no Front theorem is named and why);
+`Front.bundle_correct_rawTCp`, `Front.bundle_correct_raw_peakTCp` (#1088: about cg_clif's
+program, at `buildSpec`'s spec `S0` of the bundle read and the compiled spec, whose functions are
+`S0`'s constant-phi removals, `Front.placedFrom_cp_funcs`; `Front.bundle_correct_rawT{…}` take
+`compileExeT` of `S0` itself, which is not what runs when constant-phi removal changes a function);
 totality is proven on `InScopeIn` only. `compileExeT`
 lowers every function with `lowerFunction`, while the units hold the Stock routes' code
 (Cranelift's) where `lean-backend` took them; when some function differs (`stockDiffersB`, #691),
@@ -103,7 +106,8 @@ route's pipeline and link `leanLinkProductionWith` on its placement `placedProdu
 the units' code, accepted by the typed checks `okRWithTS`: the Stock validator on an integer
 function, the typed validators on `lowerFunction`'s output) is tried instead; coverage
 `attemptT_correct`, `attemptT_correct_depth`, `attemptT_correct_peak` (returned values by
-class). When it fails, the smallest of: the functions failing its typed checks, the functions
+class), and for a bundle in `SrcScopeB` `attemptT_correct_sourceCp`, `attemptT_correct_source_peakCp`
+(#1100; `hcp` by `TypedStockShared.stockSteps_placed` and `rfl`). When it fails, the smallest of: the functions failing its typed checks, the functions
 whose placed code is not the units' (their span to the next function is not rust-lld's,
 `spanFails`, #1075; its link checks name the failing check and objects, `linkFails`), those
 Stock-lowered functions, or the typed ones (outside `fnScopeInB`; the executable then takes the
@@ -116,8 +120,9 @@ like a fallback) and runs `lean-link` again (T3c).
 
 **Constant-phi removal** (#990): the compiler's input is `Link.LinkSpec.cp` of the bundle's spec,
 each function after `Opt.ConstPhi.run` when `Opt.ConstPhi.keeps` holds (`FnInput.cp`: the function
-`lean-backend` compiled, so its register allocations apply); every theorem named below is about
-that input, and `Link.cp_lift` lifts each to the bundle's program (`constant-phi removal:` line).
+`lean-backend` compiled, so its register allocations apply); every route theorem named below is
+about that input; the source theorems named (`…_sourceCp`, `Front.bundle_correct_raw{,_peak}TCp`)
+are about the bundle's program through it (`Link.cpSource`; `constant-phi removal:` line).
 The source domain `SrcScopeB` that `--verified` requires is decided on the bundle's program (as
 parsed, before the `i128` legalisation), and the source theorems named below are about that
 program: the `…_sourceCp` theorems (#1052) compose the legalisation's refinement, constant-phi
@@ -624,12 +629,12 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok S => pure S
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
   -- constant-phi removal (#990): the input `lean-backend` compiled (`FnInput.cp`, its decision
-  -- `Opt.ConstPhi.keeps`); the theorems below are about `S0.cp`, `Link.cp_lift` lifts them to
-  -- `S0`'s program
+  -- `Opt.ConstPhi.keeps`); the route theorems below are about `S0.cp`, the source ones about
+  -- `S0`'s program through it (`Link.cpSource`)
   let S0 := S
   let S := S0.cp
   let cpN := S0.cpChanged
-  IO.println s!"lean-link: {exe}: constant-phi removal: {cpN.length} of {S0.funcs.length} function(s) {cpN.take 5}, cpFallbacks: {S0.cpFallbacks.length}; the theorems below are about Link.LinkSpec.cp (lean-backend's input), lifted to the input's program by Link.cp_lift"
+  IO.println s!"lean-link: {exe}: constant-phi removal: {cpN.length} of {S0.funcs.length} function(s) {cpN.take 5}, cpFallbacks: {S0.cpFallbacks.length}; the route theorems below are about the compiled input Link.LinkSpec.cp (lean-backend's input), the source ones (…Cp, Front.…TCp) about the bundle's program through constant-phi removal (Link.cpSource)"
   -- the compiler's input: the optimised one under `--opt` (`compileExeOpt S = compileExe S.opt`),
   -- the self tail calls as loops when a function has one (`compileExeTail S = compileExe S.tail`),
   -- with the Lean compiler's layout (`placedPar = placed`: the totality theorems' layout)
@@ -802,7 +807,14 @@ def main (args0 : List String) : IO UInt32 := do
             ", Link.SemanticCompilerWith.attemptT_correct_sourceTB, Link.SemanticCompilerWith.attemptT_correct_source_peakTB"
             else ""
           s!"; the bundle's program is in SrcScopeTB, not SrcScopeB (#1076: i128 functions with a try_call_indirect at an i128-free signature): its legalisation refines it (E2E.LegalProgram.legalProg_refinesT{thmTB})"
-        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim{progTot}{srcTB}"
+        -- #1100: the bundle's program through the legalisation and constant-phi removal, at
+        -- `I0 = S0.input0` (`hsrc = srcOk`, decided above) and `SP` (`hcp`:
+        -- `TypedStockShared.stockSteps_placed`, `SP = SC0.placedProductionWith routes[0]! true`
+        -- with `SC0 = S0.cp` on this route, then `rfl`)
+        let srcCp := if srcOk then
+            "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.SemanticCompilerWith.attemptT_correct_sourceCp, Link.SemanticCompilerWith.attemptT_correct_source_peakCp"
+          else ""
+        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
         return 0
       if let .error e := att then
         let bad := typedStockFails SP RS
@@ -844,11 +856,10 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok file =>
       IO.FS.writeBinFile exe file
       IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
-      -- #1088: the Front theorems only where their premises `buildSpec b = .ok SC` (the bundle
-      -- read, with the placed sizes) and `SrcScopeB` are decided of the spec compiled
-      -- (`Front.rawTNamed_premises`); never when constant-phi removal changed a function
-      let front := Front.rawTClause cpN.length { b0 with sizes := SC.names.zip SC.sizes } SC
-      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; {front}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
+      -- #1088: through the frontend, `Front.bundle_correct_rawTCp`/`…raw_peakTCp` at `S0` (`hb`:
+      -- `buildSpec` of the bundle read gave `S0` above), `SC` (`hcp`: `Front.placedFrom_cp_funcs`,
+      -- `rfl`: `SC0 = S0.cp` on this route) and `hsrc = srcOk` (decided above)
+      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; cg_clif's program: Front.bundle_correct_rawTCp, Front.bundle_correct_raw_peakTCp; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem covers this executable (Link.DeadCleanup.compileExeT_total_reach_input needs InScopeIn; {typedN} function(s) are outside fnScopeInB); {tcbN} function(s) admitted only through fnScopeInTCB"
       IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
       return 0
@@ -901,7 +912,7 @@ def main (args0 : List String) : IO UInt32 := do
       let src := if srcOk then
           "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.SemanticCompilerWith.attempt_correct_sourceCp, Link.SemanticCompilerWith.attempt_correct_source_peakCp"
         else "; outside SrcScopeB: about the legalised program only"
-      let scope := if verified then "; input in InScopeIn (--verified)" else ""
+      let scope := if verified then "; input conditions InScopeIn decided (--verified; no totality theorem for this route)" else ""
       IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attempt_correct, Link.SemanticCompilerWith.attempt_correct_depth, Link.SemanticCompilerWith.attempt_correct_peak{src}{scope}"
       return 0
     -- the unwind tables (S10f): with the cleanup compiler, `compileExeU SC file0 = .ok file`
@@ -932,7 +943,7 @@ def main (args0 : List String) : IO UInt32 := do
           IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e} (totality only with the checks of file0, {total})"
           pure false
     let totalAll := if ldOk then s!"{total}; on lean-ld's output {totalLd}" else total
-    let scope := if verified then s!"; input in InScopeIn (totality: {totalAll}) (--verified)" else ""
+    let scope := if verified then s!"; input in InScopeIn (--verified); totality: {totalAll}{if ldOk then "" else " (its layout, reach and file0 premises decided only with --ld)"}" else ""
     -- the exceptional edges: `compileExeU SC0 file0 = .ok file` (`compileExeOptU S` under `--opt`)
     let unw := if unwOk && !tailOn then
         if opt then

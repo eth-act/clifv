@@ -37,7 +37,7 @@ def fv(log, lean_link, known=(), fv_log=LEAN_LD, pinned=None, example="survey"):
     return gc.cargo_fv(example, log, lean_link, known, fv_log, pinned)
 
 
-def exe(package, stem, verdict="verified: E2E.Binary.binary_correct holds for its 70 Lean-compiled functions",
+def exe(package, stem, verdict="verified: E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 70 Lean-compiled functions",
         h="e3ea9c8990bd8ccd"):
     return f"cargo fv: binary {OUT}/{package}/{h}/out/{stem}-{h}: {verdict}\n"
 
@@ -304,7 +304,7 @@ class PinnedCounts(unittest.TestCase):
     and verified functions of every example are pinned (scripts/gate-expected-counts.txt)."""
 
     BIG = ("cargo fv: binary /w/target/fv/plain/aarch64-unknown-linux-musl/debug/build/bigframe-unwind/938e46b67ec0fe2f/out/"
-           "bigframe_unwind-938e46b67ec0fe2f: verified: E2E.Binary.binary_correct holds for its 75 Lean-compiled functions\n"
+           "bigframe_unwind-938e46b67ec0fe2f: verified: E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 75 Lean-compiled functions\n"
            + count(1, 1) + "cargo fv: 103 of 103 functions compiled by the Lean backend (101 verified): your crate(s)\n"
            "SAME: 2 test outcomes identical (logs: /t)\n")
 
