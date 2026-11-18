@@ -77,12 +77,18 @@ def fCopysignET : Inst → Bool
   | .float .fcopysign ty [_, _] => ty.isArithFloat
   | _ => false
 
-/-- **The instructions of the typed scope with the proven float operations, the literal pool and
-`fcopysign`** (#35): `instETFL` or an `fCopysignET`. -/
-def instETFLC (i : Inst) : Bool := instETFL i || fCopysignET i
+/-- #35: an `fma` of three operands at `f32`/`f64` (`instData` admits these; the roots
+`rule_lower_608`/`rule_lower_609` are `Backend.Proof.lowerRulesCorrectFM_program`). -/
+def fFmaET : Inst → Bool
+  | .float .fma ty [_, _, _] => ty.isArithFloat
+  | _ => false
 
-theorem instETFLC_of_instETFL {i : Inst} (h : instETFL i = true) : instETFLC i = true := by
-  simp [instETFLC, h]
+/-- **The instructions of the typed scope with the proven float operations, the literal pool,
+`fcopysign` and `fma`** (#35): `instETFL`, an `fCopysignET` or an `fFmaET`. -/
+def instETFLO (i : Inst) : Bool := instETFL i || fCopysignET i || fFmaET i
+
+theorem instETFLO_of_instETFL {i : Inst} (h : instETFL i = true) : instETFLO i = true := by
+  simp [instETFLO, h]
 
 /-- The operands in integer positions with the conversions: an `fcvt_from_*`'s operand is an
 integer (the CLIF verifier's typing). -/
