@@ -619,9 +619,13 @@ def main (args0 : List String) : IO UInt32 := do
   let dir : System.FilePath := d
   let (b0, exe) ← try Front.readBundle dir []
     catch e => do IO.eprintln s!"lean-link: {e}"; return 2
+  -- #1077: the bundle holds every function's dump (8.4 GB of text on ruint's test executable);
+  -- only its markers are read after `buildSpec`, which consumes it (`Front.buildSpecF`); the
+  -- Front clause below reads the bundle again
+  let markers := b0.markers
   -- `buildSpec` takes a size per function (every region function has a marker); the layout below
   -- replaces them by the compiled code's
-  let S ← match Front.buildSpec { b0 with sizes := b0.markers.map fun (n, _) => (n, 0) } with
+  let S ← match Front.buildSpec { b0 with sizes := markers.map fun (n, _) => (n, 0) } with
     | .ok S => pure S
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
   -- constant-phi removal (#990): the input `lean-backend` compiled (`FnInput.cp`, its decision
@@ -814,7 +818,7 @@ def main (args0 : List String) : IO UInt32 := do
         -- the link's own checks (`leanLinkProductionWith`): name the failing check and its
         -- objects, also where no function fails the typed checks (#1075)
         if e != SemanticCompilerWith.outOkTSMsg then
-          for l in linkFails SP file0 (fun I => parResultsProductionWith routes[0]! I true) b0.markers do
+          for l in linkFails SP file0 (fun I => parResultsProductionWith routes[0]! I true) markers do
             IO.eprintln s!"lean-link:   {l}"
         -- leave out only the functions failing the typed checks when that set is the smallest
         -- (only those: `attemptT_correct` has no per-function input premise, #754)
@@ -831,7 +835,7 @@ def main (args0 : List String) : IO UInt32 := do
         -- (`regionOkB`, `outsideOkB`) with no failing function: leave out the functions whose
         -- placed span is not rust-lld's when that set is the smallest (they keep cg_clif's code,
         -- as outside code; `attemptT_correct` has no per-function input premise)
-        let moved := if e == SemanticCompilerWith.outOkTSMsg then [] else (spanFails SP b0.markers).map (·.1)
+        let moved := if e == SemanticCompilerWith.outOkTSMsg then [] else (spanFails SP markers).map (·.1)
         if badFns.isEmpty && !moved.isEmpty && moved.length < min typedN stockFns.length then
           IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route: leaving out the {moved.length} function(s) whose placed code is not the units' (span to the next function not rust-lld's) {moved.take 3}; not written"
           printExclusions exe S SC true moved (only := true)
@@ -847,8 +851,12 @@ def main (args0 : List String) : IO UInt32 := do
       IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
       -- #1088: the Front theorems only where their premises `buildSpec b = .ok SC` (the bundle
       -- read, with the placed sizes) and `SrcScopeB` are decided of the spec compiled
-      -- (`Front.rawTNamed_premises`); never when constant-phi removal changed a function
-      let front := Front.rawTClause cpN.length { b0 with sizes := SC.names.zip SC.sizes } SC
+      -- (`Front.rawTNamed_premises`; the bundle read again, as above); never when constant-phi
+      -- removal changed a function
+      let b1 ← if cpN.length == 0 then
+          try (·.1) <$> Front.readBundle dir [] catch _ => pure default
+        else pure default
+      let front := Front.rawTClause cpN.length { b1 with sizes := SC.names.zip SC.sizes } SC
       IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; {front}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
       IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"

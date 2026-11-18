@@ -146,15 +146,36 @@ theorem mapM_eq_par {α β : Type} (f : α → Except String β) (l : List α) :
   | cons a l ih =>
     simp only [List.mapM_cons, List.map_cons, ih, id]
 
-/-- `parseUnit` with the dumps read and decoded in parallel tasks. -/
+/-- `u`'s dumps and the rest of `u`. Not inlined: it takes `u` apart (its cell is reused for the
+rest), so that the caller alone owns the dumps' list and releases each dump once it is read (the
+dumps of ruint's test executable are 8.4 GB of text). -/
+@[noinline] def Cgu.split (u : Cgu) : List FnFile × Cgu := (u.funcs, { u with funcs := [] })
+
+/-- `decodeFile` reading the function's name and regalloc output only (`decodeFile_eq_NR`). -/
+def decodeNR (ρ : Std.HashMap String String) (p : (String × String) × Dump) :
+    Except String (Clif.Function × List String × String) :=
+  match decodeFn ρ p.2 with
+  | .error e => .error s!"%{p.1.1}: {e}"
+  | .ok g =>
+    if g.name = p.1.1 then .ok (g, p.2.header, p.1.2)
+    else .error s!"%{p.1.1}: its dump holds %{g.name}"
+
+theorem decodeFile_eq_NR (ρ : Std.HashMap String String) (fns : List FnFile) (ds : List Dump) :
+    (fns.zip ds).map (decodeFile ρ) = ((fns.map fun f => (f.name, f.ra)).zip ds).map (decodeNR ρ) := by
+  rw [List.zip_map_left, List.map_map]
+  rfl
+
+/-- `parseUnit` with the dumps read and decoded in parallel tasks, each dump released once read. -/
 def parseUnitF (u : Cgu) : Except String PCgu :=
-  match (parMap readFile u.funcs).mapM id with
+  let (fns, u) := u.split
+  let nr := fns.map fun f => (f.name, f.ra)
+  match (parMap readFile fns).mapM id with
   | .error e => .error e
   | .ok ds =>
   match unitTable ds with
   | .error e => .error s!"unit {u.tag}: {e}"
   | .ok ρ =>
-  match (parMap (decodeFile ρ) (u.funcs.zip ds)).mapM id with
+  match (parMap (decodeNR ρ) (nr.zip ds)).mapM id with
   | .error e => .error e
   | .ok fs =>
     let ps := dataParsed u.data
@@ -170,9 +191,14 @@ def parseUnitF (u : Cgu) : Except String PCgu :=
               locals := u.locals, names := u.names }
       else .error s!"unit {u.tag}: a data object is named like a declared external name"
 
+theorem decodeFile_mapM_NR (ρ : Std.HashMap String String) (fns : List FnFile) (ds : List Dump) :
+    (fns.zip ds).mapM (decodeFile ρ) =
+      ((fns.map fun f => (f.name, f.ra)).zip ds).mapM (decodeNR ρ) := by
+  rw [mapM_eq_par, mapM_eq_par (decodeNR ρ), parMap_eq, parMap_eq, decodeFile_eq_NR]
+
 @[csimp] theorem parseUnit_eq_F : @parseUnit = @parseUnitF := by
   funext u
-  simp only [parseUnit, parseUnitF, ← mapM_eq_par]
+  simp only [parseUnit, parseUnitF, Cgu.split, ← mapM_eq_par, decodeFile_mapM_NR]
   all_goals rfl
 
 /-! ## The assembled program part -/
@@ -193,14 +219,15 @@ def assembledW (us : List PCgu) (Pf : List Clif.Function) (D : List DataObject)
       (!nameSet.contains ·))
     symNames := dedupFirst (Pf.flatMap addrNamesOf ++ dataFnsOf names D) }
 
-/-- `assemble`: the linked names through the units' tables, every function renamed once (its
-`FnInput` and the program's function), the inputs printed and checked in parallel tasks. -/
-def assembleF (b : Bundle) : Except String Assembled :=
-  match b.skipped with
+/-- `assemble` on the bundle's skipped functions and units: the linked names through the units'
+tables, every function renamed once (its `FnInput` and the program's function), the inputs
+printed and checked in parallel tasks. -/
+def assembleU (sk : List (String × String)) (units : List Cgu) : Except String Assembled :=
+  match sk with
   | (n, why) :: _ =>
-    .error s!"link-proof skipped {b.skipped.length} function(s) of the region: {n}: {why}"
+    .error s!"link-proof skipped {sk.length} function(s) of the region: {n}: {why}"
   | [] =>
-    match b.units.mapM parseUnit with
+    match units.mapM parseUnit with
     | .error e => .error e
     | .ok us =>
       if !scopingB us then .error "the linked names are not a scoping of the units" else
@@ -210,6 +237,9 @@ def assembleF (b : Bundle) : Except String Assembled :=
       | .error e => .error e
       | .ok fis => .ok (assembledW us (rn.map (·.2.1)) (linkData us sc) fis)
 
+/-- `assemble` with `assembleU`. -/
+def assembleF (b : Bundle) : Except String Assembled := assembleU b.skipped b.units
+
 @[csimp] theorem assemble_eq_F : @assemble = @assembleF := by
   funext b
   have hr : ∀ us, renamedOfW (finOf us) us = renamedOf us := fun _ => rfl
@@ -218,12 +248,18 @@ def assembleF (b : Bundle) : Except String Assembled :=
     intro us fis
     rw [renamedOf_funcs]
     rfl
-  simp only [assemble, assembleF, finOfT_eq, hr, ← mapM_eq_par, ha]
+  simp only [assemble, assembleF, assembleU, finOfT_eq, hr, ← mapM_eq_par, ha]
   all_goals rfl
 
-/-- `buildSpec`, compiled here (with `assembleF`). -/
+/-- The symbol table of `b`, its units and the rest of `b`. Not inlined: it takes `b` apart, so
+that `assembleU` alone owns the units (and their dumps). -/
+@[noinline] def Bundle.split (b : Bundle) : Std.HashMap String Nat × List Cgu × Bundle :=
+  (symTable b, b.units, { b with units := [] })
+
+/-- `buildSpec` with `assembleU`, the bundle taken apart first (`Bundle.split`). -/
 def buildSpecF (b : Bundle) : Except String LinkSpec :=
-  match assemble b with
+  let (t, units, b) := b.split
+  match assembleU b.skipped units with
   | .error e => .error e
   | .ok A =>
     match sizesFor b.sizes A.names with
@@ -232,13 +268,15 @@ def buildSpecF (b : Bundle) : Except String LinkSpec :=
       match A.names.head?.bind (fun n => b.markers.lookup n) with
       | none => .error "no function, or the first has no Lean code address"
       | some R =>
-        let t := symTable b
         let al := firstMap b.aligns
         .ok { funcs := A.funcs, names := A.names, sizes,
               outside := A.refs.filterMap fun n => (addrOf t n).map (n, ·),
               data := A.data, symNames := A.symNames, R,
               aligns := A.names.map fun n => al.getD n 4 }
 
-@[csimp] theorem buildSpec_eq_F : @buildSpec = @buildSpecF := rfl
+@[csimp] theorem buildSpec_eq_F : @buildSpec = @buildSpecF := by
+  funext b
+  simp only [buildSpec, buildSpecF, Bundle.split, assemble_eq_F, assembleF]
+  all_goals rfl
 
 end Front
