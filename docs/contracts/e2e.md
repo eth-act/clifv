@@ -1009,6 +1009,16 @@ and the backend (the switch is #990 part 5; translation validation: an untrusted
   `SrcScopeB` of the bundle's program only and names these. Witness:
   `Link.CpSourceWitness.correct_sourceCp_applies` (two functions at an `i128` declaration, one
   changed by constant-phi removal, on the ABI-aware route). Audit: `scripts/audit/cp-source.lean`.
+* **The frontend theorems on the typed route** (#1088, `FV/Front/CoverageT.lean`):
+  `Front.bundle_correct_rawT{,_peak}` take `buildSpec b = .ok S` and `compileExeT S file0 = .ok
+  file`, i.e. the bundle's own spec; `lean-link` compiles `DeadCleanup.placedPar S0.cp`, which is
+  `buildSpec` of no bundle when constant-phi removal changes a function. On the `compileExeT`
+  route `lean-link` therefore names them only when `Front.rawTNamed` holds: no function changed,
+  `buildSpec` of the bundle read with the placed sizes is (decided, `DecidableEq`) the spec
+  compiled, and that spec is in `SrcScopeB`; `Front.rawTNamed_premises` turns this into the
+  premises `hb` and `hsrc`. Otherwise its coverage line says `cg_clif's program: no Front theorem
+  is named (…)` with the reason. Test: `Crates.FrontendBundleCoverageT` (the three cases on a
+  real bundle). The theorems composing the frontend with `Link.cpSource` are not yet stated.
 
 ### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
 

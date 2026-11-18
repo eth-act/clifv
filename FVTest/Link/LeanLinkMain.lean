@@ -1,3 +1,4 @@
+import FV.Front.CoverageT
 import FV.Link.TypedCompileSourceModes
 import FV.E2E.LinkIdxT
 import FV.Link.ReturnPinExeSourceWith
@@ -90,7 +91,11 @@ a function passes under either list) — but not all
 written executable is covered by the typed theorems
 `compileExeT_correct`, `compileExeT_correct_peak`, `compileExeT_correct_sourceCp`,
 `compileExeT_correct_source_peakCp` (returned values by class) and, through the frontend,
-`Front.bundle_correct_rawT{,_peak}`; totality is proven on `InScopeIn` only. `compileExeT`
+`Front.bundle_correct_rawT{,_peak}` only where their premises `buildSpec b = .ok S` (the bundle
+read, with the placed sizes) and `SrcScopeB` are decided of the spec compiled
+(`Front.rawTClause`, `Front.rawTNamed_premises`; never when constant-phi removal changed a
+function, `S0.cpChanged ≠ []`, #1088: the line then says no Front theorem is named and why);
+totality is proven on `InScopeIn` only. `compileExeT`
 lowers every function with `lowerFunction`, while the units hold the Stock routes' code
 (Cranelift's) where `lean-backend` took them; when some function differs (`stockDiffersB`, #691),
 the typed compiler on the Stock route (#722) `Link.SemanticCompilerWith.attemptT` (the Stock
@@ -839,7 +844,11 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok file =>
       IO.FS.writeBinFile exe file
       IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
-      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; cg_clif's program: Front.bundle_correct_rawT, Front.bundle_correct_raw_peakT; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
+      -- #1088: the Front theorems only where their premises `buildSpec b = .ok SC` (the bundle
+      -- read, with the placed sizes) and `SrcScopeB` are decided of the spec compiled
+      -- (`Front.rawTNamed_premises`); never when constant-phi removal changed a function
+      let front := Front.rawTClause cpN.length { b0 with sizes := SC.names.zip SC.sizes } SC
+      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; {front}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality proven on InScopeIn and InScopeInT only: {tcbN} function(s) admitted only through fnScopeInTCB have no totality claim"
       IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
       return 0

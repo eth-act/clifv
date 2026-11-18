@@ -8,6 +8,7 @@ import FV.Link.DeadCleanupExeSourceTCp
 import FV.Link.OptExeSourceCp
 import FV.Link.DeadCleanupOptExeSourceCp
 import FV.Link.CpSourceWitness
+import FV.Front.CoverageT
 
 -- #1052: the source theorems about the bundle's program, through the `i128` legalisation and
 -- constant-phi removal (`lean-link --verified` names them on every route but `attemptT`)
@@ -37,3 +38,9 @@ import FV.Link.CpSourceWitness
 #print axioms Link.CpSourceWitness.hcp
 #print axioms Link.CpSourceWitness.parts -- witness: native_decide
 #print axioms Link.CpSourceWitness.correct_sourceCp_applies -- witness: native_decide
+
+-- #1088: lean-link names `Front.bundle_correct_rawT{,_peak}` only where their premises `hb`,
+-- `hsrc` are decided of the spec compiled
+#print axioms Front.buildsB_eq
+#print axioms Front.srcScopeB_inputCleanup
+#print axioms Front.rawTNamed_premises
