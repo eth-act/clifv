@@ -1009,16 +1009,25 @@ and the backend (the switch is #990 part 5; translation validation: an untrusted
   `SrcScopeB` of the bundle's program only and names these. Witness:
   `Link.CpSourceWitness.correct_sourceCp_applies` (two functions at an `i128` declaration, one
   changed by constant-phi removal, on the ABI-aware route). Audit: `scripts/audit/cp-source.lean`.
-* **The frontend theorems on the typed route** (#1088, `FV/Front/CoverageT.lean`):
-  `Front.bundle_correct_rawT{,_peak}` take `buildSpec b = .ok S` and `compileExeT S file0 = .ok
-  file`, i.e. the bundle's own spec; `lean-link` compiles `DeadCleanup.placedPar S0.cp`, which is
-  `buildSpec` of no bundle when constant-phi removal changes a function. On the `compileExeT`
-  route `lean-link` therefore names them only when `Front.rawTNamed` holds: no function changed,
-  `buildSpec` of the bundle read with the placed sizes is (decided, `DecidableEq`) the spec
-  compiled, and that spec is in `SrcScopeB`; `Front.rawTNamed_premises` turns this into the
-  premises `hb` and `hsrc`. Otherwise its coverage line says `cg_clif's program: no Front theorem
-  is named (…)` with the reason. Test: `Crates.FrontendBundleCoverageT` (the three cases on a
-  real bundle). The theorems composing the frontend with `Link.cpSource` are not yet stated.
+* **The frontend theorems on the typed route** (#1088, `FV/Front/ExeTCp.lean`):
+  `Front.bundle_correct_rawT`/`raw_peakT` take `buildSpec b = .ok S` and `compileExeT S file0 = .ok
+  file`, i.e. the bundle's own spec; `lean-link` compiles the cleanup layout of `S0.cp`, which is
+  `buildSpec` of no bundle when constant-phi removal changes a function. New, under new names:
+  **`Front.bundle_correct_sourceTCp`**, **`Front.bundle_correct_source_peakTCp`**,
+  **`Front.bundle_correct_rawTCp`**, **`Front.bundle_correct_raw_peakTCp`**: for `buildSpec b = .ok
+  S0`, a compiled spec `S` with `hcp : S.funcs = S0.input0.funcs.map FnInput.cp`,
+  `compileExeT S file0 = .ok file` and `SrcScopeB S0.input0`, the statements of
+  `bundle_correct_{source,raw}{,_peak}T` about `S`'s compiled function `f'` named `f`'s linked
+  name (`compileExeT_correct_source{,_peak}Cp` composed with the renaming and `rawLink_eq_link`).
+  On the `compileExeT` route `lean-link` names `bundle_correct_rawTCp`, `bundle_correct_raw_peakTCp`:
+  `hb` is the `buildSpec` it ran, `hcp` is `rfl` (`Front.placedFrom_cp_funcs`), `hsrc` decided.
+  Until then (#1089) it named `bundle_correct_rawT`/`raw_peakT` only where their premises were
+  decided of the compiled spec, never when constant-phi removal changed a function. Witnesses:
+  `Crates.FrontendBundleWitnessTCp` (the four theorems on a real bundle whose functions
+  constant-phi removal keeps) and `Crates.FrontendBundleWitnessTCpChanged` (the four theorems on
+  a bundle in the patched cg_clif's dump format whose function `cpwit` constant-phi removal
+  changes: `S0.cpChanged = ["cpwit"]`, the compiled spec is `lean-link`'s placement of `S0.cp`,
+  `compileExeT` succeeds on it). Audit: `scripts/audit/cp-source.lean`.
 
 ### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
 
@@ -2450,10 +2459,14 @@ by totality, and since L1d (#204) by executable correctness too (below). Witness
 `total_witness`) and `CompileExeRunWitness.lean` (`compileExe_run_witness`: every premise of
 `compileExe_correct` for one concrete outside call into the panic=abort `a_arith` compiled by
 `compileExe`; the executable machine returns `5`). `lake exe lean-link` runs
-`Link.DeadCleanup.compileExe` by default (`--no-dead-cleanup`: `compileExe`; the theorems of the
-cleanup compiler: "The shipped compiler" below); on an input outside `InScopeP` it prints the
-failing conditions and links with the bare Lean linker (not covered by `compileExe_correct`),
-except under `--verified`, where that is an error.
+`Link.DeadCleanup.compileExe` (`--no-dead-cleanup`: `compileExe`; the theorems of the
+cleanup compiler: "The shipped compiler" below) when none of its Stock routes applies: it tries
+the typed Stock route `SemanticCompilerWith.attemptT`, `DeadCleanup.compileExeT`, the ABI-aware
+route `ReturnPinCompilerWith.attempt`, `SemanticCompilerWith.compileWithRoutes` and
+`TypedCompilerWith.attempt` first, and those write every executable of the gate (fv-demo,
+survey, deps, std; audit #1096); its `written by` line names the compiler that ran. On an input
+outside `InScopeP` it prints the failing conditions and links with the bare Lean linker (not
+covered by `compileExe_correct`), except under `--verified`, where that is an error.
 
 **The executable on the original source program (S2/S3, `FV/Link/ExeSource.lean`).**
 `compileExe_correct` relates the executable to `prog S.input`, the input's functions after the
@@ -2603,16 +2616,19 @@ program compiled by `Link.DeadCleanup.compileExe`: `cleanup_peak_witness` (the l
 *Fail closed (`--verified`).* `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt]
 [--verified]` (the layout is the Lean compiler's, `Link.DeadCleanup.placedPar`/
 `LinkSpec.placedPar` `= placed`, `FV/Link/PlacedEq.lean`; no sizes are read) prints after writing
-the executable the theorems covering it: `coverage:
-Link.DeadCleanup.compileExe_correct, Link.DeadCleanup.compileExe_correct_peak` and, for an input
-in `SrcScopeB` (decided by the tool: `FV/E2E/SrcScopeDefs.lean`; it reads the parsed functions
-only, so `S.input0`'s is the theorems' `S.inputCleanup`'s), `…_source, …_source_peak`; the bare-
-linker fallback prints `coverage: none (…)`. With `--verified` an input outside `SrcScopeB`,
-outside `fnScopeInB` (the per-function input conditions decided on the CLIF alone, V7: the tool
-names the failing conjuncts) or outside `InScopeP` is an error (exit 1, the executable not
-written), so every executable it writes is covered by the four theorems and its input is in
-`InScopeIn`; its `coverage:` line adds `input in InScopeIn (totality:
-Link.DeadCleanup.compileExe_total_reach_input)`. `cargo fv --lean-link --verified` passes it (own
+the executable the compiler that wrote it (`written by …`) and the theorems covering it. When
+`Link.DeadCleanup.compileExe` wrote it (no gate executable: the Stock routes above take them), the
+line is `coverage: Link.DeadCleanup.compileExe_correct, Link.DeadCleanup.compileExe_correct_peak`
+and, for an input in `SrcScopeB` (decided by the tool: `FV/E2E/SrcScopeDefs.lean`; it reads the
+parsed functions only, so `S.input0`'s is the theorems' `S.inputCleanup`'s),
+`…_sourceCp, …_source_peakCp`; the bare-linker fallback prints `coverage: none (…)`. With
+`--verified` an input outside `SrcScopeB`, outside `fnScopeInB` (the per-function input
+conditions decided on the CLIF alone, V7: the tool names the failing conjuncts) or outside
+`InScopeP` is an error (exit 1, the executable not written), so every executable it writes is
+covered by the theorems of the route that wrote it and its input is in `InScopeIn`; only on the
+`compileExe` route does the `coverage:` line add `input in InScopeIn (totality:
+Link.DeadCleanup.compileExe_total_reach_input)`: the Stock routes have no totality theorem, and
+their lines make no totality claim. `cargo fv --lean-link --verified` passes it (own
 target dir) and records the coverage in the report (`binary.lean_link`).
 
 **The optimising executable compiler (S1, S2; #25, #26).** `Link.compileExeOpt S file0 :=
@@ -2843,6 +2859,50 @@ concrete arguments, as `backend_correct_program_witness` does for `f 41`); the w
 
 PLAN.md §4 "M9": a guarantee about the executable file `cargo fv` produces. Each item has its
 subsection.
+
+#### What `cargo fv`'s binary check establishes (#1092, #1093)
+
+`cargo fv build`'s per-executable binary check runs `link-check --prune` on the executable's
+bundle. `link-check` takes the functions as `lean-backend` compiled them (constant-phi removal,
+the routes recovered from the bytes), selects a checker and decides, for the (pruned) program
+and the file, every premise of one executable-word theorem that is a fact about the program or
+the file, and prints the theorem (`theorem:`, `FVTest/E2E/BinVerdict.lean`) only when all hold:
+
+| `checker:` | decided premises (output line) | theorem (`_peak_` sibling for functions reaching a call cycle) |
+|---|---|---|
+| `integer` | `ReturnPinStackBound.okB` (`okB:`), `BinOkWithResults` (`binary:`), `codeMapB` (`code map:`), `SemanticExecBytes.GotOk` (`GOT:`), the stack bound (`stack:`) | `E2E.ReturnPinExecBytes.binary_correct_exec_proven` (`…_peak_proven`) |
+| `typed Stock (okRWithTS)` | `SemanticStackBound.okBTS`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk`, stack | `E2E.SemanticExecBytes.binary_correct_exec_provenTS` (`…_peak_provenTS`) |
+| `typed (okBCleanupT)` | `okBCleanupT`, `DeadCleanupBinCheck.BinOk`, `codeMapB`, `DeadCleanupExecBytes.GotOk`, stack | `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT` (`…_peak_provenT`) |
+
+`GotOk` is decided by `E2E.GotTab.gotTabB` on the whole file (`SemanticExecBytes.gotTabB_sound`,
+`DeadCleanupExecBytes.gotTabB_sound`: the slots of the GOT pairs whose second word is an `ldr`;
+`gotB` also checks the "slot" of a pair the linker relaxed to `adrp`/`add`, which `GotSlot` does
+not contain). A failing premise is `not verified: …` and `link-check` exits 1. Until #1092 the
+verdict named `E2E.Binary.binary_correct` for `checker: integer`, a theorem about the baseline
+pipeline's results (`E2E.LinkCheck.okB`), which this checker does not decide; and `codeMapB` was
+printed but not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdictTest` checks
+that every name exists and the verdicts; `scripts/bin-check-got-mutation.py` that a file whose
+GOT slots are writable is not verified.
+
+**`verified: <theorem>` is not unconditional.** The named theorem keeps these hypotheses, which
+are about the code outside the program and about a run, and which no tool decides:
+
+* `BaseOk (sys I B)`: the base environment (std, musl, fallback functions, TLS) meets the
+  contracts of the calls out of the program (`LinkSys.Ok`'s base premises, `FV/E2E/LinkCheck.lean`).
+* `HooksSim I B`: that outside code and the TLS sequence compute their effect from the registers
+  and the bytes outside the program's relocated words (`FV/E2E/*ExecStatic.lean`).
+* `Image.Intact r`: the machine state holds the executable's kept bytes (the loader mapped the
+  segments at their link addresses; read-only segments and relocation-read-only data unwritten).
+* `OutsideCall I roB f N r args cm`: the caller calls `f` per AAPCS64 with `args`, `N` bytes of
+  free stack, a return address outside the program, its CLIF-visible memory `cm` related to the
+  machine's (`FV/E2E/*Binary.lean`).
+* `OutsideAvoids (GotSlot I file) f N r args cm`: the GOT slots are not in the caller's free
+  stack, a stack argument, or a live CLIF allocation.
+* `ClifRun I B f r args cs`: the reference CLIF run starts from the state `cs` that corresponds
+  to `r` (arguments, memory, symbols).
+* `TrapsExplicit …`: the CLIF run traps only at explicit trap instructions (no stuck access).
+* `Clif.DepthLe … d cs` (`_peak_` theorems only): the CLIF run's call depth is at most `d`;
+  the caller provides `frameDrop + (D * d + pbMax)` bytes of stack (`OutsideCall`'s `N`).
 
 #### Code bytes, data objects, GOT and symbols (items 1–2; 2026-10-05, `agent/bin-bytes`)
 

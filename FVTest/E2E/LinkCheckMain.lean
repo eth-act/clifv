@@ -1,3 +1,5 @@
+import FVTest.E2E.BinVerdict
+import FV.E2E.GotTab
 import FV.E2E.ProductionPipelineWith
 import FV.E2E.LinkIdxT
 import FV.Backend.Lowering.StockVoidCallNI
@@ -411,9 +413,14 @@ def main (args : List String) : IO UInt32 := do
       s!"  binary: ok ({arts.length} functions, {words} words, {D.length} data objects, {I'.addrs.length - I'.aliases.length} symbols)"
     else s!"  binary: FAIL code={codeBad} data={dataBad} syms={symsBad.length} hdr={if hdrOk then 0 else 1}")
   -- the code map of the executable machine (`codeMapB`, `FV/E2E/CodeMap.lean`: a premise of the
-  -- theorem about the executable's own words, not of `okB`)
-  IO.println (if codeMapFastB (fun n => (assocMap I'.addrs)[n]?) (fun n => (assocMap I'.syms)[n]?) (tabOf keep)
-    then "  code map: ok" else "  code map: FAIL (codeMapB)")
+  -- theorem about the executable's own words, not of `okB`; `codeMapFastB_eq`)
+  let codeOk := codeMapFastB (fun n => (assocMap I'.addrs)[n]?) (fun n => (assocMap I'.syms)[n]?) (tabOf keep)
+  IO.println (if codeOk then "  code map: ok" else "  code map: FAIL (codeMapB)")
+  -- the GOT slots the program's `adrp`/`ldr` pairs read (`GotOk`, decided on the whole file:
+  -- `E2E.SemanticExecBytes.gotTabB_sound`, `E2E.DeadCleanupExecBytes.gotTabB_sound`), #1093
+  let tg ← IO.monoMsNow
+  let gotOk := E2E.GotTab.gotTabB (tabOf keep) ex
+  IO.println s!"  GOT: {if gotOk then "ok" else "FAIL (GotOk)"} ({E2E.GotTab.gotPairs (tabOf keep) ex} GOT pair(s) with an ldr; {(← IO.monoMsNow) - tg} ms)"
   -- the stack bound (`budMap`) of the (pruned) program: a function has a budget iff no call
   -- cycle is reachable from it (`StackBound.budC_isSome_iff`)
   let Pk := progOf keep
@@ -428,6 +435,11 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"  stack: {s} bytes at most (no call cycle)"
   else
     IO.println s!"  stack: recursive: the calls of {bad.length} function(s) reach a call cycle (their stack stays a premise): {(bad.map (·.name)).take 10}{if bad.length > 10 then " …" else ""}; the other {Pk.funcs.length - bad.length}: {s} bytes at most"
+  -- the theorem these checks instantiate (#1092): named only when every premise it takes that
+  -- is a fact about the program and the file holds (`FVTest.E2E.BinVerdict`)
+  let checker : FVTest.E2E.BinVerdict.Checker :=
+    if typedS then .typedStock else if typed then .typed else .integer
+  IO.println s!"  {FVTest.E2E.BinVerdict.binVerdict checker (!bad.isEmpty) ok binOk codeOk gotOk}"
   -- no caller: no function declares it, and no indirect call can enter it (`edgeB`)
   let cs := calleeSet Pk
   let iSigs := (Pk.funcs.filter (!indFreeB ·)).flatMap indSigs
@@ -485,4 +497,4 @@ def main (args : List String) : IO UInt32 := do
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"
     IO.println s!"  {funcs.length} functions, {entries.length} entries"
-  return (if ok && binOk then 0 else 1)
+  return (if ok && binOk && codeOk && gotOk then 0 else 1)

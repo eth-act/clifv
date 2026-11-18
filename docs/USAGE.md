@@ -142,8 +142,8 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function cg_clif's dump whose decoding `lean-backend` compiled (copied into `c.clif/`), the register allocator's answers for it (`lean-backend` writes them to `$FV_RA_OUT`, in `lean-regalloc`'s schema), the unit's data objects (`data.clif`), the merge's linked names and the object's local symbols (`fv-link.json`), per executable the link map |
 | `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the patched cg_clif without its `unwinding` feature; own target directory; the configuration of the binary-level theorem: no unwinding through Lean frames) |
 | `--no-binary-check` | skip the per-executable binary check (see *The executable as a whole*); without it the build keeps what the check reads (the per-function CLIF and allocator answers, `fv-link.json`, the link maps; not the objects) in `target/fv/<mode>/tmp/` |
-| `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`; the Lean static linker `lean-ld` links the rest around it, rust-lld with `--rust-lld` or when `lean-ld` rejects the inputs) whose bytes `lake exe lean-link` computes with the executable compiler `Link.DeadCleanup.compileExe` (the input conditions `InScopeP`, then `Link.DeadCleanup.leanLink`: the pipeline with dead-instruction cleanup, placement, relocation, checks) and writes into the executable; such an executable is covered by `Link.DeadCleanup.compileExe_correct` and `…_correct_peak` (recursive entries), and for a program in the source domain `SrcScopeB` by `…_correct_sourceCp` and `…_correct_source_peakCp` (the bundle's program, before the `i128` legalisation and constant-phi removal; #1052), with no per-crate proof (L1, L1f; `lean-link` prints `written by Link.DeadCleanup.compileExe` and a `coverage:` line naming them, also recorded as `binary.lean_link` in the report and printed as `cargo fv: lean-link …: covered by …`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.DeadCleanup.leanLink` alone (`written by Link.DeadCleanup.leanLink`, `coverage: none`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
-| `--verified` | with `--lean-link`: fail closed. An executable whose Lean-compiled part is outside the source domain `SrcScopeB` or the input conditions `InScopeP` is a link error (`lean-link … --verified` names the failing functions and conditions and does not write it) instead of the bare-linker fallback, so every executable the build writes is covered by `Link.DeadCleanup.compileExe_correct{,_peak,_sourceCp,_source_peakCp}`, or, when its functions meet only the typed input conditions `fnScopeInTB` (float data movement, float parameters and returns; S11e6), by `Link.DeadCleanup.compileExeT_correct{,_peak,_sourceCp,_source_peakCp}` (returned values by class; `lean-link` prints `--verified: typed scope`; through the frontend `Front.bundle_correct_rawT{,_peak}` only where their premises are decided of the spec compiled, `Front.rawTNamed`: never when constant-phi removal changed a function, #1088). Functions failing only a per-function condition (`lean-link`'s `--verified: exclude:` line) are left out of the region and the executable is linked again (they keep cg_clif's code, outside code like a fallback; list in `target/fv/<mode>/tmp/exclude-<tag>.txt`, count in the report's `lean-link` line). Combine with `--no-fallback` to also require every member function in the Lean region. Own target directory |
+| `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`; the Lean static linker `lean-ld` links the rest around it, rust-lld with `--rust-lld` or when `lean-ld` rejects the inputs) whose bytes `lake exe lean-link` computes with one of its executable compilers and writes into the executable. It tries the routes in a fixed order (section "The executable compiler" below) and prints the compiler that wrote the region (`written by …`) and the theorems that cover it (`coverage: …`, also recorded as `binary.lean_link` in the report and printed as `cargo fv: lean-link …: covered by …`), with no per-crate proof (L1, L1f). On the gate's executables the routes are the ABI-aware route `Link.ReturnPinCompilerWith.attempt` (fv-demo, survey; `attempt_correct`, `attempt_correct_depth`), the typed Stock route `Link.SemanticCompilerWith.attemptT` (deps, std, the typed survey crates; `attemptT_correct{,_depth,_peak}`) and `Link.SemanticCompilerWith.compileWithRoutes` (`attempt_correct{,_depth,_peak}`); the plain executable compiler `Link.DeadCleanup.compileExe` (`compileExe_correct`, `…_correct_peak`, totality `compileExe_total_reach_input`) writes an executable only when none of those routes applies. For a program in the source domain `SrcScopeB` each route names its `…_sourceCp`/`…_source_peakCp` theorems (the bundle's program, before the `i128` legalisation and constant-phi removal; #1052), the typed Stock route none (its line says `about the legalised program`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.DeadCleanup.leanLink` alone (`written by Link.DeadCleanup.leanLink`, `coverage: none`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
+| `--verified` | with `--lean-link`: fail closed. An executable whose Lean-compiled part is outside the source domain `SrcScopeB` or the input conditions `InScopeP` is a link error (`lean-link … --verified` names the failing functions and conditions and does not write it) instead of the bare-linker fallback, so every executable the build writes is covered by the theorems its `coverage:` line names: those of the route that wrote it (above), with the source theorems `…_sourceCp{,_peak}` on every route but the typed Stock route, and on the `compileExeT` route through the frontend `Front.bundle_correct_rawTCp`, `Front.bundle_correct_raw_peakTCp` (cg_clif's program through constant-phi removal, #1088). Totality is claimed only on the `compileExe`/`compileExeT`/`compileExeT3` routes (`Link.DeadCleanup.compileExe_total_reach_input` on `InScopeIn`); the Stock routes, which write the gate's executables, have no totality theorem, and `lean-link` says so. Functions failing only a per-function condition (`lean-link`'s `--verified: exclude:` line) are left out of the region and the executable is linked again (they keep cg_clif's code, outside code like a fallback; list in `target/fv/<mode>/tmp/exclude-<tag>.txt`, count in the report's `lean-link` line). Combine with `--no-fallback` to also require every member function in the Lean region. Own target directory |
 | `--lean-ld` | link every executable with the Lean static linker `lake exe lean-ld` (`Link.Ld.link`, docs/research/lean-linker.md §6) instead of rust-lld (the default with `--lean-link`): resolution, `--gc-sections`, layout, GOT, TLS relaxation, `.eh_frame_hdr` and the ELF writer in Lean; no debug sections are written. rust-lld still performs relocatable links (`ld -r`) and links an executable whose inputs `lean-ld` rejects (reported). With `--lean-link`, `lean-ld`'s output is the `file0` that `compileExe` checks; `Link.Ld.file0OkB_ld` proves `file0OkB` of it from the link spec's conditions on `lean-ld`'s plan (`Plan.specOkB`), so `Link.DeadCleanup.compileExe_total_ld` needs no check of the linker's output; `lean-link --ld` links again and decides `Plan.specOkB` against the executable's link spec, printing `lean-ld's plan meets the link spec` and adding `…_total_ld` to the `--verified` totality note. Needs `lake build lean-ld`. Own target directory |
 | `--rust-lld` | with `--lean-link`: link with rust-lld instead of `lean-ld` (the outside part's facts are then only `leanLink`'s checks of rust-lld's output, `file0OkB`) |
 | `--build-std` | compile the standard library like a dependency (cargo `-Zbuild-std=std,panic_unwind`, `panic_abort` with `--panic-abort`; cargo adds `test` for test harnesses) from the sources `scripts/build-cg-clif.sh` prepares: every std crate (std, core, alloc, test, proc_macro, panic_unwind and std's dependencies such as hashbrown, gimli, object) goes through cg_clif and the Lean backend; compiler_builtins stays on LLVM (cg_clif cannot compile its `f128` code) and musl libc prebuilt. The report counts the std crates as a third group (`std`); own target directory (`-std`). Measurements and limits (with `--lean-link --verified` some std/test functions fail a per-function condition of `InScopeIn` and are left out of the region; `lean-link` takes ~12 min and the binary check hours on the ~30k-function region, `--no-binary-check` skips it): docs/plans/std.md |
@@ -156,6 +156,7 @@ Environment variables:
 | variable | effect |
 |---|---|
 | `FV_JOBS` | `lean-backend` processes at a time in the whole build, across all crates cargo compiles in parallel (default: number of CPUs; file-lock slots in `target/fv/<mode>/tmp/slots/`) |
+| `FV_FN_TIME_LIMIT` | watchdog on one function's `lean-backend` run, in seconds (default 7200; `0` or `off`: none). A run over it is killed and the build **fails** with the function's name and how to skip it (`skip` below or `FV_SKIP`); never a fallback, so what is verified does not depend on the machine's load (#1074) |
 | `FV_SKIP_DEPS=a,b` | dependency packages (Cargo package names) that keep plain cg_clif |
 | `FV_SKIP=pat,…` / `FV_ONLY=pat,…` | debugging: functions whose symbol or Rust path contains a pattern fall back / only those are compiled |
 | `FV_TOOLCHAIN` | the nightly (default `nightly-2026-09-26`) |
@@ -450,8 +451,23 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   function with more than 1000000000 instructions × values (`Backend.validationBudget`):
   such a function is compiled and reported **compiled, unverified** with the reason
   `validation budget: N instructions × values > 1000000000, lowerCheck not run`
-  (`lean-backend` prints `compiled, unverified (validation budget): …`). No function of std or
-  `examples/` reaches it.
+  (`lean-backend` prints `compiled, unverified (validation budget): …`). The `i128`
+  legalisation's validator (`Opt.Legal.checkW`) has the same budget on the legalised function
+  (`Opt.Legalize128.overCheckBudget?`): over it, the function is reported unverified with
+  `i128 legalized (outside backend_correct: validation budget: N instructions × values >
+  1000000000, Opt.Legal.checkW not run)`. No function of std or `examples/` reaches it; ruint's
+  macro-generated `bits::tests::test_primitive_shifts` (105,241 instructions, 7.4 × 10⁹) does.
+  Both verdicts are known before the function is compiled, and under `--lean-link` (which keeps
+  cg_clif's code for every unverified function) `cargo fv` passes `--skip-unverified`:
+  `lean-backend` does not compile such a function (`not compiled (--skip-unverified),
+  unverified (…)`), and the report gives it the same fallback and reason as a compiled one.
+* **Compile budget.** A function with more than 20000000000 instructions × blocks is not
+  compiled (`unsupported: compile budget: N instructions × blocks > 20000000000`; cg_clif's
+  code): a deterministic bound on the steps whose time grows faster than the function (the
+  emission check's branch queries, `MachBuffer`'s erasures, branch relaxation; #1074). The
+  largest function measured, ruint's `bits::tests::test_primitive_shifts` (2.2 × 10⁹), compiles
+  in about 18 min; crypto-bigint's largest test function (10,201 instructions, 2.6 × 10⁷) in
+  34 s.
 * Not verified (trusted): rustc and cg_clif with its patch (Rust → CLIF and the dumps'
   external-name tables, docs/contracts/frontend.md), `clif-data-export` (the object's data
   objects), the object surgery above and the linker (both checked, for the
@@ -470,11 +486,20 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 
 ### The executable compiler (`--lean-link`, L1)
 
-With `--lean-link`, the Lean-compiled code of every executable is written by the executable
-compiler `Link.DeadCleanup.compileExe` (`lake exe lean-link`: the input conditions `InScopeP`,
-then the Lean linker `Link.DeadCleanup.leanLink`, whose pipeline removes dead pure machine
-instructions, docs/contracts/dead-cleanup.md; `lean-link --no-dead-cleanup` runs the baseline
-`Link.compileExe`). When `lean-link` prints `written by Link.DeadCleanup.compileExe`, the
+With `--lean-link`, the Lean-compiled code of every executable is written by one of
+`lake exe lean-link`'s executable compilers, tried in this order: the typed Stock route
+`Link.SemanticCompilerWith.attemptT` (when the units hold Stock-lowered code and a typed
+function; deps, std and the typed survey crates in the gate), `Link.DeadCleanup.compileExeT`,
+the ABI-aware route `Link.ReturnPinCompilerWith.attempt` (fv-demo and the survey in the gate),
+`Link.SemanticCompilerWith.compileWithRoutes`, `Link.TypedCompilerWith.attempt`, and the plain
+executable compiler `Link.DeadCleanup.compileExe` (the input conditions `InScopeP`, then the Lean
+linker `Link.DeadCleanup.leanLink`, whose pipeline removes dead pure machine instructions,
+docs/contracts/dead-cleanup.md; `lean-link --no-dead-cleanup` runs the baseline
+`Link.compileExe`). No gate executable is written by the plain compiler: its paragraph below
+describes the route the others refine. `lean-link` prints the compiler it took (`written by
+…`) and the theorems of that route (`coverage: …`); each route theorem is about the compiler that
+ran, on exactly the input it compiled (the coverage per route: the module docstring of
+`FVTest/Link/LeanLinkMain.lean`; audit #1096). When `lean-link` prints `written by Link.DeadCleanup.compileExe`, the
 executable is covered by the theorems its `coverage:` line names (docs/contracts/e2e.md, "The
 executable compiler" and "The shipped compiler"), proven once for every input:
 `compileExe_correct` (whenever code outside the program calls one of its Lean-compiled
@@ -500,9 +525,11 @@ refuses that case, inputs outside `SrcScopeB` and functions outside the input co
 on the CLIF alone (`fnScopeInB`, naming the failing ones); when only some functions fail a
 per-function condition (and the program-wide ones hold), it links the executable again with those
 functions left out of the region (their cg_clif code stays, as a fallback's; std's indirect-call
-sites, docs/plans/std.md §2.1): every executable it writes is covered,
-and its input is one on which the compiler is proven total (`InScopeIn`,
-`Link.DeadCleanup.compileExe_total_reach_input`). When the executable linked again takes the
+sites, docs/plans/std.md §2.1): every executable it writes is covered by its route's theorems,
+and its input meets `InScopeIn`, the input conditions on which `Link.DeadCleanup.compileExe` is
+proven total (`Link.DeadCleanup.compileExe_total_reach_input`); a totality claim is made only when
+that compiler (or `compileExeT`/`compileExeT3`) wrote it, as the Stock routes have no totality
+theorem. When the executable linked again takes the
 typed scope (its typed Stock route `attemptT_correct` has no per-function input premise, #754),
 only the functions failing a condition of the source domain or of the admission, or a call-site
 condition `callScopeB` (which that route checks again on the compiled code), are left out; those
@@ -536,30 +563,34 @@ needed for the guarantee of `--lean-link` executables.
 ### The executable as a whole (binary check)
 
 After the build, `cargo fv build`/`test`/`run` checks every linked executable with
-Lean-compiled code against the binary-level theorem `E2E.Binary.binary_correct_of_checks`
-(docs/contracts/e2e.md, "Binary level (M9)"): it runs `cargo fv link-proof` on the executable
-(into `target/fv/<mode>/bin-check/<tag>/`) and `link-check --prune`, which decide the crate
-checker (`LinkSys.Ok`), the binary checks (the executable's code is the compiled code with
+Lean-compiled code against an executable-word theorem (docs/contracts/e2e.md, "Binary level
+(M9)", "What `cargo fv`'s binary check establishes"): it runs `cargo fv link-proof` on the
+executable (into `target/fv/<mode>/bin-check/<tag>/`) and `link-check --prune`, which decide the
+checker of the program's results (`okB:`; `checker:` integer, i.e. the return-pin production
+checks, or a typed one), the binary checks (the executable's code is the compiled code with
 resolved relocations — `cargo fv` links with lld's `--no-relax` so the address pairs stay as
-emitted —, its data objects and symbols are the program's) and the stack bound, and prints one
-verdict per executable:
+emitted —, its data objects and symbols are the program's), the code map (`codeMapB`), the GOT
+slots (`GotOk`) and the stack bound, and name the theorem these instantiate (`theorem:`);
+one verdict per executable:
 
 ```
-cargo fv: binary …/values-5203fc787ef73bb4: verified: E2E.Binary.binary_correct holds for its 493 Lean-compiled functions; stack: 3008 bytes at most (no call cycle)
-cargo fv: binary …/fv_demo: verified: E2E.Binary.binary_correct (binary_correct_depth for the functions whose calls reach a call cycle: their stack stays a premise) holds for its 551 Lean-compiled functions; stack: recursive: the calls of 26 function(s) reach a call cycle (their stack stays a premise); the other 525: 1744 bytes at most
+cargo fv: binary …/values-5203fc787ef73bb4: verified: E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 493 Lean-compiled functions; stack: 3008 bytes at most (no call cycle)
+cargo fv: binary …/deps: verified: E2E.SemanticExecBytes.binary_correct_exec_provenTS (E2E.SemanticExecBytes.binary_correct_exec_peak_provenTS for the functions whose calls reach a call cycle: their stack stays a premise) holds for its 17243 Lean-compiled functions; stack: recursive: the calls of 1832 function(s) reach a call cycle (their stack stays a premise); the other 15411: 61968 bytes at most
 cargo fv: binary check: 18 of 18 executable(s) verified (docs/contracts/e2e.md, "Binary level (M9)")
 ```
 
-or `not verified: …` with the failing check (`binary check failed: FAIL code=… — BIN …`, or the
-first function failing `LinkSys.Ok`, the others still covered). *Verified* means: whenever code
-outside the program calls one of these functions per AAPCS64 and its contract (`OutsideCall`:
-arguments, free stack of the printed size, its CLIF-visible memory related to the machine's), in
-a machine state holding the executable's read-only bytes, the machine refines the
-whole-program CLIF run; the premises left are the contracts of the code outside the program
-(std, musl, fallback functions) and that CLIF traps only explicitly. The verdict is computed by
-`link-check` (compiled Lean); for a kernel-checked certificate generate the proof with `cargo fv
-link-proof --lean` (below). `--no-binary-check` skips it (its cost grows with the number of
-Lean-compiled functions of each executable: under a second per survey executable).
+or `not verified: …` with the failing check (`binary check failed: FAIL code=… — BIN …`, the
+code map, the GOT check, or the first function failing the checker, the others still covered).
+*Verified* means: whenever code outside the program calls one of these functions per AAPCS64
+and its contract (`OutsideCall`: arguments, free stack of the printed size, its CLIF-visible
+memory related to the machine's), in a machine state holding the executable's read-only bytes,
+the executable's own words refine the whole-program CLIF run; the premises left are the
+contracts of the code outside the program (std, musl, fallback functions) and that CLIF traps
+only explicitly. The verdict is computed by `link-check` (compiled Lean); for a kernel-checked
+certificate generate the proof with `cargo fv link-proof --lean` (below; its proof files state
+the linked machine model's theorem, `backend_correct_program`, not the executable-word one).
+`--no-binary-check` skips it (its cost grows with the number of Lean-compiled functions of each
+executable: under a second per survey executable).
 
 ## Proving a crate (`cargo fv link-proof`, optional)
 
