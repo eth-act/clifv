@@ -22,11 +22,14 @@ args=(--preset=aeneas --sysroot default
   --include regalloc2
   # Fork options: layouts are unused by Aeneas (and stale after associated-type lifting);
   # ISLE-generated bodies explode under duplicating control-flow reconstruction.
-  --no-layouts --code-duplication-limit "${CLIFV_DUP_LIMIT:-8}")
+  --no-layouts --code-duplication-limit "${CLIFV_DUP_LIMIT:-2}"
+  # Monomorphize the extracted crates (not std/foreign crates, whose items keep matching the
+  # Aeneas library models): removes the recursive groups mixing ISLE functions with the
+  # IsleContext impl, and the associated-type cycles of the MachInst/ABIMachineSpec traits.
+  --monomorphize-local-only)
 while IFS= read -r p; do args+=(--opaque "$p"); done < <(patterns "$EXTRACT/opaque.txt")
 while IFS= read -r p; do args+=(--opaque "$p"); done < <(patterns "$EXTRACT/overrides.txt")
 while IFS= read -r p; do args+=(--devirtualize "$p"); done < <(patterns "$EXTRACT/devirtualize.txt")
-[ -f "$EXTRACT/monomorphize" ] && args+=(--monomorphize)
 # Experiments only: extra Charon arguments (word-split).
 # shellcheck disable=SC2206
 [ -n "${CLIFV_CHARON_EXTRA:-}" ] && args+=($CLIFV_CHARON_EXTRA)
@@ -44,11 +47,11 @@ fi
 GEN=$EXTRACT/lean/Generated
 rm -rf "$GEN"; mkdir -p "$GEN"
 if [ -f "$LLBC" ]; then
-  # -filter-trait-impl-methods: trait impls only provide the methods of the library's model of
+  # -filter-trait-methods: trait impls only provide the methods of the library's model of
   # the trait (e.g. Iterator: next, size_hint, ...), not its ~75 default methods.
   (cd "$EXTRACT" && heavy "$WORK/tools/aeneas/bin/aeneas" -backend lean -split-files -emit-json \
     -sequential -no-progress-bar -print-error-emitters -print-error-diagnostics -all-computable \
-    -filter-trait-impl-methods -dest "$GEN" -subdir ClifvGen "$LLBC") > "$RUN/aeneas.log" 2>&1
+    -filter-trait-methods -dest "$GEN" -subdir ClifvGen "$LLBC") > "$RUN/aeneas.log" 2>&1
   echo $? > "$RUN/aeneas.exit"
   # TypesExternal/FunsExternal: the templates minus the items with a handwritten model.
   python3 "$EXTRACT/scripts/externals.py" "$GEN" > "$RUN/externals.json"

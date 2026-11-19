@@ -1,0 +1,6 @@
+# Charon `--devirtualize Trait=Type` (one per line; `#` comments): `dyn Trait` values whose
+# only possible type on the compile path is `Type` (Aeneas has no `dyn` support).
+#
+# `compile_aarch64` builds exactly one ISA, the AArch64 backend; `Context::compile` and the
+# alignment computation take it as `&dyn TargetIsa`.
+cranelift_codegen::isa::TargetIsa=cranelift_codegen::isa::aarch64::AArch64Backend
