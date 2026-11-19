@@ -15,9 +15,10 @@ the optimised one (`Opt.MidVal.check`). One tab-separated line per pair on stdou
 With `--cert`, two more columns: the re-check of the emitted certificate
 (`Opt.MidVal.checkCert f g (emit f g)`: `ok` when it gives `check`'s verdict, `MISMATCH`
 otherwise, `-` for a rejected pair) and its microseconds (`checkCert` alone, not the emission).
-The normaliser is the validator's default (`Opt.MidVal.Norm.std`, constant evaluation); with
-`--norm-id`, stage 1's identity. With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by `checkCertSyms`,
-whose theorem assumes the function's global values resolve).
+The normaliser is the validator's default (`Opt.MidVal.Norm.std`: constant evaluation, then the
+single-node algebraic rules); with `--norm-id`, stage 1's identity; with `--norm-const`, constant
+evaluation alone. With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by
+`checkCertSyms`, whose theorem assumes the function's global values resolve).
 
 Measurement tool only: it states no theorem.
 -/
@@ -33,40 +34,41 @@ def decodeOne (p : System.FilePath) : IO (Except String Clif.Function) := do
 
 def firstWord (s : String) : String := (s.splitOn " ").headD s
 
-/-- The normaliser: the validator's default `Norm.std` (constant evaluation), or with
-`--norm-id` stage 1's identity (`Norm.id`, for before/after measurements). -/
-def normOf (normId : Bool) : Opt.MidVal.Norm :=
-  if normId then Opt.MidVal.Norm.id else Opt.MidVal.Norm.std
+/-- The normaliser: the validator's default `Norm.std`, or (before/after measurements) with
+`--norm-id` stage 1's identity (`Norm.id`), with `--norm-const` constant evaluation alone. -/
+def normOf (normId normConst : Bool) : Opt.MidVal.Norm :=
+  if normId then Opt.MidVal.Norm.id
+  else if normConst then Opt.MidVal.evalConst else Opt.MidVal.Norm.std
 
 /-- Constant-phi removal and the check, evaluated inside the call (timing). -/
-@[noinline] def runCheck (normId hoist : Bool) (f0 g : Clif.Function) :
+@[noinline] def runCheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f0 g : Clif.Function) :
     IO (Clif.Function × Except String Unit) := do
   let f := Opt.ConstPhi.run f0
-  let r := Opt.MidVal.check f g (normOf normId) hoist
+  let r := Opt.MidVal.check f g nm hoist
   match r with
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
 
 /-- The certificate of an accepted pair (`Opt.MidVal.emit`). -/
-@[noinline] def runEmit (normId hoist : Bool) (f g : Clif.Function) :
+@[noinline] def runEmit (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) :
     IO (Except String Opt.MidVal.Cert) :=
-  pure (Opt.MidVal.emit f g (normOf normId) hoist)
+  pure (Opt.MidVal.emit f g nm hoist)
 
 /-- The re-check (`Opt.MidVal.checkCert`, or `checkCertSyms` in the hoisting mode), evaluated
 inside the call (timing). -/
-@[noinline] def runRecheck (normId hoist : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert) :
+@[noinline] def runRecheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert) :
     IO Bool :=
-  pure (if hoist then Opt.MidVal.checkCertSyms f g cert (normOf normId)
-    else Opt.MidVal.checkCert f g cert (normOf normId))
+  pure (if hoist then Opt.MidVal.checkCertSyms f g cert nm
+    else Opt.MidVal.checkCert f g cert nm)
 
 /-- `ok`/`MISMATCH`/`-` and the microseconds of `checkCert` (`f` after constant-phi removal). -/
-def recheck (normId hoist : Bool) (f g : Clif.Function) (accepted : Bool) : IO String := do
+def recheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) (accepted : Bool) : IO String := do
   if !accepted then return "-\t0"
-  match ← runEmit normId hoist f g with
+  match ← runEmit nm hoist f g with
   | .error e => return s!"MISMATCH(emit {e})\t0"
   | .ok cert =>
     let t0 ← IO.monoNanosNow
-    let ok ← runRecheck normId hoist f g cert
+    let ok ← runRecheck nm hoist f g cert
     let t1 ← IO.monoNanosNow
     return s!"{if ok then "ok" else "MISMATCH"}\t{(t1 - t0) / 1000}"
 
@@ -79,21 +81,23 @@ def pairMode (fp gp : String) : IO UInt32 := do
       | .error e => throw (IO.userError s!"{p}: {e}")
     | none => throw (IO.userError s!"{p}: no function")
   let g ← one gp
-  let (f, r) ← runCheck false false (← one fp) g
+  let (f, r) ← runCheck Opt.MidVal.Norm.std false (← one fp) g
   match r with
-  | .ok () => IO.println s!"accept\trecheck {← recheck false false f g true}"; return 0
+  | .ok () => IO.println s!"accept\trecheck {← recheck Opt.MidVal.Norm.std false f g true}"; return 0
   | .error e => IO.println s!"reject\t{e}"; return 1
 
 def main (args : List String) : IO UInt32 := do
   if let ["--pair", fp, gp] := args then return ← pairMode fp gp
   -- `--norm-id`: stage 1's identity normaliser instead of the default `Opt.MidVal.Norm.std`
   let normId := args.contains "--norm-id"
+  -- `--norm-const`: constant evaluation alone (`Opt.MidVal.evalConst`, family 1)
+  let nm := normOf normId (args.contains "--norm-const")
   -- `--cert`: re-check the emitted certificate of every accepted pair (`Opt.MidVal.checkCert`)
   let cert := args.contains "--cert"
   -- `--hoist`: the hoisting mode (`Opt.MidVal.checkCertSyms`)
   let hoist := args.contains "--hoist"
   let out ← IO.getStdout
-  for dir in args.filter (fun a => a != "--norm-id" && a != "--cert" && a != "--hoist") do
+  for dir in args.filter (fun a => a != "--norm-id" && a != "--norm-const" && a != "--cert" && a != "--hoist") do
     let mut stems : Array String := #[]
     for e in ← System.FilePath.readDir dir do
       if e.fileName.endsWith ".unopt.clif" then
@@ -112,11 +116,11 @@ def main (args : List String) : IO UInt32 := do
         out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-g {firstWord e}\t0\t0\t0{if cert then "\t-\t0" else ""}"
       | .ok f0, .ok g =>
         let t0 ← IO.monoNanosNow
-        let (f, r) ← runCheck normId hoist f0 g
+        let (f, r) ← runCheck nm hoist f0 g
         let t1 ← IO.monoNanosNow
         let verdict := match r with
           | .ok () => "accept\t-"
           | .error e => s!"reject\t{e}"
-        let rc ← if cert then do pure s!"\t{← recheck normId hoist f g r.isOk}" else pure ""
+        let rc ← if cert then do pure s!"\t{← recheck nm hoist f g r.isOk}" else pure ""
         out.putStrLn s!"{dir}\t{stem}\t{verdict}\t{Opt.instCount f}\t{Opt.instCount g}\t{(t1 - t0) / 1000}{rc}"
   return 0

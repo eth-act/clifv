@@ -4,7 +4,7 @@ import FV.Opt.Proof.MidValFStep
 import FV.Opt.Proof.MidValMatch
 import FV.Opt.Proof.MidValTermin
 import FV.Opt.Proof.SimWin
-import FV.Opt.Proof.MidValNormConst
+import FV.Opt.Proof.MidValNormAlg
 
 /-!
 # Soundness of the mid-end validator (#1119, module (5))
@@ -263,7 +263,7 @@ theorem check_soundSyms_norm {f g : Function} {cert : Cert} {norm : Norm}
       entry_rel H (fun fr m hfr => entry_facts_hold H hres hfr m) hb⟩⟩
 
 /-- **Soundness of the mid-end validator** (with its default normaliser `Norm.std`, constant
-evaluation, `normSound_std`): if `checkCert` accepts the certificate, `g` simulates `f`
+evaluation and the single-node algebraic rules, `normSound_std`): if `checkCert` accepts the certificate, `g` simulates `f`
 (`FunSimMU`). -/
 theorem check_sound {f g : Function} {cert : Cert} (h : checkCert f g cert = true) :
     FunSimMU f g :=

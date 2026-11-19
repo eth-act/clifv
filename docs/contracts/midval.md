@@ -44,7 +44,8 @@ function's arguments), the same dominator tree.
   join of different versions starts one; explicit traps keep it.
 * **Normaliser seam** (`Norm`): `Norm.id` in stage 1; the default is now `Norm.std` (stage 2,
   below). A stage-2 rewrite is one more `Norm` with a lemma that it preserves the value under
-  `Clif.evalInst` (`NormSound`). `midval-check --norm-id` measures with stage 1's `Norm.id`.
+  `Clif.evalInst` (`NormSound`). `midval-check --norm-id` measures with stage 1's `Norm.id`,
+  `--norm-const` with family 1 alone (`evalConst`).
 
 Rejected, with a reason: ISLE rewrites (`rewrite:*`), dead-store elimination (`alias:store`),
 moved `can_move` loads, the two checker gaps below.
@@ -154,7 +155,7 @@ hand-made pairs: the 4 positive ones re-check `ok`, the 8 negative ones are reje
   ReleaseScope1's counterfactual: 1,079 / 1,086 identical to stock (items 1+2), 3 / 15 (hoisting).
   Witnesses on real pairs: `FVTest/Opt/MidValGapWitness.lean`.
 
-## Stage 2: rewrites through the normaliser (agent MidendNorm1)
+## Stage 2: rewrites through the normaliser (agents MidendNorm1, MidendNorm2)
 
 The default normaliser `Norm.std` of `check`, `emit`, `checkCert` and `checkCertSyms` grows one
 proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h normSound_std`).
@@ -163,6 +164,11 @@ proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h 
 |---|---|---|---|---|---|
 | stage 1 + gaps (`--norm-id`) | none | `normSound_id` | 74,462 (61.1 %) | 73,597 / 74,437 (98.9 %) | 60.5 % |
 | 1: constant evaluation | `evalConst` | `normSound_evalConst` | 77,905 (63.9 %) | 76,767 / 77,880 (98.6 %) | 63.1 % |
+| 2: single-node algebraic rules | `Norm.alg` after `evalConst` | `normSound_alg`, `normSound_std` | 87,451 (71.8 %) | 80,622 / 87,406 (92.2 %) | 66.2 % |
+
+(Projected release parity: functions byte-identical to stock if every accepted function is
+compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
+counterfactual.)
 
 * **Family 1, constant evaluation** (`Opt.MidVal.evalConst`, `FV/Opt/Proof/MidValNormConst.lean`):
   an `isPure`, non-partial node with at least one operand, every operand an `iconst` term (floats
@@ -183,3 +189,40 @@ proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h 
   modulo the width) and `sshr.i8 -128, 1 = -64` accepted, the look-alike folds to `0` and `64`
   rejected and shown to be no simulation, so every certificate is rejected (`shift_rejected`,
   `sshr_rejected`).
+* **Family 2, single-node algebraic rules** (`Opt.MidVal.Norm.alg` = `Norm.guard algStep`,
+  `FV/Opt/Proof/MidValNormAlg.lean`), tried where `evalConst` leaves the node alone
+  (`Norm.std = Norm.orElse evalConst Norm.alg`). Each rule maps a node to a node over existing
+  terms with the same value under `Clif.evalInst` in every frame, ill-typed operands included (no
+  typing premise): it reads an operand's structure only through `nodeAt` (a node whose operands
+  are earlier) and `constAt` (a constant of the given type), and `Norm.guard` keeps a result only
+  if every occurrence of it in the table has its operands earlier.
+  - `selIcmp`: `select ty c 1 0` with `c` an `icmp` is `c` at `i8` and `uextend ty c` at a wider
+    type; `select ty c 0 1` is the same of the inverted `icmp` (`IntCC.inv`, interned first by
+    `auxTms`). Not for a `c` that is not an `icmp` (it need not be 0/1).
+  - `mulPow2`: `imul ty x c` (either operand order) with `c` the constant `2^k` of type `ty`,
+    `0 < k < width`, is `ishl ty x k` (the amount a constant of type `ty`, interned first).
+  - `addStack`: `iadd ty s c` (either order) with `s` a `stack_addr ty slot off` and `c` a
+    constant of type `ty` is `stack_addr ty slot (off + c)`, `c` read as signed (the address is
+    taken modulo `2^width` on both sides).
+  - `redExt`: `ireduce ty (extend op uty x)` with `x` a node whose result type `xt` is known
+    (`nodeTy`), `xt` and `ty` narrower than `uty`: `x` if `xt = ty`, `extend op ty x` if `xt` is
+    narrower, `ireduce ty x` if wider. Not for an atom `x` (a parameter, load or call result):
+    its type is not in the table, and for an operand of another width the rewrite is false.
+
+  These mirror Cranelift's mid-end rewrites seen in the dumps (`select`-of-`icmp` in
+  `opts/selects.isle`, `imul` by a power of two in `opts/arithmetic.isle`, `ireduce`-of-extend in
+  `opts/extends.isle`, and the `stack_addr` offset fold), and are proved directly against
+  `Clif.evalInst`: `FV/Opt`'s proven 0.136.1 `simplify` rules carry a forward, typed obligation
+  (`SimplifySound`: under a typed `GraphModel`, a candidate has the value the node has, if it has
+  one), not the every-frame equality `NormSound` needs. Proof: `ruleSound_selIcmp`,
+  `ruleSound_mulPow2`, `ruleSound_addStack`, `ruleSound_redExt`, `normSound_alg`, `normSound_std`.
+  Measured (2026-11-19, the same 121,879 pairs; #1136's binary against this one): 77,905 → 87,451
+  (+9,546), 0 lost, every accepted pair re-checks `ok`; 9,526 of the newly accepted functions are
+  Lean-compiled and verified from `g` in ReleaseScope1's counterfactual (20 have no record there),
+  3,855 of them byte-identical to stock (compiled from `f` today, they are not). Hoisting mode:
+  77,932 → 87,518. Witnesses (`FVTest/Opt/MidValAlgWitness.lean`): per rule a hand-made pair
+  accepted and rejected by family 1 alone, and a look-alike rejected (`select` of a non-`icmp`
+  condition and the wrong extension in `redExt`'s place shown to be no simulation); three real
+  pairs (`imul v1, 4` → `ishl v1, 2`; `iadd (stack_addr ss0), (imul 0, 8)` → `stack_addr ss0`;
+  `select (icmp eq x, -1), 0, 1` and its `ireduce.i32` → `uextend` of `icmp ne x, -1`), each
+  rejected by family 1 alone, `checkCert` decided, simulation and program refinement.

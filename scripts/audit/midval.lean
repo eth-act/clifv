@@ -8,6 +8,7 @@ import FVTest.Opt.MidValWitness
 import FVTest.Opt.MidValNegWitness
 import FVTest.Opt.MidValGapWitness
 import FVTest.Opt.MidValNormWitness
+import FVTest.Opt.MidValAlgWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -324,6 +325,48 @@ import FVTest.Opt.MidValNormWitness
 #print axioms Opt.MidVal.mapM_lookup
 #print axioms Opt.MidVal.tmVal_of_constOf
 #print axioms Opt.MidVal.normSound_evalConst
+-- stage 2, family 2: single-node algebraic rules (MidValNormAlg)
+#print axioms Opt.MidVal.guard_spec
+#print axioms Opt.MidVal.normSound_guard
+#print axioms Opt.MidVal.normSound_orElse
+#print axioms Opt.MidVal.ruleSound_orElse
+#print axioms Opt.MidVal.nodeAt_spec
+#print axioms Opt.MidVal.findTm_spec
+#print axioms Opt.MidVal.tmVal_node'
+#print axioms Opt.MidVal.constAt_spec
+#print axioms Opt.MidVal.evalNode_some_iff
+#print axioms Opt.MidVal.evalNode_iconst
+#print axioms Opt.MidVal.evalNode_select
+#print axioms Opt.MidVal.evalNode_uextend
+#print axioms Opt.MidVal.evalNode_icmp
+#print axioms Opt.MidVal.truthy_bool8
+#print axioms Opt.MidVal.intcc_inv
+#print axioms Opt.MidVal.truthy_bool8'
+#print axioms Opt.MidVal.evalNode_icmp_inv
+#print axioms Opt.MidVal.evalNode_icmp_bool
+#print axioms Opt.MidVal.select_bool8
+#print axioms Opt.MidVal.uextend_bool8
+#print axioms Opt.MidVal.uextend_bool8'
+#print axioms Opt.MidVal.select_bool8'
+#print axioms Opt.MidVal.selPick_spec
+#print axioms Opt.MidVal.ruleSound_selIcmp
+#print axioms Opt.MidVal.evalNode_binary_nonShift
+#print axioms Opt.MidVal.evalNode_ishl
+#print axioms Opt.MidVal.mul_pow2
+#print axioms Opt.MidVal.pow2Log_spec
+#print axioms Opt.MidVal.ruleSound_mulPow2
+#print axioms Opt.MidVal.evalNode_stackAddr
+#print axioms Opt.MidVal.add_stack_eq
+#print axioms Opt.MidVal.ruleSound_addStack
+#print axioms Opt.MidVal.evalNode_extend
+#print axioms Opt.MidVal.evalNode_ireduce
+#print axioms Opt.MidVal.evalNode_ty_of_nodeTy
+#print axioms Opt.MidVal.setWidth_extOp
+#print axioms Opt.MidVal.extOp_narrow
+#print axioms Opt.MidVal.extOp_same
+#print axioms Opt.MidVal.ruleSound_redExt
+#print axioms Opt.MidVal.ruleSound_algStep
+#print axioms Opt.MidVal.normSound_alg
 #print axioms Opt.MidVal.normSound_std
 -- (5) MidValProg
 #print axioms Opt.MidVal.checked_simMU
@@ -409,6 +452,37 @@ import FVTest.Opt.MidValNormWitness
 #print axioms Opt.MidVal.NormWitness.shift_rejected
 #print axioms Opt.MidVal.NormWitness.sshr_not_sim
 #print axioms Opt.MidVal.NormWitness.sshr_rejected
+-- witnesses of the algebraic rules (FVTest/Opt/MidValAlgWitness.lean)
+#print axioms Opt.MidVal.AlgWitness.pos_sel -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.pos_sel_const_rejects -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.neg_sel -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.pos_mul -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.pos_mul_const_rejects -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.neg_mul -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.pos_stack -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.pos_stack_const_rejects -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.neg_stack -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.pos_red -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.pos_red_const_rejects -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.neg_red -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.selNegF_text -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.selNegG_text -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.redF_text -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.redGu_text -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.sel_not_sim
+#print axioms Opt.MidVal.AlgWitness.sel_rejected
+#print axioms Opt.MidVal.AlgWitness.red_not_sim
+#print axioms Opt.MidVal.AlgWitness.red_rejected
+#print axioms Opt.MidVal.AlgWitness.sim_of_checked
+#print axioms Opt.MidVal.AlgWitness.real_mul_const_rejects -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_mul_checked -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_mul_sim -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_stack_const_rejects -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_stack_checked -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_stack_sim -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_sel_const_rejects -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_sel_checked -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.real_sel_sim -- witness: native_decide
 -- (no axioms at all: last, so the audit's parser does not join them with the next line)
 #print axioms Opt.SemSimMWitness.keeps
 #print axioms Opt.SemSimMWitness.fwd_entry

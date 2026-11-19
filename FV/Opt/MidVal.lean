@@ -42,8 +42,11 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   different versions a new version (`merge b`) starts. Explicit traps keep the version. Removed
   stores of `f` are idempotent (memory unchanged), so `g`'s versions are `f`'s memory states.
 
-* **Constant evaluation** (stage 2, the default normaliser `Norm.std` = `evalConst`): a pure
-  node whose operands are all constants is the constant `Clif.evalInst` gives it, on both sides.
+* **Normalisation** (stage 2, the default normaliser `Norm.std`), on both sides: constant
+  evaluation (`evalConst`: a pure node whose operands are all constants is the constant
+  `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg`: `select` of an `icmp`
+  with constant arms 1/0, `imul` by a power of two, `iadd` of a `stack_addr` and a constant,
+  `ireduce` of an extension of a typed node).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -482,11 +485,158 @@ def evalConst : Norm := fun tms i =>
       | .ok ([v], _) => some (.node (.iconst v.ty v.bits))
       | _ => none
 
-/-- **The validator's default normaliser** (the default `norm` of `check`, `emit`, `checkCert`,
-`checkCertSyms`): constant evaluation (`evalConst`), proved sound (`normSound_std`). -/
-def Norm.std : Norm := evalConst
+/-! ## Stage 2, family 2: single-node algebraic rules
 
-def intern (t : Tm) : M Nat := do
+A rule maps a node (term operands) to a node over existing terms that has the same value under
+`Clif.evalInst` in every frame (`algStep`). A rule may name a term other than the node's
+operands (`findTm`: the first id of that term, whose operands are earlier); the checker interns
+such terms first (`auxTms`). It reads the structure of an operand only through `nodeAt` (a node
+whose operands are earlier) and `constAt` (a constant of a given type). `Norm.guard` keeps a
+result only when every occurrence of it in the table has its operands earlier (what the term
+values need); the checker's table is hash-consed and grows by appending, so this holds for every
+result it interns. -/
+
+/-- The operand ids of a term (a node's operands; none for an atom). -/
+def Tm.ops : Tm → List Nat
+  | .node i => operands i
+  | _ => []
+
+/-- The first id of term `x` in the table, if `x`'s operands are earlier. -/
+def findTm (tms : Array Tm) (x : Tm) : Option Nat :=
+  ((List.range tms.size).find? fun a => tms[a]? == some x).bind fun a =>
+    if x.ops.all (· < a) then some a else none
+
+/-- Every occurrence of `x` in the table has its operands earlier. -/
+def ordered (tms : Array Tm) (x : Tm) : Bool :=
+  (List.range tms.size).all fun t => tms[t]? != some x || x.ops.all (· < t)
+
+/-- A normaliser's result, kept only if `ordered`. -/
+def Norm.guard (n : Norm) : Norm := fun tms i =>
+  match n tms i with
+  | some x => if ordered tms x then some x else none
+  | none => none
+
+/-- The instruction of term `c`, if it is a node whose operands are earlier. -/
+def nodeAt (tms : Array Tm) (c : Nat) : Option Inst :=
+  match tms[c]? with
+  | some (.node j) => if (operands j).all (· < c) then some j else none
+  | _ => none
+
+/-- The bits of term `o`, if it is a constant of type `ty`. -/
+def constAt (tms : Array Tm) (ty : Ty) (o : Nat) : Option (BitVec ty.width) :=
+  (constOf tms o).bind (·.as? ty)
+
+/-- The comparison with the opposite outcome. -/
+def IntCC.inv : IntCC → IntCC
+  | .eq => .ne | .ne => .eq | .slt => .sge | .sge => .slt | .sgt => .sle | .sle => .sgt
+  | .ult => .uge | .uge => .ult | .ugt => .ule | .ule => .ugt
+
+/-- `k` with `2 ^ k = v`, `0 < k`. -/
+def pow2Log (v : Nat) : Option Nat :=
+  if 0 < Nat.log2 v && 2 ^ Nat.log2 v == v then some (Nat.log2 v) else none
+
+/-- The comparison term a `select ty c vx vy` of an `icmp` `c` stands for: `c` itself when
+`(vx, vy) = (1, 0)`, the inverted comparison (if interned) when `(0, 1)`. -/
+def selPick (tms : Array Tm) (c : Nat) (cc : IntCC) (cty : Ty) (a b : Nat) {w : Nat}
+    (vx vy : BitVec w) : Option Nat :=
+  if vx == 1 && vy == 0 then some c
+  else if vx == 0 && vy == 1 then findTm tms (.node (.icmp (IntCC.inv cc) cty a b)) else none
+
+/-- An `i8` comparison term `n` at type `ty`: itself at `i8`, `uextend ty n` at a wider type. -/
+def selWrap (tms : Array Tm) (ty : Ty) (n : Nat) : Option Tm :=
+  if ty == .i8 then tms[n]? else if 8 < ty.width then some (.node (.extend .uextend ty n)) else none
+
+/-- `select ty c 1 0` with `c` an `icmp` (an `i8` 0/1): `c` itself at `i8`, `uextend ty c` at a
+wider type; `select ty c 0 1`: the same of the inverted `icmp` (Cranelift 0.135.0's
+`select`-of-`icmp` rules, `opts/selects.isle`/`icmp.isle`). -/
+def selIcmp (tms : Array Tm) (ty : Ty) (c x y : Nat) : Option Tm :=
+  match nodeAt tms c with
+  | some (.icmp cc cty a b) =>
+    match constAt tms ty x, constAt tms ty y with
+    | some vx, some vy => (selPick tms c cc cty a b vx vy).bind (selWrap tms ty)
+    | _, _ => none
+  | _ => none
+
+/-- `imul ty x c` with `c` the constant `2^k` of type `ty`, `0 < k < width`: `ishl ty x k`, the
+amount a constant of type `ty` (Cranelift's `imul`-by-power-of-two rule, `opts/arithmetic.isle`). -/
+def mulPow2 (tms : Array Tm) (ty : Ty) (x c : Nat) : Option Tm :=
+  match constAt tms ty c with
+  | some b => match pow2Log b.toNat with
+    | some k =>
+      if k < ty.width then
+        (findTm tms (.node (.iconst ty (BitVec.ofNat ty.width k)))).map fun kc =>
+          .node (.binary .ishl ty x kc)
+      else none
+    | none => none
+  | none => none
+
+/-- `iadd ty s c` with `s` a `stack_addr ty slot off` and `c` a constant of type `ty`:
+`stack_addr ty slot (off + c)`, `c` read as signed (Cranelift's `stack_addr` offset folding). -/
+def addStack (tms : Array Tm) (ty : Ty) (s c : Nat) : Option Tm :=
+  match nodeAt tms s, constAt tms ty c with
+  | some (.stackAddr ty' slot off), some b =>
+    if ty' == ty then some (.node (.stackAddr ty slot (off + b.toInt))) else none
+  | _, _ => none
+
+/-- The result type of a node, whenever it evaluates (`Inst.resultTypes` of a pure node). -/
+def nodeTy : Inst → Option Ty
+  | .iconst ty _ | .unary _ ty _ | .binary _ ty _ _ | .select ty .. | .bmask ty _
+  | .extend _ ty _ | .ireduce ty _ | .bitcast ty .. => some ty
+  | .icmp .. => some .i8
+  | _ => none
+
+/-- `ireduce ty (extend op uty x)` with `x` a node of type `xt`, `xt` and `ty` narrower than
+`uty`: `x` when `xt = ty`, `extend op ty x` when `xt` is narrower than `ty`, `ireduce ty x` when
+wider (Cranelift's `ireduce`-of-extend rules, `opts/extends.isle`). `x` must be a node: the type
+of an atom is not in the table, and the rewrite is false for an operand of another width. -/
+def redExt (tms : Array Tm) (ty : Ty) (u : Nat) : Option Tm :=
+  match nodeAt tms u with
+  | some (.extend op uty x) =>
+    match nodeAt tms x with
+    | some j =>
+      match nodeTy j with
+      | some xt =>
+        if xt.width < uty.width && ty.width < uty.width then
+          if xt == ty then some (.node j)
+          else if xt.width < ty.width then some (.node (.extend op ty x))
+          else if ty.width < xt.width then some (.node (.ireduce ty x))
+          else none
+        else none
+      | none => none
+    | none => none
+  | _ => none
+
+/-- The single-node rules (unguarded; `Norm.alg` guards them). -/
+def algStep (tms : Array Tm) : Inst → Option Tm
+  | .select ty c x y => selIcmp tms ty c x y
+  | .binary .imul ty x y => (mulPow2 tms ty x y).orElse fun _ => mulPow2 tms ty y x
+  | .binary .iadd ty x y => (addStack tms ty x y).orElse fun _ => addStack tms ty y x
+  | .ireduce ty u => redExt tms ty u
+  | _ => none
+
+/-- The terms `algStep` looks up besides the node's operands (the checker interns them first). -/
+def auxTms (tms : Array Tm) : Inst → List Tm
+  | .select _ c _ _ => match nodeAt tms c with
+    | some (.icmp cc cty a b) => [.node (.icmp (IntCC.inv cc) cty a b)]
+    | _ => []
+  | .binary .imul ty x y =>
+    [x, y].filterMap fun o => (constAt tms ty o).bind fun b =>
+      (pow2Log b.toNat).map fun k => .node (.iconst ty (BitVec.ofNat ty.width k))
+  | _ => []
+
+/-- The algebraic rules, guarded. -/
+def Norm.alg : Norm := Norm.guard algStep
+
+/-- One normaliser, then another where the first leaves the node alone. -/
+def Norm.orElse (a b : Norm) : Norm := fun tms i => (a tms i).orElse fun _ => b tms i
+
+/-- **The validator's default normaliser** (the default `norm` of `check`, `emit`, `checkCert`,
+`checkCertSyms`): constant evaluation (`evalConst`, family 1), then the single-node algebraic
+rules (`Norm.alg`, family 2); proved sound (`normSound_std`). -/
+def Norm.std : Norm := Norm.orElse evalConst Norm.alg
+
+/-- Intern a term (normalised, if a node), without auxiliary terms. -/
+def intern1 (t : Tm) : M Nat := do
   let s ← get
   let t := match t with
     | .node i => (s.norm s.tms i).getD t
@@ -497,6 +647,12 @@ def intern (t : Tm) : M Nat := do
     let i := s.tms.size
     set { s with tms := s.tms.push t, ids := s.ids.insert t i }
     pure i
+
+/-- Intern a term; for a node, first the terms a rule may look up (`auxTms`). -/
+def intern (t : Tm) : M Nat := do
+  if let .node i := t then
+    for a in auxTms (← get).tms i do discard (intern1 a)
+  intern1 t
 
 /-- The term of `v` on one side. -/
 def termOf (env : Std.HashMap ValueId Nat) (side : String) (v : ValueId) : Except Reject Nat :=

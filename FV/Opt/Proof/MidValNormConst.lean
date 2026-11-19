@@ -12,8 +12,7 @@ constants (`constFrame`). It rests on no rewrite rule: only on the semantics.
   slots (the frame `evalConst` uses has neither);
 * `mapM_lookup`: the constants `evalConst` collected are the operands' (`List.lookup`);
 * `tmVal_of_constOf`: a constant term has its constant as value;
-* **`normSound_evalConst : NormSound evalConst`**, and `normSound_std` for the validator's
-  default normaliser `Norm.std`.
+* **`normSound_evalConst : NormSound evalConst`**.
 -/
 
 namespace Opt.MidVal
@@ -96,9 +95,5 @@ theorem normSound_evalConst : NormSound evalConst := by
       exact (tmVal_of_constOf hc).trans hlk.symm
     simp only [evalNode, evalInst_isPure_frame hp hne hr, hev]
   · cases hx
-
-/-- The validator's default normaliser (`Norm.std`, constant evaluation) is sound. -/
-theorem normSound_std : NormSound Norm.std :=
-  normSound_evalConst
 
 end Opt.MidVal
