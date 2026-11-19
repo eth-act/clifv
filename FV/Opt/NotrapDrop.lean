@@ -81,11 +81,17 @@ def closedB (f : Function) (L : Std.HashSet ValueId) : Bool :=
 def dropWith (f : Function) (L : Std.HashSet ValueId) : Function :=
   { f with blocks := f.blocks.map fun b => { b with body := b.body.filter (keep L) } }
 
+/-- The live values stay below the output's fresh value, which is at most the input's: the
+registers a `try_call` binds (from each side's fresh value on, `Opt.Win`) are never live. -/
+def freshOk (f : Function) (L : Std.HashSet ValueId) : Bool :=
+  let g := dropWith f L
+  decide (g.freshValue ≤ f.freshValue) && L.toList.all fun v => decide (v < g.freshValue)
+
 /-- **The pass**: `f` without its dead `notrap` loads and the dead removable statements, when at
-least one `notrap` load goes and the live set passes `closedB`; `f` otherwise. -/
+least one `notrap` load goes and the live set passes `closedB` and `freshOk`; `f` otherwise. -/
 def run (f : Function) : Function :=
   let L := live f
-  if droppedWith f L != 0 && closedB f L then dropWith f L else f
+  if droppedWith f L != 0 && closedB f L && freshOk f L then dropWith f L else f
 
 /-- `lean-backend`'s decision, as `Opt.ConstPhi.keeps`: the pass changes `f` and its output,
 printed after `header`, parses back to itself. -/
