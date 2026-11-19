@@ -67,11 +67,13 @@ if [[ -n "$CL" ]]; then
   (cd "$cg" && cargo +"$TC" update -p cranelift-codegen -p cranelift-frontend -p cranelift-module \
     -p cranelift-native -p cranelift-jit -p cranelift-object)
   # cranelift-codegen's own dependencies on -meta/-shared/-control/-srcgen are caret
-  # requirements: pin every cranelift-* crate to exactly $CL, as rust/Cargo.lock does
-  for p in $(awk '/^name = "cranelift-/{n=$3; getline; if ($3 != "\"'"$CL"'\"") print n}' "$cg/Cargo.lock" | tr -d '"'); do
-    (cd "$cg" && cargo +"$TC" update -p "$p" --precise "$CL")
+  # requirements: pin every cranelift-* crate to exactly $CL, as rust/Cargo.lock does (several
+  # passes: a crate can only be downgraded once the crates requiring a newer one are)
+  off() { awk '/^name = "cranelift-/{n=$3; getline; if ($3 != "\"'"$CL"'\"") print n}' "$cg/Cargo.lock" | tr -d '"'; }
+  for _ in 1 2 3 4 5; do
+    for p in $(off); do (cd "$cg" && cargo +"$TC" update -q -p "$p" --precise "$CL") || true; done
   done
-  grep -A1 '^name = "cranelift-' "$cg/Cargo.lock" | grep -c "version = \"$CL\"" || true
+  [[ -z "$(off)" ]] || { echo "not pinned to $CL: $(off)" >&2; exit 1; }
   if [[ -f "$CLPATCH" ]]; then git -C "$SRC" apply "$CLPATCH"; fi
 fi
 sysroot=$(rustc +"$TC" --print sysroot)
