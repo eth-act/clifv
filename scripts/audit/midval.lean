@@ -9,6 +9,7 @@ import FVTest.Opt.MidValNegWitness
 import FVTest.Opt.MidValGapWitness
 import FVTest.Opt.MidValNormWitness
 import FVTest.Opt.MidValAlgWitness
+import FVTest.Opt.MidValAlg2Witness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -367,6 +368,33 @@ import FVTest.Opt.MidValAlgWitness
 #print axioms Opt.MidVal.ruleSound_redExt
 #print axioms Opt.MidVal.ruleSound_algStep
 #print axioms Opt.MidVal.normSound_alg
+-- stage 2, family 2, second set (MidValNormAlg2)
+#print axioms Opt.MidVal.nodeSound_orElse
+#print axioms Opt.MidVal.evalNode_unary
+#print axioms Opt.MidVal.evalNode_bmask
+#print axioms Opt.MidVal.tmVal_res
+#print axioms Opt.MidVal.intcc_swap
+#print axioms Opt.MidVal.ns_icmpSwap
+#print axioms Opt.MidVal.one_ne_zero_of_pos
+#print axioms Opt.MidVal.boolAt_val
+#print axioms Opt.MidVal.icmp_bool_keep
+#print axioms Opt.MidVal.icmp_bool_flip
+#print axioms Opt.MidVal.ns_icmpBool
+#print axioms Opt.MidVal.toNat_one_of_pos
+#print axioms Opt.MidVal.ult_one
+#print axioms Opt.MidVal.uge_one
+#print axioms Opt.MidVal.ugt_zero
+#print axioms Opt.MidVal.ule_zero
+#print axioms Opt.MidVal.ns_icmpUnit
+#print axioms Opt.MidVal.add_self_eq_mul_two
+#print axioms Opt.MidVal.ns_subNeg
+#print axioms Opt.MidVal.ns_mulTwo
+#print axioms Opt.MidVal.shl_one
+#print axioms Opt.MidVal.ns_shlOne
+#print axioms Opt.MidVal.ns_xorNot
+#print axioms Opt.MidVal.ns_bmaskBool
+#print axioms Opt.MidVal.ruleSound_algStep2
+#print axioms Opt.MidVal.normSound_alg2
 #print axioms Opt.MidVal.normSound_std
 -- (5) MidValProg
 #print axioms Opt.MidVal.checked_simMU
@@ -483,6 +511,56 @@ import FVTest.Opt.MidValAlgWitness
 #print axioms Opt.MidVal.AlgWitness.real_sel_const_rejects -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.real_sel_checked -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.real_sel_sim -- witness: native_decide
+-- witnesses of the second set (FVTest/Opt/MidValAlg2Witness.lean)
+#print axioms Opt.MidVal.Alg2Witness.pos_swap -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.swap_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.neg_swap -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.pos_bool -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.bool_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.neg_bool -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.pos_unit -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.unit_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.neg_unit -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.pos_sub -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.sub_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.neg_sub -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.pos_mul2 -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.mul2_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.pos_shl1 -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.neg_mul2 -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.pos_bmask -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.bmask_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.neg_bmask -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.pos_xor -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.xor_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.neg_xor -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.boolF2_text -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.boolG_text -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.unitF2_text -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.unitG_text -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.bmaskF2_text -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.bmaskG2_text -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.bool_not_sim
+#print axioms Opt.MidVal.Alg2Witness.bool_rejected
+#print axioms Opt.MidVal.Alg2Witness.unit_not_sim
+#print axioms Opt.MidVal.Alg2Witness.unit_rejected
+#print axioms Opt.MidVal.Alg2Witness.bmask_not_sim
+#print axioms Opt.MidVal.Alg2Witness.bmask_rejected
+#print axioms Opt.MidVal.Alg2Witness.real_sub_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_sub_checked -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_sub_sim -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_mul2_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_mul2_checked -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_mul2_sim -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_swap_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_swap_checked -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_swap_sim -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_unit_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_unit_checked -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_unit_sim -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_bool_alg2_needed -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_bool_checked -- witness: native_decide
+#print axioms Opt.MidVal.Alg2Witness.real_bool_sim -- witness: native_decide
 -- (no axioms at all: last, so the audit's parser does not join them with the next line)
 #print axioms Opt.SemSimMWitness.keeps
 #print axioms Opt.SemSimMWitness.fwd_entry
