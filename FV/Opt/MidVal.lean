@@ -145,6 +145,42 @@ def termName : Terminator → String
   | .returnCall .. => "return_call" | .trap .. => "trap" | .tryCall .. => "try_call"
   | .tryCallIndirect .. => "try_call_indirect"
 
+/-- The last component of a `repr` (`Clif.BinaryOp.iadd` ↦ `iadd`). -/
+def lastName {α : Type} [Repr α] (a : α) : String :=
+  ((toString (repr a)).splitOn ".").getLast!
+
+/-- An opcode name with its operation (reasons only). -/
+def detName (i : Inst) : String :=
+  match i with
+  | .unary op .. => lastName op | .binary op .. => lastName op | .div op .. => lastName op
+  | .icmp cc .. => s!"icmp_{lastName cc}" | .extend op .. => lastName op
+  | .load op .. => lastName op | .store op .. => lastName op
+  | i => opName i
+
+/-- The head of a term (reasons only). -/
+def tmHead : Tm → String
+  | .param .. => "param" | .res .. => "res" | .poison .. => "poison" | .node i => detName i
+
+/-- Where two terms first differ, descending through equal heads: `fhead→ghead` (reasons
+only: the root of the rewrite Cranelift applied). -/
+def diffHeads (tms : Array Tm) : Nat → Nat → Nat → String
+  | 0, a, b => s!"{tmHead tms[a]!}→{tmHead tms[b]!}"
+  | fuel + 1, a, b =>
+    match tms[a]!, tms[b]! with
+    | .node i, .node j =>
+      if shape i == shape j then
+        match ((operands i).zip (operands j)).find? (fun (x, y) => x != y) with
+        | some (x, y) => diffHeads tms fuel x y
+        | none => detName i
+      else s!"{detName i}→{detName j}"
+    | x, y => s!"{tmHead x}→{tmHead y}"
+
+/-- The first differing operand pair of two operand lists, as `diffHeads`. -/
+def diffOps (tms : Array Tm) (xs ys : List Nat) : String :=
+  match (xs.zip ys).find? (fun (x, y) => x != y) with
+  | some (x, y) => diffHeads tms 64 x y
+  | none => "arity"
+
 /-! ## Memory versions (on `g`) -/
 
 def meetV (b : Nat) : Option Ver → Ver → Ver
@@ -232,8 +268,16 @@ structure St where
   merges : Std.HashMap Nat (Array (Option Nat × Nat)) := {}
   /-- Partial pure terms `f` evaluates: term ↦ (block, skeleton segment). -/
   partials : Std.HashMap Nat (Array (Nat × Nat)) := {}
+  /-- The likely cause of a later rejection (reasons only): a load of `f` taken for a dead
+  `notrap` load while `g`'s next statement was a load of another address. -/
+  hint : Option Reject := none
 
-abbrev M := StateT St (Except Reject)
+/-- The checker's monad; the state survives a rejection (for `St.hint`). -/
+abbrev M := ExceptT Reject (StateM St)
+
+def liftE {α : Type} : Except Reject α → M α
+  | .ok a => pure a
+  | .error r => throw r
 
 def intern (t : Tm) : M Nat := do
   let s ← get
@@ -291,7 +335,7 @@ def keyOf (ver : Ver) : Inst → Option (Key × Option Nat)
 def bindPure (side : String) (st : Stmt) (bi seg : Nat) (fSide : Bool) : M Unit := do
   let s ← get
   let env := if fSide then s.envF else s.envG
-  let i ← StateT.lift (mapM' env side st.inst)
+  let i ← liftE (mapM' env side st.inst)
   let t ← intern (.node i)
   match st.results with
   | [r] =>
@@ -315,10 +359,11 @@ def bindRes (fSide : Bool) (rs : List ValueId) (bi k : Nat) : M (List Nat) := do
 /-- The reason when `f`'s skeleton statement `s` (class `cls` if `g`'s next statement has
 another shape) has no counterpart: an operand rewrite when `g`'s next statement has the same
 shape, a moved `can_move` load, else `cls`. -/
-def missReason (fid : BlockId) (s : Stmt) (gt? : Option Stmt) (cls : String) : Reject :=
+def missReason (fid : BlockId) (s : Stmt) (gt? : Option Stmt) (cls : String) (det : String := "") :
+    Reject :=
   match gt? with
   | some t =>
-    if shape t.inst == shape s.inst then s!"rewrite:operand {opName s.inst} block{fid}"
+    if shape t.inst == shape s.inst then s!"rewrite:operand {opName s.inst} {det} block{fid}"
     else if movedLoad t.inst then s!"alias:load-moved block{fid}"
     else s!"{cls} {opName s.inst}/{opName t.inst} block{fid}"
   | none => if movedLoad s.inst then s!"alias:load-moved block{fid}"
@@ -339,7 +384,10 @@ def bindF (s : Stmt) (t : Nat) : M Unit :=
 version `ver`, has no counterpart in `g` (whose next statement is `gt?`): accept it when its
 removal is justified (module doc), else reject. -/
 def removeF (c : Ctx) (fid : BlockId) (bi k : Nat) (ver : Ver) (s : Stmt) (s' : Inst)
-    (gt? : Option Stmt) : M Unit := do
+    (gt? : Option Stmt) (t'? : Option Inst) : M Unit := do
+  let det := match t'? with
+    | some t' => diffOps (← get).tms (operands s') (operands t')
+    | none => ""
   match s' with
   | .load _ _ fl _ _ =>
     let some (key, _) := keyOf ver s' | throw "wf:internal"
@@ -347,15 +395,18 @@ def removeF (c : Ctx) (fid : BlockId) (bi k : Nat) (ver : Ver) (s : Stmt) (s' : 
       bindF s v
     else if fl.trapCode.isNone then
       bindF s (← intern (.poison bi k))
-    else throw (missReason fid s gt? "alias:load")
+      if let some t := gt? then
+        if shape t.inst == shape s.inst && (← get).hint.isNone then
+          modify fun st => { st with hint := some s!"rewrite:operand load(poisoned) {det} block{fid}" }
+    else throw (missReason fid s gt? "alias:load" det)
   | .store _ _ _ x _ _ =>
     let some (key, _) := keyOf ver s' | throw "wf:internal"
-    if (← lookupFact c key bi) != some x then throw (missReason fid s gt? "alias:store")
+    if (← lookupFact c key bi) != some x then throw (missReason fid s gt? "alias:store" det)
   | i =>
-    if !mergeK i then throw (missReason fid s gt? "rewrite:skeleton-removed")
+    if !mergeK i then throw (missReason fid s gt? "rewrite:skeleton-removed" det)
     let nt ← intern (.node s')
     let some (rt, _) := ((← get).merges.getD nt #[]).find? (fun (_, d) => c.dom d bi)
-      | throw (missReason fid s gt? "rewrite:skeleton-removed")
+      | throw (missReason fid s gt? "rewrite:skeleton-removed" det)
     match rt with
     | some v => bindF s v
     | none => if s.results.isEmpty then pure () else throw "wf:merge arity"
@@ -401,12 +452,13 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
     match fs[k]?, gs[k']? with
     | none, none => break
     | some s, gt? =>
-      let s' ← StateT.lift (mapM' (← get).envF "f" s.inst)
-      let matched ← match gt? with
-        | some t => do
-          let t' ← StateT.lift (mapM' (← get).envG "g" t.inst)
-          pure (s' == t' && s.results.length == t.results.length)
-        | none => pure false
+      let s' ← liftE (mapM' (← get).envF "f" s.inst)
+      let t'? ← match gt? with
+        | some t => do pure (some (← liftE (mapM' (← get).envG "g" t.inst)))
+        | none => pure none
+      let matched := match gt?, t'? with
+        | some t, some t' => s' == t' && s.results.length == t.results.length
+        | _, _ => false
       if matched then
         let some t := gt? | throw "wf:internal"
         -- pending partial terms of `g` are evaluated before this statement
@@ -430,7 +482,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
         seg := seg + 1
       else
         -- `f`'s statement has no counterpart in `g`
-        removeF c fb.id bi k ver s s' gt?
+        removeF c fb.id bi k ver s s' gt? t'?
         k := k + 1
         seg := seg + 1
     | none, some t =>
@@ -439,11 +491,11 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
     let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
       (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
     if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
-  let ft ← StateT.lift (mapTermM (← get).envF "f" fb.term)
-  let gt ← StateT.lift (mapTermM (← get).envG "g" gb.term)
+  let ft ← liftE (mapTermM (← get).envF "f" fb.term)
+  let gt ← liftE (mapTermM (← get).envG "g" gb.term)
   if ft != gt then
     if termName fb.term == termName gb.term && termSuccs fb.term == termSuccs gb.term then
-      throw s!"rewrite:operand {termName fb.term} block{fb.id}"
+      throw s!"rewrite:operand {termName fb.term} {diffOps (← get).tms (termOperands ft) (termOperands gt)} block{fb.id}"
     else throw s!"rewrite:term {termName fb.term}/{termName gb.term} block{fb.id}"
 
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
@@ -461,6 +513,10 @@ def check (f g : Function) : Except Reject Unit := do
   let go : M Unit := do
     for bi in order do
       checkBlock c bi fbs[bi]! gbs[bi]!
-  discard (go.run {})
+  let (r, st) := (go.run).run {}
+  match r, st.hint with
+  | .ok (), _ => pure ()
+  | .error e, some h => throw (if e.startsWith "wf:" || e.startsWith "placement" then e else h)
+  | .error e, none => throw e
 
 end Opt.MidVal
