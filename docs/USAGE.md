@@ -209,7 +209,10 @@ per-function theorem `lean-backend` named for it, fully qualified, with the pass
 `(T := …)` where there is one), `about` (`the source function`, or `the compiled function,
 after …` naming the transformations the theorem does not compose; `, compiled from cg_clif's
 optimised dump (.opt.clif)` for the `.opt.clif` retry) and, for a `try_call` function whose
-unwinding is not covered, `normal_returns: true`. `counts` (per unit and in the totals) has
+unwinding is not covered, `normal_returns: true`. A verified or unverified function compiled from
+its `.unopt.clif` while cg_clif optimised it has `unopt_input_opt_level` (the `opt_level` of its
+dump's header, e.g. `speed_and_size`; *Optimised builds*). `counts` (per unit and in the totals)
+has `unopt_input_optimised` (how many such functions) and
 `by_theorem`: the verified functions per theorem, keyed by the theorem name, with
 ` (about the compiled function)` appended when `about` is not the source function and
 ` [normal returns only; unwinding trusted]` for `normal_returns` (its values add up to
@@ -264,7 +267,9 @@ dependencies, which cargo compiles without `--target`, for x86_64), dependencies
 crate it compiles it adds:
 
 * `--emit=llvm-ir`: cg_clif then writes every function's CLIF to `<out-dir>/<unit>.clif/`
-  (`<symbol>.unopt.clif`, the frontend's output, which is what we compile, plus `.vcode`).
+  (`<symbol>.unopt.clif`, the frontend's output before Cranelift's mid-end, which is what we
+  compile; `<symbol>.opt.clif`, the function cg_clif's own code is compiled from, after the
+  mid-end in an optimised build, see *Optimised builds*; plus `.vcode`).
   With a single codegen unit rustc afterwards tries to copy an `.ll` file that cg_clif never
   writes. `fv-rustc` recognises exactly that error, creates the empty file and runs rustc again.
 * `-Csymbol-mangling-version=hashed`: v0 names of monomorphised iterator adapters are longer
@@ -296,7 +301,11 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
    and `lean-link` take the same decision (`FnInput.cp`), so they compile the same function.
 4. **Safety net**: every symbol a Lean object references must be defined or referenced by
    cg_clif's object (or be a runtime helper: `mem*`, `__{u,}{div,mod}ti3`, all in every Rust
-   executable); otherwise the function falls back. A calling-convention guard (`abi_guard`)
+   executable). A reference to a symbol cg_clif's object neither defines nor references (in an
+   optimised build, e.g. a `Location` of a panic path Cranelift's optimiser removed) makes
+   `cargo fv` compile the function again from its `.opt.clif` dump, decoded the same way, and
+   keep that result if it passes this check (its `about` then says so); otherwise the function
+   falls back. A calling-convention guard (`abi_guard`)
    would send functions whose signature or callees' signatures are passed differently by
    the two backends to the fallback. Its list is empty now: the one mismatch found (sret)
    was fixed in the backend, see *Limitations*.
@@ -554,6 +563,62 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   *The executable compiler* (`--lean-link`: the guarantee is the general theorem
   `Link.DeadCleanup.compileExe_correct` and its variants, no per-executable proof) and the binary check; *Proving a crate*
   gives an optional, independent Lean-checked certificate.
+
+### Optimised builds (`--release`, or a profile raising `opt-level`)
+
+`cargo fv` passes the profile to cargo unchanged. cg_clif sets one Cranelift flag from rustc's
+optimisation level: `opt_level=none` for `-Copt-level=0` (the default `dev` and `test`
+profiles) and `opt_level=speed_and_size` for every other level (`--release`, `--profile bench`,
+and any profile or per-package override with `opt-level` above 0). At `speed_and_size`
+Cranelift runs its mid-end (`egraph_pass`: alias analysis with redundant-load elimination and
+store-to-load forwarding, GVN, the ISLE `simplify` rules, elaboration) before lowering, and
+cg_clif's object code, stock's, is compiled from that optimised function (cg_clif dumps it as
+`<symbol>.opt.clif`).
+
+`cargo fv` compiles every function from `<symbol>.unopt.clif`, cg_clif's output before
+Cranelift's mid-end (rustc's own MIR optimisations of the profile are in it), in every
+profile. So in an optimised build:
+
+* the per-function theorems (`about the source function`), `lean-link`'s executable theorems
+  (the bundle's program) and the binary check are about that unoptimised function; Cranelift's
+  mid-end is neither applied to the verified code nor trusted. The exception is a function
+  retried from its `.opt.clif` (step 4 of *How it works*): its `about` ends in `compiled from
+  cg_clif's optimised dump (.opt.clif)`, and its theorem is about Cranelift's optimised function;
+* fallback functions, and with `--lean-link` the unverified ones and those `lean-link
+  --verified` leaves out of a region, keep cg_clif's code from the same build, i.e. stock
+  Cranelift's optimised code;
+* the Lean-compiled code is in general not byte-equal to stock's (stock compiles another
+  function, the optimised one), and larger in total (measured below).
+
+`cargo fv` reads `opt_level` from each function's dump header, not from `--release`, so profile
+overrides count too. The report counts the Lean-compiled functions compiled from the
+`.unopt.clif` while it is not `none` (`unopt_input_optimised` in `counts`, and
+`unopt_input_opt_level` on each such function), and when there is at least one, cargo fv
+prints after its `verified functions by theorem` line (M = verified + unverified):
+
+```
+cargo fv: N of the M Lean-compiled functions were compiled from cg_clif's unoptimised CLIF (.unopt.clif) while cg_clif optimised them (opt_level=speed_and_size in their dumps' header): a verified one's theorem is about the unoptimised function, Cranelift's mid-end is neither applied to it nor trusted, and stock compiles Cranelift's optimised function, so the code is in general not byte-equal to stock's (docs/USAGE.md "Optimised builds", #1119)
+```
+
+Measured (#1119, 2026-11-19, main faec4deba): `cargo fv test --release --lean-link --verified`
+on 9 crates (blake2, crypto-bigint, itoa, memchr, num-traits, ryu, semver, serde_json, sha3)
+verified 121,750 of 121,869 functions, the binary check passed on all 48 executables, and the
+test outcomes were the same as stock cg_clif's `--release` on all 9 (1,423 outcomes). 23.1 % of
+the verified functions (28,083 of 121,750) were byte-identical to stock cg_clif's, against
+93.3 % (94,262 of 101,057) in the plain debug builds of the 7 of them whose debug profile is
+unoptimised. The compared functions' code was 5.5–11 % larger than stock's (1.055–1.110×), and
+the test suites took 1.02–1.21× stock's CPU time under qemu. No function was retried from its
+`.opt.clif` in these builds.
+
+A crate that raises `opt-level` in the profile a plain `cargo fv test` uses (as the workspace
+root: a dependency's own `[profile]` is ignored by cargo) is in the same situation without
+`--release`: memchr and base64 (`[profile.test] opt-level = 3`) and crypto-bigint
+(`[profile.dev] opt-level = 2`) had 23.4 %, 24.4 % and 21.7 % byte parity in the crate
+survey's debug builds (#1076), the other 27 crates measured 88.4–96.4 %.
+
+Compiling Cranelift's optimised function instead (80.2 % byte-identical in the same release
+builds) would make the theorems about it and put Cranelift's mid-end into the trusted base; the
+options, and the plan to validate the mid-end per function instead, are in #1119.
 
 ### The executable compiler (`--lean-link`, L1)
 
@@ -1161,9 +1226,12 @@ the CPU qemu emulates has.)
   fixed in the backend (f52e514), and fv-demo's `sret_interop` is the regression test.
   i128 register pairs, more than 8 (stack-passed) arguments and `uext`/`sext` narrow
   arguments were spot-checked against Cranelift and agree.
-* In release builds, a function whose unoptimised CLIF references data that Cranelift's
-  optimiser removed falls back. We compile the unoptimised CLIF, and the object has no symbol
-  for that data.
+* In an optimised build (`opt_level` other than `none` in the dumps' header: `--release`, or a
+  profile raising `opt-level`) the functions are compiled from the unoptimised CLIF, so the
+  theorems are about it and the code is in general not stock's (*Optimised builds*, #1119). A
+  function whose unoptimised CLIF references a symbol that Cranelift's optimiser removed from
+  cg_clif's object is retried from its `.opt.clif` (*How it works*, step 4) and falls back only
+  if that retry fails too.
 
 ## Stock Cranelift compiler-output comparison
 
