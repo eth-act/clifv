@@ -647,7 +647,7 @@ one verdict per executable:
 ```
 cargo fv: binary …/values-5203fc787ef73bb4: verified: E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 493 Lean-compiled functions; stack: 3008 bytes at most (no call cycle)
 cargo fv: binary …/deps: verified: E2E.SemanticExecBytes.binary_correct_exec_provenTS (E2E.SemanticExecBytes.binary_correct_exec_peak_provenTS for the functions whose calls reach a call cycle: their stack stays a premise) holds for its 17243 Lean-compiled functions; stack: recursive: the calls of 1832 function(s) reach a call cycle (their stack stays a premise); the other 15411: 61968 bytes at most
-cargo fv: binary check: 18 of 18 executable(s) verified (docs/contracts/e2e.md, "Binary level (M9)")
+cargo fv: binary check: 18 of 18 executable(s) verified (docs/contracts/e2e.md, "Binary level (M9)"); the theorems link-check names cover 3251 of their 3251 Lean-compiled function(s) (per executable: lean-link's region count with --lean-link, else its resolved Lean markers; a function in several executables counts in each)
 ```
 
 or `not verified: …` with the failing check (`binary check failed: FAIL code=… — BIN …`, the
@@ -662,6 +662,19 @@ certificate generate the proof with `cargo fv link-proof --lean` (below; its pro
 the linked machine model's theorem, `backend_correct_program`, not the executable-word one).
 `--no-binary-check` skips it (its cost grows with the number of Lean-compiled functions of each
 executable: under a second per survey executable).
+
+The program link-check checks holds every Lean-compiled function of the executable: with
+`--lean-link` the functions of the codegen units whose code `lean-link` put in the region (also a
+unit whose own object the link did not take: an archive member that only holds weak copies of
+functions the region object defines is not extracted, e.g. k256's `zerocopy` unit, #1130), else
+those of the units whose object the link map names. An executable is verified only when the
+theorem's instance covers all of them: the number of functions it covers (link-check's
+`--prune` count) must equal lean-link's region count (with `--lean-link`) or the number of Lean
+markers resolved in the executable; otherwise the line says `not verified: the binary check
+covers N function(s), the executable has M Lean-compiled function(s) (…)`, and a Lean-compiled
+function whose marker is in the link map but not in link-proof's bundle is named with its
+codegen unit. `target/fv-report.json` records both counts per executable (`binary.bin_check`:
+`functions`, `functions_from`, `checked`, `verified`, `summary`).
 
 ## Proving a crate (`cargo fv link-proof`, optional)
 
@@ -697,8 +710,11 @@ $ cd ../../crate-proofs && lake build Crates.GU128
 1. Build with `cargo fv build` or `test` (the inputs are kept unless `--no-binary-check`;
    `--keep-temps` keeps the whole work directories).
 2. `cargo fv link-proof` picks the executable whose path contains every `--exe` (default: the
-   only one linked) and the Lean-compiled, **verified** functions of its codegen units (`--crate NAME`:
-   only the crate's own units, `NAME-<hash>`), and writes `--out` (default
+   only one linked) and the Lean-compiled, **verified** functions of its codegen units (with
+   `--lean-link` the region's units, the list `lean-link` placed, recorded as `cgus` in
+   `target/fv/<mode>/tmp/link-<tag>.json`; else the units whose object the link map names;
+   `--crate NAME`: only the crate's own units, `NAME-<hash>`; a Lean-compiled function of the
+   executable left out of the bundle is named), and writes `--out` (default
    `target/fv/link-proof`): `bundle.json`, the frontend bundle (docs/contracts/frontend.md:
    per codegen unit the paths of the functions' CLIF files and allocator answers, of its
    data objects, its local symbols and the merge's names; the executable's symbols and the
