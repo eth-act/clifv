@@ -123,7 +123,9 @@ def main():
     rc, out = run_check(a.link_check, work)
     pc2 = prune_counts(out)
     lines = out.splitlines()
-    fail_a = [i for i, l in enumerate(lines) if l.strip() == f"FAIL {fa['name']}:"]
+    # link-check names a function by its linked name (`final`: a local symbol renamed `__fv_<tag>_…`)
+    a_names = {f"FAIL {fa['name']}:", f"FAIL {fa.get('final', fa['name'])}:"}
+    fail_a = [i for i, l in enumerate(lines) if l.strip() in a_names]
     a_mid = any("Link.midPairB" in lines[j] for i in fail_a for j in range(i + 1, min(i + 8, len(lines))) if lines[j].startswith("      "))
     theorem = next((l.strip() for l in lines if l.strip().startswith("theorem: ")), "")
     print(f"tampered: rc={rc}, Link.midPairB fails for {mid_fails(out)}, {fa['name']} fails Link.midPairB: {a_mid}, --prune {pc2}, {theorem[:120]}")

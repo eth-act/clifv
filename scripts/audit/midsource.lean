@@ -5,6 +5,8 @@ import FV.Link.MidSourceRoutes
 import FV.E2E.MidValExecProven
 import FVTest.Link.MidPairWitness
 import FVTest.Link.MidSourceWitness
+import FV.Link.MidSourceTB
+import FVTest.Link.MidSourceTBWitness
 
 /-! #1119 layer 2: the bundle's program through the mid-end validator. -/
 
@@ -46,6 +48,8 @@ import FVTest.Link.MidSourceWitness
 #print axioms Link.SemanticCompilerWith.attemptT_correct_source_peakMid
 #print axioms Link.TypedCompilerWith.attempt_correct_sourceMid
 #print axioms Link.TypedCompilerWith.attempt_correct_source_peakMid
+#print axioms Link.SemanticCompilerWith.attemptT_correct_sourceTBMid
+#print axioms Link.SemanticCompilerWith.attemptT_correct_source_peakTBMid
 #print axioms FVTest.Link.MidPairWitness.facts0 -- witness: native_decide
 #print axioms FVTest.Link.MidPairWitness.facts_spec -- witness: native_decide
 #print axioms FVTest.Link.MidPairWitness.validated -- witness: native_decide
@@ -54,4 +58,7 @@ import FVTest.Link.MidSourceWitness
 #print axioms Link.MidSourceWitness.parts -- witness: native_decide
 #print axioms Link.MidSourceWitness.correct_sourceMid_applies -- witness: native_decide
 #print axioms Link.MidSourceWitness.hcp
+#print axioms E2E.MidSourceTBWitness.checks_true -- witness: native_decide
+#print axioms E2E.MidSourceTBWitness.parts -- witness: native_decide
+#print axioms E2E.MidSourceTBWitness.correct_sourceTBMid_applies -- witness: native_decide
 #print axioms FVTest.Link.MidPairWitness.keep_empty

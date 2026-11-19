@@ -782,11 +782,14 @@ def main (args0 : List String) : IO UInt32 := do
   -- failing one is left out of the region (`--verified: exclude:`). When all hold
   -- (`Link.midValidatedB_sound`: `Opt.MidVal.Validated I0.srcProg.funcs S0.input0.srcProg.funcs`,
   -- `I0` the bundle with the source dumps), the source theorems named are the `…Mid` ones, about
-  -- the bundle's source program (the unoptimised dumps), on `SrcScopeB S0.input0` (`srcOk`).
+  -- the bundle's source program (the unoptimised dumps), on `SrcScopeB S0.input0` (`srcOk`); on a
+  -- bundle only in `SrcScopeTB` (`srcT`, the typed Stock route alone) the `…TBMid` ones
+  -- (`FV/Link/MidSourceTB.lean`), decided on that route's input below (`midFis0`: the source
+  -- dumps' inputs).
   let midSrc ← try Front.readSrcBundle dir
     catch e => do IO.eprintln s!"lean-link: {e}"; return 2
-  let midN : Nat ← match midSrc with
-    | none => pure 0
+  let (midN, midFis0) : Nat × List FnInput ← match midSrc with
+    | none => pure (0, [])
     | some (bs, srcNames) => do
       if !verified then
         IO.eprintln s!"lean-link: {exe}: {srcNames.length} function(s) compiled from optimised dumps (src_dump, #1119): only with --verified; not written"
@@ -806,13 +809,11 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link: {exe}: --verified: the mid-end validator's pair fails (Link.midPairB, re-decided on the bundle's dumps): {bad.length} function(s) {bad.take 3}; not written"
         printExclusions exe S0 SC typedOk bad (only := true)
         return 1
-      if !srcOk then
-        let mids := pairs.filterMap fun (f0, f1) => if f0 = f1 then none else some f1.name
-        IO.eprintln s!"lean-link: {exe}: --verified: the bundle's program is outside SrcScopeB, which the theorems through the mid-end validator take: the {mids.length} function(s) compiled from optimised dumps are left out {mids.take 3}; not written"
-        printExclusions exe S0 SC typedOk mids (only := true)
-        return 1
-      IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midValidatedB holds against the source dumps (src_dump): the source theorems below are the …Mid ones, about the bundle's source program (unoptimised dumps)"
-      pure srcNames.length
+      if srcOk then
+        IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midValidatedB holds against the source dumps (src_dump): the source theorems below are the …Mid ones, about the bundle's source program (unoptimised dumps)"
+      else
+        IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midPairB holds on every pair of the bundle's dumps; the bundle's program is in SrcScopeTB only: the typed Stock route decides Link.midValidatedB on its input (the …TBMid source theorems)"
+      pure (srcNames.length, A0.funcs)
   -- a coverage line through the validator: the `…Cp` source theorems by their `…Mid`
   -- compositions (`FV/Link/MidSourceRoutes.lean`), about the unoptimised dumps; `Front.…TCp`
   -- (about the dumps compiled) not named
@@ -934,6 +935,23 @@ def main (args0 : List String) : IO UInt32 := do
       let bad := TypedStockShared.stockFails SP RS
       let att := if bad.isEmpty then leanLinkWithResults SP file0 (fun _ => RS)
         else .error SemanticCompilerWith.outOkTSMsg
+      -- #1119: a bundle only in `SrcScopeTB` with functions compiled from optimised dumps: the
+      -- theorems through the validator on this route (`attemptT_correct_source{,_peak}TBMid`,
+      -- `FV/Link/MidSourceTB.lean`) take `Opt.MidVal.Validated P0.funcs Q.funcs`, `Q` the route
+      -- input's source program, `P0` the source dumps' inputs taken as the route takes the dumps
+      -- (`FnInput.cp`, then parsed), by name; decided here (`Link.midValidatedB_sound`) before the
+      -- executable is written, a failing pair left out (`--verified: exclude:`)
+      let midTB : Bool := midN != 0 && srcT && SrcScopeTB SP.input0
+      if midTB then
+        let Q := (SemanticCompilerWith.input routes[0]! SP true).toLinkInput.srcProg.funcs
+        let m0 : Std.HashMap String Clif.Function :=
+          midFis0.foldl (fun m fi => let f := (FnInput.cp fi).src; m.insert f.name f) {}
+        let P0 := Q.map fun q => (m0[q.name]?).getD default
+        if !Link.midValidatedB P0 Q then
+          let badQ := (P0.zip Q).filterMap fun (f, g) => if Link.midPairB f g then none else some g.name
+          IO.eprintln s!"lean-link: {exe}: --verified: the mid-end validator's pair fails on the typed Stock route's input (Link.midPairB, the source dumps taken as the route takes the dumps): {badQ.length} function(s) {badQ.take 3}; not written"
+          printExclusions exe S0 SC typedOk badQ (only := true)
+          return 1
       if let .ok file := att then
         IO.FS.writeBinFile exe file
         IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
@@ -951,7 +969,9 @@ def main (args0 : List String) : IO UInt32 := do
         -- route input's call-level stack, `SrcScopeTB_withDepth`: decided on `SP.input0`)
         let srcTB := if !srcT then "" else
           let thmTB := if SrcScopeTB SP.input0 then
-            ", Link.SemanticCompilerWith.attemptT_correct_sourceTB, Link.SemanticCompilerWith.attemptT_correct_source_peakTB"
+            if midTB then
+              ", Link.SemanticCompilerWith.attemptT_correct_sourceTBMid, Link.SemanticCompilerWith.attemptT_correct_source_peakTBMid: about the bundle's unoptimised dumps (src_dump) taken as the route's input takes the dumps (constant-phi removal), through the mid-end validator (Link.midValidatedB decided on the route's input)"
+            else ", Link.SemanticCompilerWith.attemptT_correct_sourceTB, Link.SemanticCompilerWith.attemptT_correct_source_peakTB"
             else ""
           s!"; the bundle's program is in SrcScopeTB, not SrcScopeB (#1076: i128 functions with a try_call_indirect at an i128-free signature): its legalisation refines it (E2E.LegalProgram.legalProg_refinesT{thmTB})"
         -- #1100: the bundle's program through the legalisation and constant-phi removal, at
