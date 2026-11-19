@@ -2,6 +2,7 @@ import FV.E2E.BinCheck
 import FV.E2E.CodeMap
 import FV.E2E.StackBound
 import FV.E2E.LinkCheckFast
+import FV.E2E.LinkIdx
 
 /-! # The stack budgets with hash maps (T3d)
 
@@ -63,6 +64,79 @@ theorem budSuccFast_eq (I : LinkInput) (fs : Array Clif.Function) :
     budSuccFast (fun n => (assocMap I.syms)[n]?) fs = budSucc I fs := by
   simp only [budSuccFast, assocMap_fun, declSet_contains]
   rfl
+
+/-- The positions of `fs` by name (the candidate edges to the functions a caller declares). -/
+def budByName (fs : Array Clif.Function) : Std.HashMap String (List Nat) :=
+  groupMulti (fun j => [fs[j]!.name]) (List.range fs.size)
+
+/-- The positions of the functions of `fs` with a symbol by parameter types (the candidate edges
+of an indirect call: `LinkSys.IndSigMatch.ty`). -/
+def budByTys (S : String → Option Nat) (fs : Array Clif.Function) :
+    Std.HashMap (List Clif.Ty) (List Nat) :=
+  groupMulti (fun j => if (S fs[j]!.name).isSome then [Clif.AbiParam.tys fs[j]!.sig.params] else [])
+    (List.range fs.size)
+
+/-- The positions `g` may have an edge to (`budCands_of`): those of the names it declares and,
+when it has an indirect call, those of the functions with a symbol and the parameter types of one
+of its indirect-call signatures. -/
+def budCands (byName : Std.HashMap String (List Nat)) (byTys : Std.HashMap (List Clif.Ty) (List Nat))
+    (g : Clif.Function) : Std.HashSet Nat :=
+  Std.HashSet.ofList ((g.externs.flatMap fun e => byName.getD e.2.name []) ++
+    (if !indFreeB g then (indSigs g).flatMap fun s => byTys.getD (Clif.AbiParam.tys s.params) []
+      else []))
+
+theorem budCands_of (S : String → Option Nat) (fs : Array Clif.Function) (g : Clif.Function)
+    {j : Nat} (hj : j < fs.size)
+    (h : edgeWithW S (fun n => (declSet g).contains n) (!indFreeB g) (indSigs g) fs[j]! = true) :
+    (budCands (budByName fs) (budByTys S fs) g).contains j = true := by
+  simp only [budCands, Std.HashSet.contains_ofList, List.contains_iff_mem, List.mem_append,
+    List.mem_flatMap]
+  simp only [edgeWithW, Bool.or_eq_true, Bool.and_eq_true, List.any_eq_true,
+    decide_eq_true_eq] at h
+  rcases h with hd | ⟨⟨hind, hs⟩, s, hsm, hm⟩
+  · left
+    have hd' : declB g fs[j]!.name = true := by rw [← declSet_contains g]; exact hd
+    simp only [declB, List.any_eq_true, beq_iff_eq] at hd'
+    obtain ⟨e, he, hen⟩ := hd'
+    refine ⟨e, he, ?_⟩
+    rw [budByName, mem_groupMulti]
+    exact ⟨List.mem_range.mpr hj, by simp [hen]⟩
+  · right
+    simp only [hind, ↓reduceIte, List.mem_flatMap]
+    refine ⟨s, hsm, ?_⟩
+    rw [budByTys, mem_groupMulti]
+    refine ⟨List.mem_range.mpr hj, ?_⟩
+    simp only [hs, ↓reduceIte, List.mem_singleton]
+    exact (LinkSys.IndSigMatch.ty hm).symm
+
+/-- **`budSuccFast` with the candidate edges indexed and one task per function** (`@[csimp]
+`budSuccFast_eq_idx`): `budSuccFast` tests every pair of functions, with `g`'s indirect-call
+signatures compared per pair; on ruint's test executable (226,990 functions, #1108) that phase
+of `link-check` ran for hours. Each pair is now first tested against `g`'s candidates (a hash
+set), the edge test only on those. -/
+def budSuccIdx (S : String → Option Nat) (fs : Array Clif.Function) : Array (List Nat) :=
+  let rg := List.range fs.size
+  let byName := budByName fs
+  let byTys := budByTys S fs
+  (Link.parMap (fun g =>
+    let D := declSet g
+    let ind := !indFreeB g
+    let sigs := indSigs g
+    let C := budCands byName byTys g
+    rg.filter fun j => C.contains j && edgeWithW S (fun n => D.contains n) ind sigs fs[j]!)
+    fs.toList).toArray
+
+@[csimp] theorem budSuccFast_eq_idx : @budSuccFast = @budSuccIdx := by
+  funext S fs
+  apply Array.ext'
+  simp only [budSuccFast, budSuccIdx, Link.parMap_eq, Array.toList_map, List.toList_toArray]
+  apply List.map_congr_left
+  intro g _
+  apply List.filter_congr
+  intro j hj
+  cases hp : edgeWithW S (fun n => (declSet g).contains n) (!indFreeB g) (indSigs g) fs[j]! with
+  | false => simp
+  | true => simp [budCands_of S fs g (List.mem_range.mp hj) hp]
 
 /-- `budFd` with the images in a hash map. -/
 def budFdFast (M : Std.HashMap String Art) (fs : Array Clif.Function) : Array Nat :=
