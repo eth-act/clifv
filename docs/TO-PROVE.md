@@ -1187,6 +1187,10 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     whose run lost a shard before its build step (a lost runner, a setup failure) gets one retry
     run (`workflow_dispatch`) unless a newer push already waits. The swap file goes on the disk with
     more room and leaves 25 GB free on `/` (8 shards died of a full disk, 2026-10-31 to 11-04).
+    Jobs install their Ubuntu packages with `.github/scripts/apt-install.sh`: apt's own download
+    retries, each `update` + `install` attempt killed after 6 minutes, 4 attempts, and the step's
+    `timeout-minutes: 35`, so a mirror outage fails the step within 35 minutes, not at the
+    job limit (#726: a hung `apt-get update` and HTTP 503s turned main's record red twice on 2026-11-19).
     Contributors fill their `FV_LAKE_CACHE` from these builds with `scripts/fetch-lake-cache.sh`.
     Then one job assembles every target
     and executable, and the gate jobs run every line of `scripts/main-gate.sh` (#998; since

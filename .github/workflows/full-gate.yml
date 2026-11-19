@@ -450,9 +450,10 @@ jobs:
           swap-gb: '16'
           stages: lake-full
       - name: Tools
+        # above apt-install.sh's worst case (about 33 min): a mirror outage fails here, not at the job limit
+        timeout-minutes: 35
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq qemu-user-static llvm-18 clang
+          .github/scripts/apt-install.sh qemu-user-static llvm-18 clang
           rustup target add aarch64-unknown-linux-musl
       - name: Rust build cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -532,9 +533,9 @@ jobs:
           swap-gb: '16'
           stages: lake-full
       - name: Tools
+        timeout-minutes: 35
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq qemu-user-static llvm-18
+          .github/scripts/apt-install.sh qemu-user-static llvm-18
           rustup toolchain install nightly-2026-09-26 --profile minimal \
             --component rustc-dev --target aarch64-unknown-linux-musl
           rustup target add aarch64-unknown-linux-musl
@@ -708,9 +709,9 @@ jobs:
           swap-gb: '16'
           stages: lake-full
       - name: Tools
+        timeout-minutes: 35
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq qemu-user-static llvm-18
+          .github/scripts/apt-install.sh qemu-user-static llvm-18
           rustup toolchain install nightly-2026-09-26 --profile minimal \
             --component rustc-dev --component rust-src --target aarch64-unknown-linux-musl
           rustup target add aarch64-unknown-linux-musl
@@ -804,9 +805,9 @@ jobs:
           swap-gb: '16'
           stages: lake-full
       - name: Tools
+        timeout-minutes: 35
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq qemu-user-static llvm-18
+          .github/scripts/apt-install.sh qemu-user-static llvm-18
           rustup toolchain install nightly-2026-09-26 --profile minimal \
             --component rustc-dev --target aarch64-unknown-linux-musl
           rustup target add aarch64-unknown-linux-musl
