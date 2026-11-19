@@ -74,6 +74,32 @@ def MR (f g : Function) (fi gi : Info) (cert : Cert) (norm : Norm) (syms : Strin
     (fr fr' : Frame) (m : Mem) : Prop :=
   ∃ bi k k' S, Rel f g fi gi cert norm syms bi k k' S fr fr' m
 
+/-- `g` runs its checked pure prefix (the statement of `gPre_run`, `FV/Opt/Proof/MidValPrefix.lean`;
+a definition so that the step lemmas can be stated and built independently of its proof):
+from frames where `g`'s values available at `(bi, k')` hold their terms' values with sites no
+later than `f`'s position `(bi, k)` and every `defd` fact of `S` holds, `g` executes the pure
+statements `gPre` accepts (bound `(bi, k)`) without changing memory, keeping both. -/
+def GPreRun (f g : Function) (fi gi : Info) (cert : Cert) (norm : Norm) : Prop :=
+  ∀ {syms : String → Option Nat} {bi k k' k'' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
+    {rest : List Stmt},
+    m.symbols = syms →
+    Inv f (wfData f fi) syms fr bi k →
+    Inv g (wfData g gi) syms fr' bi k' →
+    fr'.slots = fr.slots →
+    (∀ y, Avail (wfData g gi) bi k' y →
+      TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr'.regs y) →
+    (∀ y, Avail (wfData g gi) bi k' y →
+      LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k)) →
+    (∀ t, Fact.defd t ∈ S → (TV f cert syms fr t).isSome) →
+    (ccOf fi gi cert norm).gPre (bi, k) S fr'.body k' = some (rest, k'') →
+    ∃ fr'', LStar fr' m fr'' m ∧ fr''.body = rest ∧ fr''.term = fr'.term ∧
+      fr''.slots = fr'.slots ∧ fr''.func = fr'.func ∧
+      Inv g (wfData g gi) syms fr'' bi k'' ∧
+      (∀ y, Avail (wfData g gi) bi k'' y →
+        TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr''.regs y) ∧
+      (∀ y, Avail (wfData g gi) bi k'' y →
+        LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k))
+
 namespace Hyp
 
 variable {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
