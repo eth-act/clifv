@@ -60,8 +60,9 @@ def binVerdict (c : Checker) (recursive ok binOk codeOk gotOk : Bool) : String :
 When the bundle has functions compiled from Cranelift's optimised dumps (`src_dump`: their
 unoptimised dumps), the theorem is the `_mid` sibling: the same premises about the compiled
 program, plus `Opt.MidVal.Validated P0.funcs (prog I).funcs` for the program `P0` of the
-unoptimised dumps (`link-check` decides `Link.midValidatedB` on the pruned program,
-`Link.midValidatedB_sound`); its conclusion is about `P0`'s runs. -/
+unoptimised dumps after constant-phi removal and the `i128` legalisation (`FnInput.cp`, as
+`prog I` is of the dumps compiled; `link-check` decides `Link.midValidatedB` on the pruned
+program, `Link.midValidatedB_sound`); its conclusion is about `P0`'s runs. -/
 
 /-- The `_mid` siblings of `theorems`. -/
 def theoremsMid (c : Checker) : String × String :=
@@ -84,6 +85,6 @@ def binVerdictMid (c : Checker) (recursive ok binOk codeOk gotOk midOk : Bool) :
   else if !codeOk then "theorem: none (codeMapB fails)"
   else if !gotOk then "theorem: none (GotOk fails)"
   else if !midOk then "theorem: none (Link.midValidatedB fails)"
-  else s!"theorem: {binTheoremMid c recursive} (about the program of the unoptimised dumps)"
+  else s!"theorem: {binTheoremMid c recursive} (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation)"
 
 end FVTest.E2E.BinVerdict

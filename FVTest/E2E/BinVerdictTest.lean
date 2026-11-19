@@ -50,7 +50,7 @@ run_cmd do
       | some _ => throwError "{n} is not a theorem"
       | none => throwError "{n} does not exist"
 #guard binVerdictMid .integer false true true true true true =
-  "theorem: E2E.ReturnPinExecBytes.binary_correct_exec_proven_mid (about the program of the unoptimised dumps)"
+  "theorem: E2E.ReturnPinExecBytes.binary_correct_exec_proven_mid (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation)"
 #guard binVerdictMid .integer false true true true true false = "theorem: none (Link.midValidatedB fails)"
 #guard binVerdictMid .typed false true true false true true = "theorem: none (codeMapB fails)"
 

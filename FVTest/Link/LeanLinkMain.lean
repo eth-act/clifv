@@ -819,8 +819,8 @@ def main (args0 : List String) : IO UInt32 := do
   let midCov (s : String) : String := if midN == 0 then s else
     let s := (s.replace "_sourceCp" "_sourceMid").replace "_source_peakCp" "_source_peakMid"
     let s := s.replace "; cg_clif's program: Front.bundle_correct_rawTCp, Front.bundle_correct_raw_peakTCp" ""
-    let s := s.replace "the bundle's program (before the i128 legalisation and constant-phi removal)"
-      "about the bundle's source program (unoptimised dumps; through the mid-end validator, Link.midValidatedB decided; before the i128 legalisation and constant-phi removal)"
+    let s := s.replace "the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB:"
+      "the bundle's source program (the unoptimised dumps, src_dump, before the i128 legalisation and constant-phi removal; through the mid-end validator: Link.midValidatedB decided against the dumps compiled, whose program is in SrcScopeB):"
     s ++ (if (s.splitOn "Mid").length > 1 then
         s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps"
       else s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps, and no theorem named here is about their unoptimised dumps")

@@ -4,6 +4,7 @@ import FV.Link.MidProg
 import FV.Link.MidSourceRoutes
 import FV.E2E.MidValExecProven
 import FVTest.Link.MidPairWitness
+import FVTest.Link.MidSourceWitness
 
 /-! #1119 layer 2: the bundle's program through the mid-end validator. -/
 
@@ -49,4 +50,8 @@ import FVTest.Link.MidPairWitness
 #print axioms FVTest.Link.MidPairWitness.facts_spec -- witness: native_decide
 #print axioms FVTest.Link.MidPairWitness.validated -- witness: native_decide
 #print axioms FVTest.Link.MidPairWitness.midProg_applies -- witness: native_decide
+#print axioms Link.MidSourceWitness.checks_true -- witness: native_decide
+#print axioms Link.MidSourceWitness.parts -- witness: native_decide
+#print axioms Link.MidSourceWitness.correct_sourceMid_applies -- witness: native_decide
+#print axioms Link.MidSourceWitness.hcp
 #print axioms FVTest.Link.MidPairWitness.keep_empty
