@@ -422,15 +422,16 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let lg := Opt.Legalize128.parsedFile128 source
   -- constant-phi removal after the legalisation, before the mid-end (#990)
   let header := Link.clifHeader src
-  let lgc0 := Opt.ConstPhi.selectFile header lg.file
-  -- option D prototype (#1017, scratch): Cranelift 0.136.1's drop of unused `notrap` loads,
-  -- before lowering; not proved yet, so the functions it changes are reported unverified
-  let lgc := Opt.NotrapDrop.selectFile header lgc0
-  let notrapChanged : List String := (lgc0.funcs.zip lgc.funcs).filterMap fun (a, b) =>
+  let lgc := Opt.ConstPhi.selectFile header lg.file
+  let pf0 := match o.opt with | some c => Opt.optimizeParsedFile c lgc | none => lgc
+  -- option D prototype (#1017, scratch): Cranelift 0.136.1's drop of unused `notrap` loads, the
+  -- last pass before lowering (Cranelift drops them while lowering, after its mid-end); not
+  -- proved yet, so the functions it changes are reported unverified
+  let pf := Opt.NotrapDrop.selectFile header pf0
+  let notrapChanged : List String := (pf0.funcs.zip pf.funcs).filterMap fun (a, b) =>
     match a.func, b.func with
     | .ok fa, .ok fb => if decide (fa = fb) then none else some a.name
     | _, _ => none
-  let pf := match o.opt with | some c => Opt.optimizeParsedFile c lgc | none => lgc
   -- the compile budget (#1074): functions over it are not compiled (unsupported)
   let overCompile : List (String × String) := pf.funcs.filterMap fun p =>
     p.func.toOption.bind fun f => (overCompileBudget? f).map (p.name, ·)

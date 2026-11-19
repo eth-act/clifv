@@ -63,18 +63,29 @@ def live (f : Function) : Std.HashSet ValueId := Id.run do
 def keep (L : Std.HashSet ValueId) (st : Stmt) : Bool :=
   !droppable st.inst || st.results.any L.contains
 
-/-- The number of `notrap` loads the drop deletes. -/
-def dropped (f : Function) : Nat :=
-  let L := live f
+/-- The number of `notrap` loads the drop with live set `L` deletes. -/
+def droppedWith (f : Function) (L : Std.HashSet ValueId) : Nat :=
   f.blocks.foldl (fun n b => n + (b.body.filter fun st => notrapLoad st.inst && !keep L st).length) 0
 
+/-- The number of `notrap` loads the drop deletes. -/
+def dropped (f : Function) : Nat := droppedWith f (live f)
+
+/-- **The check** the proof relies on (the mark phase is not trusted): every operand of a kept
+statement and every operand of a terminator is in `L`. -/
+def closedB (f : Function) (L : Std.HashSet ValueId) : Bool :=
+  f.blocks.all fun b =>
+    b.body.all (fun st => !keep L st || (operands st.inst).all L.contains) &&
+      (termOperands b.term).all L.contains
+
+/-- `f` without the statements `keep L` rejects. -/
+def dropWith (f : Function) (L : Std.HashSet ValueId) : Function :=
+  { f with blocks := f.blocks.map fun b => { b with body := b.body.filter (keep L) } }
+
 /-- **The pass**: `f` without its dead `notrap` loads and the dead removable statements, when at
-least one `notrap` load goes; `f` otherwise. -/
+least one `notrap` load goes and the live set passes `closedB`; `f` otherwise. -/
 def run (f : Function) : Function :=
-  if dropped f == 0 then f
-  else
-    let L := live f
-    { f with blocks := f.blocks.map fun b => { b with body := b.body.filter (keep L) } }
+  let L := live f
+  if droppedWith f L != 0 && closedB f L then dropWith f L else f
 
 /-- `lean-backend`'s decision, as `Opt.ConstPhi.keeps`: the pass changes `f` and its output,
 printed after `header`, parses back to itself. -/
