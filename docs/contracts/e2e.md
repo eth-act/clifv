@@ -3000,6 +3000,26 @@ printed but not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdic
 that every name exists and the verdicts; `scripts/bin-check-got-mutation.py` that a file whose
 GOT slots are writable is not verified.
 
+**Which functions the program holds (#1130).** `cargo fv link-proof` builds the bundle from the
+codegen units whose Lean code is in the executable: with `--lean-link`, the units of the region
+(the list `lean-link`'s input was built from, `cgus` in the link record
+`target/fv/<mode>/tmp/link-<tag>.json`), also a unit whose own object the link did not take
+(rust-lld and lean-ld extract an archive member only for a non-weak undefined reference to one
+of its symbols, `FV/Link/Ld/Resolve.lean`; a member that only holds weak copies of region
+functions can be left out, and its functions are still in the region); without `--lean-link`, the units whose object
+the link map names (the Lean code is inside that object). link-check decides the data objects
+the functions reach against the file whatever unit they come from. link-proof names every
+Lean-compiled function of the executable (its `__fvlean$` marker is in the link map) that is not
+in the bundle, and `cargo fv` counts an executable as verified only when the named theorem's
+instance covers every Lean-compiled function of it: link-check's `--prune` count of passing
+functions must equal `lean-link`'s region count (`--lean-link`) or the number of markers resolved
+in the executable; otherwise the line is `not verified: the binary check covers N function(s),
+the executable has M Lean-compiled function(s) (…)`. `fv-report.json` records both counts
+(`binary.bin_check`). Until #1130 link-proof took the units of the objects in the link map also
+under `--lean-link`, and the verdict covered fewer functions than the region without saying so
+(k256 1,162 of 48,673 region functions, ruint 561 of 228,175, deps 4 of 69,393, crypto-bigint 5
+of 68,853: the units of `zerocopy`, `ctutils`, `bit_set`, `cpufeatures`).
+
 **`verified: <theorem>` is not unconditional.** The named theorem keeps these hypotheses, which
 are about the code outside the program and about a run, and which no tool decides:
 
@@ -3462,6 +3482,8 @@ E2E.Binary.binary_correct holds for its N Lean-compiled functions; stack: …` (
 `binary_correct_depth` for functions on call cycles), or `not verified: …` with the failing check
 (the binary check's `FAIL` line and first detail, or the first function failing `LinkSys.Ok`).
 The build keeps link-proof's inputs for it (objects removed); `--no-binary-check` turns it off.
+An executable counts as verified only when the theorem covers all its Lean-compiled functions
+("Which functions the program holds", #1130).
 The 18 executables of `examples/survey` and `fv-demo`'s are verified (fv-demo: 26 functions on
 call cycles).
 

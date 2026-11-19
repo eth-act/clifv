@@ -1,6 +1,6 @@
 //! `cargo fv build|run|test|report`: see docs/USAGE.md.
 use cargo_fv::config::{Config, Mode};
-use cargo_fv::report::{BinaryCheck, Report, Status, UnitReport};
+use cargo_fv::report::{BinCheckVerdict, BinaryCheck, Report, Status, UnitReport};
 use cargo_fv::{TARGET, TOOLCHAIN};
 use std::collections::HashSet;
 use std::os::unix::fs::MetadataExt;
@@ -561,7 +561,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         (a.dep, a.std, &a.package, &a.crate_name, &a.kind, &a.src, &a.unit)
             .cmp(&(b.dep, b.std, &b.package, &b.crate_name, &b.kind, &b.src, &b.unit))
     });
-    let report = Report::new(&profile, mode.name(), &panic_desc, units);
+    let mut report = Report::new(&profile, mode.name(), &panic_desc, units);
     let rp = report_path(&target);
     let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
     if !out.status.success() {
@@ -641,20 +641,39 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         );
     }
     if bin_check {
-        // the binary-level theorem's checks, per linked executable with Lean-compiled code
+        // the binary-level theorem's checks, per linked executable with Lean-compiled code; an
+        // executable counts as verified only when the theorem's instance covers every
+        // Lean-compiled function in it (#1130): lean-link's region count with --lean-link, else
+        // the markers resolved in the executable
         let manifest = value_of(&cargo_args, "--manifest-path");
-        let (mut checked, mut verified) = (0, 0);
-        for b in report.units.iter().filter_map(|u| u.unit.binary.as_ref()) {
+        let (mut checked, mut verified, mut fns, mut covered) = (0, 0, 0, 0);
+        for b in report.units.iter_mut().filter_map(|u| u.unit.binary.as_mut()) {
             if b.note.is_some() || b.lean_functions_linked == 0 {
                 continue;
             }
-            let v = cargo_fv::bincheck::check(&fv_dir, &b.path, manifest.as_deref());
+            let (functions, from) = match b.lean_link_region {
+                Some(n) => (n, "lean-link's region count"),
+                None => (b.lean_functions_linked, "the Lean markers resolved in the executable"),
+            };
+            let v = cargo_fv::bincheck::cover(cargo_fv::bincheck::check(&fv_dir, &b.path, manifest.as_deref()), functions, from);
             eprintln!("cargo fv: binary {}: {}", b.path, v.summary);
             checked += 1;
             verified += usize::from(v.verified);
+            fns += functions;
+            covered += v.checked.unwrap_or(0).min(functions);
+            b.bin_check = Some(BinCheckVerdict {
+                functions,
+                functions_from: from.into(),
+                checked: v.checked,
+                verified: v.verified,
+                summary: v.summary,
+            });
         }
         if checked > 0 {
-            eprintln!("cargo fv: binary check: {verified} of {checked} executable(s) verified (docs/contracts/e2e.md, \"Binary level (M9)\")");
+            eprintln!(
+                "cargo fv: binary check: {verified} of {checked} executable(s) verified (docs/contracts/e2e.md, \"Binary level (M9)\"); the theorems link-check names cover {covered} of their {fns} Lean-compiled function(s) (per executable: lean-link's region count with --lean-link, else its resolved Lean markers; a function in several executables counts in each)"
+            );
+            let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
         }
     }
     let mism = report.binary_mismatches();
