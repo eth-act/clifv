@@ -18,6 +18,7 @@ args=(--preset=aeneas --sysroot default
   --start-from crate::compile_aarch64 --start-from crate::triple
   --include cranelift_codegen --include cranelift_reader --include cranelift_entity
   --include cranelift_bforest --include cranelift_bitset --include cranelift_control
+  --include cranelift_codegen_shared --include wasmtime_internal_core
   --include regalloc2
   # Fork options: layouts are unused by Aeneas (and stale after associated-type lifting);
   # ISLE-generated bodies explode under duplicating control-flow reconstruction.
@@ -47,6 +48,8 @@ if [ -f "$LLBC" ]; then
     -sequential -no-progress-bar -print-error-emitters -print-error-diagnostics -all-computable \
     -dest "$GEN" -subdir ClifvGen "$LLBC") > "$RUN/aeneas.log" 2>&1
   echo $? > "$RUN/aeneas.exit"
+  # TypesExternal/FunsExternal: the templates minus the items with a handwritten model.
+  python3 "$EXTRACT/scripts/externals.py" "$GEN" > "$RUN/externals.json"
 else
   echo "no LLBC" > "$RUN/aeneas.log"; echo 255 > "$RUN/aeneas.exit"
 fi
