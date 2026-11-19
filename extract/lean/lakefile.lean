@@ -6,7 +6,7 @@ The generated code (`Generated/`, by `extract/scripts/extract.sh`) uses the Aene
 the pinned fork (`extract/pins.json`). -/
 
 require aeneas from git
-  "https://github.com/codygunton/aeneas" @ "9d116a4093d2dc249af19b7278a85e597eac0ef1" / "backends/lean"
+  "https://github.com/codygunton/aeneas" @ "a16a3053ca05b3df9acbb73f36ddeff6905e6106" / "backends/lean"
 
 package clifvExtract where
   leanOptions := #[⟨`weak.linter.dupNamespace, false⟩]
