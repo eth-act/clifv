@@ -1,4 +1,5 @@
 import FV.Opt.Check
+import FV.Clif.Run
 
 /-!
 # `Opt.MidVal`: a per-function validator for Cranelift's mid-end, without rewrite rules (#1119)
@@ -271,6 +272,8 @@ structure St where
   /-- The likely cause of a later rejection (reasons only): a load of `f` taken for a dead
   `notrap` load while `g`'s next statement was a load of another address. -/
   hint : Option Reject := none
+  /-- Measurement variant: constant evaluation of pure nodes (`evalConst`). -/
+  fold : Bool := false
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -279,8 +282,25 @@ def liftE {α : Type} : Except Reject α → M α
   | .ok a => pure a
   | .error r => throw r
 
+/-- **Measurement variant only** (`St.fold`): the value of a pure node whose operands are all
+constants, by `Clif.evalInst` (no rewrite rule: the semantics itself). -/
+def evalConst (tms : Array Tm) (i : Inst) : Option Tm := do
+  let ops := operands i
+  if ops.isEmpty || !isPure i || partialK i then none
+  let vals ← ops.mapM fun o => match tms[o]? with
+    | some (.node (.iconst ty imm)) => some (Val.mk ty imm)
+    | _ => none
+  let regs : Regs := fun x => (ops.zip vals).lookup x
+  let fr : Frame := { func := default, regs, slots := [], body := [], term := .ret [] }
+  match evalInst fr Mem.empty i with
+  | .ok ([v], _) => some (.node (.iconst v.ty v.bits))
+  | _ => none
+
 def intern (t : Tm) : M Nat := do
   let s ← get
+  let t := match t with
+    | .node i => if s.fold then (evalConst s.tms i).getD t else t
+    | _ => t
   match s.ids.get? t with
   | some i => pure i
   | none =>
@@ -501,7 +521,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
 
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
 `g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. -/
-def check (f g : Function) : Except Reject Unit := do
+def check (f g : Function) (fold : Bool := false) : Except Reject Unit := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (Opt.check f).mapError (s!"wf:f {·}")
   let gi ← (Opt.check g).mapError (s!"wf:g {·}")
@@ -514,7 +534,7 @@ def check (f g : Function) : Except Reject Unit := do
   let go : M Unit := do
     for bi in order do
       checkBlock c bi fbs[bi]! gbs[bi]!
-  let (r, st) := (go.run).run {}
+  let (r, st) := (go.run).run { fold }
   match r, st.hint with
   | .ok (), _ => pure ()
   | .error e, some h => throw (if e.startsWith "wf:" || e.startsWith "placement" then e else h)

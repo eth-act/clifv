@@ -27,9 +27,10 @@ def decodeOne (p : System.FilePath) : IO (Except String Clif.Function) := do
 def firstWord (s : String) : String := (s.splitOn " ").headD s
 
 /-- Constant-phi removal and the check, evaluated inside the call (timing). -/
-@[noinline] def runCheck (f0 g : Clif.Function) : IO (Clif.Function × Except String Unit) := do
+@[noinline] def runCheck (fold : Bool) (f0 g : Clif.Function) :
+    IO (Clif.Function × Except String Unit) := do
   let f := Opt.ConstPhi.run f0
-  let r := Opt.MidVal.check f g
+  let r := Opt.MidVal.check f g fold
   match r with
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
@@ -42,15 +43,17 @@ def pairMode (fp gp : String) : IO UInt32 := do
       | .ok f => pure f
       | .error e => throw (IO.userError s!"{p}: {e}")
     | none => throw (IO.userError s!"{p}: no function")
-  let (_, r) ← runCheck (← one fp) (← one gp)
+  let (_, r) ← runCheck false (← one fp) (← one gp)
   match r with
   | .ok () => IO.println "accept"; return 0
   | .error e => IO.println s!"reject\t{e}"; return 1
 
 def main (args : List String) : IO UInt32 := do
   if let ["--pair", fp, gp] := args then return ← pairMode fp gp
+  -- `--fold`: the measurement variant with constant evaluation (`Opt.MidVal.evalConst`)
+  let fold := args.contains "--fold"
   let out ← IO.getStdout
-  for dir in args do
+  for dir in args.filter (· != "--fold") do
     let mut stems : Array String := #[]
     for e in ← System.FilePath.readDir dir do
       if e.fileName.endsWith ".unopt.clif" then
@@ -69,7 +72,7 @@ def main (args : List String) : IO UInt32 := do
         out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-g {firstWord e}\t0\t0\t0"
       | .ok f0, .ok g =>
         let t0 ← IO.monoNanosNow
-        let (f, r) ← runCheck f0 g
+        let (f, r) ← runCheck fold f0 g
         let t1 ← IO.monoNanosNow
         let verdict := match r with
           | .ok () => "accept\t-"
