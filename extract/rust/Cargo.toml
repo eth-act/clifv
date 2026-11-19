@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = ["entry", "native-cli"]
+
+# Stock codegen without `timing`/`host-arch`. `unwind` (and `gimli`) is enabled regardless:
+# cranelift-reader inherits the Wasmtime workspace dependency `features = ["unwind"]`.
+# Gate G0 (extract/scripts/compare.py --candidate native) proves byte identity with stock.
+[workspace.dependencies]
+cranelift-codegen = { path = "../../third_party/wasmtime/cranelift/codegen", default-features = false, features = ["std", "arm64"] }
+cranelift-reader = { path = "../../third_party/wasmtime/cranelift/reader", default-features = false }
+cranelift-control = { path = "../../third_party/wasmtime/cranelift/control" }
+target-lexicon = "=0.13.5"
+
+[profile.release]
+debug = false

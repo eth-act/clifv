@@ -8,3 +8,6 @@
 /scripts/__pycache__/
 /scripts/shake/__pycache__/
 /tools/prejit-export/target/
+/extract/lean/Generated/
+/extract/rust/target/
+/extract/lean/.lake/

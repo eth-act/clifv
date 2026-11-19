@@ -1,0 +1,9 @@
+{
+ "counts": {
+  "identical": 4455
+ },
+ "unmapped_targets": [],
+ "fields": {},
+ "command": "extract/scripts/compare.py --candidate native --opt-levels all",
+ "input_from_source": 75
+}

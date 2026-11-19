@@ -1,0 +1,4 @@
+[
+ {"target": "aarch64-unknown-linux-gnu", "spec": "Aarch64UnknownLinuxGnu"},
+ {"target": "aarch64-unknown-unknown-elf", "spec": "Aarch64UnknownUnknownElf"}
+]
