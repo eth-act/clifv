@@ -1,0 +1,5 @@
+function %f(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    store.i64 v1, v0
+    return v1
+}

@@ -1,0 +1,9 @@
+function %f(f64, i8) -> f64 {
+block0(v0: f64, v1: i8):
+    v9 = fadd.f64 v0, v1
+    brif v1, block1, block2
+block1:
+    return v0
+block2:
+    return v0
+}

@@ -1,0 +1,8 @@
+function %f(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = load.i64 notrap readonly v0
+    store.i64 v1, v0
+    v3 = load.i64 notrap readonly v0
+    v4 = iadd v2, v3
+    return v4
+}

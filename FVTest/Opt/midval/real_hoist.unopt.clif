@@ -1,0 +1,232 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10rayon_core12HlO039y8Reib
+function u0:634(i64) system_v {
+; symbol _RNxC10rayon_core12HlO039y8Reib
+; instance Instance { def: Item(DefId(0:232 ~ rayon_core[8d7c]::latch::{impl#5}::wait)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &latch::LockLatch, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(12 bytes), pointee_align: Some(Align(4 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0       Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(12 bytes), pointee_align: Some(Align(4 bytes)) }) &'{erased} latch::LockLatch
+
+; kind  local ty                              size align (abi)
+; stack _1    &'{erased} latch::LockLatch       8b 8                storage=ss0
+; stack _2    std::sync::MutexGuard<'{erased}, bool>   16b 8                storage=ss1
+; stack _3    std::result::Result<std::sync::MutexGuard<'{erased}, bool>, std::sync::PoisonError<std::sync::MutexGuard<'{erased}, bool>>>   24b 8                storage=ss2
+; ssa   _4    &'{erased} std::sync::Mutex<bool>    8b 8                var=1
+; ssa   _5    bool                              1b 1                var=2
+; stack _6    std::sync::MutexGuard<'{erased}, bool>   16b 8                storage=ss3
+; stack _7    std::result::Result<std::sync::MutexGuard<'{erased}, bool>, std::sync::PoisonError<std::sync::MutexGuard<'{erased}, bool>>>   24b 8                storage=ss4
+; ssa   _8    &'{erased} std::sync::Condvar     8b 8                var=3
+; stack _9    std::sync::MutexGuard<'{erased}, bool>   16b 8                storage=ss5
+; ssa   _10   *mut bool                         8b 8                var=4
+; stack _11   &'{erased} std::sync::Mutex<bool>    8b 8                storage=ss6
+; ssa   _12   *const std::cell::UnsafeCell<bool>    8b 8                var=5
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 16, align = 8
+    ss2 = explicit_slot 24, align = 8
+    ss3 = explicit_slot 16, align = 8
+    ss4 = explicit_slot 24, align = 8
+    ss5 = explicit_slot 16, align = 8
+    ss6 = explicit_slot 8, align = 8
+    gv0 = symbol colocated userextname1 ; alloc1028
+    gv1 = symbol colocated userextname5 ; alloc1029
+    sig0 = (i64 sret, i64) system_v
+    sig1 = (i64, i64) -> i64, i8 uext system_v
+    sig2 = (i64) system_v
+    sig3 = (i64 sret, i64, i64, i8 uext) system_v
+    sig4 = (i64, i64) -> i64, i8 uext system_v
+    fn0 = colocated u0:225 sig0 ; Instance { def: Item(DefId(1:6156 ~ std[2c12]::sync::poison::mutex::{impl#7}::lock)), args: [bool] }
+    fn1 = colocated u0:483 sig1 ; Instance { def: Item(DefId(2:12929 ~ core[7b1c]::result::{impl#0}::unwrap)), args: [std::sync::MutexGuard<'{erased}, bool>, std::sync::PoisonError<std::sync::MutexGuard<'{erased}, bool>>] }
+    fn2 = colocated u0:312 sig2 ; Instance { def: Shim(DropGlue(DefId(2:3580 ~ core[7b1c]::ptr::drop_glue), Some(std::sync::MutexGuard<'{erased}, bool>))), args: [std::sync::MutexGuard<'{erased}, bool>] }
+    fn3 = colocated u0:653 sig3 ; Instance { def: Item(DefId(1:6089 ~ std[2c12]::sync::poison::condvar::{impl#0}::wait)), args: [bool] }
+    fn4 = colocated u0:483 sig4 ; Instance { def: Item(DefId(2:12929 ~ core[7b1c]::result::{impl#0}::unwrap)), args: [std::sync::MutexGuard<'{erased}, bool>, std::sync::PoisonError<std::sync::MutexGuard<'{erased}, bool>>] }
+
+block0(v0: i64):
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): &'{erased} latch::LockLatch <- ByVal(v0): &'{erased} latch::LockLatch
+    v1 = stack_addr.i64 ss0
+    store notrap v0, v1
+    jump block1
+
+block1:
+    nop 
+; _4 = &((*_1).0: std::sync::Mutex<bool>)
+    v2 = stack_addr.i64 ss0
+    v3 = load.i64 notrap v2
+; write_cvalue: Var(_4, var1): &'{erased} std::sync::Mutex<bool> <- ByVal(v3): &'{erased} std::sync::Mutex<bool>
+; 
+; _3 = std::sync::Mutex::<bool>::lock(move _4)
+    v4 = stack_addr.i64 ss2
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &std::sync::Mutex<bool>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: std::result::Result<std::sync::MutexGuard<'_, bool>, std::sync::PoisonError<std::sync::MutexGuard<'_, bool>>>, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }, VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 1444952315369654534 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+    call fn0(v4, v3)
+    jump block2
+
+block2:
+    nop 
+; 
+; _2 = std::result::Result::<std::sync::MutexGuard<'_, bool>, std::sync::PoisonError<std::sync::MutexGuard<'_, bool>>>::unwrap(move _3)
+    v5 = symbol_value.i64 gv0
+    v6 = stack_addr.i64 ss2
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: std::result::Result<std::sync::MutexGuard<'_, bool>, std::sync::PoisonError<std::sync::MutexGuard<'_, bool>>>, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }, VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 1444952315369654534 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, ArgAbi { layout: TyAndLayout { ty: &std::panic::Location<'_>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: std::sync::MutexGuard<'_, bool>, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u8 is 0..=1, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(8 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16630231432435067923 } }, mode: Pair(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }, ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+    v7, v8 = call fn1(v6, v5)
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::sync::MutexGuard<'{erased}, bool> <- ByValPair(v7, v8): std::sync::MutexGuard<'{erased}, bool>
+    v9 = stack_addr.i64 ss1
+    store notrap v7, v9
+    v10 = stack_addr.i64 ss1+8
+    store notrap v8, v10
+    jump block3
+
+block3:
+    nop 
+; 
+; goto
+    jump block4
+
+block4:
+    nop 
+; _11 = no_retag copy (_2.0: &std::sync::Mutex<bool>)
+; write_cvalue: Addr(Pointer { base: Stack(ss6), offset: Offset32(0) }, None): &'{erased} std::sync::Mutex<bool> <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): &'{erased} std::sync::Mutex<bool>
+    v11 = stack_addr.i64 ss1
+    v12 = load.i64 notrap v11
+    v13 = stack_addr.i64 ss6
+    store notrap v12, v13
+; _12 = &raw const ((*_11).2: std::cell::UnsafeCell<bool>)
+    v14 = stack_addr.i64 ss6
+    v15 = load.i64 notrap v14
+    v16 = iconst.i64 5
+    v17 = iadd v15, v16  ; v16 = 5
+; write_cvalue: Var(_12, var5): *const std::cell::UnsafeCell<bool> <- ByVal(v17): *const std::cell::UnsafeCell<bool>
+; _10 = copy _12 as *mut bool (PtrToPtr)
+; write_cvalue: Var(_10, var4): *mut bool <- ByVal(v17): *mut bool
+; _5 = copy (*_10)
+; write_cvalue: Var(_5, var2): bool <- ByRef(Pointer { base: Addr(v17), offset: Offset32(0) }, None): bool
+    v18 = load.i8 notrap v17
+; 
+; switchInt(move _5)
+    brif v18, block5, block6
+
+block5:
+    nop 
+; 
+; drop(_2)
+    v19 = stack_addr.i64 ss1
+    call fn2(v19)
+    jump block9
+
+block6:
+    nop 
+; _8 = &((*_1).1: std::sync::Condvar)
+    v20 = stack_addr.i64 ss0
+    v21 = load.i64 notrap v20
+    v22 = iconst.i64 8
+    v23 = iadd v21, v22  ; v22 = 8
+; write_cvalue: Var(_8, var3): &'{erased} std::sync::Condvar <- ByVal(v23): &'{erased} std::sync::Condvar
+; _9 = move _2
+; write_cvalue: Addr(Pointer { base: Stack(ss5), offset: Offset32(0) }, None): std::sync::MutexGuard<'{erased}, bool> <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::sync::MutexGuard<'{erased}, bool>
+    v24 = stack_addr.i64 ss1
+    v25 = load.i64 notrap v24
+    v26 = stack_addr.i64 ss1+8
+    v27 = load.i8 notrap v26
+    v28 = stack_addr.i64 ss5
+    store notrap v25, v28
+    v29 = stack_addr.i64 ss5+8
+    store notrap v27, v29
+; 
+; _7 = std::sync::Condvar::wait::<bool>(move _8, move _9)
+    v30 = stack_addr.i64 ss4
+    v31 = stack_addr.i64 ss5
+    v32 = load.i64 notrap v31
+    v33 = stack_addr.i64 ss5+8
+    v34 = load.i8 notrap v33
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &std::sync::Condvar, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(4 bytes), pointee_align: Some(Align(4 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: std::sync::MutexGuard<'_, bool>, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u8 is 0..=1, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(8 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16630231432435067923 } }, mode: Pair(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }, ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: std::result::Result<std::sync::MutexGuard<'_, bool>, std::sync::PoisonError<std::sync::MutexGuard<'_, bool>>>, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }, VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 1444952315369654534 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+    call fn3(v30, v23, v32, v34)
+    jump block7
+
+block7:
+    nop 
+; 
+; _6 = std::result::Result::<std::sync::MutexGuard<'_, bool>, std::sync::PoisonError<std::sync::MutexGuard<'_, bool>>>::unwrap(move _7)
+    v35 = symbol_value.i64 gv1
+    v36 = stack_addr.i64 ss4
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: std::result::Result<std::sync::MutexGuard<'_, bool>, std::sync::PoisonError<std::sync::MutexGuard<'_, bool>>>, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }, VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(16 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 1444952315369654534 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, ArgAbi { layout: TyAndLayout { ty: &std::panic::Location<'_>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: std::sync::MutexGuard<'_, bool>, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u8 is 0..=1, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(8 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16630231432435067923 } }, mode: Pair(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }, ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+    v37, v38 = call fn4(v36, v35)
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): std::sync::MutexGuard<'{erased}, bool> <- ByValPair(v37, v38): std::sync::MutexGuard<'{erased}, bool>
+    v39 = stack_addr.i64 ss3
+    store notrap v37, v39
+    v40 = stack_addr.i64 ss3+8
+    store notrap v38, v40
+    jump block8
+
+block8:
+    nop 
+; _2 = move _6
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::sync::MutexGuard<'{erased}, bool> <- ByRef(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): std::sync::MutexGuard<'{erased}, bool>
+    v41 = stack_addr.i64 ss3
+    v42 = load.i64 notrap v41
+    v43 = stack_addr.i64 ss3+8
+    v44 = load.i8 notrap v43
+    v45 = stack_addr.i64 ss1
+    store notrap v42, v45
+    v46 = stack_addr.i64 ss1+8
+    store notrap v44, v46
+; 
+; goto
+    jump block4
+
+block9:
+    nop 
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u0:225
+; userextname1 = u1:449
+; userextname2 = u0:483
+; userextname3 = u0:312
+; userextname4 = u0:653
+; userextname5 = u1:450
+; decl u0:225 func local "_RNxC10rayon_core12H7IOtoZcwoTc"
+; decl u0:312 func local "_RNxC10rayon_core12HadvZUbSJv6a"
+; decl u0:483 func local "_RNxC10rayon_core12HgCvMD32aJpv"
+; decl u0:634 func local "_RNxC10rayon_core12HlO039y8Reib"
+; decl u0:653 func local "_RNxC10rayon_core12HlteEDWhJuUV"
+; decl u1:449 data local ro notls ".Ldata1c1"
+; decl u1:450 data local ro notls ".Ldata1c2"
+; end clifv-extnames

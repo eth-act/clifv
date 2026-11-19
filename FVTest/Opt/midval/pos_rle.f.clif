@@ -1,0 +1,9 @@
+function %f(i64) -> i64 {
+block0(v0: i64):
+    v1 = load.i64 v0+8
+    v2 = iconst.i64 1
+    v3 = load.i64 v0+8
+    v4 = iadd v1, v3
+    v5 = iadd v4, v2
+    return v5
+}
