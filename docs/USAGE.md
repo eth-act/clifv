@@ -730,8 +730,9 @@ executable: under a second per survey executable).
 
 The program link-check checks holds every Lean-compiled function of the executable: with
 `--lean-link` the functions of the codegen units whose code `lean-link` put in the region (also a
-unit whose own object the link did not take: an archive member that only holds weak copies of
-functions the region object defines is not extracted, e.g. k256's `zerocopy` unit, #1130), else
+unit whose own object the link did not take: an archive member is extracted only for a non-weak
+undefined reference to one of its symbols, so a member that only holds weak copies of region
+functions can be left out, e.g. k256's `zerocopy` unit, #1130), else
 those of the units whose object the link map names. An executable is verified only when the
 theorem's instance covers all of them: the number of functions it covers (link-check's
 `--prune` count) must equal lean-link's region count (with `--lean-link`) or the number of Lean

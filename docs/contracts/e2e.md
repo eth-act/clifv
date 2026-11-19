@@ -3004,9 +3004,9 @@ GOT slots are writable is not verified.
 codegen units whose Lean code is in the executable: with `--lean-link`, the units of the region
 (the list `lean-link`'s input was built from, `cgus` in the link record
 `target/fv/<mode>/tmp/link-<tag>.json`), also a unit whose own object the link did not take
-(rust-lld and lean-ld extract an archive member only for a symbol that is still undefined; a
-member whose global symbols are all weak copies of functions the region object defines is left
-out, and its functions are still in the region); without `--lean-link`, the units whose object
+(rust-lld and lean-ld extract an archive member only for a non-weak undefined reference to one
+of its symbols, `FV/Link/Ld/Resolve.lean`; a member that only holds weak copies of region
+functions can be left out, and its functions are still in the region); without `--lean-link`, the units whose object
 the link map names (the Lean code is inside that object). link-check decides the data objects
 the functions reach against the file whatever unit they come from. link-proof names every
 Lean-compiled function of the executable (its `__fvlean$` marker is in the link map) that is not
