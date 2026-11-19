@@ -443,7 +443,9 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
       else lg.unverified ++ lg.accepted.map
         (·, "i128 legalized and optimised with unproven rules (outside backend_correct_legal_opt: --opt)")
     | none => lg.unverified
-  let unvTry : List (String × String) := notrapChanged.map
+  -- `FV_SCRATCH_NOTRAP_VERIFIED=1`: measure as if the pass were proved (the projected verdicts)
+  let asProved := (← IO.getEnv "FV_SCRATCH_NOTRAP_VERIFIED").isSome
+  let unvTry : List (String × String) := if asProved then [] else notrapChanged.map
     (·, "scratch: unused notrap loads dropped (option D prototype, not proved)")
   -- `--skip-unverified` (#1074): a function unverified before it is compiled is not compiled
   let skipped : List (String × String × String) :=
