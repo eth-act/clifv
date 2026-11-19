@@ -60,7 +60,10 @@ git -C "$SRC" apply "$PATCH"
 if [[ -n "$CL" ]]; then
   cg="$SRC/compiler/rustc_codegen_cranelift"
   sed -i -E "s/^(cranelift-[a-z]+ = \{ version = \")[0-9.]+\"/\1$CL\"/" "$cg/Cargo.toml"
-  grep -E '^cranelift-' "$cg/Cargo.toml"
+  # cranelift-object 0.136.x writes with object 0.40 (cg_clif's own upstream update to 0.137
+  # made the same change)
+  sed -i -E 's/^(object = \{ version = ")0\.39\.1"/\10.40.0"/' "$cg/Cargo.toml"
+  grep -E '^(cranelift-|object)' "$cg/Cargo.toml"
   (cd "$cg" && cargo +"$TC" update -p cranelift-codegen -p cranelift-frontend -p cranelift-module \
     -p cranelift-native -p cranelift-jit -p cranelift-object)
   if [[ -f "$CLPATCH" ]]; then git -C "$SRC" apply "$CLPATCH"; fi
