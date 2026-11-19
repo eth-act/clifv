@@ -4,3 +4,6 @@
 # `compile_aarch64` builds exactly one ISA, the AArch64 backend; `Context::compile` and the
 # alignment computation take it as `&dyn TargetIsa`.
 cranelift_codegen::isa::TargetIsa=cranelift_codegen::isa::aarch64::AArch64Backend
+# `cranelift_bforest::Path::find` takes `&dyn Comparator<K>`; the compile path only uses the
+# `()` comparator (`impl<K> Comparator<K> for ()`, flowgraph.rs).
+cranelift_bforest::Comparator=()

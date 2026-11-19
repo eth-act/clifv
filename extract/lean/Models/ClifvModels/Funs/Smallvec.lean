@@ -446,7 +446,7 @@ def smallvec.IntoIter.Insts.CoreIterTraitsIteratorIterator.size_hint
 
 /-- [smallvec::{core::iter::traits::collect::IntoIterator<&'a smallvec::SmallVec<@A, @Clause0_Item>, &'a @Clause0_Item, core::slice::iter::Iter<'a, @Clause0_Item>>}::into_iter]:
 `self.iter()`. -/
-def SharedASmallVec.Insts.CoreIterTraitsCollectIntoIteratorSharedAClause0_ItemIter.into_iter
+def smallvec.SharedASmallVec.Insts.CoreIterTraitsCollectIntoIteratorSharedAClause0_ItemIter.into_iter
   {A : Type _} {Clause0_Item : Type _} (ArrayInst : smallvec.Array A
   Clause0_Item) :
   smallvec.SmallVec A Clause0_Item → Result (core.slice.iter.Iter
@@ -455,7 +455,7 @@ def SharedASmallVec.Insts.CoreIterTraitsCollectIntoIteratorSharedAClause0_ItemIt
 
 /-- [smallvec::{core::iter::traits::collect::IntoIterator<&'a mut smallvec::SmallVec<@A, @Clause0_Item>, &'a mut @Clause0_Item, core::slice::iter::IterMut<'a, @Clause0_Item>>}::into_iter]:
 `self.iter_mut()`. -/
-def MutASmallVec.Insts.CoreIterTraitsCollectIntoIteratorMutAClause0_ItemIterMut.into_iter
+def smallvec.MutASmallVec.Insts.CoreIterTraitsCollectIntoIteratorMutAClause0_ItemIterMut.into_iter
   {A : Type _} {Clause0_Item : Type _} (ArrayInst : smallvec.Array A
   Clause0_Item) :
   smallvec.SmallVec A Clause0_Item → Result ((core.slice.iter.IterMut

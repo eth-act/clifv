@@ -70,6 +70,7 @@ open ClifvModels.AllocatorApi2
 
 /-- [allocator_api2::stable::alloc::Allocator::allocate_zeroed]: `self.allocate(layout)?`, then
 zero the `ptr.len()` bytes of the block. -/
+@[trait_default]
 def allocator_api2.stable.alloc.Allocator.allocate_zeroed.default
   {Self : Type _} (AllocatorInst : allocator_api2.stable.alloc.Allocator Self)
   :
@@ -86,6 +87,7 @@ def allocator_api2.stable.alloc.Allocator.allocate_zeroed.default
 
 /-- [allocator_api2::stable::alloc::Allocator::grow]: `self.allocate(new_layout)?`, copy
 `old_layout.size()` bytes from `ptr`, `self.deallocate(ptr, old_layout)`. -/
+@[trait_default]
 def allocator_api2.stable.alloc.Allocator.grow.default
   {Self : Type _} (AllocatorInst : allocator_api2.stable.alloc.Allocator Self)
   :
@@ -104,6 +106,7 @@ def allocator_api2.stable.alloc.Allocator.grow.default
 
 /-- [allocator_api2::stable::alloc::Allocator::grow_zeroed]: as `grow`, with
 `self.allocate_zeroed(new_layout)?`. -/
+@[trait_default]
 def allocator_api2.stable.alloc.Allocator.grow_zeroed.default
   {Self : Type _} (AllocatorInst : allocator_api2.stable.alloc.Allocator Self)
   :
@@ -122,6 +125,7 @@ def allocator_api2.stable.alloc.Allocator.grow_zeroed.default
 
 /-- [allocator_api2::stable::alloc::Allocator::shrink]: `self.allocate(new_layout)?`, copy
 `new_layout.size()` bytes from `ptr`, `self.deallocate(ptr, old_layout)`. -/
+@[trait_default]
 def allocator_api2.stable.alloc.Allocator.shrink.default
   {Self : Type _} (AllocatorInst : allocator_api2.stable.alloc.Allocator Self)
   :
@@ -314,7 +318,7 @@ def allocator_api2.stable.vec.Vec.Insts.CoreIterTraitsCollectIntoIteratorTIntoIt
 
 /-- [allocator_api2::stable::vec::{core::iter::traits::collect::IntoIterator<&'a allocator_api2::stable::vec::Vec<@T, @A>, &'a @T, core::slice::iter::Iter<'a, @T>>}::into_iter]:
 `self.iter()`. -/
-def SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
+def allocator_api2.stable.vec.SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
   {T : Type _} {A : Type _} (allocAllocatorInst :
   allocator_api2.stable.alloc.Allocator A) :
   allocator_api2.stable.vec.Vec T A → Result (core.slice.iter.Iter T) :=
@@ -322,7 +326,7 @@ def SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
 
 /-- [allocator_api2::stable::vec::{core::iter::traits::collect::IntoIterator<&'a mut allocator_api2::stable::vec::Vec<@T, @A>, &'a mut @T, core::slice::iter::IterMut<'a, @T>>}::into_iter]:
 `self.iter_mut()`. -/
-def MutAVec.Insts.CoreIterTraitsCollectIntoIteratorMutATIterMut.into_iter
+def allocator_api2.stable.vec.MutAVec.Insts.CoreIterTraitsCollectIntoIteratorMutATIterMut.into_iter
   {T : Type _} {A : Type _} (allocAllocatorInst :
   allocator_api2.stable.alloc.Allocator A) :
   allocator_api2.stable.vec.Vec T A → Result ((core.slice.iter.IterMut T) ×

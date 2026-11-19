@@ -728,7 +728,7 @@ def hashbrown_2.map.HashMap.iter
   fun m => ok ⟨m.table.elems⟩
 
 /-- [hashbrown#2::map::{core::iter::traits::collect::IntoIterator<&'a hashbrown#2::map::HashMap<@K, @V, @S, @A>, (&'a @K, &'a @V), hashbrown#2::map::Iter<'a, @K, @V>>}::into_iter] -/
-def SharedAHashMap.Insts.CoreIterTraitsCollectIntoIteratorPairSharedAKSharedAVIter.into_iter
+def hashbrown_2.map.SharedAHashMap.Insts.CoreIterTraitsCollectIntoIteratorPairSharedAKSharedAVIter.into_iter
   {K : Type _} {V : Type _} {S : Type _} {A : Type _} (allocinnerAllocatorInst
   : hashbrown_2.alloc.inner.Allocator A) :
   hashbrown_2.map.HashMap K V S A → Result (hashbrown_2.map.Iter K V) :=
@@ -1018,7 +1018,7 @@ def hashbrown_2.set.HashSet.iter
   fun s => ok ⟨s.map.table.elems.map (·.1)⟩
 
 /-- [hashbrown#2::set::{core::iter::traits::collect::IntoIterator<&'a hashbrown#2::set::HashSet<@T, @S, @A>, &'a @T, hashbrown#2::set::Iter<'a, @T>>}::into_iter] -/
-def SharedAHashSet.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
+def hashbrown_2.set.SharedAHashSet.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
   {T : Type _} {S : Type _} {A : Type _} (allocinnerAllocatorInst :
   hashbrown_2.alloc.inner.Allocator A) :
   hashbrown_2.set.HashSet T S A → Result (hashbrown_2.set.Iter T) :=
