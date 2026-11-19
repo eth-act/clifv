@@ -1,0 +1,13 @@
+function %f(i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    store.i64 v1, v0
+    brif v2, block1, block2
+block1:
+    v9 = iconst.i64 0
+    jump block3
+block2:
+    jump block3
+block3:
+    v3 = load.i64 v0
+    return v3
+}

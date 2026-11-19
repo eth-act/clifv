@@ -34,7 +34,21 @@ def firstWord (s : String) : String := (s.splitOn " ").headD s
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
 
+/-- `--pair F G`: the first function of each plain CLIF file (`Clif.parseFile`; tests). -/
+def pairMode (fp gp : String) : IO UInt32 := do
+  let one (p : String) : IO Clif.Function := do
+    match (Clif.parseFile (← IO.FS.readFile p)).funcs[0]? with
+    | some pf => match pf.func with
+      | .ok f => pure f
+      | .error e => throw (IO.userError s!"{p}: {e}")
+    | none => throw (IO.userError s!"{p}: no function")
+  let (_, r) ← runCheck (← one fp) (← one gp)
+  match r with
+  | .ok () => IO.println "accept"; return 0
+  | .error e => IO.println s!"reject\t{e}"; return 1
+
 def main (args : List String) : IO UInt32 := do
+  if let ["--pair", fp, gp] := args then return ← pairMode fp gp
   let out ← IO.getStdout
   for dir in args do
     let mut stems : Array String := #[]

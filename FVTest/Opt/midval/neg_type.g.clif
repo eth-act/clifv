@@ -1,0 +1,7 @@
+function %f(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    store.i64 v1, v0
+    v2 = ireduce.i32 v1
+    v3 = uextend.i64 v2
+    return v3
+}
