@@ -169,6 +169,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 2: single-node algebraic rules, first set | `Norm.alg` after `evalConst` | `normSound_alg` | 87,451 (71.8 %) | 80,622 / 87,406 (92.2 %) | 66.2 % |
 | 2: second set | `Norm.alg2` before `Norm.alg` | `normSound_alg2`, `normSound_std` | 88,966 (73.0 %) | 81,681 / 88,921 (91.9 %) | 67.1 % |
 | 3: branch conditions (`checkCertC`, hints) | none (`condPrep g hints` re-check) | `condPrep_simU`, `check_soundC` | 91,948 (75.4 %) | 84,317 / 91,898 (91.8 %) | 69.3 % |
+| typed seam (`Norm.stdT f`) | `selTyped`, `redTyped` after `Norm.std` | `normSoundT_typed`, `normSoundT_stdT`, `check_sound_normT` | 103,615 (85.0 %) | 86,843 / 103,562 (83.9 %) | 71.3 % |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -343,6 +344,8 @@ counterfactual.)
     rejected (`sel_rejected`, `red_rejected`); two real pairs (clap_builder in crypto-bigint's
     test build: `br_table (ireduce.i32 (uextend.i64 (load.i8 …)))` → `br_table (uextend.i32
     (load.i8 …))`; `select (icmp eq (load.i64 …), 0), 0, 1` → `select (load.i64 …), 1, 0`), each
-    rejected by `Norm.std`, `checkCert` decided, simulation and program refinement. The design's
-    prototype of the same rules measured 91,948 → 103,615 accepted (`--cond`, the same 121,879
-    pairs, 0 lost); the landed binary is not measured here.
+    rejected by `Norm.std`, `checkCert` decided, simulation and program refinement. Measured
+    (2026-11-19, the same 121,879 pairs, `midval-check --cond --cert`, family 3's binary against
+    this one): 91,948 → 103,615 (+11,667), 0 lost, every accepted pair re-checks `ok`; 11,664 of
+    the newly accepted functions are Lean-compiled and verified from `g` (3 have no record), 2,526
+    byte-identical to stock. Hoisting mode: 92,096 → 104,468.
