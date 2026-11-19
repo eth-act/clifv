@@ -37,7 +37,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TC=${FV_TOOLCHAIN:-nightly-2026-09-26}
 CL=${FV_CG_CLIF_CRANELIFT:-}
-OUT=$ROOT/target/cg_clif${CL:+-cl$CL}
+OUT=${FV_CG_CLIF_OUT:-$ROOT/target/cg_clif${CL:+-cl$CL}}
 SRC=$OUT/rust
 PATCH=$ROOT/scripts/patches/cg-clif-extnames.patch
 CLPATCH=$ROOT/scripts/patches/cg-clif-cl$CL.patch
