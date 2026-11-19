@@ -1,9 +1,11 @@
 # Contract: the mid-end validator `Opt.MidVal` (#1119, option (c))
 
-Status: **stage 1, in progress.** The checker is an executable definition (`FV/Opt/MidVal.lean`,
-`lake exe midval-check`) measured on real dump pairs; the memory facts it relies on are proved
-(`FV/Opt/Proof/MidValMem.lean`); the soundness theorem below is not proved yet, and no tool uses
-the checker (no verdict, report or link input mentions it).
+Status: **stage 1: checker measured, soundness proved.** The checker is an executable definition
+(`FV/Opt/MidVal.lean`, `lake exe midval-check`) measured on real dump pairs; on acceptance it
+emits a certificate that `Opt.MidVal.checkCert` re-checks (`FV/Opt/MidValCert.lean`), and
+**`Opt.MidVal.check_sound : checkCert f g cert = true → Opt.FunSimMU f g`** is proved with the
+standard axioms (`FV/Opt/Proof/MidValSim.lean`; audit `scripts/audit/midval.lean`). No tool uses
+the checker yet (no verdict, report or link input mentions it): that is the plumbing PR.
 
 ## What it is for
 
@@ -19,7 +21,8 @@ function is compiled from `f` as today.
 `f` is the unoptimised dump after `Opt.ConstPhi.run` (Cranelift's own unreachable-code and
 constant-phi removal, which run before the e-graph), `g` the optimised dump. Same header and
 `sigDecls`, both well-formed (`Opt.check`), the same blocks in the same order with the same
-parameter types, the same dominator tree.
+parameter types (the entry block: the same parameters, ids included, since it receives the
+function's arguments), the same dominator tree.
 
 * **Terms.** Every value gets a hash-consed term: `param b i`, `res b k j` (result `j` of `f`'s
   statement `k` of block `b`, a skeleton statement), `node i` (a pure node with term operands,
@@ -47,22 +50,31 @@ parameter types, the same dominator tree.
 Rejected, with a reason: ISLE rewrites (`rewrite:*`), dead-store elimination (`alias:store`),
 moved `can_move` loads, the two checker gaps below.
 
-## Soundness (to be proved; names are new, nothing existing changes)
+## Soundness (proved; names are new, nothing existing changes)
 
 * `Opt.FunSimMU f g`: the simulation of `Opt.FunSimU` with the frame relation over memory
   (`Frame → Frame → Mem → Prop`); `FunSimU` cannot express load removal because memory is
   quantified away at every step. With `FunSimU.toMU`, `FunSimMU.trans` and the program-level
   lifting `runLoopX_refinesMU`, whose conclusion is that of `Opt.runLoopX_refinesU`.
 * `Opt.MidVal.check_sound : checkCert f g cert = true → FunSimMU f g` (stage 1, `Norm.id`; with a
-  normaliser: `checkCert f g cert norm = true → NormSound norm → FunSimMU f g`), where `checkCert`
-  re-checks the certificate the executable checker emits (`Opt.MidVal.emit`: the term table with
-  a dominance site per term, the term of every value of `f` and `g`, the facts at each block's
-  entry) and `NormSound` says the normaliser preserves values.
-* Refinement: `OutcomeRefines` (same return values and final memory, same trap code; nothing
-  claimed for a `stuck` or out-of-fuel source run). A removed load never removes a trap: its
-  location was accessed successfully at the same version, so `f`'s load succeeds or is `stuck`
-  (`Clif.Mem.load_of_store`, `Clif.Mem.load_of_load`); a dead load is removed only if `notrap`
-  (`Clif.run` is `stuck`, never trapped, on a bad `notrap` access).
+  normaliser: `check_sound_norm : checkCert f g cert norm = true → NormSound norm →
+  FunSimMU f g`), where `checkCert` re-checks the certificate the executable checker emits
+  (`Opt.MidVal.emit`: the term table with a dominance site per term, the term of every value of
+  `f` and `g`, the facts at each block's entry) and `NormSound` says the normaliser preserves
+  values (`normSound_id`).
+* Programs: `Opt.MidVal.validated_refines` — if every function of `q` is the one of `p` or a `g`
+  with `checkCert (ConstPhi.run f) g cert = true` (`Validated`), then `∀ n xs xs', SRU syms xs xs'
+  → ∃ n', XOutcomeRefines (runLoopX env p n xs) (runLoopX env q n' xs')` (same return values and
+  final memory, same trap code, same exception; nothing claimed for a `stuck` or out-of-fuel
+  source run). A removed load never removes a trap: its location holds a memory fact (accessed
+  successfully, no writer since), so `f`'s load succeeds with the fact's value or is `stuck`
+  (`evalInst_load_of_holds`); a dead load is removed only if `notrap` (`Clif.run` is `stuck`,
+  never trapped, on a bad `notrap` access).
+* Witnesses: `FVTest/Opt/MidValWitness.lean` decides `checkCert` (`native_decide`) on a real pair of
+  the measured crates (memchr 2.8.3, `find_raw_impl`: two stores forwarded to loads, one across
+  blocks, `stack_addr`s merged) and instantiates `check_sound` and `validated_refines` on it;
+  `FVTest/Opt/MidValNegWitness.lean` shows `¬ FunSimMU f g` for three negative pairs (`neg_deadload`,
+  `neg_stuckpure`, `neg_hoist`), hence `checkCert … cert = false` for **every** certificate.
 
 ## Proof modules (plan)
 
@@ -82,11 +94,19 @@ moved `can_move` loads, the two checker gaps below.
    `runLoopX_refinesSRMU` and **`runLoopX_refinesMU`** (from `FunsSimMU p.funcs q.funcs`, exactly
    the conclusion of `runLoopX_refinesU`: `∀ n xs xs', SRU syms xs xs' → ∃ n',
    XOutcomeRefines …`); witness `SemSimMWitness.lean` (the ConstPhi witness pair, run to a return).
-4. `FV/Opt/Proof/MidValTerm.lean`: term evaluation, `NormSound`, totality of typed pure nodes.
-5. `FV/Opt/Proof/MidValSim.lean`: the relation (a valuation of the atoms; registers are the
-   terms' values; the known values hold in memory at the current version), step lemmas, block
-   entry, `check_sound`; a positive witness on a real pair of the measured crates and the
-   negative pairs of `FVTest/Opt/midval/`.
+4. `FV/Opt/Proof/MidValTerm.lean` — **done**: term values `tmVal` (atoms read `f`'s registers, nodes
+   are `evalNode` of earlier terms), stability (`tmVal_congr`), node terms (`tmVal_mapOperands`),
+   `NormSound`/`normSound_id`; `MidValFloat.lean`: totality of the checker's pure nodes
+   (`evalInst_pureK_total`, floats typed by `floatTyped`); `MidValFacts.lean`: the memory facts
+   (`MemHolds`; load from a fact, fact from a load/store, idempotent store, `mergeK` memory
+   independence); the `symbol_value`/`func_addr`/`tls_value` placement rule is the `defd` fact.
+5. `FV/Opt/Proof/MidVal{Spec,Walk,Rel,Entry,Prefix,FStep,Match,Termin,Sim,Prog}.lean` — **done**:
+   `checkCert_spec`, the walk case lemmas, the relation `Rel`/`MR` (positions in the same block, the
+   rest of the walk succeeds, registers of both sides hold their terms' values, facts hold) and
+   `MRW` (with equal register windows from the fresh values on), `g`'s pure prefix (`gPre_run`),
+   steps of `f` alone (`rel_nop`, `rel_pure`, `rel_remove`), matched statements (`rel_matched`),
+   terminators and `try_call` edges (`rel_term`, `rel_try`, `rel_enter`), `isSimMU`,
+   **`check_sound`**, `validated_refines`; witnesses above.
 6. Plumbing (separate PR): per-function theorem about `f` through the validator, `lean-backend`
    naming it only when `checkCert` is decided, `cargo fv` passing the `.opt.clif` when the dump's
    `opt_level` is not `none`, `lean-link`/`link-check` re-deciding the check per pair
