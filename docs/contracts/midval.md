@@ -128,3 +128,29 @@ pair: `check` median 91 µs (mean 157, p99 924, max 159 ms), `checkCert` median 
 p99 320, max 54 ms; 4.1 s in total; second run, with the static site check `CC.sitesOk`). The 12
 hand-made pairs: the 4 positive ones re-check `ok`, the 8 negative ones are rejected by `check`
 (no certificate).
+
+## Follow-up: the checker gaps (2026-11-19, agent MidendGaps1)
+
+* **`call_indirect` and `bitcast`**: `checkCert` and `check` run `Opt.MidVal.wfCheck` instead of
+  `Opt.check` (unchanged): `call_indirect` result types from the function's `sigDecls`
+  (`sigDeclOf`), `bitcast` typed by width as `Clif.evalInst` evaluates it (`pureTypedM`). Proof
+  side: `WfM` (`FV/Opt/Proof/MidValWf.lean`, `wfM_of_wfCheck`, the `DomInv` lemmas restated),
+  `evalInst_pureK_totalM`, and the `call_indirect` step proved (`matched_ci`: same signature,
+  callee and argument terms, memory reset at the call).
+* **Hoisted `symbol_value`/`tls_value`/`func_addr`**: a separate mode, `checkCertSyms`
+  (`check … (hoist := true)`, `midval-check --hoist`): `g` may evaluate such a node of `f` before
+  `f` does. Theorem `check_soundSyms : checkCertSyms f g cert = true → globalsResolve f syms = true
+  → FunSimMUAt syms f g` (`globalsResolve`: every such instruction of `f` names a symbol `syms`
+  defines; decidable from the function and the symbol table, for link-check); program level
+  `validated_refines_syms` (`ValidatedSyms syms`), through `runLoopX_refinesMUAt` (the
+  `SemSimMU` chain restated for `FunsSimMUAt syms`, the old statements its instances).
+  `checkCert` itself does not accept hoisting.
+* **Negative witnesses**: `neg_call`, `neg_merge`, `neg_endian`, `neg_readonly`: `¬ FunSimMU`, so
+  every certificate is rejected; `neg_type` is a true simulation (little-endian `load.i32` of a
+  stored `i64` = `ireduce`), the checker is conservative there (`ty_check_rejects`).
+* **Measured** (the 121,879 pairs regenerated; the stage-1 binary on the same dumps: 73,703):
+  items 1+2 74,462 (61.1 %; +613 `call_indirect`, +146 `bitcast`; 1,210 former `call_indirect`
+  pairs now fail on a rewrite), hoisting mode 74,477 (+15; 388 former placement pairs now fail on
+  a rewrite). Every accepted pair re-checks `ok`. Newly accepted, compiled from `g` in
+  ReleaseScope1's counterfactual: 1,079 / 1,086 identical to stock (items 1+2), 3 / 15 (hoisting).
+  Witnesses on real pairs: `FVTest/Opt/MidValGapWitness.lean`.
