@@ -274,8 +274,15 @@ def domIntervals (idom : Array (Option Nat)) : Array Nat × Array Nat × Array N
 and a detail. -/
 abbrev Reject := String
 
-/-- A normaliser of pure nodes (`Norm.id`, below). -/
+/-- A **normaliser** of pure nodes: given the term table and a node (term operands), a term
+of the same value under `Clif.evalInst`, or `none` (keep the node). This is the seam of stage 2
+(#1119): the soundness theorem takes it with the one hypothesis that it preserves values;
+stage 1 uses `Norm.id`, and each proven rewrite (constant evaluation, single `simplify` rules)
+can be added as one more `Norm` with its own preservation lemma. -/
 abbrev Norm := Array Tm → Inst → Option Tm
+
+/-- The identity normaliser (stage 1). -/
+def Norm.id : Norm := fun _ _ => none
 
 structure St where
   tms : Array Tm := #[]
@@ -300,13 +307,6 @@ abbrev M := ExceptT Reject (StateM St)
 def liftE {α : Type} : Except Reject α → M α
   | .ok a => pure a
   | .error r => throw r
-
-/-- A **normaliser** of pure nodes: given the term table and a node (term operands), a term
-of the same value under `Clif.evalInst`, or `none` (keep the node). This is the seam of stage 2
-(#1119): the soundness theorem takes it with the one hypothesis that it preserves values;
-stage 1 uses `Norm.id`, and each proven rewrite (constant evaluation, single `simplify` rules)
-can be added as one more `Norm` with its own preservation lemma. -/
-def Norm.id : Norm := fun _ _ => none
 
 /-- **Measurement variant only** (`midval-check --fold`): the value of a pure node whose
 operands are all constants, by `Clif.evalInst` (no rewrite rule: the semantics itself). -/
