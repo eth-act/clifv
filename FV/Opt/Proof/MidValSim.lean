@@ -4,6 +4,7 @@ import FV.Opt.Proof.MidValFStep
 import FV.Opt.Proof.MidValMatch
 import FV.Opt.Proof.MidValTermin
 import FV.Opt.Proof.SimWin
+import FV.Opt.Proof.MidValNormConst
 
 /-!
 # Soundness of the mid-end validator (#1119, module (5))
@@ -261,17 +262,18 @@ theorem check_soundSyms_norm {f g : Function} {cert : Cert} {norm : Norm}
     ⟨MRW f g fi gi cert norm syms, isSimMU H (gPre_run H) syms, fun b hb =>
       entry_rel H (fun fr m hfr => entry_facts_hold H hres hfr m) hb⟩⟩
 
-/-- **Soundness of the mid-end validator** (stage 1, no normaliser): if `checkCert` accepts the
-certificate, `g` simulates `f` (`FunSimMU`). -/
+/-- **Soundness of the mid-end validator** (with its default normaliser `Norm.std`, constant
+evaluation, `normSound_std`): if `checkCert` accepts the certificate, `g` simulates `f`
+(`FunSimMU`). -/
 theorem check_sound {f g : Function} {cert : Cert} (h : checkCert f g cert = true) :
     FunSimMU f g :=
-  check_sound_norm h normSound_id
+  check_sound_norm h normSound_std
 
-/-- **Soundness of the hoisting mode** (no normaliser): if `checkCertSyms` accepts the
-certificate, `g` simulates `f` at every symbol table where `f`'s global values resolve
-(`FunSimMUAt`). -/
+/-- **Soundness of the hoisting mode** (default normaliser `Norm.std`): if `checkCertSyms`
+accepts the certificate, `g` simulates `f` at every symbol table where `f`'s global values
+resolve (`FunSimMUAt`). -/
 theorem check_soundSyms {f g : Function} {cert : Cert} (h : checkCertSyms f g cert = true)
     {syms : String → Option Nat} (hres : globalsResolve f syms = true) : FunSimMUAt syms f g :=
-  check_soundSyms_norm h normSound_id hres
+  check_soundSyms_norm h normSound_std hres
 
 end Opt.MidVal
