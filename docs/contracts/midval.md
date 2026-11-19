@@ -42,10 +42,11 @@ function's arguments), the same dominator tree.
 * **Memory versions**: Cranelift 0.135.0's `LastStores` with one region (cg_clif sets no alias
   region): every store, call, `call_indirect`, atomic, `fence` and `try_call` starts a version, a
   join of different versions starts one; explicit traps keep it.
-* **Normaliser seam** (`Norm`): `Norm.id` in stage 1; the default is now `Norm.std` (stage 2,
-  below). A stage-2 rewrite is one more `Norm` with a lemma that it preserves the value under
-  `Clif.evalInst` (`NormSound`). `midval-check --norm-id` measures with stage 1's `Norm.id`,
-  `--norm-const` with family 1 alone (`evalConst`).
+* **Normaliser seam** (`Norm`): `Norm.id` in stage 1; the default is now `Norm.stdT f` (stage 2,
+  below: `Norm.std`, then the typed rules). A stage-2 rewrite is one more `Norm` with a lemma that
+  it preserves the value under `Clif.evalInst` (`NormSound`, or `NormSoundT f` for a rule that
+  reads an atom's type). `midval-check --norm-id` measures with stage 1's `Norm.id`,
+  `--norm-const` with family 1 alone (`evalConst`), `--norm-std` without the typed rules.
 
 Rejected, with a reason: ISLE rewrites (`rewrite:*`), dead-store elimination (`alias:store`),
 moved `can_move` loads, the two checker gaps below.
@@ -57,7 +58,7 @@ moved `can_move` loads, the two checker gaps below.
   quantified away at every step. With `FunSimU.toMU`, `FunSimMU.trans` and the program-level
   lifting `runLoopX_refinesMU`, whose conclusion is that of `Opt.runLoopX_refinesU`.
 * `Opt.MidVal.check_sound : checkCert f g cert = true → FunSimMU f g` (with the default
-  normaliser `Norm.std`; for any normaliser: `check_sound_norm : checkCert f g cert norm = true →
+  normaliser `Norm.stdT f`; for any normaliser: `check_sound_norm : checkCert f g cert norm = true →
   NormSound norm → FunSimMU f g`), where `checkCert` re-checks the certificate the executable
   checker emits (`Opt.MidVal.emit`: the term table with a dominance site per term, the term of
   every value of `f` and `g`, the facts at each block's entry) and `NormSound` says the
@@ -157,8 +158,9 @@ hand-made pairs: the 4 positive ones re-check `ok`, the 8 negative ones are reje
 
 ## Stage 2: rewrites through the normaliser (agents MidendNorm1, MidendNorm2)
 
-The default normaliser `Norm.std` of `check`, `emit`, `checkCert` and `checkCertSyms` grows one
-proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h normSound_std`).
+The default normaliser of `check`, `emit`, `checkCert` and `checkCertSyms` (`Norm.std`, since
+the typed seam `Norm.stdT f`) grows one proved family at a time; `check_sound`'s text is
+unchanged (`check_sound_normT h normSoundT_stdT`).
 
 | family | normaliser step | proof | accepted (121,879 pairs) | accepted: identical to stock from `g` | projected release parity |
 |---|---|---|---|---|---|
@@ -303,3 +305,44 @@ counterfactual.)
   (load.i8 …))` → `brif (load.i8 …)`; `brif (icmp ne …, 0)` in a proptest runner with
   `try_call`s), each rejected without hints, `checkCertC` decided, simulation and program
   refinement.
+* **Typed seam** (agent MidendNorm4; design: #1119 issuecomment-7024569975). Two rewrites seen
+  in the dumps depend on an atom's width, which the term table does not hold; in an arbitrary
+  frame an atom's register may hold a value of any type, so no every-frame equality (`NormSound`)
+  covers them. The seam:
+  - Compiler side (`FV/Opt/MidVal.lean`): `atomTy f` is the static type of an atom of `f` (block
+    parameters' declared types; statement results' `Inst.resultTypes`, calls through the extern
+    signatures, `call_indirect` through `sigDeclOf`; `none` for `poison`); `tyAt` gives a term's
+    type (a node's `nodeTy`, an atom's `atomTy`). `selTyped`: `select ty c 1 0` / `select ty c 0
+    1` with `c` an integer-typed term that is not an `icmp` is `icmp ne/eq tc c 0` at `i8`, its
+    `uextend ty` wider (the `0` and the comparison are looked up with `findTm`; the untrusted
+    `intern` interns them first, `internSelAux`). `redTyped`: `ireduce ty (extend op uty x)` with
+    `x` an atom of static type `xt`, both narrower than `uty`: `x`, `extend op ty x` or
+    `ireduce ty x` (as `redExt` for a node `x`). `Norm.stdT f = Norm.orElse Norm.std (Norm.guard
+    (typedStep (atomTy f)))` is the default of `check`, `emit`, `checkCert`, `checkCertSyms`,
+    `checkCertC`, `checkC`, `emitC` (a default that reads `f`), and of `midval-check`.
+  - Obligation (`FV/Opt/Proof/MidValTerm.lean`): `AtomsTyped f tms fr mem i` (every atom reachable
+    from `i`'s operands through node operands, `TmReach`, that has a static type holds a value of
+    it in `fr`) and `NormSoundT f norm` (the normalised term has the node's value in every frame
+    where `AtomsTyped` holds); `NormSound.toT`. The simulation evaluates a normalised node only in
+    `f`'s frame at a point where its operands' sites are no later, so every atom below it is
+    available there and typed by the run-time invariant (`Inv.regs`) and `wfCheck`'s typing
+    (`atomTy_tm`, `reach_site`, `atomsTyped_of`, `FV/Opt/Proof/MidValTyped.lean`).
+  - `HypT` is `Hyp` with `NormSoundT f norm` (`Hyp.toT`); the simulation lemmas taking `Hyp` have
+    `…T` versions taking `HypT` (the two that use the normaliser, `TV_pureOkT` and `gStmtT`, get
+    `AtomsTyped` from `HypT.atomsTyped`), and the old names are corollaries with their text.
+    Theorems (new names): `check_sound_normT : checkCert f g cert norm = true → NormSoundT f norm →
+    FunSimMU f g`, `check_soundSyms_normT`, `check_soundC_normT`; `check_sound`, `check_soundSyms`,
+    `check_soundC` keep their text and are proved by them with `normSoundT_stdT : NormSoundT f
+    (Norm.stdT f)` (`ruleSoundT_selTyped`, `ruleSoundT_redTyped`, `normSoundT_typed`,
+    `FV/Opt/Proof/MidValNormTyped.lean`).
+  - Witnesses (`FVTest/Opt/MidValTypedWitness.lean`): `select (icmp eq x, 0), 0, 1` against
+    `select x, 1, 0` (`x` an `i32` parameter) and `ireduce.i16 (uextend.i64 x)` against `x`,
+    `uextend.i16 x`, `ireduce.i16 x` (`x` of `i16`, `i8`, `i32`) accepted and rejected by
+    `Norm.std`; the look-alikes `uextend.i64 (icmp ne x, 0)` against `select x, 0, 1` and the
+    `i16` pair with an `i32` atom rejected, shown to be no simulation, so every certificate is
+    rejected (`sel_rejected`, `red_rejected`); two real pairs (clap_builder in crypto-bigint's
+    test build: `br_table (ireduce.i32 (uextend.i64 (load.i8 …)))` → `br_table (uextend.i32
+    (load.i8 …))`; `select (icmp eq (load.i64 …), 0), 0, 1` → `select (load.i64 …), 1, 0`), each
+    rejected by `Norm.std`, `checkCert` decided, simulation and program refinement. The design's
+    prototype of the same rules measured 91,948 → 103,615 accepted (`--cond`, the same 121,879
+    pairs, 0 lost); the landed binary is not measured here.

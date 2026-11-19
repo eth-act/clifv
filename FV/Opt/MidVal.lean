@@ -42,12 +42,14 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   different versions a new version (`merge b`) starts. Explicit traps keep the version. Removed
   stores of `f` are idempotent (memory unchanged), so `g`'s versions are `f`'s memory states.
 
-* **Normalisation** (stage 2, the default normaliser `Norm.std`), on both sides: constant
+* **Normalisation** (stage 2, the default normaliser `Norm.stdT f`), on both sides: constant
   evaluation (`evalConst`: a pure node whose operands are all constants is the constant
   `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg2`: `icmp` canonical
   forms, `isub 0 x`, `imul x 2`/`ishl x 1`, `bmask` of an `icmp`, `bxor x -1`; `Norm.alg`:
   `select` of an `icmp` with constant arms 1/0, `imul` by a power of two, `iadd` of a
-  `stack_addr` and a constant, `ireduce` of an extension of a typed node).
+  `stack_addr` and a constant, `ireduce` of an extension of a typed node), then the typed rules
+  (`typedStep`: `select` of an integer term with constant arms 1/0, `ireduce` of an extension of
+  an atom), which read an atom's static type in `f` (`atomTy`).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -472,6 +474,9 @@ structure St where
   first) is recorded in `conds` (the hints of `condPrep`). -/
   cond : Bool := false
   conds : Array (BlockId × List Wrap) := #[]
+  /-- The static type of an atom (`atomTy f`): the checker interns the terms `selTyped` looks
+  up (`internSelAux`). -/
+  aty : Tm → Option Ty := fun _ => none
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -771,10 +776,83 @@ def Norm.alg2 : Norm := Norm.guard algStep2
 /-- One normaliser, then another where the first leaves the node alone. -/
 def Norm.orElse (a b : Norm) : Norm := fun tms i => (a tms i).orElse fun _ => b tms i
 
-/-- **The validator's default normaliser** (the default `norm` of `check`, `emit`, `checkCert`,
-`checkCertSyms`): constant evaluation (`evalConst`, family 1), then the single-node algebraic
-rules (family 2: `Norm.alg2`, then `Norm.alg`); proved sound (`normSound_std`). -/
+/-- The constant evaluation and the single-node algebraic rules (`evalConst`, then family 2:
+`Norm.alg2`, then `Norm.alg`); proved sound (`normSound_std`). -/
 def Norm.std : Norm := Norm.orElse evalConst (Norm.orElse Norm.alg2 Norm.alg)
+
+/-! ### The typed rules
+
+An atom's value in a frame of `f` may have any type, so a rule whose truth depends on the width
+of an atom holds only in the frames where the atom holds a value of its static type (`atomTy`):
+its soundness obligation is `NormSoundT f` (`FV/Opt/Proof/MidValTerm.lean`), which the simulation
+discharges from `wfCheck`'s typing. -/
+
+/-- The static type of an atom of `f`: a block parameter's declared type, a statement result's
+`Inst.resultTypes` (calls through the extern signatures, `call_indirect` through `sigDeclOf`);
+`none` for nodes and `poison`. -/
+def atomTy (f : Function) : Tm → Option Ty
+  | .param b i => (f.blocks[b]?).bind fun blk => (blk.params[i]?).map (·.2)
+  | .res b k j => (f.blocks[b]?).bind fun blk => (blk.body[k]?).bind fun st =>
+      (st.inst.resultTypes (fun r => (f.externs.lookup r).map (·.sig)) (sigDeclOf f)).bind
+        (·[j]?)
+  | _ => none
+
+/-- The static type of term `u`: a node's `nodeTy` (operands earlier), an atom's `aty`. -/
+def tyAt (aty : Tm → Option Ty) (tms : Array Tm) (u : Nat) : Option Ty :=
+  match tms[u]? with
+  | some (.node j) => if (operands j).all (· < u) then nodeTy j else none
+  | some a => aty a
+  | none => none
+
+/-- The comparison a `select` with constant arms `vx`, `vy` stands for: `ne` for `1, 0`, `eq`
+for `0, 1`. -/
+def selCC {w : Nat} (vx vy : BitVec w) : Option IntCC :=
+  if vx == 1 && vy == 0 then some .ne else if vx == 0 && vy == 1 then some .eq else none
+
+/-- `select ty c 1 0` (`select ty c 0 1`) with `c` a term of integer type `tc` that is not an
+`icmp`: `icmp ne tc c 0` (`icmp eq tc c 0`) at `i8`, its `uextend ty` at a wider type
+(Cranelift 0.135.0's `select`-to-`icmp` rules, `opts/selects.isle`). The comparison and the
+constant `0` are looked up (`findTm`); the checker interns them (`internSelAux`). -/
+def selTyped (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (c x y : Nat) : Option Tm :=
+  match nodeAt tms c with
+  | some (.icmp ..) => none
+  | _ =>
+    match tyAt aty tms c, constAt tms ty x, constAt tms ty y with
+    | some tc, some vx, some vy =>
+      if tc.isInt then
+        (selCC vx vy).bind fun cc =>
+          (findTm tms (.node (.iconst tc 0))).bind fun z =>
+            (findTm tms (.node (.icmp cc tc c z))).bind fun n => selWrap tms ty n
+      else none
+    | _, _, _ => none
+
+/-- `ireduce ty (extend op uty x)` with `x` a term of static type `xt` by `aty` (an atom: `atomTy`
+gives nodes no type; a node `x` is `redExt`'s), `xt` and `ty` narrower than `uty`: as `redExt`
+(`x` when `xt = ty`, `extend op ty x` when narrower, `ireduce ty x` when wider). -/
+def redTyped (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (u : Nat) : Option Tm :=
+  match nodeAt tms u with
+  | some (.extend op uty x) =>
+    match tms[x]?, (tms[x]?).bind aty with
+    | some a, some xt =>
+      if xt.width < uty.width && ty.width < uty.width then
+        if xt == ty then some a
+        else if xt.width < ty.width then some (.node (.extend op ty x))
+        else if ty.width < xt.width then some (.node (.ireduce ty x))
+        else none
+      else none
+    | _, _ => none
+  | _ => none
+
+/-- The typed rules (unguarded; `Norm.stdT` guards them). -/
+def typedStep (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .select ty c x y => selTyped aty tms ty c x y
+  | .ireduce ty u => redTyped aty tms ty u
+  | _ => none
+
+/-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
+`checkCert`, `checkCertSyms`): `Norm.std`, then the typed rules with `f`'s atom types; proved
+sound under typing (`normSoundT_stdT`). -/
+def Norm.stdT (f : Function) : Norm := Norm.orElse Norm.std (Norm.guard (typedStep (atomTy f)))
 
 /-- Intern a term (normalised, if a node), without auxiliary terms. -/
 def intern1 (t : Tm) : M Nat := do
@@ -789,10 +867,26 @@ def intern1 (t : Tm) : M Nat := do
     set { s with tms := s.tms.push t, ids := s.ids.insert t i }
     pure i
 
-/-- Intern a term; for a node, first the terms a rule may look up (`auxTms`). -/
+/-- The terms `selTyped` looks up for `select ty c x y` (`iconst tc 0`, then the comparison of
+`c` with it), interned first when its arms are the constants `1, 0` or `0, 1`. -/
+def internSelAux (ty : Ty) (c x y : Nat) : M Unit := do
+  let s ← get
+  match nodeAt s.tms c with
+  | some (.icmp ..) => pure ()
+  | _ =>
+    match tyAt s.aty s.tms c, constAt s.tms ty x, constAt s.tms ty y with
+    | some tc, some vx, some vy =>
+      if tc.isInt then
+        if let some cc := selCC vx vy then
+          let z ← intern1 (.node (.iconst tc 0))
+          discard (intern1 (.node (.icmp cc tc c z)))
+    | _, _, _ => pure ()
+
+/-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`). -/
 def intern (t : Tm) : M Nat := do
   if let .node i := t then
     for a in auxTms (← get).tms i do discard (intern1 a)
+    if let .select ty c x y := i then internSelAux ty c x y
   intern1 t
 
 /-- The term of `v` on one side. -/
@@ -1040,7 +1134,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
 (certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). `cond`: a
 `brif` condition of `f` that is `g`'s under wrappers is recorded instead of rejected (family 3:
 `St.conds`, the hints of `condPrep`; such a state is not a certificate's). -/
-def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false)
+def checkRun (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false)
     (cond : Bool := false) : Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (wfCheck f).mapError (s!"wf:f {·}")
@@ -1057,7 +1151,7 @@ def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false)
   let go : M Unit := do
     for bi in order do
       checkBlock c bi fbs[bi]! gbs[bi]!
-  let (r, st) := (go.run).run { norm, cond }
+  let (r, st) := (go.run).run { norm, cond, aty := atomTy f }
   match r, st.hint with
   | .ok (), _ => pure (st, c, fi)
   | .error e, some h => throw (if e.startsWith "wf:" || e.startsWith "placement" then e else h)
@@ -1066,7 +1160,7 @@ def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false)
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
 `g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. `hoist`: also accept `g` evaluating
 a `symbol_value`/`func_addr`/`tls_value` of `f` earlier than `f` does (`place`). -/
-def check (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) : Except Reject Unit :=
+def check (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) : Except Reject Unit :=
   (checkRun f g norm hoist).map fun _ => ()
 
 end Opt.MidVal

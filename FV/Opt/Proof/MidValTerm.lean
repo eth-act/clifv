@@ -18,7 +18,8 @@ a term whose site is no later than a point has the same value in two frames that
 values available there (`tmVal_congr`): this is why values computed earlier stay valid; a node
 term built from operands' terms has the value of the instruction it names (`tmVal_mapOperands`,
 `tmVal_mapOperands_inst` for any instruction); and the normaliser seam `NormSound` with its
-identity instance `normSound_id`.
+identity instance `normSound_id`, and its typed form `NormSoundT f` (equality in the frames where
+the atoms below the node hold values of their static types, `AtomsTyped`; `NormSound.toT`).
 -/
 
 namespace Opt.MidVal
@@ -268,5 +269,30 @@ def NormSound (norm : Norm) : Prop :=
 theorem normSound_id : NormSound Norm.id := by
   intro _ _ _ h
   cases h
+
+/-! ## The typed normaliser seam -/
+
+/-- Term `u` is reachable from the operands of `i` through node operands. -/
+inductive TmReach (tms : Array Tm) (i : Inst) : Nat → Prop
+  | op {u : Nat} : u ∈ operands i → TmReach tms i u
+  | sub {w u : Nat} {j : Inst} : TmReach tms i w → tms[w]? = some (.node j) → u ∈ operands j →
+      TmReach tms i u
+
+/-- The atoms reachable from the operands of `i` that have a static type in `f` (`atomTy`) hold
+values of that type in the frame `fr`. -/
+def AtomsTyped (f : Function) (tms : Array Tm) (fr : Frame) (mem : Mem) (i : Inst) : Prop :=
+  ∀ (u : Nat) (a : Tm) (ty : Ty) (v : Val), TmReach tms i u → tms[u]? = some a →
+    atomTy f a = some ty → tmVal f tms fr mem u = some v → v.ty = ty
+
+/-- A normaliser is sound for `f` under typing when the term it gives for a node has the node's
+value in every frame of `f` where the atoms below the node are typed (`AtomsTyped`). -/
+def NormSoundT (f : Function) (norm : Norm) : Prop :=
+  ∀ (tms : Array Tm) (i : Inst) (x : Tm), norm tms i = some x →
+    ∀ (fr : Frame) (mem : Mem) (t : Nat), tms[t]? = some x → AtomsTyped f tms fr mem i →
+      tmVal f tms fr mem t = evalNode (tmFrame f tms fr mem) mem i
+
+/-- A normaliser sound in every frame is sound under typing. -/
+theorem NormSound.toT {norm : Norm} {f : Function} (h : NormSound norm) : NormSoundT f norm :=
+  fun tms i x hx fr mem t ht _ => h tms i x hx f fr mem t ht
 
 end Opt.MidVal

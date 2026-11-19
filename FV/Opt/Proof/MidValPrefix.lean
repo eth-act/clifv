@@ -65,7 +65,7 @@ variable {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
 
 /-- The results of `g`'s statement `st` (in the body at `k'`) are as many as the values it
 evaluates to. -/
-theorem results_len (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k' : Nat}
+theorem results_lenT (H : HypT f g fi gi cert norm) {syms : String → Option Nat} {bi k' : Nat}
     {fr' : Frame} {m mm : Mem} {st : Stmt} {rest : List Stmt} {vals : List Val}
     (hinv : Inv g (wfData g gi) syms fr' bi k') (hb : fr'.body = st :: rest)
     (hev : evalInst fr' m st.inst = .ok (vals, mm)) : st.results.length = vals.length := by
@@ -75,9 +75,17 @@ theorem results_len (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
   obtain ⟨ts, hts, htl, -⟩ := H.wfg.results bi gb hgb k' st hst
   rw [← htl, ← evalInst_types hev hts, List.length_map]
 
+/-- The results of `g`'s statement `st` (in the body at `k'`) are as many as the values it
+evaluates to. -/
+theorem results_len (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k' : Nat}
+    {fr' : Frame} {m mm : Mem} {st : Stmt} {rest : List Stmt} {vals : List Val}
+    (hinv : Inv g (wfData g gi) syms fr' bi k') (hb : fr'.body = st :: rest)
+    (hev : evalInst fr' m st.inst = .ok (vals, mm)) : st.results.length = vals.length := by
+  exact results_lenT H.toT hinv hb hev
+
 /-- One statement of `g` that evaluates to `vals` without changing memory, where each result's
 term holds the value bound to it and has a site no later than `(bi, k)`. -/
-theorem gStep (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k k' : Nat}
+theorem gStepT (H : HypT f g fi gi cert norm) {syms : String → Option Nat} {bi k k' : Nat}
     {fr fr' : Frame} {m : Mem} {st : Stmt} {rest : List Stmt} {vals : List Val}
     (hinv : Inv g (wfData g gi) syms fr' bi k')
     (hb : fr'.body = st :: rest) (hc : ∀ fn args, st.inst ≠ .call fn args)
@@ -102,7 +110,7 @@ theorem gStep (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
   have hb' := hb
   rw [hbody] at hb'
   obtain ⟨hst, -, -⟩ := drop_eq_cons hb'
-  obtain ⟨regs, hset⟩ := setMany_len (r := fr'.regs) (results_len H hinv hb hev)
+  obtain ⟨regs, hset⟩ := setMany_len (r := fr'.regs) (results_lenT H hinv hb hev)
   obtain ⟨-, hsm⟩ := setMany_spec hset
   have hstep : lstep fr' m = .next { fr' with regs, body := rest } m := by
     rw [lstep_inst hb hc, hev]
@@ -136,8 +144,32 @@ theorem gStep (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
       exact (hres n y hn).2
     · exact hsites y hy'
 
+/-- One statement of `g` that evaluates to `vals` without changing memory, where each result's
+term holds the value bound to it and has a site no later than `(bi, k)`. -/
+theorem gStep (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k k' : Nat}
+    {fr fr' : Frame} {m : Mem} {st : Stmt} {rest : List Stmt} {vals : List Val}
+    (hinv : Inv g (wfData g gi) syms fr' bi k')
+    (hb : fr'.body = st :: rest) (hc : ∀ fn args, st.inst ≠ .call fn args)
+    (hev : evalInst fr' m st.inst = .ok (vals, m))
+    (hpure : isPure st.inst = true → ∃ a, vals = [a] ∧ evalNode fr' (symMem syms) st.inst = some a)
+    (hagree : ∀ y, Avail (wfData g gi) bi k' y →
+      TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr'.regs y)
+    (hsites : ∀ y, Avail (wfData g gi) bi k' y →
+      LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k))
+    (hres : ∀ (n : Nat) (r : ValueId), st.results[n]? = some r →
+      TV f cert syms fr ((ccOf fi gi cert norm).eg r) = vals[n]? ∧
+      LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg r)) (bi, k)) :
+    ∃ fr1, lstep fr' m = .next fr1 m ∧ fr1.body = rest ∧ fr1.term = fr'.term ∧
+      fr1.slots = fr'.slots ∧ fr1.func = fr'.func ∧
+      Inv g (wfData g gi) syms fr1 bi (k' + 1) ∧
+      (∀ y, Avail (wfData g gi) bi (k' + 1) y →
+        TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr1.regs y) ∧
+      (∀ y, Avail (wfData g gi) bi (k' + 1) y →
+        LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k)) := by
+  exact gStepT H.toT hinv hb hc hev hpure hagree hsites hres
+
 /-- One statement of `g`'s checked pure prefix (`GPreStmt`). -/
-theorem gStmt (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k k' : Nat}
+theorem gStmtT (H : HypT f g fi gi cert norm) {syms : String → Option Nat} {bi k k' : Nat}
     {S : List Fact} {fr fr' : Frame} {m : Mem} {st : Stmt} {rest : List Stmt}
     (hm : m.symbols = syms)
     (hinvf : Inv f (wfData f fi) syms fr bi k)
@@ -159,8 +191,8 @@ theorem gStmt (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
   rcases hgs with hn | ⟨-, hp, t, hpo, hpart⟩
   · -- `nop`: nothing is bound
     have hev : evalInst fr' m st.inst = .ok ([], m) := by rw [hn]; rfl
-    have hlen := results_len H hinv hb hev
-    refine gStep H hinv hb (fun fn args h => by rw [hn] at h; cases h) hev
+    have hlen := results_lenT H hinv hb hev
+    refine gStepT H hinv hb (fun fn args h => by rw [hn] at h; cases h) hev
       (fun h => by rw [hn] at h; simp [isPure] at h) hagree hsites fun n r hr => ?_
     have := (List.getElem?_eq_some_iff.1 hr).1
     simp only [List.length_nil] at hlen
@@ -191,7 +223,10 @@ theorem gStmt (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
         have hx' : norm cert.tms (mapOperands (ccOf fi gi cert norm).eg st.inst) = some x := hx
         have ht : cert.tms[t]? = some x := hnorm.symm
         show tmVal f cert.tms fr (symMem syms) t = _
-        rw [H.norm _ _ x hx' f fr (symMem syms) t ht]
+        rw [H.norm _ _ x hx' fr (symMem syms) t ht (H.atomsTyped hinvf.regs (fun o ho => by
+          rw [operands_mapOperands] at ho
+          obtain ⟨y, hy, rfl⟩ := List.mem_map.1 ho
+          exact hsites y (hops y hy)))]
         exact evalNode_rename hgl hex hsl.symm (fun x hx => hagree x (hops x hx))
     have hval : ∃ v, evalNode fr' (symMem syms) st.inst = some v ∧
         evalInst fr' m st.inst = .ok ([v], m) := by
@@ -208,7 +243,7 @@ theorem gStmt (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
         rw [evalNode_pureK_syms (m := symMem syms) hp hm]
         exact hv
     obtain ⟨v, hv1, hv2⟩ := hval
-    refine gStep H hinv hb (pureK_not_call hp) hv2 (fun _ => ⟨v, rfl, hv1⟩) hagree hsites
+    refine gStepT H hinv hb (pureK_not_call hp) hv2 (fun _ => ⟨v, rfl, hv1⟩) hagree hsites
       fun n r hr => ?_
     have hn0 : n = 0 := by
       have := (List.getElem?_eq_some_iff.1 hr).1
@@ -218,8 +253,30 @@ theorem gStmt (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
     rw [hpo.term r (List.mem_of_getElem? hr)]
     exact ⟨by rw [hTV, hv1]; rfl, H.le_sound hpo.site⟩
 
+/-- One statement of `g`'s checked pure prefix (`GPreStmt`). -/
+theorem gStmt (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k k' : Nat}
+    {S : List Fact} {fr fr' : Frame} {m : Mem} {st : Stmt} {rest : List Stmt}
+    (hm : m.symbols = syms)
+    (hinvf : Inv f (wfData f fi) syms fr bi k)
+    (hinv : Inv g (wfData g gi) syms fr' bi k')
+    (hsl : fr'.slots = fr.slots)
+    (hagree : ∀ y, Avail (wfData g gi) bi k' y →
+      TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr'.regs y)
+    (hsites : ∀ y, Avail (wfData g gi) bi k' y →
+      LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k))
+    (hdefd : ∀ t, Fact.defd t ∈ S → (TV f cert syms fr t).isSome)
+    (hb : fr'.body = st :: rest) (hgs : GPreStmt (ccOf fi gi cert norm) (bi, k) S st) :
+    ∃ fr1, lstep fr' m = .next fr1 m ∧ fr1.body = rest ∧ fr1.term = fr'.term ∧
+      fr1.slots = fr'.slots ∧ fr1.func = fr'.func ∧
+      Inv g (wfData g gi) syms fr1 bi (k' + 1) ∧
+      (∀ y, Avail (wfData g gi) bi (k' + 1) y →
+        TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr1.regs y) ∧
+      (∀ y, Avail (wfData g gi) bi (k' + 1) y →
+        LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k)) := by
+  exact gStmtT H.toT hm hinvf hinv hsl hagree hsites hdefd hb hgs
+
 /-- A run of checked prefix statements. -/
-theorem gPre_run_list (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k : Nat}
+theorem gPre_run_listT (H : HypT f g fi gi cert norm) {syms : String → Option Nat} {bi k : Nat}
     {S : List Fact} {fr : Frame} {m : Mem} (hm : m.symbols = syms)
     (hinvf : Inv f (wfData f fi) syms fr bi k)
     (hdefd : ∀ t, Fact.defd t ∈ S → (TV f cert syms fr t).isSome) (rest : List Stmt) :
@@ -241,21 +298,46 @@ theorem gPre_run_list (H : Hyp f g fi gi cert norm) {syms : String → Option Na
     ⟨fr', .refl _ _, by simpa using hb, rfl, rfl, rfl, hinv, ha, hs⟩
   | st :: pre, fr', k', hinv, hsl, ha, hs, hb, hpre => by
     obtain ⟨fr1, hstep, hb1, ht1, hsl1, hf1, hinv1, ha1, hs1⟩ :=
-      gStmt H hm hinvf hinv hsl ha hs hdefd (by rw [hb]; rfl) (hpre st (by simp))
+      gStmtT H hm hinvf hinv hsl ha hs hdefd (by rw [hb]; rfl) (hpre st (by simp))
     obtain ⟨fr'', hstar, hb2, ht2, hsl2, hf2, hinv2, ha2, hs2⟩ :=
-      gPre_run_list H hm hinvf hdefd rest pre fr1 (k' + 1) hinv1 (by rw [hsl1, hsl]) ha1 hs1 hb1
+      gPre_run_listT H hm hinvf hdefd rest pre fr1 (k' + 1) hinv1 (by rw [hsl1, hsl]) ha1 hs1 hb1
         (fun s hs' => hpre s (by simp [hs']))
     have hk : k' + 1 + pre.length = k' + (st :: pre).length := by simp; omega
     rw [hk] at hinv2 ha2 hs2
     exact ⟨fr'', .step hstep hstar, hb2, by rw [ht2, ht1], by rw [hsl2, hsl1], by rw [hf2, hf1],
       hinv2, ha2, hs2⟩
 
+/-- A run of checked prefix statements. -/
+theorem gPre_run_list (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k : Nat}
+    {S : List Fact} {fr : Frame} {m : Mem} (hm : m.symbols = syms)
+    (hinvf : Inv f (wfData f fi) syms fr bi k)
+    (hdefd : ∀ t, Fact.defd t ∈ S → (TV f cert syms fr t).isSome) (rest : List Stmt) :
+    ∀ (pre : List Stmt) (fr' : Frame) (k' : Nat),
+      Inv g (wfData g gi) syms fr' bi k' → fr'.slots = fr.slots →
+      (∀ y, Avail (wfData g gi) bi k' y →
+        TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr'.regs y) →
+      (∀ y, Avail (wfData g gi) bi k' y →
+        LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k)) →
+      fr'.body = pre ++ rest → (∀ st ∈ pre, GPreStmt (ccOf fi gi cert norm) (bi, k) S st) →
+      ∃ fr'', LStar fr' m fr'' m ∧ fr''.body = rest ∧ fr''.term = fr'.term ∧
+        fr''.slots = fr'.slots ∧ fr''.func = fr'.func ∧
+        Inv g (wfData g gi) syms fr'' bi (k' + pre.length) ∧
+        (∀ y, Avail (wfData g gi) bi (k' + pre.length) y →
+          TV f cert syms fr ((ccOf fi gi cert norm).eg y) = fr''.regs y) ∧
+        (∀ y, Avail (wfData g gi) bi (k' + pre.length) y →
+          LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (bi, k))
+  := gPre_run_listT H.toT hm hinvf hdefd rest
+
 /-- **`g` runs its checked pure prefix** (`GPreRun`, module doc). -/
-theorem gPre_run (H : Hyp f g fi gi cert norm) : GPreRun f g fi gi cert norm := by
+theorem gPre_runT (H : HypT f g fi gi cert norm) : GPreRun f g fi gi cert norm := by
   intro syms bi k k' k'' S fr fr' m rest hm hinvf hinv hsl ha hs hdefd hg
   obtain ⟨pre, hgs, hk, hpre, -⟩ := gPre_spec fr'.body k' rest k'' hg
   subst hk
-  exact gPre_run_list H hm hinvf hdefd rest pre fr' k' hinv hsl ha hs hgs hpre
+  exact gPre_run_listT H hm hinvf hdefd rest pre fr' k' hinv hsl ha hs hgs hpre
+
+/-- **`g` runs its checked pure prefix** (`GPreRun`, module doc). -/
+theorem gPre_run (H : Hyp f g fi gi cert norm) : GPreRun f g fi gi cert norm := by
+  exact gPre_runT H.toT
 
 end
 
