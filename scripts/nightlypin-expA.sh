@@ -26,6 +26,6 @@ for ep in "$@"; do
   echo "  $tag parity: $(grep -m1 '^functions' "$out/$tag.parity.txt")"
   cp "$root/examples/$ex/target/fv-report.json" "$out/$tag.fv-report.json" 2>/dev/null
   rm -rf "$out/keep-$tag" && mkdir -p "$out/keep-$tag"
-  (cd "$tmpd" && find . -maxdepth 2 -name c.clif -exec cp --parents {} "$out/keep-$tag/" \;)
+  (cd "$tmpd" && find . -maxdepth 2 -name c.clif -type d -exec cp -r --parents {} "$out/keep-$tag/" \;)
 done
 rm -rf "$root"/examples/*/target

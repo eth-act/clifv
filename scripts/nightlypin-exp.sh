@@ -34,14 +34,20 @@ for ep in "$@"; do
     echo "  $tag parity: $(grep -m1 '^functions' "$out/$tag.parity.txt")"
     rm -rf "$out/keep-$tag" && mkdir -p "$out/keep-$tag"
     (cd "$tmpd" && find . -maxdepth 2 \( -name cgclif.o -o -name lean.o -o -name c.clif \) \
-      -exec cp --parents {} "$out/keep-$tag/" \;)
+      -exec cp -r --parents {} "$out/keep-$tag/" \;)
     cp "$root/examples/$ex/target/fv-report.json" "$out/$tag.fv-report.json" 2>/dev/null
   done
-  # the CLIF Lean compiles (c.clif of all CGUs; lines sorted, CGU prefixes removed): the same
-  # in both runs?
-  for cl in 0.135.0 0.136.1; do
-    cat "$out/keep-$ex-$prof-$cl"/*/c.clif | sed -E 's/_fv_[0-9a-f]{12}_//g' | LC_ALL=C sort | md5sum
-  done | uniq -c | sed "s/^/  $ex-$prof c.clif md5 (count, sum): /"
+  # the CLIF of the dumps (c.clif dirs of all CGUs; lines sorted, CGU prefixes removed): the same
+  # in both runs? (Lean compiles the unoptimised dumps; *.opt.clif is Cranelift's mid-end output)
+  set -f
+  for sel in "! -name *.opt.clif" "-name *.opt.clif"; do
+    for cl in 0.135.0 0.136.1; do
+      # shellcheck disable=SC2086
+      find "$out/keep-$ex-$prof-$cl" -path '*/c.clif/*' -type f $sel -exec cat {} + |
+        sed -E 's/_fv_[0-9a-f]{12}_//g' | LC_ALL=C sort | md5sum
+    done | uniq -c | sed "s/^/  $ex-$prof c.clif ($sel) md5 (count, sum): /"
+  done
+  set +f
   python3 "$root/scripts/nightlypin-s2s.py" "$out/keep-$ex-$prof-0.135.0" "$out/keep-$ex-$prof-0.136.1" \
     --diffs "$out/s2s-$ex-$prof.diffs" --json "$out/s2s-$ex-$prof.json" >"$out/s2s-$ex-$prof.txt" 2>&1
   sed "s/^/  $ex-$prof s2s: /" "$out/s2s-$ex-$prof.txt"
