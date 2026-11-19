@@ -821,9 +821,10 @@ def midvalDecide (src srcOpt : String) : Except (Option String × String) (Strin
   let gs := (Clif.parseFile srcOpt).funcs
   let some k := gs.findIdx? (·.name == p.name)
     | throw (some p.name, "the optimised dump has no function of that name")
-  let g ← match gs[k]?.map (·.func) with
-    | some (.ok g) => pure g
-    | _ => throw (some p.name, "the optimised function does not parse")
+  let some q := gs[k]? | throw (some p.name, "the optimised dump has no function of that name")
+  let g ← match q.func with
+    | .ok g => pure g
+    | .error _ => throw (some p.name, "the optimised function does not parse")
   let f' := Opt.ConstPhi.run f
   let cert ← match Opt.MidVal.emit f' g with
     | .ok c => pure c
