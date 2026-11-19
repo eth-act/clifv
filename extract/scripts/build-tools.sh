@@ -9,7 +9,8 @@ WORK=${CLIFV_EXTRACT_WORK:-/data/clifv-extract}
 TOOLS=$WORK/tools
 mkdir -p "$TOOLS"
 export OMP_NUM_THREADS=2 OMP_THREAD_LIMIT=2 LEAN_NUM_THREADS=2 CARGO_BUILD_JOBS=2
-heavy() { FV_MEMCAP=64G bash "$ROOT/scripts/memcap.sh" nice -n 10 "$@"; }
+# One heavy command at a time across all agents/scripts (resource rule): $WORK/heavy.lock.
+heavy() { flock "$WORK/heavy.lock" env FV_MEMCAP=64G bash "$ROOT/scripts/memcap.sh" nice -n 10 "$@"; }
 pin() { python3 -c "import json,sys;print(json.load(open('$EXTRACT/pins.json'))['$1']['$2'])"; }
 
 checkout() { # name -> prints 1 if the checkout moved

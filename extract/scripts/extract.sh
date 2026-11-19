@@ -10,7 +10,8 @@ WORK=${CLIFV_EXTRACT_WORK:-/data/clifv-extract}
 RUN=$WORK/runs/$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p "$RUN"
 export OMP_NUM_THREADS=2 OMP_THREAD_LIMIT=2 LEAN_NUM_THREADS=2 CARGO_BUILD_JOBS=2
-heavy() { FV_MEMCAP=64G bash "$ROOT/scripts/memcap.sh" nice -n 10 "$@"; }
+# One heavy command at a time across all agents/scripts (resource rule): $WORK/heavy.lock.
+heavy() { flock "$WORK/heavy.lock" env FV_MEMCAP=64G bash "$ROOT/scripts/memcap.sh" nice -n 10 "$@"; }
 patterns() { [ -f "$1" ] && grep -v '^\s*#' "$1" | grep -v '^\s*$' | cut -f1; }
 
 args=(--preset=aeneas --sysroot default

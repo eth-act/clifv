@@ -1,0 +1,33 @@
+[
+ {
+  "caller": "regalloc2::indexset::{regalloc2::indexset::AdaptiveMap}::iter",
+  "callees": [
+   "hashbrown_2.map.HashMap.iter"
+  ]
+ },
+ {
+  "caller": "regalloc2::indexset::{regalloc2::indexset::AdaptiveMap}::is_empty",
+  "callees": [
+   "hashbrown_2.map.HashMap.values"
+  ]
+ },
+ {
+  "caller": "regalloc2::checker::{regalloc2::checker::CheckerState}::get_mappings_mut",
+  "callees": [
+   "hashbrown_2.map.HashMap.iter_mut"
+  ]
+ },
+ {
+  "caller": "regalloc2::checker::{regalloc2::checker::CheckerValue}::meet_with",
+  "callees": [
+   "hashbrown_2.set.HashSet.retain"
+  ]
+ },
+ {
+  "caller": "regalloc2::checker::merge_map",
+  "callees": [
+   "hashbrown_2.map.HashMap.iter_mut",
+   "hashbrown_2.map.HashMap.retain"
+  ]
+ }
+]

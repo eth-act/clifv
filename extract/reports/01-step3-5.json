@@ -1,0 +1,260 @@
+{
+ "charon_exit": 0,
+ "aeneas_exit": 1,
+ "llbc_has_errors": true,
+ "aeneas_fatal": false,
+ "sorry_count": 537,
+ "crates": {
+  "clifv_extract_entry": {
+   "functions": 8,
+   "lean_body": 5,
+   "missing": 2
+  },
+  "cranelift_codegen": {
+   "functions": 5547,
+   "lean_body": 2049,
+   "missing": 3349
+  },
+  "cranelift_reader": {
+   "functions": 254,
+   "lean_body": 148,
+   "missing": 87
+  },
+  "cranelift_entity": {
+   "functions": 115,
+   "lean_body": 78,
+   "missing": 35
+  },
+  "cranelift_bforest": {
+   "functions": 114,
+   "lean_body": 105,
+   "missing": 7
+  },
+  "cranelift_bitset": {
+   "functions": 29,
+   "lean_body": 27,
+   "missing": 2
+  },
+  "cranelift_control": {
+   "functions": 5,
+   "lean_body": 2,
+   "missing": 3
+  },
+  "regalloc2": {
+   "functions": 1260,
+   "lean_body": 494,
+   "missing": 696
+  }
+ },
+ "opaque_local_counts": {
+  "configured": 171,
+  "override": 0,
+  "unexpected": 4253
+ },
+ "failed_items_count": 488,
+ "missing_external_models_count": 1101,
+ "error_families": [
+  {
+   "message": "[Error] end_abs_aux: detected a loop in the chain of ids: abs@<n>(level:<n>) -> abs@<n>(level:<n>) -> abs@<n>(level:<n>) -> abs@<n>(level:<n>)",
+   "emitter": "Compiler source: interp/InterpBorrowsCore.ml, line 98",
+   "count": 1052
+  },
+  {
+   "message": "[Error] Internal error: please file an issue",
+   "emitter": "Compiler source: llbc/TypesAnalysis.ml, line 388",
+   "count": 182
+  },
+  {
+   "message": "[Error] Breaks to outer loops are not supported yet",
+   "emitter": "Compiler source: PrePasses.ml, line 1436",
+   "count": 157
+  },
+  {
+   "message": "[Error] Ignoring the body of '<item>' because of previous error",
+   "emitter": "Compiler source: PrePasses.ml, line 3226",
+   "count": 152
+  },
+  {
+   "message": "[Error] Found a case of unsupported nested borrows",
+   "emitter": "Compiler source: interp/InterpBorrows.ml, line 2060",
+   "count": 152
+  },
+  {
+   "message": "[Error] Could not find: trait_decl_id: <n>",
+   "emitter": "Compiler source: extract/ExtractBase.ml, line 479",
+   "count": 130
+  },
+  {
+   "message": "[Error] Internal error: please file an issue",
+   "emitter": "Compiler source: Translate.ml, line 192",
+   "count": 95
+  },
+  {
+   "message": "[Error] Not_found",
+   "emitter": "Compiler source: <stdlib>, line 0",
+   "count": 38
+  },
+  {
+   "message": "[Error] Mixed-recursive declaration groups are not supported",
+   "emitter": "Compiler source: Translate.ml, line 1384",
+   "count": 20
+  },
+  {
+   "message": "[Error] Invalid_argument: List.combine",
+   "emitter": "Compiler source: charon/charon-ml/src/Substitute.ml, line 314",
+   "count": 18
+  },
+  {
+   "message": "[Error] Could not match the contexts",
+   "emitter": "Compiler source: interp/InterpJoin.ml, line 1571",
+   "count": 18
+  },
+  {
+   "message": "[Error] Can't end abstraction <n> as it is set as non-endable",
+   "emitter": "Compiler source: interp/InterpBorrows.ml, line 1213",
+   "count": 15
+  },
+  {
+   "message": "[Error] Internal error, please file an issue",
+   "emitter": "Compiler source: interp/InterpBorrows.ml, line 1561",
+   "count": 15
+  },
+  {
+   "message": "[Error] Could not lookup the translated function, probably because of an error which happened before",
+   "emitter": "Compiler source: extract/Extract.ml, line 3396",
+   "count": 14
+  },
+  {
+   "message": "[Error] Unimplemented",
+   "emitter": "Compiler source: llbc/RegionsHierarchy.ml, line 315",
+   "count": 12
+  },
+  {
+   "message": "[Error] Invalid inputs for binop",
+   "emitter": "Compiler source: interp/InterpExpressions.ml, line 1189",
+   "count": 10
+  },
+  {
+   "message": "[Error] Nested borrows are not supported yet",
+   "emitter": "Compiler source: interp/InterpBorrows.ml, line 2022",
+   "count": 9
+  },
+  {
+   "message": "[Error] Found type error in the output of charon",
+   "emitter": "Compiler source: llbc/TypesAnalysis.ml, line 515",
+   "count": 8
+  },
+  {
+   "message": "[Error] Joining region abstractions containing shared loans whose shared value contains borrows is not supported yet",
+   "emitter": "Compiler source: interp/InterpReduceCollapse.ml, line 1373",
+   "count": 8
+  },
+  {
+   "message": "[Error] Nested borrows are not supported yet",
+   "emitter": "Compiler source: interp/InterpBorrows.ml, line 2002",
+   "count": 8
+  },
+  {
+   "message": "[Error] Found a case of unsupported nested borrows",
+   "emitter": "Compiler source: interp/InterpBorrows.ml, line 2045",
+   "count": 8
+  },
+  {
+   "message": "[Error] Can't copy a mutable borrow",
+   "emitter": "Compiler source: interp/InterpExpressions.ml, line 200",
+   "count": 8
+  },
+  {
+   "message": "[Error] Internal error, please file an issue",
+   "emitter": "Compiler source: llbc/RegionsHierarchy.ml, line 283",
+   "count": 8
+  },
+  {
+   "message": "[Error] Encountered an error when analyzing the following type declarations group:",
+   "emitter": "Compiler source: interp/Interp.ml, line 47",
+   "count": 7
+  },
+  {
+   "message": "[Error] Internal error, please file an issue",
+   "emitter": "Compiler source: interp/InterpMatchCtxs.ml, line 230",
+   "count": 7
+  },
+  {
+   "message": "[Error] Internal error: please file an issue",
+   "emitter": "Compiler source: symbolic/SymbolicToPureValues.ml, line 366",
+   "count": 7
+  },
+  {
+   "message": "[Error] Could not find: type name: cranelift_codegen::verifier::Verifier, field name: func",
+   "emitter": "Compiler source: extract/ExtractBase.ml, line 468",
+   "count": 7
+  },
+  {
+   "message": "[Error] Could not find: type name: cranelift_codegen::machinst::buffer::MachLabelFixup",
+   "emitter": "Compiler source: extract/ExtractBase.ml, line 479",
+   "count": 7
+  },
+  {
+   "message": "[Error] Early returns inside of loops are not supported yet",
+   "emitter": "Compiler source: PrePasses.ml, line 1373",
+   "count": 6
+  },
+  {
+   "message": "[Error] region_in_set shouldn't be called on erased regions",
+   "emitter": "Compiler source: llbc/TypesUtils.ml, line 53",
+   "count": 6
+  },
+  {
+   "message": "[Error] Found type error in the output of charon",
+   "emitter": "Compiler source: llbc/RegionsHierarchy.ml, line 320",
+   "count": 6
+  },
+  {
+   "message": "[Error] Not implemented",
+   "emitter": "Compiler source: interp/InterpJoin.ml, line 1321",
+   "count": 6
+  },
+  {
+   "message": "[Error] Not allowed to expand enumerations with several variants",
+   "emitter": "Compiler source: interp/InterpExpansion.ml, line 293",
+   "count": 6
+  },
+  {
+   "message": "[Error] Unsupported switch scrutinee",
+   "emitter": "Compiler source: interp/InterpStatements.ml, line 1029",
+   "count": 5
+  },
+  {
+   "message": "[Error] Found bottom while reading a place",
+   "emitter": "Compiler source: interp/InterpPaths.ml, line 460",
+   "count": 5
+  },
+  {
+   "message": "[Error] There should be no bottoms in the value",
+   "emitter": "Compiler source: interp/InterpExpressions.ml, line 55",
+   "count": 5
+  },
+  {
+   "message": "[Error] Missing type information",
+   "emitter": "Compiler source: llbc/TypesUtils.ml, line 132",
+   "count": 5
+  },
+  {
+   "message": "[Error] Improperly typed constant value",
+   "emitter": "Compiler source: interp/InterpExpressions.ml, line 120",
+   "count": 5
+  },
+  {
+   "message": "[Error] Unsized cast between dynamic traits: unimplemented case",
+   "emitter": "Compiler source: interp/InterpExpressions.ml, line 969",
+   "count": 5
+  },
+  {
+   "message": "[Error] Dynamic trait types are not supported yet",
+   "emitter": "Compiler source: symbolic/SymbolicToPureTypes.ml, line 192",
+   "count": 4
+  }
+ ],
+ "charon_error_families": [],
+ "notes": "Aeneas fork 3cda978d, Charon fork 6ede935f; ISLE lowering still one mixed declaration group (Step 6 pending); full report: /data/clifv-extract/runs/20261119T042120Z/report.json"
+}
