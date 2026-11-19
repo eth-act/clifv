@@ -89,6 +89,30 @@ pub struct BinaryCheck {
     /// count: its `N function(s), … written by` line).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lean_link_region: Option<usize>,
+    /// The binary check after the build (`cargo fv link-proof` + `link-check`; not run with
+    /// `--no-binary-check`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bin_check: Option<BinCheckVerdict>,
+}
+
+/// The binary check of one executable (docs/contracts/e2e.md, "Binary level (M9)"; #1130).
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct BinCheckVerdict {
+    /// The Lean-compiled functions of the executable, which the theorem must cover: with
+    /// `--lean-link` lean-link's region count (`lean_link_region`), else the markers resolved in
+    /// the executable (`lean_functions_linked`).
+    pub functions: usize,
+    /// Which of the two counts `functions` is.
+    pub functions_from: String,
+    /// The functions the theorem `link-check` names covers (its program's passing functions);
+    /// none when it names no theorem.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub checked: Option<usize>,
+    /// The theorem covers every Lean-compiled function of the executable (`checked` =
+    /// `functions`) and every check holds.
+    pub verified: bool,
+    /// cargo fv's line for the executable.
+    pub summary: String,
 }
 
 /// The function symbols of a linked executable (distinct addresses), by origin.
