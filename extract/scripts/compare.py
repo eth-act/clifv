@@ -28,7 +28,9 @@ artifacts, SUITE, TARGET = scc.artifacts, scc.SUITE, scc.TARGET
 PREJIT = ROOT / "tools/prejit-export/target/debug/prejit-export"
 CANDIDATES = {
     "native": EXTRACT / "rust/target/release/clifv-extract-native",
-    "lean": EXTRACT / "lean/.lake/build/bin/clifv-extract-lean",
+    # Built by scripts/lean-build.sh.
+    "lean": Path(os.environ.get("CLIFV_EXTRACT_WORK", "/data/clifv-extract"))
+    / "lean-build/.lake/build/bin/clifv-extract-lean",
 }
 TIMEOUT = 600
 
