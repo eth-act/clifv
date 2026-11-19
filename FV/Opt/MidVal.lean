@@ -105,6 +105,22 @@ def pureK (i : Inst) : Bool :=
     | .float op _ _ => op != .fcvtToUint && op != .fcvtToSint
     | _ => false
 
+/-- The float pure nodes are typed so that `Clif.evalFloat` cannot be `stuck` (`Opt.check`
+types only the `isPure` nodes): `ty` gives the operand types. Other instructions: `true`. -/
+def floatTyped (ty : ValueId → Option Ty) : Inst → Bool
+  | .float op t args =>
+    let isF (x : Ty) : Bool := x == .f32 || x == .f64
+    match op, args.map ty with
+    | .fpromote, [some a] => t == .f64 && a == .f32
+    | .fdemote, [some a] => t == .f32 && a == .f64
+    | .fcvtToUintSat, [some a] | .fcvtToSintSat, [some a] => t.isInt && isF a
+    | .fcvtFromUint, [some a] | .fcvtFromSint, [some a] => a.isInt && isF t
+    | .fcmp _, [some a, some b] => isF t && a == t && b == t
+    | .fcvtToUint, _ | .fcvtToSint, _ => true
+    | op, tys => isF t && tys.length == op.arity && tys.all (· == some t) &&
+      (op == .fma || (FSem.unary op).isSome || (FSem.binary op).isSome)
+  | _ => true
+
 /-- Pure nodes whose evaluation can be `stuck` (a symbol missing from the link-time image). -/
 def partialK : Inst → Bool
   | .symbolValue .. | .funcAddr .. | .tlsValue .. => true
@@ -258,6 +274,9 @@ def domIntervals (idom : Array (Option Nat)) : Array Nat × Array Nat × Array N
 and a detail. -/
 abbrev Reject := String
 
+/-- A normaliser of pure nodes (`Norm.id`, below). -/
+abbrev Norm := Array Tm → Inst → Option Tm
+
 structure St where
   tms : Array Tm := #[]
   ids : Std.HashMap Tm Nat := {}
@@ -272,8 +291,8 @@ structure St where
   /-- The likely cause of a later rejection (reasons only): a load of `f` taken for a dead
   `notrap` load while `g`'s next statement was a load of another address. -/
   hint : Option Reject := none
-  /-- Measurement variant: constant evaluation of pure nodes (`evalConst`). -/
-  fold : Bool := false
+  /-- The normaliser of pure nodes (`Norm`): the identity in stage 1. -/
+  norm : Norm := Norm.id
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -282,9 +301,16 @@ def liftE {α : Type} : Except Reject α → M α
   | .ok a => pure a
   | .error r => throw r
 
-/-- **Measurement variant only** (`St.fold`): the value of a pure node whose operands are all
-constants, by `Clif.evalInst` (no rewrite rule: the semantics itself). -/
-def evalConst (tms : Array Tm) (i : Inst) : Option Tm := do
+/-- A **normaliser** of pure nodes: given the term table and a node (term operands), a term
+of the same value under `Clif.evalInst`, or `none` (keep the node). This is the seam of stage 2
+(#1119): the soundness theorem takes it with the one hypothesis that it preserves values;
+stage 1 uses `Norm.id`, and each proven rewrite (constant evaluation, single `simplify` rules)
+can be added as one more `Norm` with its own preservation lemma. -/
+def Norm.id : Norm := fun _ _ => none
+
+/-- **Measurement variant only** (`midval-check --fold`): the value of a pure node whose
+operands are all constants, by `Clif.evalInst` (no rewrite rule: the semantics itself). -/
+def evalConst : Norm := fun tms i => do
   let ops := operands i
   if ops.isEmpty || !isPure i || partialK i then none
   let vals ← ops.mapM fun o => match (tms[o]? : Option Tm) with
@@ -299,7 +325,7 @@ def evalConst (tms : Array Tm) (i : Inst) : Option Tm := do
 def intern (t : Tm) : M Nat := do
   let s ← get
   let t := match t with
-    | .node i => if s.fold then (evalConst s.tms i).getD t else t
+    | .node i => (s.norm s.tms i).getD t
     | _ => t
   match s.ids.get? t with
   | some i => pure i
@@ -328,6 +354,9 @@ structure Ctx where
   pre : Array Nat
   post : Array Nat
   ver : Array Ver
+  /-- Value types of `f` and `g` (`Opt.check`). -/
+  fty : ValueId → Option Ty
+  gty : ValueId → Option Ty
 
 def Ctx.dom (c : Ctx) (a b : Nat) : Bool :=
   c.pre[a]! ≤ c.pre[b]! && c.post[b]! ≤ c.post[a]!
@@ -352,9 +381,13 @@ def keyOf (ver : Ver) : Inst → Option (Key × Option Nat)
   | _ => none
 
 /-- Bind the results of a pure statement on one side. -/
-def bindPure (side : String) (st : Stmt) (bi seg : Nat) (fSide : Bool) : M Unit := do
+def bindPure (c : Ctx) (side : String) (st : Stmt) (bi seg : Nat) (fSide : Bool) : M Unit := do
   let s ← get
   let env := if fSide then s.envF else s.envG
+  -- totality: `g` may evaluate a pure node where `f` does not, so every pure node must be
+  -- unable to be `stuck` on its (checked) operand types; `Opt.check` types the `isPure` ones
+  if !floatTyped (if fSide then c.fty else c.gty) st.inst then
+    throw s!"wf:{side} float typing"
   let i ← liftE (mapM' env side st.inst)
   let t ← intern (.node i)
   match st.results with
@@ -457,7 +490,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
         k := k + 1
         continue
       if !pureK st.inst then break
-      bindPure "f" st bi seg true
+      bindPure c "f" st bi seg true
       k := k + 1
     while k' < gs.size do
       let st := gs[k']!
@@ -465,7 +498,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
         k' := k' + 1
         continue
       if !pureK st.inst then break
-      bindPure "g" st bi seg false
+      bindPure c "g" st bi seg false
       if partialK st.inst then
         if let [r] := st.results then
           pend := pend.push ((← get).envG.getD r 0)
@@ -521,20 +554,20 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
 
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
 `g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. -/
-def check (f g : Function) (fold : Bool := false) : Except Reject Unit := do
+def check (f g : Function) (norm : Norm := Norm.id) : Except Reject Unit := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (Opt.check f).mapError (s!"wf:f {·}")
   let gi ← (Opt.check g).mapError (s!"wf:g {·}")
   if g.blocks.map (·.id) != f.blocks.map (·.id) then throw "rewrite:blocks"
   if gi.cfg.idom != fi.cfg.idom then throw "rewrite:domtree"
   let (pre, post, order) := domIntervals fi.cfg.idom
-  let c : Ctx := { pre, post, ver := versions g gi.cfg }
+  let c : Ctx := { pre, post, ver := versions g gi.cfg, fty := fi.types.get?, gty := gi.types.get? }
   let fbs := f.blocks.toArray
   let gbs := g.blocks.toArray
   let go : M Unit := do
     for bi in order do
       checkBlock c bi fbs[bi]! gbs[bi]!
-  let (r, st) := (go.run).run { fold }
+  let (r, st) := (go.run).run { norm }
   match r, st.hint with
   | .ok (), _ => pure ()
   | .error e, some h => throw (if e.startsWith "wf:" || e.startsWith "placement" then e else h)

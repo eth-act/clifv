@@ -30,7 +30,7 @@ def firstWord (s : String) : String := (s.splitOn " ").headD s
 @[noinline] def runCheck (fold : Bool) (f0 g : Clif.Function) :
     IO (Clif.Function × Except String Unit) := do
   let f := Opt.ConstPhi.run f0
-  let r := Opt.MidVal.check f g fold
+  let r := Opt.MidVal.check f g (if fold then Opt.MidVal.evalConst else Opt.MidVal.Norm.id)
   match r with
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
