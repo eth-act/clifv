@@ -240,10 +240,48 @@ compiles `f` exactly as without the option (same objects, same lines, one `midva
 form is a legalisation or constant-phi removal of `g` (no composed typed theorem exists), constant-phi
 removal of a `g` outside the scope, a `try_call` function without the unwinding theorem through the
 validator, and any `g` whose own verdict names no theorem (`FVTest.Backend.FnVerdict.midvalVerdict`).
-Executables: layer 2 (`link-check` re-deciding the pair) is not done, so `cargo fv --midval` runs
-no binary check. `FVTest/Backend/MidValPassWitness.lean` instantiates
+`FVTest/Backend/MidValPassWitness.lean` instantiates
 `backend_correct_midval_semantic_return_pins` on a real pair of sha3's release build (a stored value
 forwarded across blocks) with every checkable premise decided; audit `scripts/audit/midval-e2e.lean`.
+
+**Executables through the mid-end validator** (#1119 layer 2; `FV/Link/MidPair.lean`,
+`MidProg.lean`, `MidSourceRoutes.lean`, `MidSourceTB.lean`, `FV/E2E/MidValExecProven.lean`; audit
+`scripts/audit/midsource.lean`). `lean-backend --midval-opt` also requires `Link.midPairB` on the
+pair as `link-check` takes it (both functions after constant-phi removal and the `i128`
+legalisation, `FnInput.cp`) and `g`'s printed CLIF to parse back to `g`. `cargo fv` writes, for a
+function compiled from its optimised dump, `"dump"` = the `.opt.clif` and `"src_dump"` = the
+`.unopt.clif` into the bundle (docs/contracts/frontend.md). Nothing `cargo fv` or `lean-backend`
+said about the pair is used after that: `Link.midPairB f g` (`f = g`, or `Opt.MidVal.emit` gives a
+certificate `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g` accepts) is decided again by each tool
+on the bundle's two texts, and `Link.midValidatedB_sound` turns the per-pair decisions into
+`Opt.MidVal.Validated`.
+* `link-check` decides `Link.midPairB` for every function (the bundle's program and the program of
+  the source dumps, each through `FnInput.cp`) as one more per-function check: a failing pair fails
+  that function (`FAIL <f>: Link.midPairB …`), `--prune` drops it and its callers, and `cargo fv`
+  counts the executable not verified (`k of N Lean-compiled functions fail`, #1131). When all
+  hold it decides `Link.midValidatedB P0.funcs (prog I).funcs` on the pruned program and names the
+  `_mid` sibling of the table's theorem (`E2E.ReturnPinExecBytes.binary_correct_exec_proven_mid`,
+  `…_peak_proven_mid`, `E2E.SemanticExecBytes.binary_correct_exec_provenTS_mid`, `…_peak_provenTS_mid`,
+  `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT_mid`, `…_peak_provenT_mid`): the same
+  premises plus `Opt.MidVal.Validated P0.funcs (prog I).funcs` and `Opt.EnvKeepsSymbols B.env`, the
+  conclusion about the runs of `P0`, the program of the unoptimised dumps after constant-phi removal
+  and the `i128` legalisation. `scripts/midval-tamper-check.py` points one `src_dump` of a real
+  bundle at another function's unoptimised dump renamed to it and checks that `link-check`
+  rejects exactly that pair and the executable is not verified.
+* `lean-link --verified` decides `Link.midPairB` on the bundle's raw pairs (`FnInput.src`, before
+  the `i128` legalisation and constant-phi removal: the `…Mid` theorems' `hv`); a failing pair is
+  left out of the region (`--verified: exclude:`). On a bundle in `SrcScopeB` the source theorems
+  named are the `…_sourceMid`/`…_source_peakMid` compositions of the route's `…_sourceCp` pair with
+  `Link.midProg`/`midProg_depth` (18 theorems, `FV/Link/MidSourceRoutes.lean`), about
+  `I0.srcProg`, the program of the unoptimised dumps; premises about memory bounds and memory traps
+  stay at the compiled program's run from `midEntry g cs`. On a bundle only in `SrcScopeTB` (the
+  typed Stock route, #1076) it decides `Link.midValidatedB` on that route's input (the source dumps
+  taken as the route takes the dumps) and names `Link.SemanticCompilerWith.attemptT_correct_source{,_peak}TBMid`.
+  `Front.bundle_correct_raw{,_peak}TCp` (about the dumps compiled) are not named then. Witnesses:
+  `Link.MidSourceWitness.correct_sourceMid_applies` (sha3's keccak pair, the ABI-aware route writes
+  the executable holding the optimised function's code, every premise `lean-link` decides
+  discharged), `E2E.MidSourceTBWitness.correct_sourceTBMid_applies`, and
+  `FVTest.Link.MidPairWitness.midProg_applies`.
 
 **About the source function or the compiled function.** `about the source function`: the
 theorem's CLIF function is the one `lean-backend` read (cg_clif's dump, decoded by `cargo fv`),
