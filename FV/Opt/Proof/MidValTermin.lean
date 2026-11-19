@@ -555,12 +555,12 @@ theorem id_eq (H : Hyp f g fi gi cert norm) {i : Nat} {b gb : Block}
 theorem block?_g (H : Hyp f g fi gi cert norm) {id : BlockId} {j : Nat} {b gb : Block}
     (hf : f.block? id = some b) (hj : f.blocks[j]? = some b) (hj' : g.blocks[j]? = some gb) :
     g.block? id = some gb := by
-  obtain ⟨j0, hj0, hid⟩ := block?_index H.wff hf
-  have := idx_unique H.wff hj0 hj rfl
+  obtain ⟨j0, hj0, hid⟩ := H.wff.block?_index hf
+  have := H.wff.idx_unique hj0 hj rfl
   subst this
   rw [Function.block?, List.find?_eq_some_iff_getElem] at hf ⊢
   obtain ⟨hp, i, hi, hbi, hlt⟩ := hf
-  have hij : i = j0 := idx_unique H.wff (by simp [hi, hbi]) hj0 rfl
+  have hij : i = j0 := H.wff.idx_unique (by simp [hi, hbi]) hj0 rfl
   subst hij
   have hid' : gb.id = b.id := id_eq H hj0 hj'
   have hi' : i < g.blocks.length := (List.getElem?_eq_some_iff.1 hj').1
@@ -601,7 +601,7 @@ theorem TV_enter (H : Hyp f g fi gi cert norm) {fr fr1 : Frame} {si : Nat} {b2 :
     (fun v hv => hr v ?_) (LeP.refl _ _)
   intro hm
   obtain ⟨p, hp, rfl⟩ := List.mem_map.1 hm
-  have hdp := site_param H.wff hj hp
+  have hdp := H.wff.site_param hj hp
   obtain ⟨d2, t2, hd2, hva⟩ := hv
   rw [hdp] at hd2
   simp only [Option.some.injEq, Prod.mk.injEq] at hd2
@@ -610,6 +610,19 @@ theorem TV_enter (H : Hyp f g fi gi cert norm) {fr fr1 : Frame} {si : Nat} {b2 :
   rcases hva with ⟨h1, -⟩ | ⟨-, h2⟩
   · exact hne h1.symm
   · exact hne (Anc.antisymm H.rankF ha h2)
+
+/-- A node without operands has the same value in frames of the same function and slots. -/
+theorem TV_closed {fr fr1 : Frame} (hg : fr1.func = fr.func) (hs : fr1.slots = fr.slots) {t : Nat}
+    (hcl : (ccOf fi gi cert norm).closed t = true) : TV f cert syms fr1 t = TV f cert syms fr t := by
+  simp only [CC.closed, CC.tm, ccOf] at hcl
+  split at hcl
+  · rename_i i hi
+    have hops : operands i = [] := by simpa using hcl
+    show tmVal f cert.tms fr1 (symMem syms) t = tmVal f cert.tms fr (symMem syms) t
+    rw [tmVal_node hi (by simp [hops]), tmVal_node hi (by simp [hops])]
+    exact evalNode_congr (by simp [tmFrame, hg]) (by simp [tmFrame, hg]) (by simp [tmFrame, hs])
+      (fun o ho => by simp [hops] at ho)
+  · cases hcl
 
 theorem tv_param {fr : Frame} {t si i : Nat} {b : Block} {p : ValueId × Ty}
     (ht : cert.tms[t]? = some (.param si i)) (hb : f.blocks[si]? = some b)
@@ -686,20 +699,20 @@ theorem AtEnd.regs_congr (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block
   hfb := hE.hfb
   hgb := hE.hgb
   endOk := hE.endOk
-  invf := hE.invf.regs_congr H.wff hr
-  invg := hE.invg.regs_congr H.wfg hr'
+  invf := H.wff.inv_regs_congr hE.invf hr
+  invg := H.wfg.inv_regs_congr hE.invg hr'
   slots := hE.slots
   agreeF x hx := by
     rw [H.TV_stable (fr1 := fr) (fr2 := { fr with regs := r }) rfl rfl rfl
-      (fun v hv => hr v (avail_lt H.wff hv)) (H.siteF hx), hE.agreeF x hx]
-    exact (hr x (avail_lt H.wff hx)).symm
+      (fun v hv => hr v (H.wff.avail_lt hv)) (H.siteF hx), hE.agreeF x hx]
+    exact (hr x (H.wff.avail_lt hx)).symm
   agreeG y hy := by
     rw [H.TV_stable (fr1 := fr) (fr2 := { fr with regs := r }) rfl rfl rfl
-      (fun v hv => hr v (avail_lt H.wff hv)) (hE.sitesG y hy), hE.agreeG y hy]
-    exact (hr' y (avail_lt H.wfg hy)).symm
+      (fun v hv => hr v (H.wff.avail_lt hv)) (hE.sitesG y hy), hE.agreeG y hy]
+    exact (hr' y (H.wfg.avail_lt hy)).symm
   sitesG := hE.sitesG
   facts F hF := FactHolds.stable H (fr1 := fr) (fr2 := { fr with regs := r }) rfl rfl rfl
-    (fun v hv => hr v (avail_lt H.wff hv)) (hE.factSites F hF) (fun _ => rfl) (hE.facts F hF)
+    (fun v hv => hr v (H.wff.avail_lt hv)) (hE.factSites F hF) (fun _ => rfl) (hE.facts F hF)
   factSites := hE.factSites
 
 /-- From the relation with `f` at the end of its body, `g` runs its pure tail. -/
@@ -761,8 +774,8 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
   have hTS : termSuccs fb.term = termSuccs gb.term := by
     have := congrArg termSuccs hT
     rwa [termSuccs_mapTerm, termSuccs_mapTerm] at this
-  obtain ⟨j, b2, hj, hb2, hinv1⟩ := Inv.enter H.wff hE.invf hb (by rw [hft]; exact hbc) he
-  obtain ⟨-, -, hid⟩ := block?_index H.wff hb2
+  obtain ⟨j, b2, hj, hb2, hinv1⟩ := H.wff.inv_enter hE.invf hb (by rw [hft]; exact hbc) he
+  obtain ⟨-, -, hid⟩ := H.wff.block?_index hb2
   have hjs : j = si := by
     have h1 := H.wff.ids j b2 hj
     rw [hid] at h1
@@ -794,10 +807,10 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
     enterBlock_of (by rw [hE.invg.func, hblk]; exact hgb2) hgaG (by rw [hty, bok.paramTys]) hset'
   have hsucc' : bc'.block ∈ termSuccs fr'.term := by
     rw [hgt, hblk, ← hTS]; exact hbc
-  obtain ⟨jx, b3, hj3, hb3, hinv2⟩ := Inv.enter H.wfg hE.invg hb' hsucc' he'
+  obtain ⟨jx, b3, hj3, hb3, hinv2⟩ := H.wfg.inv_enter hE.invg hb' hsucc' he'
   rw [hblk, hgb2] at hb3
   cases hb3
-  have hjx : jx = si := idx_unique H.wfg hj3 hj' rfl
+  have hjx : jx = si := H.wfg.idx_unique hj3 hj' rfl
   rw [hjx] at hinv2
   refine ⟨si, _, hsi, he', fun m' hm' => ?_⟩
   have hlen : b2.params.length = gb2.params.length := by
@@ -810,7 +823,7 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
       LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).eg y)) (si, 0) := by
     intro y hy
     by_cases hdy : (wfData g gi).dm y = some (si, 0)
-    · obtain ⟨b4, q, hb4, hq, hqy⟩ := site_param' H.wfg hdy
+    · obtain ⟨b4, q, hb4, hq, hqy⟩ := H.wfg.site_param' hdy
       rw [hj'] at hb4
       cases hb4
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hq
@@ -826,13 +839,13 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
         setMany_param hset' hi (params_uniq (env := (ccOf fi gi cert norm).eg) bok.paramsG hi)]
     · have hgsucc : gb2.id ∈ termSuccs gb.term := by
         rw [id_eq H hj hj', hid, ← hTS]; exact hbc
-      have hya := avail_pred H.wfg hE.hgb hj' hgsucc hy hdy
+      have hya := H.wfg.avail_pred hE.hgb hj' hgsucc hy hdy
       obtain ⟨d, t, hd, hva⟩ := hy
       rcases hva with ⟨hds, ht0⟩ | ⟨hne, ha⟩
       · exact absurd (by rw [hd, hds, show t = 0 by omega]) hdy
       have hnp : y ∉ gb2.params.map (·.1) := fun hm => by
         obtain ⟨q, hq, hqy⟩ := List.mem_map.1 hm
-        exact hdy (by rw [← hqy]; exact site_param H.wfg hj' hq)
+        exact hdy (by rw [← hqy]; exact H.wfg.site_param hj' hq)
       have ha2 : Anc fi.cfg.idom d si := by rw [← H.idomG]; exact ha
       have hanc := ancB_sound (H.ok.sitesG y d t (H.wfg.sitesRev y (d, t) hd))
       obtain ⟨hne', ha'⟩ := strict_of_anc H hanc hne ha2
@@ -847,19 +860,19 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
     exact ⟨Send, hj, hj', by simpa only [List.drop_zero] using hw, hend⟩
   · intro x hx
     by_cases hdx : (wfData f fi).dm x = some (si, 0)
-    · obtain ⟨b4, p, hb4, hp, hpx⟩ := site_param' H.wff hdx
+    · obtain ⟨b4, p, hb4, hp, hpx⟩ := H.wff.site_param' hdx
       rw [hj] at hb4
       cases hb4
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hp
       rw [← hpx]
       exact tv_param (cert := cert) (syms := syms) (bok.paramsF i p hi) hj hi
-    · have hxa := avail_pred H.wff hE.hfb hj (by rw [hid]; exact hbc) hx hdx
+    · have hxa := H.wff.avail_pred hE.hfb hj (by rw [hid]; exact hbc) hx hdx
       obtain ⟨d, t, hd, hva⟩ := hx
       rcases hva with ⟨hds, ht0⟩ | ⟨hne, ha⟩
       · exact absurd (by rw [hd, hds, show t = 0 by omega]) hdx
       have hnp : x ∉ b2.params.map (·.1) := fun hm => by
         obtain ⟨p, hp, hpx⟩ := List.mem_map.1 hm
-        exact hdx (by rw [← hpx]; exact site_param H.wff hj hp)
+        exact hdx (by rw [← hpx]; exact H.wff.site_param hj hp)
       have hle := H.le_sound (H.ok.sitesF x (d, t) (H.wff.sitesRev x (d, t) hd))
       obtain ⟨hne', ha'⟩ := strict_of_le H hle hne ha
       rw [TV_enter H (fr := fr) (fr1 := fr1) hfr1f hfr1s hj hr1 hne' ha', hr1 x hnp]
@@ -872,11 +885,14 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
       · exact hFS
     refine factHolds_of_TV (fr1 := fr) (fr2 := fr1) (by rw [hfr1f]) (by rw [hfr1f]) hfr1s
       (fun t ht => ?_) (fun hmem => hm' F hFS hmem) (hE.facts F hFS')
-    obtain ⟨hne, ha⟩ := entryOk_spec hentry F hF t ht
-    exact TV_enter H hfr1f hfr1s hj hr1 hne (ancB_sound ha)
+    rcases entryOk_spec hentry F hF t ht with ⟨hne, ha⟩ | ⟨-, -, hcl⟩
+    · exact TV_enter H hfr1f hfr1s hj hr1 hne (ancB_sound ha)
+    · exact TV_closed hfr1f hfr1s hcl
   · intro F hF t ht
-    obtain ⟨hne, ha⟩ := entryOk_spec hentry F hF t ht
-    exact LeP.of_anc hne (ancB_sound ha) 0
+    rcases entryOk_spec hentry F hF t ht with ⟨hne, ha⟩ | ⟨hsi, hs, -⟩
+    · exact LeP.of_anc hne (ancB_sound ha) 0
+    · rw [hs, hsi]
+      exact LeP.refl _ _
 
 /-! ## Terminators -/
 
@@ -931,8 +947,8 @@ theorem pair_regs (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
   rcases hq with ⟨v, w, hv, hw', h1, h2, hvw⟩ | ⟨i, rfl, rfl⟩
   · rw [h1, h2]
     show r' w = r v
-    rw [set_lo hE.invg.func h' w (avail_lt H.wfg (H.wfg.termUses bi gb hE.hgb w hw')),
-      set_lo hE.invf.func h v (avail_lt H.wff (H.wff.termUses bi fb hE.hfb v hv))]
+    rw [set_lo hE.invg.func h' w (H.wfg.avail_lt (H.wfg.termUses bi gb hE.hgb w hw')),
+      set_lo hE.invf.func h v (H.wff.avail_lt (H.wff.termUses bi fb hE.hfb v hv))]
     exact AtEnd.ops H hE v hv w hw' hvw
   · show r' (fr2.func.freshValue + i) = r (fr.func.freshValue + i)
     rw [setMany_tryRets h' i, setMany_tryRets h i]

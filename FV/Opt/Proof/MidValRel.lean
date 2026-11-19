@@ -2,6 +2,7 @@ import FV.Opt.Proof.MidValWalk
 import FV.Opt.Proof.MidValFacts
 import FV.Opt.Proof.MidValFloat
 import FV.Opt.Proof.SemSimMU
+import FV.Opt.Proof.MidValWf
 
 /-!
 # The simulation relation of the mid-end validator (#1119, module (5), part 3)
@@ -15,7 +16,7 @@ value too, with a site no later than `(bi, k)` (it is computed from `f`'s values
 now); every fact of `S` holds in `fr` and memory `m` (`FactHolds`), its terms with sites no later
 than `(bi, k)`. `MR` (some position) is the frame relation of `FunSimMU`.
 
-Basic facts: the hypotheses `Hyp` give both functions' `Wf` and equal dominator trees;
+Basic facts: the hypotheses `Hyp` give both functions' `WfM` and equal dominator trees;
 values and facts whose sites are no later than `(bi, k)` do not change when `f` binds results
 that are not available at `(bi, k)` (`TV_stable`, `FactHolds.stable`).
 -/
@@ -42,11 +43,11 @@ def FactHolds (fr : Frame) (m : Mem) : Fact → Prop
 
 end
 
-/-- The hypotheses of the simulation: both functions pass `Opt.check`, the certificate's facts
+/-- The hypotheses of the simulation: both functions pass `wfCheck`, the certificate's facts
 (`CertOk`), and a sound normaliser. -/
 structure Hyp (f g : Function) (fi gi : Info) (cert : Cert) (norm : Norm) : Prop where
-  hf : Opt.check f = .ok fi
-  hg : Opt.check g = .ok gi
+  hf : wfCheck f = .ok fi
+  hg : wfCheck g = .ok gi
   ok : CertOk f g fi gi cert norm
   norm : NormSound norm
 
@@ -104,8 +105,8 @@ namespace Hyp
 
 variable {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
 
-theorem wff (H : Hyp f g fi gi cert norm) : Wf f (wfData f fi) := wf_of_check H.hf
-theorem wfg (H : Hyp f g fi gi cert norm) : Wf g (wfData g gi) := wf_of_check H.hg
+theorem wff (H : Hyp f g fi gi cert norm) : WfM f (wfData f fi) := wfM_of_wfCheck H.hf
+theorem wfg (H : Hyp f g fi gi cert norm) : WfM g (wfData g gi) := wfM_of_wfCheck H.hg
 
 theorem idomF (_H : Hyp f g fi gi cert norm) : (wfData f fi).idom = fi.cfg.idom := rfl
 theorem idomG (H : Hyp f g fi gi cert norm) : (wfData g gi).idom = fi.cfg.idom := H.ok.idom
@@ -139,7 +140,7 @@ theorem TV_stable (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {
     (hr : ∀ v, Avail (wfData f fi) i k v → fr2.regs v = fr1.regs v) {t : Nat}
     (ht : LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf t) (i, k)) :
     TV f cert syms fr2 t = TV f cert syms fr1 t :=
-  tmVal_congr H.wff (c := ccOf fi gi cert norm) rfl H.ok.tms hg hx hs hr t ht
+  tmVal_congr_of H.wff.rank H.wff.sites (c := ccOf fi gi cert norm) rfl H.ok.tms hg hx hs hr t ht
 
 end Hyp
 

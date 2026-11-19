@@ -311,9 +311,13 @@ theorem blockOk_spec {c : CC} {bi : Nat} {fb gb : Block} (h : c.blockOk bi fb gb
     · cases h4
 
 theorem entryOk_spec {c : CC} {b : Nat} (h : c.entryOk b = true) :
-    ∀ F ∈ c.factsAt b, ∀ t ∈ F.terms, (c.siteOf t).1 ≠ b ∧ c.anc (c.siteOf t).1 b = true := by
+    ∀ F ∈ c.factsAt b, ∀ t ∈ F.terms, ((c.siteOf t).1 ≠ b ∧ c.anc (c.siteOf t).1 b = true) ∨
+      (b = 0 ∧ c.siteOf t = (0, 0) ∧ c.closed t = true) := by
   intro F hF t ht
-  simp only [CC.entryOk, List.all_eq_true, Bool.and_eq_true, bne_iff_ne, ne_eq] at h
-  exact h F hF t ht
+  simp only [CC.entryOk, List.all_eq_true, Bool.or_eq_true, Bool.and_eq_true, bne_iff_ne, ne_eq,
+    beq_iff_eq] at h
+  rcases h F hF t ht with h1 | ⟨⟨h1, h2⟩, h3⟩
+  · exact .inl h1
+  · exact .inr ⟨h1, h2, h3⟩
 
 end Opt.MidVal

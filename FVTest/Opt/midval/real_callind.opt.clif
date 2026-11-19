@@ -1,0 +1,61 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC8proptest12H7K1hCCcMXYD
+function u0:1471(i64 sret, i64) system_v {
+; symbol _RNxC8proptest12H7K1hCCcMXYD
+; instance Instance { def: Shim(FnPtr(DefId(1:4829 ~ core[7b1c]::ops::function::FnOnce::call_once), Binder { value: fn() -> test_runner::config::Config, bound_vars: [] })), args: [Binder { value: fn() -> test_runner::config::Config, bound_vars: [] }, ()] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: fn() -> test_runner::config::Config, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: test_runner::config::Config, layout: Layout { size: Size(120 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(80 bytes), Size(84 bytes), Size(88 bytes), Size(92 bytes), Size(24 bytes), Size(40 bytes), Size(56 bytes), Size(112 bytes), Size(96 bytes), Size(100 bytes), Size(104 bytes), Size(72 bytes), Size(16 bytes), Size(108 bytes), Size(113 bytes), Size(0 bytes), Size(114 bytes)], in_memory_order: [15, 12, 4, 5, 6, 11, 0, 1, 2, 3, 8, 9, 10, 13, 7, 14, 16] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16344123589693401886 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(120 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(120 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } test_runner::config::Config
+; arg   _1      = v1       Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) Binder { value: fn() -> test_runner::config::Config, bound_vars: [] }
+
+; kind  local ty                              size align (abi)
+; ssa   _1    Binder { value: fn() -> test_runner::config::Config, bound_vars: [] }    8b 8                var=1
+; zst   _2    ()                                0b 1                align=1,offset=
+
+    sig0 = (i64 sret) system_v
+
+block0(v0: i64, v1: i64):
+    nop 
+; write_cvalue: Var(_1, var1): Binder { value: fn() -> test_runner::config::Config, bound_vars: [] } <- ByVal(v1): Binder { value: fn() -> test_runner::config::Config, bound_vars: [] }
+    jump block1
+
+block1:
+    call_indirect.i64 sig0, v1(v0)
+    jump block2
+
+block2:
+    return
+}
+
+; clifv-extnames 1
+; decl u0:1471 func local "_RNxC8proptest12H7K1hCCcMXYD"
+; end clifv-extnames

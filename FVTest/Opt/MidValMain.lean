@@ -15,6 +15,8 @@ the optimised one (`Opt.MidVal.check`). One tab-separated line per pair on stdou
 With `--cert`, two more columns: the re-check of the emitted certificate
 (`Opt.MidVal.checkCert f g (emit f g)`: `ok` when it gives `check`'s verdict, `MISMATCH`
 otherwise, `-` for a rejected pair) and its microseconds (`checkCert` alone, not the emission).
+With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by `checkCertSyms`,
+whose theorem assumes the function's global values resolve).
 
 Measurement tool only: it states no theorem.
 -/
@@ -34,30 +36,34 @@ def normOf (fold : Bool) : Opt.MidVal.Norm :=
   if fold then Opt.MidVal.evalConst else Opt.MidVal.Norm.id
 
 /-- Constant-phi removal and the check, evaluated inside the call (timing). -/
-@[noinline] def runCheck (fold : Bool) (f0 g : Clif.Function) :
+@[noinline] def runCheck (fold hoist : Bool) (f0 g : Clif.Function) :
     IO (Clif.Function × Except String Unit) := do
   let f := Opt.ConstPhi.run f0
-  let r := Opt.MidVal.check f g (normOf fold)
+  let r := Opt.MidVal.check f g (normOf fold) hoist
   match r with
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
 
 /-- The certificate of an accepted pair (`Opt.MidVal.emit`). -/
-@[noinline] def runEmit (fold : Bool) (f g : Clif.Function) : IO (Except String Opt.MidVal.Cert) :=
-  pure (Opt.MidVal.emit f g (normOf fold))
+@[noinline] def runEmit (fold hoist : Bool) (f g : Clif.Function) :
+    IO (Except String Opt.MidVal.Cert) :=
+  pure (Opt.MidVal.emit f g (normOf fold) hoist)
 
-/-- The re-check (`Opt.MidVal.checkCert`), evaluated inside the call (timing). -/
-@[noinline] def runRecheck (fold : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert) : IO Bool :=
-  pure (Opt.MidVal.checkCert f g cert (normOf fold))
+/-- The re-check (`Opt.MidVal.checkCert`, or `checkCertSyms` in the hoisting mode), evaluated
+inside the call (timing). -/
+@[noinline] def runRecheck (fold hoist : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert) :
+    IO Bool :=
+  pure (if hoist then Opt.MidVal.checkCertSyms f g cert (normOf fold)
+    else Opt.MidVal.checkCert f g cert (normOf fold))
 
 /-- `ok`/`MISMATCH`/`-` and the microseconds of `checkCert` (`f` after constant-phi removal). -/
-def recheck (fold : Bool) (f g : Clif.Function) (accepted : Bool) : IO String := do
+def recheck (fold hoist : Bool) (f g : Clif.Function) (accepted : Bool) : IO String := do
   if !accepted then return "-\t0"
-  match ← runEmit fold f g with
+  match ← runEmit fold hoist f g with
   | .error e => return s!"MISMATCH(emit {e})\t0"
   | .ok cert =>
     let t0 ← IO.monoNanosNow
-    let ok ← runRecheck fold f g cert
+    let ok ← runRecheck fold hoist f g cert
     let t1 ← IO.monoNanosNow
     return s!"{if ok then "ok" else "MISMATCH"}\t{(t1 - t0) / 1000}"
 
@@ -70,9 +76,9 @@ def pairMode (fp gp : String) : IO UInt32 := do
       | .error e => throw (IO.userError s!"{p}: {e}")
     | none => throw (IO.userError s!"{p}: no function")
   let g ← one gp
-  let (f, r) ← runCheck false (← one fp) g
+  let (f, r) ← runCheck false false (← one fp) g
   match r with
-  | .ok () => IO.println s!"accept\trecheck {← recheck false f g true}"; return 0
+  | .ok () => IO.println s!"accept\trecheck {← recheck false false f g true}"; return 0
   | .error e => IO.println s!"reject\t{e}"; return 1
 
 def main (args : List String) : IO UInt32 := do
@@ -81,8 +87,10 @@ def main (args : List String) : IO UInt32 := do
   let fold := args.contains "--fold"
   -- `--cert`: re-check the emitted certificate of every accepted pair (`Opt.MidVal.checkCert`)
   let cert := args.contains "--cert"
+  -- `--hoist`: the hoisting mode (`Opt.MidVal.checkCertSyms`)
+  let hoist := args.contains "--hoist"
   let out ← IO.getStdout
-  for dir in args.filter (fun a => a != "--fold" && a != "--cert") do
+  for dir in args.filter (fun a => a != "--fold" && a != "--cert" && a != "--hoist") do
     let mut stems : Array String := #[]
     for e in ← System.FilePath.readDir dir do
       if e.fileName.endsWith ".unopt.clif" then
@@ -101,11 +109,11 @@ def main (args : List String) : IO UInt32 := do
         out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-g {firstWord e}\t0\t0\t0{if cert then "\t-\t0" else ""}"
       | .ok f0, .ok g =>
         let t0 ← IO.monoNanosNow
-        let (f, r) ← runCheck fold f0 g
+        let (f, r) ← runCheck fold hoist f0 g
         let t1 ← IO.monoNanosNow
         let verdict := match r with
           | .ok () => "accept\t-"
           | .error e => s!"reject\t{e}"
-        let rc ← if cert then do pure s!"\t{← recheck fold f g r.isOk}" else pure ""
+        let rc ← if cert then do pure s!"\t{← recheck fold hoist f g r.isOk}" else pure ""
         out.putStrLn s!"{dir}\t{stem}\t{verdict}\t{Opt.instCount f}\t{Opt.instCount g}\t{(t1 - t0) / 1000}{rc}"
   return 0

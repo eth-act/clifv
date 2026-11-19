@@ -198,6 +198,145 @@ def diffOps (tms : Array Tm) (xs ys : List Nat) : String :=
   | some (x, y) => diffHeads tms 64 x y
   | none => "arity"
 
+/-! ## Well-formedness of the validator's inputs (`wfCheck`)
+
+`Opt.check` with two differences, both following `Clif.run`: a `call_indirect`'s result types are
+the returns of its declared signature (`sigDeclOf`; `Opt.check` passes no signature table to
+`Inst.resultTypes`, so it rejects every function with a `call_indirect`), and a `bitcast` needs
+an operand of the result's width (`pureTypedM`; `Opt.pureTyped` asks for the result type itself,
+while `Clif.evalInst` evaluates `f32 ↔ i32` and `f64 ↔ i64`). `Opt.check` is unchanged. -/
+
+/-- The declared signature `sigN` of `f`. -/
+def sigDeclOf (f : Function) (s : Nat) : Option Signature := f.sigDecls.lookup s
+
+/-- Operand typing of pure nodes: `Opt.pureTyped`, except that a `bitcast`'s operand has the
+result's width (`Clif.evalInst`'s condition). -/
+def pureTypedM (ty : ValueId → Option Ty) (f : Function) : Inst → Bool
+  | .bitcast t _ x => match ty x with
+    | some s => s.width == t.width
+    | none => false
+  | i => pureTyped ty f i
+
+/-- `Opt.wfCert` with `sigDeclOf` and `pureTypedM`. -/
+def wfCertM (f : Function) (cfg : Cfg) (types : Std.HashMap ValueId Ty) : Bool :=
+  let blocks := f.blocks
+  let dmap := defMap f
+  let dm := fun v => dmap.get? v
+  let anc := ancB cfg.idom cfg.idom.size
+  let rank := fun b => (cfg.rpoNum[b]?.join).getD 0
+  let sigOf := fun r => (f.externs.lookup r).map (·.sig)
+  let tm := fun v => types.get? v
+  (blocks.zipIdx.all fun (b, i) => cfg.index.get? b.id == some i) &&
+  ((defSites f).all fun (v, s) => dm v == some s) &&
+  (cfg.idom[0]?.join).isNone &&
+  ((List.range cfg.idom.size).all fun b => match cfg.idom[b]?.join with
+    | some a => rank a < rank b
+    | none => true) &&
+  (blocks.zipIdx.all fun (b, i) =>
+    b.params.all (fun p => tm p.1 == some p.2) &&
+    (b.body.zipIdx.all fun (st, j) =>
+      (operands st.inst).all (availB dm anc i j) &&
+      (match st.inst.resultTypes sigOf (sigDeclOf f) with
+       | some ts => ts.length == st.results.length && (st.results.zip ts).all fun (r, t) => tm r == some t
+       | none => false) &&
+      (!isPure st.inst || pureTypedM tm f st.inst)) &&
+    (termOperands b.term).all (availB dm anc i b.body.length) &&
+    (termSuccs b.term).all fun id => match cfg.index.get? id with
+      | some j => (blocks[j]?.map (·.id)) == some id && match cfg.idom[j]?.join with
+        | some c => anc c i
+        | none => true
+      | none => false)
+
+/-- `Opt.checkCore` with `sigDeclOf` and `pureTypedM`. -/
+def checkCoreM (f : Function) : Except String Info := do
+  let cfg := Cfg.build f
+  ensure (cfg.size > 0) "no blocks"
+  ensure (cfg.index.size == cfg.size) "duplicate block ids"
+  for i in [0:cfg.size] do
+    ensure (cfg.reachable i) s!"unreachable block{cfg.ids[i]!}"
+  let blocks := f.blocks.toArray
+  let sigOf := fun r => (f.externs.lookup r).map (·.sig)
+  let mut types : Std.HashMap ValueId Ty := {}
+  let mut defBlock : Std.HashMap ValueId Nat := {}
+  let mut pureDef : Std.HashMap ValueId Inst := {}
+  for (b, i) in blocks.zipIdx do
+    for (v, t) in b.params do
+      ensure (!types.contains v) s!"v{v} defined twice"
+      types := types.insert v t
+      defBlock := defBlock.insert v i
+    for st in b.body do
+      let some ts := st.inst.resultTypes sigOf (sigDeclOf f) | throw s!"ill-formed instruction defining {st.results}"
+      ensure (ts.length == st.results.length) s!"result arity of {st.results}"
+      for (v, t) in st.results.zip ts do
+        ensure (!types.contains v) s!"v{v} defined twice"
+        types := types.insert v t
+        defBlock := defBlock.insert v i
+      if isPure st.inst then
+        if let [v] := st.results then pureDef := pureDef.insert v st.inst
+  ensure ((blocks[0]!.params.map (·.2)) == f.sig.params.map (·.ty)) "entry parameters ≠ signature"
+  let ty := fun v => types.get? v
+  for (b, i) in blocks.zipIdx do
+    let mut seen : Std.HashSet ValueId := b.params.foldl (·.insert ·.1) {}
+    let avail := fun (seen : Std.HashSet ValueId) (v : ValueId) =>
+      seen.contains v || match defBlock.get? v with
+        | some d => d != i && cfg.dominates d i
+        | none => false
+    for st in b.body do
+      for v in operands st.inst do
+        ensure (avail seen v) s!"block{b.id}: use of v{v} not dominated by its definition"
+      if isPure st.inst then
+        ensure (pureTypedM ty f st.inst) s!"block{b.id}: ill-typed pure instruction defining {st.results}"
+      seen := st.results.foldl (·.insert ·) seen
+    for v in termOperands b.term do
+      ensure (avail seen v) s!"block{b.id}: terminator uses v{v}, not dominated by its definition"
+    let calls : List BlockCall := match b.term with
+      | .jump d => [d] | .brif _ t e => [t, e] | .brTable _ d t => d :: t | _ => []
+    for bc in calls do
+      let some j := cfg.index.get? bc.block | throw s!"unknown block{bc.block}"
+      let ps := blocks[j]!.params
+      ensure (ps.length == bc.args.length &&
+        (ps.zip bc.args).all fun (p, a) => ty a == some p.2) s!"block{b.id}: arguments of block{bc.block}"
+    if let .brTable x _ _ := b.term then
+      ensure (ty x == some .i32) s!"block{b.id}: br_table index not i32"
+  return { cfg, types, defBlock, pureDef }
+
+/-- **The validator's well-formedness check**: `Opt.check` with `call_indirect` result types
+from the function's signature declarations and the `bitcast` typing of `Clif.evalInst`
+(section doc). -/
+def wfCheck (f : Function) : Except String Info := do
+  let info ← checkCoreM f
+  ensure (wfCertM f info.cfg info.types) "certificate rejected (Opt.MidVal.wfCertM)"
+  return info
+
+/-! ## The hoisting mode's premise: the function's global values resolve
+
+`Clif.run` is `stuck` on a `symbol_value`, `tls_value` or `func_addr` whose symbol the link-time
+image lacks, so `g` may evaluate one where `f` has not yet only if it resolves.
+`globalsResolve f syms` decides that for every such instruction of `f`, from `f` and the image's
+symbol table `syms` (`Mem.symbols`), so that a tool holding the image (link-check) can decide it
+per function. -/
+
+/-- The instruction `i` of `f` resolves in `syms` (`true` for every other instruction). -/
+def symResolves (f : Function) (syms : String → Option Nat) : Inst → Bool
+  | .symbolValue _ gv => match f.globals.lookup gv with
+    | some (.symbol name _ _) => (syms name).isSome
+    | _ => false
+  | .tlsValue _ gv => match f.globals.lookup gv with
+    | some (.tlsSymbol name _ _) => (syms name).isSome
+    | _ => false
+  | .funcAddr _ fn => match f.extern? fn with
+    | some e => (syms e.name).isSome
+    | none => false
+  | _ => true
+
+/-- **The function's global values resolve** in the symbol table `syms` (section doc). -/
+def globalsResolve (f : Function) (syms : String → Option Nat) : Bool :=
+  f.blocks.all fun b => b.body.all fun st => symResolves f syms st.inst
+
+/-- `f` contains the instruction `i`. -/
+def hasInst (f : Function) (i : Inst) : Bool :=
+  f.blocks.any fun b => b.body.any fun st => st.inst == i
+
 /-! ## Memory versions (on `g`) -/
 
 def meetV (b : Nat) : Option Ver → Ver → Ver
@@ -301,10 +440,12 @@ structure St where
   /-- The normaliser of pure nodes (`Norm`): the identity in stage 1. -/
   norm : Norm := Norm.id
   /-- The facts a removal used (certificate emission, `FV/Opt/MidValCert.lean`): memory
-  locations with their value, merged trapping nodes, partial terms. -/
+  locations with their value, merged trapping nodes, partial terms, and the partial terms `g`
+  evaluates before `f` does (hoisting mode). -/
   usedMem : Std.HashSet (Key × Nat) := {}
   usedMerge : Std.HashSet Nat := {}
   usedPart : Std.HashSet Nat := {}
+  usedHoist : Std.HashSet Nat := {}
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -359,9 +500,12 @@ structure Ctx where
   pre : Array Nat
   post : Array Nat
   ver : Array Ver
-  /-- Value types of `f` and `g` (`Opt.check`). -/
+  /-- Value types of `f` and `g` (`wfCheck`). -/
   fty : ValueId → Option Ty
   gty : ValueId → Option Ty
+  /-- The partial pure nodes `g` may evaluate anywhere (the hoisting mode: the instructions
+  `f` contains, `hasInst f`; otherwise none). -/
+  hoistable : Inst → Bool := fun _ => false
 
 def Ctx.dom (c : Ctx) (a b : Nat) : Bool :=
   c.pre[a]! ≤ c.pre[b]! && c.post[b]! ≤ c.post[a]!
@@ -473,6 +617,21 @@ def removeF (c : Ctx) (fid : BlockId) (bi k : Nat) (ver : Ver) (s : Stmt) (s' : 
     | some v => bindF s v
     | none => if s.results.isEmpty then pure () else throw "wf:merge arity"
 
+/-- `g` evaluates the partial term `pt` in block `bi` before `f`'s skeleton segment `seg`
+(layout index `bi`, block id `fid`): accepted when `f` evaluated it no later (same block and no
+later segment, or a dominating block), or, in the hoisting mode, when `f` contains its
+instruction (`Ctx.hoistable`; the soundness theorem of that mode assumes the function's global
+values resolve, `globalsResolve`). -/
+def place (c : Ctx) (bi seg : Nat) (fid : BlockId) (pt : Nat) : M Unit := do
+  let s ← get
+  let ok := (s.partials.getD pt #[]).any fun (d, sf) =>
+    (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
+  if ok then
+    modify fun st => { st with usedPart := st.usedPart.insert pt }
+  else if c.hoistable (s.tms[pt]!.inst) then
+    modify fun st => { st with usedHoist := st.usedHoist.insert pt }
+  else throw s!"placement:{opName (s.tms[pt]!.inst)} block{fid}"
+
 /-- Check one block (layout index `bi`). -/
 def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
   if fb.params.map (·.2) != gb.params.map (·.2) then throw s!"shape:params block{fb.id}"
@@ -524,11 +683,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
       if matched then
         let some t := gt? | throw "wf:internal"
         -- pending partial terms of `g` are evaluated before this statement
-        for pt in pend do
-          let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
-            (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
-          if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
-          modify fun st => { st with usedPart := st.usedPart.insert pt }
+        for pt in pend do place c bi seg fb.id pt
         pend := #[]
         let ts ← bindRes true s.results bi k
         discard (bindRes false t.results bi k)
@@ -550,11 +705,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
         seg := seg + 1
     | none, some t =>
       throw (missReason fb.id t none "rewrite:skeleton-added")
-  for pt in pend do
-    let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
-      (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
-    if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
-    modify fun st => { st with usedPart := st.usedPart.insert pt }
+  for pt in pend do place c bi seg fb.id pt
   let ft ← liftE (mapTermM (← get).envF "f" fb.term)
   let gt ← liftE (mapTermM (← get).envG "g" gb.term)
   if ft != gt then
@@ -562,18 +713,20 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
       throw s!"rewrite:operand {termName fb.term} {diffOps (← get).tms (termOperands ft) (termOperands gt)} block{fb.id}"
     else throw s!"rewrite:term {termName fb.term}/{termName gb.term} block{fb.id}"
 
-/-- The check, returning its final state, context and `f`'s `Opt.check` info on acceptance
-(certificate emission, `Opt.MidVal.emit`). -/
-def checkRun (f g : Function) (norm : Norm := Norm.id) : Except Reject (St × Ctx × Info) := do
+/-- The check, returning its final state, context and `f`'s `wfCheck` info on acceptance
+(certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). -/
+def checkRun (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) :
+    Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
-  let fi ← (Opt.check f).mapError (s!"wf:f {·}")
-  let gi ← (Opt.check g).mapError (s!"wf:g {·}")
+  let fi ← (wfCheck f).mapError (s!"wf:f {·}")
+  let gi ← (wfCheck g).mapError (s!"wf:g {·}")
   if g.blocks.map (·.id) != f.blocks.map (·.id) then throw "rewrite:blocks"
   -- the entry block takes the function's arguments: the same parameters (ids and types)
   if g.blocks.head?.map (·.params) != f.blocks.head?.map (·.params) then throw "shape:entry params"
   if gi.cfg.idom != fi.cfg.idom then throw "rewrite:domtree"
   let (pre, post, order) := domIntervals fi.cfg.idom
-  let c : Ctx := { pre, post, ver := versions g gi.cfg, fty := fi.types.get?, gty := gi.types.get? }
+  let c : Ctx := { pre, post, ver := versions g gi.cfg, fty := fi.types.get?, gty := gi.types.get?,
+                   hoistable := fun i => hoist && partialK i && hasInst f i }
   let fbs := f.blocks.toArray
   let gbs := g.blocks.toArray
   let go : M Unit := do
@@ -586,8 +739,9 @@ def checkRun (f g : Function) (norm : Norm := Norm.id) : Except Reject (St × Ct
   | .error e, none => throw e
 
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
-`g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. -/
-def check (f g : Function) (norm : Norm := Norm.id) : Except Reject Unit :=
-  (checkRun f g norm).map fun _ => ()
+`g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. `hoist`: also accept `g` evaluating
+a `symbol_value`/`func_addr`/`tls_value` of `f` earlier than `f` does (`place`). -/
+def check (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) : Except Reject Unit :=
+  (checkRun f g norm hoist).map fun _ => ()
 
 end Opt.MidVal

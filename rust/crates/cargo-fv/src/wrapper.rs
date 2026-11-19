@@ -781,7 +781,10 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
             },
         };
         if cfg.keep_link() {
-            // `cargo fv link-proof`: which executable this map is of
+            // `cargo fv link-proof`: which executable this map is of, and with `--lean-link` the
+            // work directories of the codegen units whose Lean code is in its region (the list
+            // `lean-link`'s input was built from: the binary check takes the same units, also
+            // those whose own object the link did not take, #1130)
             let rec = serde_json::json!({
                 "output": output,
                 "map": map,
@@ -789,6 +792,7 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
                 "package": meta.package,
                 "crate_name": meta.crate_name,
                 "kind": meta.kind,
+                "cgus": part.as_ref().map(|(_, list)| list),
             });
             let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
         }

@@ -3,10 +3,11 @@ import FV.Opt.Proof.MidValTerm
 /-!
 # What `checkCert` checks, as propositions (#1119, module (5), part 1)
 
-`checkCert_spec`: `checkCert f g cert norm = true` gives `Opt.check`'s info of both functions
+`checkCert_spec`: `checkCert f g cert norm = true` gives `wfCheck`'s info of both functions
 and `CertOk`, the facts of `FV/Opt/MidValCert.lean` the simulation proof reads: equal headers,
-equal block ids and dominator trees, a well-formed term table, no facts at the entry, the static
-sites, and every block's `entryOk`/`blockOk`.
+equal block ids and dominator trees, a well-formed term table, the entry facts (`hoistFact`s;
+none for `checkCert`, `checkCertSyms` allows them), the static sites, and every block's
+`entryOk`/`blockOk` (`checkCertWith_spec` for both modes).
 -/
 
 namespace Opt.MidVal
@@ -30,7 +31,7 @@ structure CertOk (f g : Function) (fi gi : Info) (cert : Cert) (norm : Norm) : P
   entryParams : g.blocks.head?.map (·.params) = f.blocks.head?.map (·.params)
   idom : gi.cfg.idom = fi.cfg.idom
   tms : (ccOf fi gi cert norm).tmsOk = true
-  entry : (ccOf fi gi cert norm).factsAt 0 = []
+  entry : ∀ F ∈ (ccOf fi gi cert norm).factsAt 0, (ccOf fi gi cert norm).hoistFact f F = true
   sitesF : ∀ v s, (v, s) ∈ defSites f →
     (ccOf fi gi cert norm).le ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).ef v)) s = true
   sitesG : ∀ v d t, (v, d, t) ∈ defSites g →
@@ -68,11 +69,12 @@ theorem CC.blocksOk_spec (c : CC) : ∀ (fbs gbs : List Block) (n : Nat), c.bloc
       rw [show n + (i + 1) = n + 1 + i by omega]
       exact this
 
-/-- **Unpacking `checkCert`.** -/
-theorem checkCert_spec {f g : Function} {cert : Cert} {norm : Norm}
-    (h : checkCert f g cert norm = true) :
-    ∃ fi gi, Opt.check f = .ok fi ∧ Opt.check g = .ok gi ∧ CertOk f g fi gi cert norm := by
-  unfold checkCert at h
+/-- **Unpacking `checkCertWith`.** Without the hoisting mode the entry block has no facts. -/
+theorem checkCertWith_spec {hoist : Bool} {f g : Function} {cert : Cert} {norm : Norm}
+    (h : checkCertWith hoist f g cert norm = true) :
+    ∃ fi gi, wfCheck f = .ok fi ∧ wfCheck g = .ok gi ∧ CertOk f g fi gi cert norm ∧
+      (hoist = false → (ccOf fi gi cert norm).factsAt 0 = []) := by
+  unfold checkCertWith at h
   simp only [Bool.and_eq_true] at h
   obtain ⟨⟨hh, hd⟩, hm⟩ := h
   split at hm
@@ -83,12 +85,23 @@ theorem checkCert_spec {f g : Function} {cert : Cert} {norm : Norm}
     have hsites' := hsites
     simp only [CC.sitesOk, Bool.and_eq_true, List.all_eq_true] at hsites'
     obtain ⟨hl, hb⟩ := CC.blocksOk_spec _ _ _ 0 hblocks
+    simp only [List.all_eq_true, Bool.and_eq_true] at hent
     refine ⟨fi, gi, hf, hg, ⟨h1, h2, h3, h4, h5, by simpa using hd, hids, hep, hidom, htms,
-      by simp only [List.isEmpty_iff] at hent; exact hent, fun v s hv => hsites'.1 (v, s) hv,
-      fun v d t hv => hsites'.2 (v, d, t) hv, fun bi fb gb h1 h2 => ?_, hl.symm⟩⟩
-    have := hb bi fb gb h1 h2
-    simp only [Nat.zero_add] at this
-    exact this
+      fun F hF => (hent F hF).2, fun v s hv => hsites'.1 (v, s) hv,
+      fun v d t hv => hsites'.2 (v, d, t) hv, fun bi fb gb h1 h2 => ?_, hl.symm⟩, fun hno => ?_⟩
+    · have := hb bi fb gb h1 h2
+      simp only [Nat.zero_add] at this
+      exact this
+    · subst hno
+      exact List.eq_nil_iff_forall_not_mem.2 fun F hF => by simpa using (hent F hF).1
   · simp at hm
+
+/-- **Unpacking `checkCert`.** -/
+theorem checkCert_spec {f g : Function} {cert : Cert} {norm : Norm}
+    (h : checkCert f g cert norm = true) :
+    ∃ fi gi, wfCheck f = .ok fi ∧ wfCheck g = .ok gi ∧ CertOk f g fi gi cert norm ∧
+      (ccOf fi gi cert norm).factsAt 0 = [] := by
+  obtain ⟨fi, gi, hf, hg, hok, h0⟩ := checkCertWith_spec h
+  exact ⟨fi, gi, hf, hg, hok, h0 rfl⟩
 
 end Opt.MidVal

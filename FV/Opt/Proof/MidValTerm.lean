@@ -207,8 +207,11 @@ theorem tmVal_mapOperands_inst {f : Function} {tms : Array Tm} {fr : Frame} {mem
 
 /-- **Stability.** In two frames with the same globals, externs and slots that agree on every
 value of `f` available at `(i, k)`, every term whose site is no later than `(i, k)` has the same
-value (atoms of such a term are available there). -/
-theorem tmVal_congr {f : Function} {W : WfData} (hW : Wf f W) {c : CC} (hidom : c.idom = W.idom)
+value (atoms of such a term are available there). From the two facts of `Opt.Wf` it reads (the
+tree's rank and the definition sites), so that `Opt.Wf` and `WfM` both give it. -/
+theorem tmVal_congr_of {f : Function} {W : WfData}
+    (hrank : ∀ b c, W.idom[b]?.join = some c → W.rank c < W.rank b)
+    (hsites : ∀ v s, (v, s) ∈ defSites f → W.dm v = some s) {c : CC} (hidom : c.idom = W.idom)
     (hok : c.tmsOk = true) {fr1 fr2 : Frame} {mem : Mem}
     (hg : fr2.func.globals = fr1.func.globals) (hx : fr2.func.externs = fr1.func.externs)
     (hs : fr2.slots = fr1.slots) {i k : Nat} (hr : ∀ v, Avail W i k v → fr2.regs v = fr1.regs v) :
@@ -231,7 +234,7 @@ theorem tmVal_congr {f : Function} {W : WfData} (hW : Wf f W) {c : CC} (hidom : 
         have hle'' := CC.le_sound hle'
         rw [hidom] at hle''
         simp only [hlt, dite_true]
-        exact ih o hlt (hle''.trans hW.rank hle)
+        exact ih o hlt (hle''.trans hrank hle)
       | _ =>
         simp only
         cases hv : atomVal f _ with
@@ -241,7 +244,16 @@ theorem tmVal_congr {f : Function} {W : WfData} (hW : Wf f W) {c : CC} (hidom : 
           have hst := CC.tmOk_atom hx' hs'
           rw [hst] at hle
           simp only [Option.bind_some]
-          exact hr v (avail_of_leP (hW.sites v s hd) hle)
+          exact hr v (avail_of_leP (hsites v s hd) hle)
+
+/-- **Stability** (`tmVal_congr_of`) for a function with the facts `Opt.Wf`. -/
+theorem tmVal_congr {f : Function} {W : WfData} (hW : Wf f W) {c : CC} (hidom : c.idom = W.idom)
+    (hok : c.tmsOk = true) {fr1 fr2 : Frame} {mem : Mem}
+    (hg : fr2.func.globals = fr1.func.globals) (hx : fr2.func.externs = fr1.func.externs)
+    (hs : fr2.slots = fr1.slots) {i k : Nat} (hr : ∀ v, Avail W i k v → fr2.regs v = fr1.regs v) :
+    ∀ t, LeP W.idom (c.siteOf t) (i, k) →
+      tmVal f c.cert.tms fr2 mem t = tmVal f c.cert.tms fr1 mem t :=
+  tmVal_congr_of hW.rank hW.sites hidom hok hg hx hs hr
 
 /-! ## The normaliser seam -/
 

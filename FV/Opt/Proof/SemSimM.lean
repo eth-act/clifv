@@ -406,4 +406,78 @@ theorem FunsSimMU.externNames {fs gs : List Function} (h : FunsSimMU fs gs) :
   | nil => rfl
   | cons hf _ ih => simp only [List.flatMap_cons, hf.externs, ih]
 
+/-! ## At one symbol table
+
+`FunSimMUAt syms f g`: `FunSimMU`'s simulation for the memories whose symbols are `syms` only.
+A program run keeps its symbols (`SRU syms`), so pointwise `FunSimMUAt syms` already gives the
+refinement of the runs at `syms` (`runLoopX_refinesMUAt`); it is what a validator gives under a
+premise on the symbol table (the hoisting mode of #1119, `Opt.MidVal.check_soundSyms`). -/
+
+/-- `FunSimMU` at the symbol table `syms` only (section doc). -/
+structure FunSimMUAt (syms : String → Option Nat) (f g : Function) : Prop where
+  name : g.name = f.name
+  sig : g.sig = f.sig
+  slots : g.slots = f.slots
+  externs : g.externs = f.externs
+  sim : ∃ R, IsSimMU syms R ∧ ∀ b, f.entry? = some b → ∃ b', g.entry? = some b' ∧
+    b'.params = b.params ∧ ∀ args regs (slots : List (SlotId × Nat)) (m : Mem),
+      args.map (·.ty) = b.params.map (·.2) →
+      Regs.empty.setMany (b.params.map (·.1)) args = some regs →
+      slots.map (·.1) = f.slots.map (·.1) → m.symbols = syms →
+      R ⟨f, regs, slots, b.body, b.term⟩ ⟨g, regs, slots, b'.body, b'.term⟩ m
+
+theorem FunSimMU.at {f g : Function} (h : FunSimMU f g) (syms : String → Option Nat) :
+    FunSimMUAt syms f g :=
+  ⟨h.name, h.sig, h.slots, h.externs, h.sim syms⟩
+
+theorem FunSimMUAt.trans {syms : String → Option Nat} {f g h : Function}
+    (h1 : FunSimMUAt syms f g) (h2 : FunSimMUAt syms g h) : FunSimMUAt syms f h where
+  name := h2.name.trans h1.name
+  sig := h2.sig.trans h1.sig
+  slots := h2.slots.trans h1.slots
+  externs := h2.externs.trans h1.externs
+  sim := by
+    obtain ⟨R₁, hs1, he1⟩ := h1.sim
+    obtain ⟨R₂, hs2, he2⟩ := h2.sim
+    refine ⟨_, hs1.comp hs2, fun b hb => ?_⟩
+    obtain ⟨b', hb', hp', hr1⟩ := he1 b hb
+    obtain ⟨b'', hb'', hp'', hr2⟩ := he2 b' hb'
+    refine ⟨b'', hb'', hp''.trans hp', fun args regs slots m ht hr hsl hm => ?_⟩
+    refine ⟨_, hr1 args regs slots m ht hr hsl hm, ?_⟩
+    rw [← hp'] at ht hr
+    exact hr2 args regs slots m ht hr (hsl.trans (by rw [h1.slots])) hm
+
+/-- Pointwise `FunSimMUAt syms` between the functions of two programs. -/
+inductive FunsSimMUAt (syms : String → Option Nat) : List Function → List Function → Prop
+  | nil : FunsSimMUAt syms [] []
+  | cons {f g fs gs} : FunSimMUAt syms f g → FunsSimMUAt syms fs gs →
+      FunsSimMUAt syms (f :: fs) (g :: gs)
+
+theorem FunsSimMU.at {fs gs : List Function} (h : FunsSimMU fs gs) (syms : String → Option Nat) :
+    FunsSimMUAt syms fs gs := by
+  induction h with
+  | nil => exact .nil
+  | cons hf _ ih => exact .cons (hf.at syms) ih
+
+theorem FunsSimMUAt.findP {syms : String → Option Nat} {fs gs : List Function}
+    (h : FunsSimMUAt syms fs gs) (P : String → Bool) :
+    (∀ f, fs.find? (fun x => P x.name) = some f →
+      ∃ g, gs.find? (fun x => P x.name) = some g ∧ FunSimMUAt syms f g) ∧
+      (fs.find? (fun x => P x.name) = none → gs.find? (fun x => P x.name) = none) := by
+  induction h with
+  | nil => simp
+  | @cons f g fs gs hfg _ ih =>
+    simp only [List.find?_cons, hfg.name]
+    split
+    · exact ⟨fun f' hf => by cases hf; exact ⟨g, rfl, hfg⟩, fun h => (by cases h)⟩
+    · exact ih
+
+theorem FunsSimMUAt.externNames {syms : String → Option Nat} {fs gs : List Function}
+    (h : FunsSimMUAt syms fs gs) :
+    gs.flatMap (fun f => f.externs.map (·.2.name)) =
+      fs.flatMap (fun f => f.externs.map (·.2.name)) := by
+  induction h with
+  | nil => rfl
+  | cons hf _ ih => simp only [List.flatMap_cons, hf.externs, ih]
+
 end Opt

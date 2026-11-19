@@ -9,6 +9,7 @@
 use std::path::Path;
 use std::process::Command;
 
+use crate::linkproof::NOT_IN_BUNDLE;
 use crate::pipeline::tag_of;
 
 /// The verdict on one executable.
@@ -17,6 +18,29 @@ pub struct Verdict {
     pub verified: bool,
     /// One line: what holds, or the failing check.
     pub summary: String,
+    /// The number of functions the named theorem's instance covers (the program the binary
+    /// check passed: `link-check`'s `--prune` count of passing functions); `None` when no
+    /// theorem is named.
+    pub checked: Option<usize>,
+}
+
+/// The binary check's verdict `v` against the number of Lean-compiled functions in the
+/// executable, `total` (`what`: whose count it is: lean-link's region count, or with the
+/// Lean code in cg_clif's objects the markers resolved in the executable). The executable is
+/// verified only when the theorem's instance covers every one of them; a different count is
+/// named in the summary, whatever the verdict (#1130).
+pub fn cover(v: Verdict, total: usize, what: &str) -> Verdict {
+    match v.checked {
+        Some(n) if n != total => {
+            let diff = format!("the binary check covers {n} function(s), the executable has {total} Lean-compiled function(s) ({what})");
+            let summary = match v.summary.strip_prefix("verified: ") {
+                Some(s) if v.verified => format!("not verified: {diff}; {s}"),
+                _ => format!("{}; {diff}", v.summary),
+            };
+            Verdict { verified: false, summary, checked: v.checked }
+        }
+        _ => v,
+    }
 }
 
 /// The value of `key` in `line` (`  key: value`).
@@ -37,9 +61,23 @@ fn stop_reason<'a>(out: &'a str, exe: &str) -> Option<&'a str> {
         .last()
 }
 
-/// The verdict on `exe` from `link-check`'s output (`ok`: its exit status was 0).
+/// The verdict on `exe` from `link-check`'s output (`ok`: its exit status was 0). A function of
+/// the executable that `cargo fv link-proof` names as not in the bundle ([`NOT_IN_BUNDLE`]) is not
+/// covered by the theorem: the executable is not verified, and the summary names them (#1130).
 pub fn verdict_of(out: &str, ok: bool, exe: &str) -> Verdict {
-    let not = |s: String| Verdict { verified: false, summary: s };
+    let v = verdict_in(out, ok, exe);
+    let Some(gap) = out.lines().find(|l| l.contains(NOT_IN_BUNDLE)) else { return v };
+    let gap = gap.trim_start().strip_prefix("cargo fv link-proof: ").unwrap_or(gap.trim());
+    let gap = gap.strip_prefix(exe).and_then(|g| g.strip_prefix(": ")).unwrap_or(gap);
+    let summary = match v.summary.strip_prefix("verified: ") {
+        Some(s) if v.verified => format!("not verified: {gap}; {s}"),
+        _ => format!("{}; {gap}", v.summary),
+    };
+    Verdict { verified: false, summary, checked: v.checked }
+}
+
+fn verdict_in(out: &str, ok: bool, exe: &str) -> Verdict {
+    let not = |s: String| Verdict { verified: false, summary: s, checked: None };
     if field(out, "link-check: ").is_none() {
         // `cargo fv link-proof` stopped before the checker (no kept codegen unit, …)
         let msg = out.lines().rev().find(|l| !l.trim().is_empty()).unwrap_or("no output").trim();
@@ -110,18 +148,26 @@ pub fn verdict_of(out: &str, ok: bool, exe: &str) -> Verdict {
         None => return not("not verified: link-check names no theorem".into()),
     };
     if pass < total {
-        return not(format!(
-            "not verified: {} of {total} Lean-compiled functions fail (first: {}); {which} holds for the other {pass}{stack}",
-            total - pass,
-            first_fail.unwrap_or_else(|| "?".into())
-        ));
+        return Verdict {
+            verified: false,
+            summary: format!(
+                "not verified: {} of {total} Lean-compiled functions fail (first: {}); {which} holds for the other {pass}{stack}",
+                total - pass,
+                first_fail.unwrap_or_else(|| "?".into())
+            ),
+            checked: Some(pass),
+        };
     }
-    Verdict { verified: true, summary: format!("verified: {which} holds for its {total} Lean-compiled functions{stack}") }
+    Verdict {
+        verified: true,
+        summary: format!("verified: {which} holds for its {total} Lean-compiled functions{stack}"),
+        checked: Some(total),
+    }
 }
 
 /// Check the executable `exe` linked in the build under `fv_dir` (`target/fv/<mode>`).
 pub fn check(fv_dir: &Path, exe: &str, manifest: Option<&str>) -> Verdict {
-    let not = |s: String| Verdict { verified: false, summary: s };
+    let not = |s: String| Verdict { verified: false, summary: s, checked: None };
     let Ok(me) = std::env::current_exe() else { return not("not checked: cargo-fv's path is unknown".into()) };
     let mode = fv_dir.file_name().map(|m| m.to_string_lossy().into_owned()).unwrap_or_default();
     let out_dir = fv_dir.join("bin-check").join(tag_of(exe));
@@ -142,7 +188,8 @@ pub fn check(fv_dir: &Path, exe: &str, manifest: Option<&str>) -> Verdict {
 
 #[cfg(test)]
 mod tests {
-    use super::verdict_of;
+    use super::{cover, verdict_of};
+    use crate::linkproof::NOT_IN_BUNDLE;
 
     const EXE: &str = "/w/target/fv/plain/aarch64-unknown-linux-musl/debug/build/bigframe-unwind/938e46b67ec0fe2f/out/bigframe_unwind-938e46b67ec0fe2f";
     const SKIPPED: &str = "link-proof skipped 1 function(s) of the region: __fv_e90dc2697494__RNxC15bigframe_unwind12H1IxI06hs9Qw: unverified: outside clif-subset-v2 E";
@@ -222,5 +269,38 @@ mod tests {
         let v = verdict_of(&ok.replace("  theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS\n", ""), true, EXE);
         assert!(!v.verified);
         assert_eq!(v.summary, "not verified: link-check names no theorem");
+    }
+
+    /// #1130: the theorem link-check names covers the bundle's functions; when the executable has
+    /// more Lean-compiled functions (lean-link's region count) the executable is not verified and
+    /// the summary names both counts. An equal count keeps the verdict.
+    #[test]
+    fn region_count_difference() {
+        const OK: &str = "link-check: X\n  okB: true\n  --prune: 74 of 74 functions pass (0 dropped)\n  binary: ok\n  code map: ok\n  GOT: ok (0 GOT pair(s) with an ldr; 0 ms)\n  stack: 352 bytes at most (no call cycle)\n  theorem: E2E.ReturnPinExecBytes.binary_correct_exec_proven\n";
+        let ok = OK.replace('X', EXE);
+        let v = cover(verdict_of(&ok, true, EXE), 74, "lean-link's region count");
+        assert!(v.verified, "{}", v.summary);
+        assert_eq!(v.checked, Some(74));
+        let v = cover(verdict_of(&ok, true, EXE), 79, "lean-link's region count");
+        assert!(!v.verified);
+        assert_eq!(v.checked, Some(74));
+        assert!(
+            v.summary.starts_with("not verified: the binary check covers 74 function(s), the executable has 79 Lean-compiled function(s) (lean-link's region count); E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 74"),
+            "{}",
+            v.summary
+        );
+        // already not verified (pruned): the counts are added
+        let pruned = ok.replace("74 of 74 functions pass (0 dropped)", "71 of 74 functions pass (3 dropped)");
+        let v = cover(verdict_of(&pruned, true, EXE), 74, "lean-link's region count");
+        assert!(!v.verified);
+        assert!(v.summary.starts_with("not verified: 3 of 74 Lean-compiled functions fail"), "{}", v.summary);
+        assert!(v.summary.ends_with("; the binary check covers 71 function(s), the executable has 74 Lean-compiled function(s) (lean-link's region count)"), "{}", v.summary);
+        // link-proof names functions of the executable it did not put in the bundle: not verified,
+        // with its line, even when the counts would agree
+        let gap = format!("cargo fv link-proof: {EXE}: 5 Lean-compiled function(s) of the executable (their __fvlean$ markers are in the link map) {NOT_IN_BUNDLE}: 1 unit(s): zerocopy-1.zerocopy.0-cgu.0.rcgu.o (5; its object is not in the link map); first: f\n{ok}");
+        let v = cover(verdict_of(&gap, true, EXE), 74, "lean-link's region count");
+        assert!(!v.verified);
+        assert!(v.summary.starts_with(&format!("not verified: 5 Lean-compiled function(s) of the executable (their __fvlean$ markers are in the link map) {NOT_IN_BUNDLE}: 1 unit(s): zerocopy-1")), "{}", v.summary);
+        assert!(v.summary.contains("; E2E.ReturnPinExecBytes.binary_correct_exec_proven holds for its 74 Lean-compiled functions"), "{}", v.summary);
     }
 }

@@ -1,4 +1,5 @@
 import FV.Opt.Proof.MidValRel
+import FV.Opt.Proof.GvnEditX
 
 /-!
 # The mid-end validator: a matched skeleton statement (#1119, module (5), slice D)
@@ -17,8 +18,10 @@ removes the memory facts, every other instruction keeps memory: `evalInst_mem_of
 load adds its location (`holds_of_evalInst_load`), a store its location (`holds_of_evalInst_store`),
 an idempotent trapping instruction its evaluation (`evalInst_mergeK`, `evalInst_rename`). After a
 call (`ContM`) the memory is arbitrary, and only the non-memory facts are left (`kill`).
-A `call_indirect` never occurs in a function `Opt.check` accepts (`no_callIndirect`: it has no
-result types without signature declarations).
+A `call_indirect` (`matched_ci`) is the same: the same signature, callee term and argument
+terms, so the same prelude (`ciArgs`: declared signature, callee address, arguments, by
+`ciArgs_ren`), results of the declared signature's return types (`wfCheck`'s `sigDeclOf`), and
+memory reset at the call.
 -/
 
 namespace Opt.MidVal
@@ -32,6 +35,13 @@ theorem mapOperands_eq_call {σ : ValueId → ValueId} {i : Inst} {fn : FnRef} {
   cases i <;> simp [mapOperands] at h
   obtain ⟨rfl, rfl⟩ := h
   exact ⟨_, rfl, rfl⟩
+
+theorem mapOperands_eq_callIndirect {σ : ValueId → ValueId} {i : Inst} {sig : Nat} {c : ValueId}
+    {args : List ValueId} (h : mapOperands σ i = .callIndirect sig c args) :
+    ∃ c0 a, i = .callIndirect sig c0 a ∧ c = σ c0 ∧ args = a.map σ := by
+  cases i <;> simp [mapOperands] at h
+  obtain ⟨rfl, rfl, rfl⟩ := h
+  exact ⟨_, _, rfl, rfl, rfl⟩
 
 theorem not_call_of_mapOperands {σ τ : ValueId → ValueId} {i j : Inst}
     (h : mapOperands σ i = mapOperands τ j) (hc : ∀ fn args, i ≠ .call fn args) :
@@ -175,6 +185,14 @@ theorem callArgs_ren {σ : ValueId → ValueId} {fr fr' : Frame} {fn : FnRef} {a
   simp only [callArgs, Function.extern?, hext, Res.norm_bind, Res.norm_ofOption, checkTys,
     Res.norm_check, Res.norm_pure, getMany_rename h]
 
+/-- `ciArgs` of renamed operands, up to `stuck` messages. -/
+theorem ciArgs_ren {σ : ValueId → ValueId} {fr fr' : Frame} {sig : Nat} {c : ValueId}
+    {args : List ValueId} (hsd : fr'.func.sigDecls = fr.func.sigDecls)
+    (hc : fr'.regs (σ c) = fr.regs c) (h : ∀ x ∈ args, fr'.regs (σ x) = fr.regs x) :
+    (ciArgs fr' sig (σ c) (args.map σ)).norm = (ciArgs fr sig c args).norm := by
+  simp only [ciArgs, hsd, Frame.get, hc, Res.norm_bind, Res.norm_ofOption, Res.norm_pure,
+    getMany_rename h]
+
 section
 variable {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
 
@@ -278,9 +296,9 @@ theorem rel_bind (H : Hyp f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} 
     (hrG : (ccOf fi gi cert norm).resOk (ccOf fi gi cert norm).eg t.results bi k = true)
     (hwk : (ccOf fi gi cert norm).walk bi rest ts (k + 1) (k'' + 1) S' = some Send)
     (hend : EndOk (ccOf fi gi cert norm) bi fb gb Send)
-    (htyF : ∀ ts0, st.inst.resultTypes (sigOf f) (fun _ => none) = some ts0 →
+    (htyF : ∀ ts0, st.inst.resultTypes (sigOf f) (sigDeclOf f) = some ts0 →
       vals.map (·.ty) = ts0)
-    (htyG : ∀ ts0, t.inst.resultTypes (sigOf g) (fun _ => none) = some ts0 →
+    (htyG : ∀ ts0, t.inst.resultTypes (sigOf g) (sigDeclOf g) = some ts0 →
       vals.map (·.ty) = ts0)
     (hset : fr.regs.setMany st.results vals = some regs)
     (hset' : fr2.regs.setMany t.results vals = some regs')
@@ -292,24 +310,24 @@ theorem rel_bind (H : Hyp f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} 
   have hipF : isPure st.inst = false := isPure_of_pureK hpF
   have hipG : isPure t.inst = false := isPure_of_pureK hC.pureG
   have hreg : ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := fun v hv =>
-    ((setMany_spec hset).2 v).1 (avail_not_result H.wff hC.hfb hC.stk hv)
+    ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hC.hfb hC.stk hv)
   have hreg' : ∀ v, Avail (wfData g gi) bi k'' v → regs' v = fr2.regs v := fun v hv =>
-    ((setMany_spec hset').2 v).1 (avail_not_result H.wfg hC.hgb hC.tk hv)
+    ((setMany_spec hset').2 v).1 (H.wfg.avail_not_result hC.hgb hC.tk hv)
   have hTV : ∀ u, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf u) (bi, k) →
       TV f cert syms { fr with regs, body := rest } u = TV f cert syms fr u :=
     fun u hu => H.TV_stable (fr1 := fr) (fr2 := { fr with regs, body := rest }) rfl rfl rfl hreg hu
   refine ⟨⟨fb, gb, Send, hC.hfb, hC.hgb, by rw [hC.dropF, hC.dropG]; exact hwk, hend⟩,
-    Inv.results H.wff hR.invf hC.bodyF htyF (fun h => absurd h (by simp [hipF])) hset,
-    Inv.results H.wfg hC.invg hC.bodyG htyG (fun h => absurd h (by simp [hipG])) hset',
+    H.wff.inv_results hR.invf hC.bodyF htyF (fun h => absurd h (by simp [hipF])) hset,
+    H.wfg.inv_results hC.invg hC.bodyG htyG (fun h => absurd h (by simp [hipG])) hset',
     hC.slots, ?_, ?_, ?_, hF, hFs⟩
   · intro x hx
-    rcases avail_succ H.wff hC.hfb hC.stk hx with hr | hx'
+    rcases H.wff.avail_succ hC.hfb hC.stk hx with hr | hx'
     · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hr
       exact TV_res (resOk_spec hrF j x hj) hC.hfb hC.stk hj
     · show TV f cert syms _ _ = regs x
       rw [hTV _ (H.siteF hx'), hR.agreeF x hx', hreg x hx']
   · intro y hy
-    rcases avail_succ H.wfg hC.hgb hC.tk hy with hr | hy'
+    rcases H.wfg.avail_succ hC.hgb hC.tk hy with hr | hy'
     · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hr
       have hjl : j < st.results.length := by
         rw [hlen]; exact (List.getElem?_eq_some_iff.1 hj).1
@@ -320,7 +338,7 @@ theorem rel_bind (H : Hyp f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} 
     · show TV f cert syms _ _ = regs' y
       rw [hTV _ (hC.sitesG y hy'), hC.agreeG y hy', hreg' y hy']
   · intro y hy
-    rcases avail_succ H.wfg hC.hgb hC.tk hy with hr | hy'
+    rcases H.wfg.avail_succ hC.hgb hC.tk hy with hr | hy'
     · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hr
       have hs := CC.tmOk_atom (s := (bi, k + 1))
         (CC.tmsOk_get H.ok.tms (resOk_spec hrG j y hj)) rfl
@@ -341,7 +359,7 @@ theorem facts_next (H : Hyp f g fi gi cert norm) {m1 : Mem} {vals : List Val} {r
       FactHolds f cert syms { fr with regs, body := rest } m1 F ∧
         ∀ u ∈ F.terms, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf u) (bi, k + 1) := by
   have hreg : ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := fun v hv =>
-    ((setMany_spec hset).2 v).1 (avail_not_result H.wff hfb hstk hv)
+    ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hfb hstk hv)
   have hTV : ∀ u, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf u) (bi, k) →
       TV f cert syms { fr with regs, body := rest } u = TV f cert syms fr u :=
     fun u hu => H.TV_stable (fr1 := fr) (fr2 := { fr with regs, body := rest }) rfl rfl rfl hreg hu
@@ -354,7 +372,7 @@ theorem facts_next (H : Hyp f g fi gi cert norm) {m1 : Mem} {vals : List Val} {r
     fun x hx => (H.siteF (hops x hx)).mono (Nat.le_succ k)
   have hresSite : ∀ x ∈ st.results,
       LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).ef x)) (bi, k + 1) :=
-    fun x hx => H.siteF ⟨bi, k + 1, site_result H.wff hfb hstk hx, .inl ⟨rfl, Nat.le_refl _⟩⟩
+    fun x hx => H.siteF ⟨bi, k + 1, H.wff.site_result hfb hstk hx, .inl ⟨rfl, Nat.le_refl _⟩⟩
   have hresTV : ∀ (j : Nat) (x : ValueId), st.results[j]? = some x →
       TV f cert syms { fr with regs, body := rest } ((ccOf fi gi cert norm).ef x) = vals[j]? :=
     fun j x hj => by
@@ -566,7 +584,7 @@ theorem matched_call (H : Hyp f g fi gi cert norm) {Send : List Fact} {ext : Ext
   obtain ⟨regs', hset'⟩ := setMany_len (r := fr2.regs) (xs := t.results) (vs := vs)
     (hM.len.symm.trans (setMany_spec hset).1)
   have hreg : ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := fun v hv =>
-    ((setMany_spec hset).2 v).1 (avail_not_result H.wff hC.hfb hC.stk hv)
+    ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hC.hfb hC.stk hv)
   refine ⟨regs', hset', bi, k + 1, k'' + 1, _,
     rel_bind (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF hM.resG
       hwk hend (fun ts0 h0 => ?_) (fun ts0 h0 => ?_)
@@ -590,6 +608,77 @@ theorem matched_call (H : Hyp f g fi gi cert norm) {Send : List Fact} {ext : Ext
     rcases mem_afterKeep hF with ⟨hk, -⟩ | hmf | ⟨hS, -⟩
     · rw [hc] at hk; simp [mergeK, mapOperands] at hk
     · rw [hc] at hmf; simp [memFact?, mapOperands] at hmf
+    · exact (hR.factSites F hS u hu).mono (Nat.le_succ k)
+
+/-- A `call_indirect` of `f` is the same `call_indirect` of `g` (the same signature, callee and
+argument terms): the same prelude (`ciArgs`); after it returns (any memory with the symbols), the
+results, of the declared signature's return types, are bound alike and the non-memory facts still
+hold. -/
+theorem matched_ci (H : Hyp f g fi gi cert norm) {Send : List Fact}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hp : pureK st.inst = false)
+    (hM : Matched (ccOf fi gi cert norm) bi st fr'.body k k' S t ts k'')
+    (hwk : (ccOf fi gi cert norm).walk bi rest ts (k + 1) (k'' + 1)
+      (afterKeep (mapOperands (ccOf fi gi cert norm).ef st.inst)
+        (st.results.head?.map (ccOf fi gi cert norm).ef) S) = some Send)
+    (hend : EndOk (ccOf fi gi cert norm) bi fb gb Send)
+    {sig : Nat} {callee : ValueId} {args : List ValueId} {d : Signature} {a : Nat}
+    {vals : List Val} (hi : st.inst = .callIndirect sig callee args)
+    (hca : ciArgs fr sig callee args = .ok (d, a, vals)) :
+    ∃ callee' args', t.inst = .callIndirect sig callee' args' ∧
+      ciArgs fr2 sig callee' args' = .ok (d, a, vals) ∧
+      ContM syms (MR f g fi gi cert norm syms) { fr with body := rest } st.results
+        { fr2 with body := ts } t.results (AbiParam.tys d.returns) := by
+  have hops := hM.ops
+  rw [hi] at hops
+  obtain ⟨c0, a0, hta, hc0, ha0⟩ := mapOperands_eq_callIndirect hops.symm
+  have hopF : ∀ x ∈ operands st.inst, Avail (wfData f fi) bi k x := H.wff.uses bi fb hC.hfb k st hC.stk
+  have hopG : ∀ y ∈ operands t.inst, Avail (wfData g gi) bi k'' y := H.wfg.uses bi gb hC.hgb k'' t hC.tk
+  have h1 := ciArgs_ren (σ := (ccOf fi gi cert norm).ef) (fr := fr)
+    (fr' := tmFrame f cert.tms fr (symMem syms)) (sig := sig) (c := callee) (args := args) rfl
+    (hR.agreeF callee (hopF callee (by rw [hi]; simp [operands])))
+    (fun x hx => hR.agreeF x (hopF x (by rw [hi]; simp [operands, hx])))
+  have h2 := ciArgs_ren (σ := (ccOf fi gi cert norm).eg) (fr := fr2)
+    (fr' := tmFrame f cert.tms fr (symMem syms)) (sig := sig) (c := c0) (args := a0)
+    (by show fr.func.sigDecls = fr2.func.sigDecls; rw [hC.funcF, hC.funcG, H.ok.sigDecls])
+    (hC.agreeG c0 (hopG c0 (by rw [hta]; simp [operands])))
+    (fun y hy => hC.agreeG y (hopG y (by rw [hta]; simp [operands, hy])))
+  have hca' : ciArgs fr2 sig c0 a0 = .ok (d, a, vals) := by
+    refine Res.norm_eq_ok ?_ hca
+    rw [← h2, ← hc0, ← ha0, h1]
+  obtain ⟨_, _, hdF, -⟩ := ciArgs_ok.1 hca
+  rw [hC.funcF] at hdF
+  have hdG : g.sigDecls.lookup sig = some d := by rw [H.ok.sigDecls]; exact hdF
+  refine ⟨c0, a0, hta, hca', ?_⟩
+  intro vs regs m' hty _ hset
+  obtain ⟨regs', hset'⟩ := setMany_len (r := fr2.regs) (xs := t.results) (vs := vs)
+    (hM.len.symm.trans (setMany_spec hset).1)
+  have hreg : ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := fun v hv =>
+    ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hC.hfb hC.stk hv)
+  refine ⟨regs', hset', bi, k + 1, k'' + 1, _,
+    rel_bind (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF hM.resG
+      hwk hend (fun ts0 h0 => ?_) (fun ts0 h0 => ?_)
+      hset hset' (fun F hF => ?_) (fun F hF => ?_)⟩
+  · rw [hi, Inst.resultTypes, sigDeclOf, hdF] at h0
+    simp only [Option.map_some, Option.some.injEq] at h0
+    rw [← h0, hty]
+    rfl
+  · rw [hta, Inst.resultTypes, sigDeclOf, hdG] at h0
+    simp only [Option.map_some, Option.some.injEq] at h0
+    rw [← h0, hty]
+    rfl
+  · rcases mem_afterKeep hF with ⟨hk, -⟩ | hmf | ⟨hS, hw⟩
+    · rw [hi] at hk; simp [mergeK, mapOperands] at hk
+    · rw [hi] at hmf; simp [memFact?, mapOperands] at hmf
+    · have hnm : F.isMem = false := hw (by rw [hi]; rfl)
+      exact FactHolds.stable (fr1 := fr) (fr2 := { fr with regs, body := rest }) (m1 := m)
+        (m2 := m') H rfl rfl rfl hreg (hR.factSites F hS)
+        (fun h => absurd h (by simp [hnm])) (hR.facts F hS)
+  · intro u hu
+    rcases mem_afterKeep hF with ⟨hk, -⟩ | hmf | ⟨hS, -⟩
+    · rw [hi] at hk; simp [mergeK, mapOperands] at hk
+    · rw [hi] at hmf; simp [memFact?, mapOperands] at hmf
     · exact (hR.factSites F hS u hu).mono (Nat.le_succ k)
 
 end
@@ -627,7 +716,7 @@ theorem rel_matched {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
   obtain rfl := Option.some.inj (hC.hfb.symm.trans hfb')
   obtain rfl := Option.some.inj (hC.hgb.symm.trans hgb')
   refine ⟨fun fr1 m1 hl => ?_, fun c' hl => ⟨fr2, m, hpre, matched_trap H hR hC hM.ops hl⟩,
-    fun ext vals rs rest' hl => ?_, fun sig callee args d a vals hi _ => ?_⟩
+    fun ext vals rs rest' hl => ?_, fun sig callee args d a vals hi hca => ?_⟩
   · by_cases hc : ∃ fn args, st.inst = .call fn args
     · obtain ⟨fn, args, hc⟩ := hc
       rw [lstep_call hb hc] at hl
@@ -640,6 +729,7 @@ theorem rel_matched {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
       exact ⟨fr1', hpre.trans h1, h2⟩
   · obtain ⟨rfl, rfl, h1, h2⟩ := matched_call H hR hC hp hM hwk hend hl
     exact ⟨fr2, t.results, ts, hpre, h1, h2⟩
-  · exact (no_callIndirect H.wff hC.hfb hC.stk hi).elim
+  · obtain ⟨c0, a0, hta, hca', hk⟩ := matched_ci H hR hC hp hM hwk hend hi hca
+    exact ⟨fr2, t, ts, sig, c0, a0, hpre, hC.bodyG, hta, hca', hk⟩
 
 end Opt.MidVal

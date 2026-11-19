@@ -169,12 +169,12 @@ end
 
 /-! ## Calls, returns and tail calls -/
 
-theorem funSimMU_entry {syms f g} (h : FunSimMU f g) {vals mem fr mem'}
+theorem funSimMUAt_entry {syms f g} (h : FunSimMUAt syms f g) {vals mem fr mem'}
     (hsym : mem.symbols = syms) (he : enterFunc f vals mem = .ok (fr, mem')) :
     ∃ fr', enterFunc g vals mem = .ok (fr', mem') ∧ GRMU syms fr fr' mem' ∧
       mem'.symbols = mem.symbols := by
   obtain ⟨b, regs, hb, h1, h2, hr, hsl, hfr⟩ := enterFunc_ok he
-  obtain ⟨R, hR, hent⟩ := h.sim syms
+  obtain ⟨R, hR, hent⟩ := h.sim
   obtain ⟨b', hb', hp, hrel⟩ := hent b hb
   have hids := enterSlots_ids f mem
   rw [hsl] at hids
@@ -216,8 +216,8 @@ theorem returnValues_relMU {syms : String → Option Nat} {s : State} {fr2 : Fra
     rw [h1]
     exact XStepRelMU.stuck'
 
-theorem callCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
-    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {s : State} {fr2 : Frame}
+theorem callCont_relMUAt {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) {s : State} {fr2 : Frame}
     {cs' : List (Frame × List ValueId)} {ext : ExtFunc} {vals : List Val} {rs rs' : List ValueId}
     {rest rest' : List Stmt} {t t' : Option ExnTable} {ts ts' : List (Option ExnTable)}
     (hsym : s.mem.symbols = syms)
@@ -242,7 +242,7 @@ theorem callCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeeps
       | stuck m => exact XStepRelMU.stuck'
       | ok x =>
         obtain ⟨frc, mem'⟩ := x
-        obtain ⟨frc', he', hg, hsy⟩ := funSimMU_entry hfs hsym he
+        obtain ⟨frc', he', hg, hsy⟩ := funSimMUAt_entry hfs hsym he
         simp only [he', StepResult.ofRes_ok]
         have hret : AbiParam.tys callee.sig.returns = AbiParam.tys ext.sig.returns := by
           simp only [Bool.and_eq_true, beq_iff_eq] at hcond; exact hcond.2
@@ -278,8 +278,8 @@ theorem callCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeeps
             exact XStepRelMU.same' rfl hlen ⟨rfl, hm1, hg, hc⟩
         · exact XStepRelMU.stuck'
 
-theorem tailCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
-    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {s : State} {fr2 : Frame}
+theorem tailCont_relMUAt {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) {s : State} {fr2 : Frame}
     {cs' : List (Frame × List ValueId)} {ext : ExtFunc} {vals : List Val}
     {t t' : Option ExnTable} {ts ts' : List (Option ExnTable)}
     (hsym : s.mem.symbols = syms)
@@ -304,7 +304,7 @@ theorem tailCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeeps
         obtain ⟨frc, mem'⟩ := x
         have hm0 : ((s.mem.free (s.frame.slots.map (·.2))).leave).symbols = syms :=
           (leave_free_symbols _ _).trans hsym
-        obtain ⟨frc', he', hg, hsy⟩ := funSimMU_entry hfs hm0 he
+        obtain ⟨frc', he', hg, hsy⟩ := funSimMUAt_entry hfs hm0 he
         simp only [he', StepResult.ofRes_ok]
         have hr2 : AbiParam.tys callee.sig.returns = AbiParam.tys ext.sig.returns := by
           simp only [Bool.and_eq_true, beq_iff_eq] at hcond; exact hcond.2
@@ -329,8 +329,8 @@ theorem tailCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeeps
       | returned rvals mem' =>
         exact returnValues_relMU hsig hsl hc ((hE _ _ hx _ _ _ _ hr).trans hsym)
 
-theorem ciCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
-    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {s : State} {fr2 : Frame}
+theorem ciCont_relMUAt {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) {s : State} {fr2 : Frame}
     {cs' : List (Frame × List ValueId)} {sig sig' : Nat} {d : Signature} {a : Nat}
     {vals : List Val} {rs rs' : List ValueId} {rest rest' : List Stmt}
     {t t' : Option ExnTable} {ts ts' : List (Option ExnTable)}
@@ -357,7 +357,7 @@ theorem ciCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSy
       | stuck m => exact XStepRelMU.stuck'
       | ok x =>
         obtain ⟨frc, mem'⟩ := x
-        obtain ⟨frc', he', hg, hsy⟩ := funSimMU_entry hfs hsym he
+        obtain ⟨frc', he', hg, hsy⟩ := funSimMUAt_entry hfs hsym he
         simp only [he', StepResult.ofRes_ok]
         have hret : AbiParam.tys d.returns = AbiParam.tys target.sig.returns :=
           (Signature.abiMatch_eq_true.1 hcond).2.2
@@ -368,7 +368,7 @@ theorem ciCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSy
         exact .cons (by rw [← hret]; exact hk) hsl hT hc
     · exact XStepRelMU.stuck'
   | none =>
-    simp only [hn hpf, callExternAt_congr (env := env) (FunsSimMU.externNames hP)]
+    simp only [hn hpf, callExternAt_congr (env := env) hP.externNames]
     cases hx : callExternAt env p s.mem d a vals with
     | trap c => exact XStepRelMU.trapped'
     | stuck m => exact XStepRelMU.stuck'
@@ -388,8 +388,8 @@ theorem ciCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSy
 
 /-- One source step whose head is not a `call_indirect` nor a `try_call`
 (`sim_step_lstepU` with the memory). -/
-theorem sim_step_lstepMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
-    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
+theorem sim_step_lstepMUAt {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
     (hR : IsSimMU syms R) {s : State} {ts : List (Option ExnTable)} {fr' : Frame}
     {cs' : List (Frame × List ValueId)} {ts' : List (Option ExnTable)}
     (hr : R s.frame fr' s.mem) (hsym : s.mem.symbols = syms)
@@ -420,7 +420,7 @@ theorem sim_step_lstepMU {syms : String → Option Nat} {env : Env} (hE : EnvKee
     rw [step_eq_lift_of (s := ⟨fr2, cs', s.mem⟩) hl2 (fun _ h => by cases h),
       pendingOf_cons (s := s) hb, pendingOf_cons (s := ⟨fr2, cs', s.mem⟩) hb2]
     simp only [LRes.lift]
-    exact callCont_relMU hE hP hsym hc (hk.mono fun a b m h => GRMU.of hR h)
+    exact callCont_relMUAt hE hP hsym hc (hk.mono fun a b m h => GRMU.of hR h)
       (by rw [(LStar.frame hst).2.1, hsl0]) (TabRelM.none' _ _ _)
   | ret vals =>
     right
@@ -439,7 +439,7 @@ theorem sim_step_lstepMU {syms : String → Option Nat} {env : Env} (hE : EnvKee
     simp only [LRes.lift]
     have hf := LStar.frame hst
     have hs := hS.frame hr
-    exact tailCont_relMU hE hP hsym hc (by rw [hf.1]; exact hs.2) (by rw [hf.2.1]; exact hs.1)
+    exact tailCont_relMUAt hE hP hsym hc (by rw [hf.1]; exact hs.2) (by rw [hf.2.1]; exact hs.1)
       (lstep_tail_returns hl)
   | trap c =>
     right
@@ -453,8 +453,8 @@ theorem sim_step_lstepMU {syms : String → Option Nat} {env : Env} (hE : EnvKee
     exact ⟨_, .refl _, XStepRelMU.stuck'⟩
 
 /-- **One source step where no callee unwinds** (`sim_stepU_core` with the memory). -/
-theorem sim_stepMU_core {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
-    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
+theorem sim_stepMU_coreAt {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
     (hR : IsSimMU syms R) {s : State} {ts : List (Option ExnTable)} {fr' : Frame}
     {cs' : List (Frame × List ValueId)} {ts' : List (Option ExnTable)}
     (hfr : R s.frame fr' s.mem ∨ JR (fun x y => R x y s.mem) s.frame fr')
@@ -469,7 +469,7 @@ theorem sim_stepMU_core {syms : String → Option Nat} {env : Env} (hE : EnvKeep
   rcases hfr with hr | ⟨hb, hb', bc, bc', ht, ht', hj⟩
   · have hsl0 := (hR.toIsSimM.frame hr).1
     by_cases hci : HeadNoCI s.frame
-    · exact sim_step_lstepMU hE hP hR hr hsym hc hci
+    · exact sim_step_lstepMUAt hE hP hR hr hsym hc hci
     right
     cases hb : s.frame.body with
     | cons st rest =>
@@ -492,7 +492,7 @@ theorem sim_stepMU_core {syms : String → Option Nat} {env : Env} (hE : EnvKeep
         rw [step_callIndirect' (s := ⟨fr2, cs', s.mem⟩) hb2 hi2, stepCallIndirect_eq,
           pendingOf_cons (s := ⟨fr2, cs', s.mem⟩) hb2]
         simp only [hca2, StepResult.ofRes_ok]
-        exact ciCont_relMU hE hP hsym hc (hk.mono fun a b m h => GRMU.of hR h)
+        exact ciCont_relMUAt hE hP hsym hc (hk.mono fun a b m h => GRMU.of hR h)
           (by rw [(LStar.frame hst).2.1, hsl0]) (TabRelM.none' _ _ _)
     | nil =>
       have hT : s.frame.term.isTry = true := by
@@ -525,7 +525,7 @@ theorem sim_stepMU_core {syms : String → Option Nat} {env : Env} (hE : EnvKeep
             simp only [ht2, stepTerm]
             rw [stepTryCall_eq]
             simp only [htc2, hca2, StepResult.ofRes_ok]
-            exact callCont_relMU (s := { s with frame := jumpFrame s.frame bc }) hE hP hsym hc
+            exact callCont_relMUAt (s := { s with frame := jumpFrame s.frame bc }) hE hP hsym hc
               (hk.toContMU hR)
               (show fr2.slots = s.frame.slots by rw [(LStar.frame hst).2.1, hsl0])
               ((TabRelM.ofH hR hh).bt [] [] (.jump bc) (.jump bc'))
@@ -552,7 +552,7 @@ theorem sim_stepMU_core {syms : String → Option Nat} {env : Env} (hE : EnvKeep
             simp only [ht2, stepTerm]
             rw [stepTryCallIndirect_eq]
             simp only [htc2, hca2, StepResult.ofRes_ok]
-            exact ciCont_relMU (s := { s with frame := jumpFrame s.frame bc }) hE hP hsym hc
+            exact ciCont_relMUAt (s := { s with frame := jumpFrame s.frame bc }) hE hP hsym hc
               (hk.toContMU hR)
               (show fr2.slots = s.frame.slots by rw [(LStar.frame hst).2.1, hsl0])
               ((TabRelM.ofH hR hh).bt [] [] (.jump bc) (.jump bc'))
@@ -569,5 +569,86 @@ theorem sim_stepMU_core {syms : String → Option Nat} {env : Env} (hE : EnvKeep
       simp only [hb1, StepResult.ofRes_ok]
       obtain ⟨_, _, _, _, _, _, _, rfl⟩ := enterBlock_ok he
       exact XStepRelMU.same' rfl hlen ⟨rfl, hsym, GRMU.of hR hr1, hc⟩
+
+/-! ## The statements for pointwise `FunSimMU` (every symbol table) -/
+
+theorem funSimMU_entry {syms f g} (h : FunSimMU f g) {vals mem fr mem'}
+    (hsym : mem.symbols = syms) (he : enterFunc f vals mem = .ok (fr, mem')) :
+    ∃ fr', enterFunc g vals mem = .ok (fr', mem') ∧ GRMU syms fr fr' mem' ∧
+      mem'.symbols = mem.symbols :=
+  funSimMUAt_entry (h.at syms) hsym he
+
+theorem callCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {s : State} {fr2 : Frame}
+    {cs' : List (Frame × List ValueId)} {ext : ExtFunc} {vals : List Val} {rs rs' : List ValueId}
+    {rest rest' : List Stmt} {t t' : Option ExnTable} {ts ts' : List (Option ExnTable)}
+    (hsym : s.mem.symbols = syms)
+    (hc : CallersRelMU syms (AbiParam.tys s.frame.func.sig.returns) s.callers ts cs' ts')
+    (hk : ContM syms (GRMU syms) { s.frame with body := rest } rs { fr2 with body := rest' } rs'
+      (AbiParam.tys ext.sig.returns))
+    (hsl : fr2.slots = s.frame.slots)
+    (hT : TabRelM syms { s.frame with body := rest } t { fr2 with body := rest' } t') :
+    XStepRelMU syms (liftWith s.callers.length t ts (callCont env p s rest rs ext vals))
+      (liftWith s.callers.length t' ts' (callCont env q ⟨fr2, cs', s.mem⟩ rest' rs' ext vals)) :=
+  callCont_relMUAt hE (hP.at syms) hsym hc hk hsl hT
+
+theorem tailCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {s : State} {fr2 : Frame}
+    {cs' : List (Frame × List ValueId)} {ext : ExtFunc} {vals : List Val}
+    {t t' : Option ExnTable} {ts ts' : List (Option ExnTable)}
+    (hsym : s.mem.symbols = syms)
+    (hc : CallersRelMU syms (AbiParam.tys s.frame.func.sig.returns) s.callers ts cs' ts')
+    (hsig : fr2.func.sig = s.frame.func.sig) (hsl : fr2.slots = s.frame.slots)
+    (hret : AbiParam.tys ext.sig.returns = AbiParam.tys s.frame.func.sig.returns) :
+    XStepRelMU syms (liftWith s.callers.length t ts (tailCont env p s ext vals))
+      (liftWith s.callers.length t' ts' (tailCont env q ⟨fr2, cs', s.mem⟩ ext vals)) :=
+  tailCont_relMUAt hE (hP.at syms) hsym hc hsig hsl hret
+
+theorem ciCont_relMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {s : State} {fr2 : Frame}
+    {cs' : List (Frame × List ValueId)} {sig sig' : Nat} {d : Signature} {a : Nat}
+    {vals : List Val} {rs rs' : List ValueId} {rest rest' : List Stmt}
+    {t t' : Option ExnTable} {ts ts' : List (Option ExnTable)}
+    (hsym : s.mem.symbols = syms)
+    (hc : CallersRelMU syms (AbiParam.tys s.frame.func.sig.returns) s.callers ts cs' ts')
+    (hk : ContM syms (GRMU syms) { s.frame with body := rest } rs { fr2 with body := rest' } rs'
+      (AbiParam.tys d.returns))
+    (hsl : fr2.slots = s.frame.slots)
+    (hT : TabRelM syms { s.frame with body := rest } t { fr2 with body := rest' } t') :
+    XStepRelMU syms (liftWith s.callers.length t ts (ciCont env p s rest rs sig d a vals))
+      (liftWith s.callers.length t' ts'
+        (ciCont env q ⟨fr2, cs', s.mem⟩ rest' rs' sig' d a vals)) :=
+  ciCont_relMUAt hE (hP.at syms) hsym hc hk hsl hT
+
+/-- One source step whose head is not a `call_indirect` nor a `try_call`
+(`sim_step_lstepU` with the memory). -/
+theorem sim_step_lstepMU {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
+    (hR : IsSimMU syms R) {s : State} {ts : List (Option ExnTable)} {fr' : Frame}
+    {cs' : List (Frame × List ValueId)} {ts' : List (Option ExnTable)}
+    (hr : R s.frame fr' s.mem) (hsym : s.mem.symbols = syms)
+    (hc : CallersRelMU syms (AbiParam.tys s.frame.func.sig.returns) s.callers ts cs' ts')
+    (hci : HeadNoCI s.frame) :
+    (∃ s1 s1', step env p s = .next s1 ∧ Stut env q ⟨fr', cs', s.mem⟩ s1' ∧
+      s1.callers = s.callers ∧ SRMU syms ⟨s1, ts⟩ ⟨s1', ts'⟩) ∨
+    (∃ s2, Stut env q ⟨fr', cs', s.mem⟩ s2 ∧
+      XStepRelMU syms (liftWith s.callers.length (pendingOf s) ts (step env p s))
+        (liftWith s.callers.length (pendingOf s2) ts' (step env q s2))) :=
+  sim_step_lstepMUAt hE (hP.at syms) hR hr hsym hc hci
+
+/-- **One source step where no callee unwinds** (`sim_stepU_core` with the memory). -/
+theorem sim_stepMU_core {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
+    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
+    (hR : IsSimMU syms R) {s : State} {ts : List (Option ExnTable)} {fr' : Frame}
+    {cs' : List (Frame × List ValueId)} {ts' : List (Option ExnTable)}
+    (hfr : R s.frame fr' s.mem ∨ JR (fun x y => R x y s.mem) s.frame fr')
+    (hsym : s.mem.symbols = syms)
+    (hc : CallersRelMU syms (AbiParam.tys s.frame.func.sig.returns) s.callers ts cs' ts') :
+    (∃ s1 s1', step env p s = .next s1 ∧ Stut env q ⟨fr', cs', s.mem⟩ s1' ∧
+      s1.callers = s.callers ∧ SRMU syms ⟨s1, ts⟩ ⟨s1', ts'⟩) ∨
+    (∃ s2, Stut env q ⟨fr', cs', s.mem⟩ s2 ∧
+      XStepRelMU syms (liftWith s.callers.length (pendingOf s) ts (step env p s))
+        (liftWith s.callers.length (pendingOf s2) ts' (step env q s2))) :=
+  sim_stepMU_coreAt hE (hP.at syms) hR hfr hsym hc
 
 end Opt
