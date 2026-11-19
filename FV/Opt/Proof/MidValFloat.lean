@@ -83,6 +83,23 @@ theorem evalInst_pureK_total {f : Function} {tm : ValueId → Option Ty} {fr : F
       exact evalInst_float_total hp hft hops
     all_goals simp [pureK, isPure, partialK] at hp hi hpart
 
+/-- `evalInst_pureK_total` under the validator's typing `pureTypedM` (`wfCheck`): a `bitcast` of
+an operand of the result's width evaluates too (`f32 ↔ i32`, `f64 ↔ i64`). -/
+theorem evalInst_pureK_totalM {f : Function} {tm : ValueId → Option Ty} {fr : Frame} {mem : Mem}
+    {i : Inst} (hp : pureK i = true) (hpart : partialK i = false)
+    (hpt : isPure i = true → pureTypedM tm f i = true) (hft : floatTyped tm i = true)
+    (hf : fr.func.globals = f.globals)
+    (hops : ∀ x ∈ operands i, ∃ a, fr.regs x = some a ∧ tm x = some a.ty)
+    (hsl : ∀ s, (f.slots.lookup s).isSome → (fr.slots.lookup s).isSome) :
+    ∃ v, evalInst fr mem i = .ok ([v], mem) := by
+  cases i
+  case bitcast ty fl x =>
+    have hb := hpt rfl
+    obtain ⟨a, ha, hta⟩ := hops x (by simp [operands])
+    simp only [pureTypedM, hta, beq_iff_eq] at hb
+    exact ⟨⟨ty, hb ▸ a.bits⟩, by simp [evalInst, Frame.get, ha, hb]⟩
+  all_goals exact evalInst_pureK_total hp hpart hpt hft hf hops hsl
+
 theorem pureK_not_call {i : Inst} (hp : pureK i = true) : ∀ fn args, i ≠ .call fn args := by
   rintro fn args rfl
   simp [pureK, isPure] at hp

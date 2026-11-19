@@ -144,7 +144,7 @@ theorem regs_after (H : Hyp f g fi gi cert norm) {vals : List Val} {regs : Regs}
     (hset : fr.regs.setMany st.results vals = some regs) :
     ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := by
   obtain ⟨b, hbi, hst, -⟩ := stmt_at hR hb
-  exact fun v hv => ((setMany_spec hset).2 v).1 (avail_not_result H.wff hbi hst hv)
+  exact fun v hv => ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hbi hst hv)
 
 /-- Terms with sites no later than `(bi, k)` keep their values. -/
 theorem TV_after (H : Hyp f g fi gi cert norm) {vals : List Val} {regs : Regs}
@@ -160,7 +160,7 @@ relation one statement later, with facts `S'` that are old facts or hold, with s
 than `(bi, k + 1)`, in the new frame. -/
 theorem rel_after (H : Hyp f g fi gi cert norm) {S' : List Fact} {vals : List Val} {regs : Regs}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hb : fr.body = st :: rest)
-    (hty : ∀ ts, st.inst.resultTypes (sigOf f) (fun _ => none) = some ts → vals.map (·.ty) = ts)
+    (hty : ∀ ts, st.inst.resultTypes (sigOf f) (sigDeclOf f) = some ts → vals.map (·.ty) = ts)
     (hpure : isPure st.inst = true → ∃ a, vals = [a] ∧ evalNode fr (symMem syms) st.inst = some a)
     (hset : fr.regs.setMany st.results vals = some regs)
     (hw : ∃ fb gb Send, f.blocks[bi]? = some fb ∧ g.blocks[bi]? = some gb ∧
@@ -173,7 +173,7 @@ theorem rel_after (H : Hyp f g fi gi cert norm) {S' : List Fact} {vals : List Va
     Rel f g fi gi cert norm syms bi (k + 1) k' S' { fr with regs, body := rest } fr' m := by
   obtain ⟨b, hbi, hst, hrest⟩ := stmt_at hR hb
   have hregs := regs_after H hR hb hset
-  refine ⟨?_, hR.invf.results H.wff hb hty hpure hset, hR.invg, hR.slots, fun x hx => ?_,
+  refine ⟨?_, H.wff.inv_results hR.invf hb hty hpure hset, hR.invg, hR.slots, fun x hx => ?_,
     fun y hy => ?_, fun y hy => (hR.sitesG y hy).mono (Nat.le_succ k), fun F hF => ?_,
     fun F hF => ?_⟩
   · obtain ⟨fb, gb, Send, hfb, hgb, hwk, he⟩ := hw
@@ -184,7 +184,7 @@ theorem rel_after (H : Hyp f g fi gi cert norm) {S' : List Fact} {vals : List Va
     refine ⟨fb, gb, Send, hfb, hgb, ?_, he⟩
     rw [hrest, ← hbody']
     exact hwk
-  · rcases avail_succ H.wff hbi hst hx with hr | hx'
+  · rcases H.wff.avail_succ hbi hst hx with hr | hx'
     · exact hres x hr
     · rw [TV_after H hR hb hset (H.siteF hx'), hR.agreeF x hx']
       exact (hregs x hx').symm
@@ -236,7 +236,7 @@ theorem rel_nop (H : Hyp f g fi gi cert norm)
     lstep fr m = .next { fr with body := rest } m ∧
       Rel f g fi gi cert norm syms bi (k + 1) k' S { fr with body := rest } fr' m := by
   obtain ⟨b, hbi, hst, -⟩ := stmt_at hR hb
-  have h0 : (Inst.nop).resultTypes (sigOf f) (fun _ => none) = some [] := rfl
+  have h0 : (Inst.nop).resultTypes (sigOf f) (sigDeclOf f) = some [] := rfl
   have hres : st.results = [] := by
     obtain ⟨ts, hts, hlen, -⟩ := H.wff.results bi b hbi k st hst
     rw [hn, h0] at hts
@@ -277,7 +277,7 @@ theorem rel_pure (H : Hyp f g fi gi cert norm)
   have hev : (∃ v, evalInst fr m st.inst = .ok ([v], m)) ∨
       ∃ msg, evalInst fr m st.inst = .stuck msg := by
     cases hpart : partialK st.inst
-    · exact .inl (evalInst_pureK_total hp hpart (H.wff.pure bi b hbi k st hst) hP.typed
+    · exact .inl (evalInst_pureK_totalM hp hpart (H.wff.pure bi b hbi k st hst) hP.typed
         (by rw [hR.invf.func]) (fun x hx => hR.invf.regs x (hav x hx)) hR.invf.slots)
     · exact evalInst_partialK hpart
   rcases hev with ⟨v, hv⟩ | ⟨msg, hmsg⟩
@@ -413,7 +413,7 @@ theorem rel_remove (H : Hyp f g fi gi cert norm)
     have hgp := hget p0 (by rw [hi0]; simp [operands]) av ha
     have hgx := hget x0 (by rw [hi0]; simp [operands]) xv hxv
     have hres0 : st.results = [] := by
-      have h0 : st.inst.resultTypes (sigOf f) (fun _ => none) = some [] := by rw [hi0]; rfl
+      have h0 : st.inst.resultTypes (sigOf f) (sigDeclOf f) = some [] := by rw [hi0]; rfl
       rw [h0] at hts
       cases hts
       exact List.eq_nil_of_length_eq_zero hlen.symm

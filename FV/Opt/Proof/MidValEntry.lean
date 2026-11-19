@@ -32,6 +32,14 @@ theorem entry_param {f : Function} {W : WfData} (hW : Wf f W) {v : ValueId} (hv 
   obtain ⟨i, hi⟩ := param_index hp
   exact ⟨b, p, i, hb, hi, hpv⟩
 
+/-- `entry_param` for the facts `WfM` of `wfCheck`. -/
+theorem entry_paramM {f : Function} {W : WfData} (hW : WfM f W) {v : ValueId} (hv : Avail W 0 0 v) :
+    ∃ (b : Block) (p : ValueId × Ty) (i : Nat), f.blocks[0]? = some b ∧ b.params[i]? = some p ∧
+      p.1 = v := by
+  obtain ⟨b, p, hb, hp, hpv⟩ := hW.site_param' (hW.avail_entry hv)
+  obtain ⟨i, hi⟩ := param_index hp
+  exact ⟨b, p, i, hb, hi, hpv⟩
+
 /-- **Function entry.** -/
 theorem rel_entry {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
     (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {b b' : Block}
@@ -47,20 +55,20 @@ theorem rel_entry {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
   obtain ⟨-, hbo⟩ := H.ok.blocks 0 b b' hb0 hb0'
   have hB := blockOk_spec hbo
   obtain ⟨Send, hw, hend⟩ := hB.walk
-  refine ⟨⟨b, b', Send, hb0, hb0', by simpa using hw, hend⟩, Inv.entry H.wff hb hty hr hsl,
-    Inv.entry H.wfg hb' (by rw [hp]; exact hty) (by rw [hp]; exact hr)
+  refine ⟨⟨b, b', Send, hb0, hb0', by simpa using hw, hend⟩, H.wff.inv_entry hb hty hr hsl,
+    H.wfg.inv_entry hb' (by rw [hp]; exact hty) (by rw [hp]; exact hr)
       (by rw [hsl, H.ok.slots]), rfl, ?_, ?_, ?_, ?_, ?_⟩
   · intro x hx
-    obtain ⟨b0, p, i, h0, hpi, rfl⟩ := entry_param H.wff hx
+    obtain ⟨b0, p, i, h0, hpi, rfl⟩ := entry_paramM H.wff hx
     rw [hb0] at h0; cases h0
     exact tv_param (hB.paramsF i p hpi) hb0 hpi
   · intro y hy
-    obtain ⟨b0, p, i, h0, hpi, rfl⟩ := entry_param H.wfg hy
+    obtain ⟨b0, p, i, h0, hpi, rfl⟩ := entry_paramM H.wfg hy
     rw [hb0'] at h0; cases h0
     have hpi' : b.params[i]? = some p := by rw [← hp]; exact hpi
     exact tv_param (hB.paramsG i p hpi) hb0 hpi'
   · intro y hy
-    obtain ⟨b0, p, i, h0, hpi, rfl⟩ := entry_param H.wfg hy
+    obtain ⟨b0, p, i, h0, hpi, rfl⟩ := entry_paramM H.wfg hy
     rw [hb0'] at h0; cases h0
     have ht := hB.paramsG i p hpi
     have := CC.tmOk_atom (CC.tmsOk_get H.ok.tms ht) (s := (0, 0)) rfl

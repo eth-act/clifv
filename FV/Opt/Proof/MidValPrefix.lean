@@ -110,7 +110,7 @@ theorem gStep (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
   -- values available before the statement are not its results
   have hnot : ∀ y, Avail (wfData g gi) bi k' y → y ∉ st.results := by
     intro y ⟨d, t, hy, hya⟩ hr
-    rw [site_result hW hgb hst hr] at hy
+    rw [hW.site_result hgb hst hr] at hy
     simp only [Option.some.injEq, Prod.mk.injEq] at hy
     obtain ⟨rfl, rfl⟩ := hy
     rcases hya with ⟨_, ht⟩ | ⟨hne, _⟩
@@ -119,12 +119,12 @@ theorem gStep (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
   -- values defined right after the statement are its results
   have hin : ∀ y, (wfData g gi).dm y = some (bi, k' + 1) → y ∈ st.results := by
     intro y hy
-    obtain ⟨b', st', hb2, hst', hr'⟩ := site_stmt hW hy
+    obtain ⟨b', st', hb2, hst', hr'⟩ := hW.site_stmt hy
     rw [hgb] at hb2; cases hb2
     rw [hst] at hst'; cases hst'
     exact hr'
   refine ⟨_, hstep, rfl, rfl, rfl, rfl,
-    Inv.results hW hinv hb (fun ts hts => evalInst_types hev hts) hpure hset,
+    hW.inv_results hinv hb (fun ts hts => evalInst_types hev hts) hpure hset,
     fun y hy => ?_, fun y hy => ?_⟩
   · show _ = regs y
     rcases avail_succ hy with hd | hy'
@@ -196,7 +196,7 @@ theorem gStmt (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {bi k
     have hval : ∃ v, evalNode fr' (symMem syms) st.inst = some v ∧
         evalInst fr' m st.inst = .ok ([v], m) := by
       cases hq : partialK st.inst
-      · obtain ⟨v, hv⟩ := evalInst_pureK_total (f := g) (tm := (wfData g gi).tm) hp hq
+      · obtain ⟨v, hv⟩ := evalInst_pureK_totalM (f := g) (tm := (wfData g gi).tm) hp hq
           (hW.pure bi gb hgb k' st hst) hpo.typed (by rw [hinv.func])
           (fun x hx => hinv.regs x (hops x hx)) hinv.slots
         refine ⟨v, ?_, hv⟩

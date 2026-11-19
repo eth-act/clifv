@@ -64,7 +64,7 @@ structure Cert where
   deriving Repr, Inhabited
 
 /-- What `checkCert` reads besides the certificate: `f`'s dominator tree and block index,
-the value types of both functions (`Opt.check`), the normaliser. -/
+the value types of both functions (`wfCheck`), the normaliser. -/
 structure CC where
   idom : Array (Option Nat)
   index : BlockId → Option Nat
@@ -236,7 +236,7 @@ end CC
 /-- **The re-check of the certificate** (module doc): what the soundness theorem is about. -/
 def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
   sameHeader f g && g.sigDecls == f.sigDecls &&
-  match Opt.check f, Opt.check g with
+  match wfCheck f, wfCheck g with
   | .ok fi, .ok gi =>
     g.blocks.map (·.id) == f.blocks.map (·.id) &&
     g.blocks.head?.map (·.params) == f.blocks.head?.map (·.params) && gi.cfg.idom == fi.cfg.idom &&

@@ -3,7 +3,7 @@ import FV.Opt.Proof.MidValTerm
 /-!
 # What `checkCert` checks, as propositions (#1119, module (5), part 1)
 
-`checkCert_spec`: `checkCert f g cert norm = true` gives `Opt.check`'s info of both functions
+`checkCert_spec`: `checkCert f g cert norm = true` gives `wfCheck`'s info of both functions
 and `CertOk`, the facts of `FV/Opt/MidValCert.lean` the simulation proof reads: equal headers,
 equal block ids and dominator trees, a well-formed term table, no facts at the entry, the static
 sites, and every block's `entryOk`/`blockOk`.
@@ -71,7 +71,7 @@ theorem CC.blocksOk_spec (c : CC) : ∀ (fbs gbs : List Block) (n : Nat), c.bloc
 /-- **Unpacking `checkCert`.** -/
 theorem checkCert_spec {f g : Function} {cert : Cert} {norm : Norm}
     (h : checkCert f g cert norm = true) :
-    ∃ fi gi, Opt.check f = .ok fi ∧ Opt.check g = .ok gi ∧ CertOk f g fi gi cert norm := by
+    ∃ fi gi, wfCheck f = .ok fi ∧ wfCheck g = .ok gi ∧ CertOk f g fi gi cert norm := by
   unfold checkCert at h
   simp only [Bool.and_eq_true] at h
   obtain ⟨⟨hh, hd⟩, hm⟩ := h
