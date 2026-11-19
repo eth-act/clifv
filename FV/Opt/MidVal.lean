@@ -1,0 +1,473 @@
+import FV.Opt.Check
+
+/-!
+# `Opt.MidVal`: a per-function validator for Cranelift's mid-end, without rewrite rules (#1119)
+
+`check f g` decides whether `g` (cg_clif's optimised dump, the output of Cranelift's
+`Context::optimize` at `opt_level=speed_and_size`) can stand for `f` (the unoptimised dump after
+`Opt.ConstPhi.run`, i.e. after Cranelift's own `eliminate_unreachable_code` and
+`remove_constant_phis`). Cranelift's mid-end is not trusted and not re-implemented: the checker
+only compares the pair. This file is the executable definition (stage 1 of #1119: measurement
+first); the soundness theorem is stated in `docs/contracts/midval.md`.
+
+What it accepts (every other difference is a rejection with a reason, `Reject`):
+
+* **Same skeleton, same CFG.** Both functions have the same header and the same blocks (ids,
+  order, parameter types). Per block, the *skeleton* statements (everything that is not a
+  `pureK` node: memory accesses, calls, traps, trapping arithmetic, multi-result instructions)
+  appear in the same order and are equal once every operand is replaced by its *term*, and the
+  terminators are equal the same way.
+* **Terms** (`Tm`, hash-consed): a block parameter is `param b i`, a skeleton result is
+  `res b k j` (statement `k` of `f`'s block `b`), a pure node is `node i` with term operands.
+  Both sides get terms from their own definitions, so value renaming, value aliases, GVN,
+  removal of dead pure nodes and any placement of pure nodes (hoisting, sinking,
+  rematerialised constants) are invisible. Pure nodes that can be `stuck` in `Clif.run`
+  (`symbol_value`, `func_addr`, `tls_value`, `partialK`) are accepted in `g` only where `f`
+  evaluated the same term no later (same block and no later skeleton segment, or a dominating
+  block).
+* **Removed skeleton statements of `f`** (`g` has no counterpart):
+  - a load whose location is known (`Key`: memory version, address term, offset, type, access
+    kind, explicit byte order) from a dominating store or load of the same version: its result
+    is the known value (redundant-load elimination, store-to-load forwarding);
+  - a store of the value already known at its location: memory is unchanged (idempotent store);
+  - a load without a trap code (`notrap`): its result becomes an opaque `poison` term that no
+    compared position may use (`Clif.run` is `stuck` on a bad `notrap` access, never traps);
+  - a trapping instruction with idempotent effects (`udiv`/`sdiv`/`urem`/`srem`,
+    `uadd_overflow_trap`, `trapz`/`trapnz`, `fcvt_to_{u,s}int`) equal to a dominating one: its
+    result is the earlier one's.
+* **Memory versions** (`versions`, on `g`): Cranelift 0.135.0's `LastStores` with one region
+  (cg_clif sets no alias region): a store, call, `call_indirect`, atomic, `fence` or
+  `try_call`/`try_call_indirect` starts a new version; at a block whose predecessors end in
+  different versions a new version (`merge b`) starts. Explicit traps keep the version. Removed
+  stores of `f` are idempotent (memory unchanged), so `g`'s versions are `f`'s memory states.
+
+Not accepted (stage 1): any ISLE rewrite (new pure terms at compared positions, changed
+terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
+-/
+
+namespace Opt.MidVal
+
+open Clif
+
+/-! ## Terms, versions, memory locations -/
+
+/-- A symbolic value (module doc). `node` holds an instruction whose operands are term ids. -/
+inductive Tm where
+  | param (b i : Nat)
+  | res (b k j : Nat)
+  | node (i : Inst)
+  | poison (b k : Nat)
+  deriving BEq, Hashable, Repr, Inhabited
+
+/-- A memory version (`LastStores::last_fence`): the function entry, the writer at statement
+`k` of block `b` (`k` = body length: the block's `try_call` terminator), or the merge at the
+entry of block `b`. -/
+inductive Ver where
+  | entry
+  | at (b k : Nat)
+  | merge (b : Nat)
+  deriving BEq, DecidableEq, Hashable, Repr, Inhabited
+
+/-- The access kind of a memory location (Cranelift's `extending_opcode`): `load`/`store`
+share `plain`; an extending load or a narrow store has its own. -/
+inductive Kind where
+  | plain
+  | ld (op : LoadOp)
+  | st (op : StoreOp)
+  deriving BEq, DecidableEq, Hashable, Repr, Inhabited
+
+/-- A memory location at a version (Cranelift's `MemoryLoc`; the address is a term). -/
+structure Key where
+  ver : Ver
+  addr : Nat
+  off : Int
+  ty : Ty
+  kind : Kind
+  endian : Option Endianness
+  deriving BEq, Hashable, Repr
+
+def loadKind : LoadOp → Kind
+  | .load => .plain
+  | op => .ld op
+
+def storeKind : StoreOp → Kind
+  | .store => .plain
+  | op => .st op
+
+/-! ## Instruction classes -/
+
+/-- Single-result, memory-free, non-trapping instructions: they may be placed anywhere their
+operands are available (Cranelift's `is_pure_for_egraph` minus loads). -/
+def pureK (i : Inst) : Bool :=
+  isPure i || match i with
+    | .funcAddr .. | .tlsValue .. => true
+    | .float op _ _ => op != .fcvtToUint && op != .fcvtToSint
+    | _ => false
+
+/-- Pure nodes whose evaluation can be `stuck` (a symbol missing from the link-time image). -/
+def partialK : Inst → Bool
+  | .symbolValue .. | .funcAddr .. | .tlsValue .. => true
+  | _ => false
+
+/-- Trapping instructions with idempotent effects (Cranelift's `side_effects_idempotent`):
+a second copy with the same operands neither traps nor changes anything. -/
+def mergeK : Inst → Bool
+  | .div .. | .uaddOverflowTrap .. | .trapz .. | .trapnz .. => true
+  | .float op _ _ => op == .fcvtToUint || op == .fcvtToSint
+  | _ => false
+
+/-- Instructions that start a new memory version. -/
+def writerK : Inst → Bool
+  | .store .. | .atomicRmw .. | .atomicCas .. | .atomicLoad .. | .atomicStore .. | .fence
+  | .call .. | .callIndirect .. => true
+  | _ => false
+
+/-- The shape of an instruction (operands erased). -/
+def shape (i : Inst) : Inst := mapOperands (fun _ => 0) i
+
+/-- A short opcode name for reasons. -/
+def opName (i : Inst) : String :=
+  match i with
+  | .iconst .. => "iconst" | .unary .. => "unary" | .binary .. => "binary" | .div .. => "div"
+  | .overflow .. => "overflow" | .carry .. => "carry" | .uaddOverflowTrap .. => "uadd_overflow_trap"
+  | .icmp .. => "icmp" | .select .. => "select" | .selectSpectreGuard .. => "select_spectre_guard"
+  | .bitselect .. => "bitselect" | .bmask .. => "bmask" | .extend .. => "extend"
+  | .ireduce .. => "ireduce" | .iconcat .. => "iconcat" | .isplit .. => "isplit"
+  | .load .. => "load" | .store .. => "store" | .stackAddr .. => "stack_addr" | .call .. => "call"
+  | .callIndirect .. => "call_indirect" | .funcAddr .. => "func_addr"
+  | .atomicRmw .. => "atomic_rmw" | .atomicCas .. => "atomic_cas" | .atomicLoad .. => "atomic_load"
+  | .atomicStore .. => "atomic_store" | .fence => "fence" | .bitcast .. => "bitcast"
+  | .trapz .. => "trapz" | .trapnz .. => "trapnz" | .nop => "nop"
+  | .symbolValue .. => "symbol_value" | .tlsValue .. => "tls_value" | .float op _ _ => op.name
+
+def termName : Terminator → String
+  | .jump .. => "jump" | .brif .. => "brif" | .brTable .. => "br_table" | .ret .. => "return"
+  | .returnCall .. => "return_call" | .trap .. => "trap" | .tryCall .. => "try_call"
+  | .tryCallIndirect .. => "try_call_indirect"
+
+/-! ## Memory versions (on `g`) -/
+
+def meetV (b : Nat) : Option Ver → Ver → Ver
+  | none, v => v
+  | some u, v => if u == v then u else .merge b
+
+/-- The version at the end of block `bi` entered at version `v`. -/
+def exitVer (bi : Nat) (blk : Block) (v : Ver) : Ver := Id.run do
+  let mut v := v
+  for (st, k) in blk.body.zipIdx do
+    if writerK st.inst then v := .at bi k
+  if blk.term.isTry then v := .at bi blk.body.length
+  return v
+
+/-- Entry version of every block (Cranelift's `compute_block_input_states`, one region): a
+fixpoint over the CFG; a block whose predecessors disagree gets `merge`. -/
+def versions (g : Function) (cfg : Cfg) : Array Ver := Id.run do
+  let blocks := g.blocks.toArray
+  let n := blocks.size
+  let mut ins : Array (Option Ver) := (Array.replicate n none).set! 0 (some .entry)
+  for _ in [0:2 * n + 2] do
+    let mut changed := false
+    for bi in cfg.rpo do
+      match ins[bi]?.join, blocks[bi]? with
+      | some v, some blk =>
+        let o := exitVer bi blk v
+        for s in termSuccs blk.term do
+          match cfg.index.get? s with
+          | some si =>
+            let old := ins[si]?.join
+            let new := if si == 0 then .merge 0 else meetV si old o
+            if old != some new then
+              ins := ins.set! si (some new)
+              changed := true
+          | none => pure ()
+      | _, _ => pure ()
+    if !changed then break
+  return ins.map (·.getD (.merge 0))
+
+/-! ## Dominator tree intervals -/
+
+/-- Preorder/postorder numbers of the dominator tree (from `idom`): `a` dominates `b` iff
+`pre a ≤ pre b ∧ post b ≤ post a`. Also the preorder itself. -/
+def domIntervals (idom : Array (Option Nat)) : Array Nat × Array Nat × Array Nat := Id.run do
+  let n := idom.size
+  let mut kids : Array (Array Nat) := Array.replicate n #[]
+  for b in [0:n] do
+    if let some (some a) := idom[b]? then kids := kids.modify a (·.push b)
+  let mut pre := Array.replicate n 0
+  let mut post := Array.replicate n 0
+  let mut order : Array Nat := #[]
+  let mut stack : Array (Nat × Nat) := #[(0, 0)]
+  let mut c := 0
+  for _ in [0:2 * n + 2] do
+    match stack.back? with
+    | none => break
+    | some (b, i) =>
+      if i == 0 then
+        pre := pre.set! b c
+        c := c + 1
+        order := order.push b
+      match (kids[b]!)[i]? with
+      | some k =>
+        stack := stack.pop.push (b, i + 1) |>.push (k, 0)
+      | none =>
+        post := post.set! b c
+        c := c + 1
+        stack := stack.pop
+  return (pre, post, order)
+
+/-! ## The check -/
+
+/-- Why a pair is rejected: a class (`rewrite:…`, `alias:…`, `placement`, `shape:…`, `wf:…`)
+and a detail. -/
+abbrev Reject := String
+
+structure St where
+  tms : Array Tm := #[]
+  ids : Std.HashMap Tm Nat := {}
+  envF : Std.HashMap ValueId Nat := {}
+  envG : Std.HashMap ValueId Nat := {}
+  /-- Known memory values: location ↦ (value term, defining block). -/
+  facts : Std.HashMap Key (Array (Nat × Nat)) := {}
+  /-- Idempotent trapping instructions: node term ↦ (result term, defining block). -/
+  merges : Std.HashMap Nat (Array (Option Nat × Nat)) := {}
+  /-- Partial pure terms `f` evaluates: term ↦ (block, skeleton segment). -/
+  partials : Std.HashMap Nat (Array (Nat × Nat)) := {}
+
+abbrev M := StateT St (Except Reject)
+
+def intern (t : Tm) : M Nat := do
+  let s ← get
+  match s.ids.get? t with
+  | some i => pure i
+  | none =>
+    let i := s.tms.size
+    set { s with tms := s.tms.push t, ids := s.ids.insert t i }
+    pure i
+
+/-- The term of `v` on one side. -/
+def termOf (env : Std.HashMap ValueId Nat) (side : String) (v : ValueId) : Except Reject Nat :=
+  match env.get? v with
+  | some t => pure t
+  | none => throw s!"wf:undefined {side} v{v}"
+
+def mapM' (env : Std.HashMap ValueId Nat) (side : String) (i : Inst) : Except Reject Inst := do
+  for v in operands i do discard (termOf env side v)
+  pure (mapOperands (fun v => env.getD v 0) i)
+
+def mapTermM (env : Std.HashMap ValueId Nat) (side : String) (t : Terminator) :
+    Except Reject Terminator := do
+  for v in termOperands t do discard (termOf env side v)
+  pure (mapTerm (fun v => env.getD v 0) t)
+
+/-- Context of one function pair. -/
+structure Ctx where
+  pre : Array Nat
+  post : Array Nat
+  ver : Array Ver
+
+def Ctx.dom (c : Ctx) (a b : Nat) : Bool :=
+  c.pre[a]! ≤ c.pre[b]! && c.post[b]! ≤ c.post[a]!
+
+/-- The instruction of a `node` term (`nop` otherwise; reasons only). -/
+def Tm.inst : Tm → Inst
+  | .node i => i
+  | _ => .nop
+
+/-- A fact at `key` usable in block `b`. -/
+def lookupFact (c : Ctx) (key : Key) (b : Nat) : M (Option Nat) := do
+  let s ← get
+  pure <| ((s.facts.getD key #[]).find? fun (_, d) => c.dom d b).map (·.1)
+
+def addFact (key : Key) (t b : Nat) : M Unit :=
+  modify fun s => { s with facts := s.facts.insert key ((s.facts.getD key #[]).push (t, b)) }
+
+/-- The memory location an access of `f` (term operands) reads or writes. -/
+def keyOf (ver : Ver) : Inst → Option (Key × Option Nat)
+  | .load op ty fl p off => some ({ ver, addr := p, off, ty, kind := loadKind op, endian := fl.endianness }, none)
+  | .store op ty fl x p off => some ({ ver, addr := p, off, ty, kind := storeKind op, endian := fl.endianness }, some x)
+  | _ => none
+
+/-- Bind the results of a pure statement on one side. -/
+def bindPure (side : String) (st : Stmt) (bi seg : Nat) (fSide : Bool) : M Unit := do
+  let s ← get
+  let env := if fSide then s.envF else s.envG
+  let i ← StateT.lift (mapM' env side st.inst)
+  let t ← intern (.node i)
+  match st.results with
+  | [r] =>
+    if fSide then
+      modify fun s => { s with envF := s.envF.insert r t }
+      if partialK st.inst then
+        modify fun s => { s with partials := s.partials.insert t ((s.partials.getD t #[]).push (bi, seg)) }
+    else
+      modify fun s => { s with envG := s.envG.insert r t }
+  | _ => throw s!"wf:pure arity {side}"
+
+def bindRes (fSide : Bool) (rs : List ValueId) (bi k : Nat) : M (List Nat) := do
+  let mut ts := []
+  for (r, j) in rs.zipIdx do
+    let t ← intern (.res bi k j)
+    ts := ts ++ [t]
+    if fSide then modify fun s => { s with envF := s.envF.insert r t }
+    else modify fun s => { s with envG := s.envG.insert r t }
+  pure ts
+
+/-- Check one block (layout index `bi`). -/
+def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
+  if fb.params.map (·.2) != gb.params.map (·.2) then throw s!"shape:params block{fb.id}"
+  for ((p, _), i) in fb.params.zipIdx do
+    let t ← intern (.param bi i)
+    modify fun s => { s with envF := s.envF.insert p t }
+  for ((p, _), i) in gb.params.zipIdx do
+    let t ← intern (.param bi i)
+    modify fun s => { s with envG := s.envG.insert p t }
+  let fs := fb.body.toArray
+  let gs := gb.body.toArray
+  let mut k := 0
+  let mut k' := 0
+  let mut seg := 0
+  let mut ver := c.ver[bi]!
+  -- partial pure terms of `g` awaiting the segment of the next match
+  let mut pend : Array Nat := #[]
+  for _ in [0:fs.size + gs.size + 2] do
+    -- pure runs
+    while k < fs.size do
+      let st := fs[k]!
+      if st.inst == .nop then
+        k := k + 1
+        continue
+      if !pureK st.inst then break
+      bindPure "f" st bi seg true
+      k := k + 1
+    while k' < gs.size do
+      let st := gs[k']!
+      if st.inst == .nop then
+        k' := k' + 1
+        continue
+      if !pureK st.inst then break
+      bindPure "g" st bi seg false
+      if partialK st.inst then
+        if let [r] := st.results then
+          pend := pend.push ((← get).envG.getD r 0)
+      k' := k' + 1
+    match fs[k]?, gs[k']? with
+    | none, none => break
+    | some s, gt? =>
+      let s' ← StateT.lift (mapM' (← get).envF "f" s.inst)
+      let matched ← match gt? with
+        | some t => do
+          let t' ← StateT.lift (mapM' (← get).envG "g" t.inst)
+          pure (s' == t' && s.results.length == t.results.length)
+        | none => pure false
+      if matched then
+        let some t := gt? | throw "wf:internal"
+        -- pending partial terms of `g` are evaluated before this statement
+        for pt in pend do
+          let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
+            (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
+          if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
+        pend := #[]
+        let ts ← bindRes true s.results bi k
+        discard (bindRes false t.results bi k)
+        if writerK s.inst then ver := .at bi k'
+        if let some (key, dat?) := keyOf ver s' then
+          match dat? with
+          | none => addFact key (ts.headD 0) bi
+          | some x => addFact key x bi
+        if mergeK s.inst then
+          let nt ← intern (.node s')
+          modify fun st => { st with merges := st.merges.insert nt ((st.merges.getD nt #[]).push (ts.head?, bi)) }
+        k := k + 1
+        k' := k' + 1
+        seg := seg + 1
+      else
+        -- `f`'s statement has no counterpart in `g`
+        match s' with
+        | .load _ _ fl _ _ =>
+          let some (key, _) := keyOf ver s' | throw "wf:internal"
+          match ← lookupFact c key bi with
+          | some v =>
+            if let [r] := s.results then modify fun st => { st with envF := st.envF.insert r v }
+            else throw "wf:load arity"
+          | none =>
+            if fl.trapCode.isNone then
+              let p ← intern (.poison bi k)
+              if let [r] := s.results then modify fun st => { st with envF := st.envF.insert r p }
+            else
+              match gt? with
+              | some t => if (shape t.inst) == shape s.inst then
+                  throw s!"rewrite:operand load block{fb.id}"
+                else throw s!"alias:load block{fb.id}"
+              | none => throw s!"alias:load block{fb.id}"
+        | .store _ _ _ x _ _ =>
+          let some (key, _) := keyOf ver s' | throw "wf:internal"
+          match ← lookupFact c key bi with
+          | some v => if v != x then
+              match gt? with
+              | some t => if shape t.inst == shape s.inst then throw s!"rewrite:operand store block{fb.id}"
+                else throw s!"alias:store block{fb.id}"
+              | none => throw s!"alias:store block{fb.id}"
+          | none =>
+            match gt? with
+            | some t => if shape t.inst == shape s.inst then throw s!"rewrite:operand store block{fb.id}"
+              else throw s!"alias:store block{fb.id}"
+            | none => throw s!"alias:store block{fb.id}"
+        | i =>
+          if mergeK i then
+            let nt ← intern (.node s')
+            match ((← get).merges.getD nt #[]).find? (fun (_, d) => c.dom d bi) with
+            | some (rt, _) =>
+              match s.results, rt with
+              | [r], some v => modify fun st => { st with envF := st.envF.insert r v }
+              | [], _ => pure ()
+              | _, _ => throw "wf:merge arity"
+            | none =>
+              match gt? with
+              | some t => if shape t.inst == shape s.inst then throw s!"rewrite:operand {opName i} block{fb.id}"
+                else throw s!"rewrite:skeleton-removed {opName i} block{fb.id}"
+              | none => throw s!"rewrite:skeleton-removed {opName i} block{fb.id}"
+          else
+            match gt? with
+            | some t =>
+              if shape t.inst == shape s.inst then throw s!"rewrite:operand {opName i} block{fb.id}"
+              else match t.inst with
+                | .load _ _ fl _ _ => if fl.canMove then throw s!"alias:load-moved block{fb.id}"
+                  else throw s!"rewrite:skeleton {opName i}/{opName t.inst} block{fb.id}"
+                | _ => throw s!"rewrite:skeleton {opName i}/{opName t.inst} block{fb.id}"
+            | none => throw s!"rewrite:skeleton-removed {opName i} block{fb.id}"
+        k := k + 1
+        seg := seg + 1
+    | none, some t =>
+      match t.inst with
+      | .load _ _ fl _ _ => if fl.canMove then throw s!"alias:load-moved block{fb.id}"
+        else throw s!"rewrite:skeleton-added load block{fb.id}"
+      | i => throw s!"rewrite:skeleton-added {opName i} block{fb.id}"
+  for pt in pend do
+    let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
+      (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
+    if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
+  let ft ← StateT.lift (mapTermM (← get).envF "f" fb.term)
+  let gt ← StateT.lift (mapTermM (← get).envG "g" gb.term)
+  if ft != gt then
+    if termName fb.term == termName gb.term && termSuccs fb.term == termSuccs gb.term then
+      throw s!"rewrite:operand {termName fb.term} block{fb.id}"
+    else throw s!"rewrite:term {termName fb.term}/{termName gb.term} block{fb.id}"
+
+/-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
+`g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. -/
+def check (f g : Function) : Except Reject Unit := do
+  if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
+  let fi ← (Opt.check f).mapError (s!"wf:f {·}")
+  let gi ← (Opt.check g).mapError (s!"wf:g {·}")
+  if g.blocks.map (·.id) != f.blocks.map (·.id) then throw "rewrite:blocks"
+  if gi.cfg.idom != fi.cfg.idom then throw "rewrite:domtree"
+  let (pre, post, order) := domIntervals fi.cfg.idom
+  let c : Ctx := { pre, post, ver := versions g gi.cfg }
+  let fbs := f.blocks.toArray
+  let gbs := g.blocks.toArray
+  let go : M Unit := do
+    for bi in order do
+      checkBlock c bi fbs[bi]! gbs[bi]!
+  discard (go.run {})
+
+end Opt.MidVal
