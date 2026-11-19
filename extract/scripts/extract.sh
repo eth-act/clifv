@@ -16,6 +16,9 @@ patterns() { [ -f "$1" ] && grep -v '^\s*#' "$1" | grep -v '^\s*$' | cut -f1; }
 
 args=(--preset=aeneas --sysroot default
   --start-from crate::compile_aarch64 --start-from crate::triple
+  # FxHasher overrides Hasher::write_u8..write_usize; their callers are std `Hash` impls (library
+  # models, no bodies), so Charon never translates them: translate all methods the impl defines.
+  --start-from '{impl core::hash::Hasher for rustc_hash::FxHasher}::_'
   --include cranelift_codegen --include cranelift_reader --include cranelift_entity
   --include cranelift_bforest --include cranelift_bitset --include cranelift_control
   --include cranelift_codegen_shared --include wasmtime_internal_core
