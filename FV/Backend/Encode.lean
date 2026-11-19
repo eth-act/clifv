@@ -171,6 +171,10 @@ def armBits : ArmInst → BitVec 32
   | .DPSFP (.FP_compare x) =>
     x.M ++ 0#1 ++ x.S ++ 0b11110#5 ++ x.ftype ++ 1#1 ++ x.Rm ++ x.op ++ 0b1000#4 ++ x.Rn ++
       x.opcode2
+  | .DPSFP (.Advanced_simd_shift_by_immediate x) =>
+    0#1 ++ x.Q ++ x.U ++ 0b011110#6 ++ x.immh ++ x.immb ++ x.opcode ++ 1#1 ++ x.Rn ++ x.Rd
+  | .DPSFP (.Advanced_simd_scalar_shift_by_immediate x) =>
+    0b01#2 ++ x.U ++ 0b111110#6 ++ x.immh ++ x.immb ++ x.opcode ++ 1#1 ++ x.Rn ++ x.Rd
   -- C4.1 Loads and Stores
   | .LDST (.Reg_imm_post_indexed x) =>
     x.size ++ 0b111#3 ++ x.V ++ 0b00#2 ++ x.opc ++ 0#1 ++ x.imm9 ++ 0b01#2 ++ x.Rn ++ x.Rt
@@ -198,7 +202,10 @@ def armBits : ArmInst → BitVec 32
 /-- `a` with every `_fixed` field reset to the value the decoder puts there (the structure's
 default): the fields `armBits` ignores. Identity on every value `Insn.armFields` builds (they
 are structure literals that leave `_fixed` at its default); `decode_raw_inst (armBits a) =
-some a.norm` for every `a` (`Backend.decode_armBits`, `FV/Backend/Proof/Encode.lean`). -/
+some a.norm` for every `a` (`Backend.decode_armBits`, `FV/Backend/Proof/Encode.lean`). The one
+class whose words overlap another class's: an Advanced SIMD shift by immediate with
+`immh = 0000` is the word of an Advanced SIMD modified immediate (`SEE(asimdimm)`), and `norm`
+returns that instruction. -/
 def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .DPI (.Add_sub_imm x) =>
     .DPI (.Add_sub_imm { sf := x.sf, op := x.op, S := x.S, sh := x.sh, imm12 := x.imm12,
@@ -301,6 +308,22 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .DPSFP (.FP_compare x) =>
     .DPSFP (.FP_compare { M := x.M, S := x.S, ftype := x.ftype, Rm := x.Rm, op := x.op,
                           Rn := x.Rn, opcode2 := x.opcode2 })
+  | .DPSFP (.Advanced_simd_shift_by_immediate x) =>
+    if x.immh = 0#4 then
+      .DPSFP (.Advanced_simd_modified_immediate
+        { Q := x.Q, op := x.U, a := x.immb.extractLsb' 2 1, b := x.immb.extractLsb' 1 1,
+          c := x.immb.extractLsb' 0 1, cmode := x.opcode.extractLsb' 1 4,
+          o2 := x.opcode.extractLsb' 0 1, d := x.Rn.extractLsb' 4 1, e := x.Rn.extractLsb' 3 1,
+          f := x.Rn.extractLsb' 2 1, g := x.Rn.extractLsb' 1 1, h := x.Rn.extractLsb' 0 1,
+          Rd := x.Rd })
+    else
+      .DPSFP (.Advanced_simd_shift_by_immediate { Q := x.Q, U := x.U, immh := x.immh,
+                                                  immb := x.immb, opcode := x.opcode,
+                                                  Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_scalar_shift_by_immediate x) =>
+    .DPSFP (.Advanced_simd_scalar_shift_by_immediate { U := x.U, immh := x.immh, immb := x.immb,
+                                                       opcode := x.opcode, Rn := x.Rn,
+                                                       Rd := x.Rd })
   | .LDST (.Reg_imm_post_indexed x) =>
     .LDST (.Reg_imm_post_indexed { size := x.size, V := x.V, opc := x.opc, imm9 := x.imm9,
                                    Rn := x.Rn, Rt := x.Rt })
@@ -805,6 +828,36 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
       | .minus32 => (0, 10) | .minus64 => (1, 10) | .zero32 => (0, 11) | .zero64 => (1, 11)
     pure (.DPSFP (.FP_data_processing_one_source { M := 0, S := 0, ftype, opcode,
                                                    Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuRRI op rd rn =>
+    -- C7.2 USHR: Advanced SIMD (scalar) shift by immediate, U 1, opcode 00000, `immh:immb =
+    -- 2·esize − amount` (Cranelift `FpuRRI`, `FPURightShiftImm::enc`); `uShr32` the vector form
+    -- with Q 0 (`.2s`), `uShr64` the scalar form (`d`)
+    if !ushrImmOk op.amount op.lane then throw s!"ushr #{op.amount} at lane size {op.lane}"
+    let imm : BitVec 7 := BitVec.ofNat 7 (2 * op.lane - op.amount)
+    match op with
+    | .uShr32 _ =>
+      pure (.DPSFP (.Advanced_simd_shift_by_immediate
+        { Q := 0, U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
+          Rn := ← rn.encV, Rd := ← rd.encV }))
+    | .uShr64 _ =>
+      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate
+        { U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0,
+          Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuRRIMod op rd rn =>
+    -- C7.2 SLI: Advanced SIMD (scalar) shift by immediate, U 1, opcode 01010, `immh:immb =
+    -- esize + amount` (Cranelift `FpuRRIMod`, `FPULeftShiftImm::enc`); `sli32` the vector form
+    -- with Q 0 (`.2s`), `sli64` the scalar form (`d`)
+    if !sliImmOk op.amount op.lane then throw s!"sli #{op.amount} at lane size {op.lane}"
+    let imm : BitVec 7 := BitVec.ofNat 7 (op.lane + op.amount)
+    match op with
+    | .sli32 _ =>
+      pure (.DPSFP (.Advanced_simd_shift_by_immediate
+        { Q := 0, U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3,
+          opcode := 0b01010, Rn := ← rn.encV, Rd := ← rd.encV }))
+    | .sli64 _ =>
+      pure (.DPSFP (.Advanced_simd_scalar_shift_by_immediate
+        { U := 1, immh := imm.extractLsb' 3 4, immb := imm.extractLsb' 0 3, opcode := 0b01010,
+          Rn := ← rn.encV, Rd := ← rd.encV }))
   | .fpuToInt op rd rn =>
     -- C7.2 FCVTZS (scalar, integer) rmode 11 opcode 000, FCVTZU rmode 11 opcode 001;
     -- sf = 64-bit integer, ftype = float size (Cranelift `FpuToInt`, `enc_fputoint`)

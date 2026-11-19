@@ -1,4 +1,5 @@
 import FV.Compile.SubsetTC
+import FV.Compile.FmaNegYFree
 
 /-!
 # The typed scope with the proven float operations (S11f, #35)
@@ -29,6 +30,14 @@ constant pool (`constant_f64`'s last rule, `emit_u64_le_const`); its `lower` roo
 the contexts of `InstScopeTFL` (`Backend.Proof.lowerRulesCorrectTL_program`). `instETF`,
 `functionETF` and the float scope's theorems (`LowerScopeTF`, #1002 part 1's
 `E2E.noPoolB_lowerTF`) are unchanged.
+
+#35: the statements of `functionETCF` may also be an `fcopysign` (`fCopysignET`) or an `fma`
+(`fFmaET`) at `f32`/`f64` (`instETFLO`). Cranelift lowers them with `ushr` + `sli`
+(`fcopy_sign`'s scalar rule) and with `fmadd`/`fmsub`/`fnmadd`/`fnmsub` (`fpu_rrrr`); their
+`lower` roots are proven over float-capable contexts (`Backend.Proof.lowerRulesCorrectCS_program`,
+`Backend.Proof.lowerRulesCorrectFM_program`), and the validator checks the scope
+`InstScopeTFLO` (`Backend.Proof.Driver.instScopeOkFLO`). `instETFL` and its theorems are
+unchanged.
 -/
 
 namespace Compile
@@ -71,6 +80,41 @@ def instETFL (i : Inst) : Bool := instETF i || f64ConstET i
 theorem instETFL_of_instETF {i : Inst} (h : instETF i = true) : instETFL i = true := by
   simp [instETFL, h]
 
+/-- #35: an `fcopysign` of two operands at `f32`/`f64` (`instData` admits these; the root
+`rule_lower_685` is `Backend.Proof.lowerRulesCorrectCS_program`). -/
+def fCopysignET : Inst → Bool
+  | .float .fcopysign ty [_, _] => ty.isArithFloat
+  | _ => false
+
+/-- #35: an `fma` of three operands at `f32`/`f64` (`instData` admits these; the roots
+`rule_lower_608`/`rule_lower_609` are `Backend.Proof.lowerRulesCorrectFM_program`). -/
+def fFmaET : Inst → Bool
+  | .float .fma ty [_, _, _] => ty.isArithFloat
+  | _ => false
+
+/-- **The instructions of the typed scope with the proven float operations, the literal pool,
+`fcopysign` and `fma`** (#35): `instETFL`, an `fCopysignET` or an `fFmaET`. -/
+def instETFLO (i : Inst) : Bool := instETFL i || fCopysignET i || fFmaET i
+
+theorem instETFLO_of_instETFL {i : Inst} (h : instETFL i = true) : instETFLO i = true := by
+  simp [instETFLO, h]
+
+/-- An `fma` is not in `instETFL`. -/
+theorem instETFL_fma (ty : Ty) (x y z : ValueId) : instETFL (.float .fma ty [x, y, z]) = false := by
+  simp [instETFL, instETF, instETA, instET, instE, fArithET, fCvtET, fCmpET, f64ConstET]
+
+/-- **A function whose statements are in `instETFL` has no `fma`**, so `fmaNegYFree` holds. -/
+theorem fmaNegYFree_of_instETFL {f : Function}
+    (h : ∀ b ∈ f.blocks, ∀ s ∈ b.body, instETFL s.inst = true) : fmaNegYFree f = true := by
+  simp only [fmaNegYFree, List.all_eq_true]
+  intro b hb s hs
+  have h1 := h b hb s hs
+  split
+  · rename_i ty x y z he
+    rw [he, instETFL_fma] at h1
+    cases h1
+  · rfl
+
 /-- The operands in integer positions with the conversions: an `fcvt_from_*`'s operand is an
 integer (the CLIF verifier's typing). -/
 def intOperandsF : Inst → List Nat
@@ -102,12 +146,14 @@ def opsTypedTCF (f : Function) : Bool :=
 
 /-- **The typed scope with the proven float operations and float calls** (`functionETC` with
 `instETF`; S11g: without `callsE`, a `call`'s arguments in their classes, `opsTypedTCF`; #1002
-part 2: `instETFL`, an `f64const` from the literal pool among the statements). -/
+part 2: `instETFL`, an `f64const` from the literal pool among the statements; #35: `instETFLO`,
+`fcopysign` and `fma` among them, no `fma` with an `fneg`-defined second operand,
+`fmaNegYFree`). -/
 def functionETCF (f : Function) : Bool :=
   sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigET ·.2.sig) &&
     f.blocks.all (fun b =>
-      b.params.all (tyM ·.2) && b.body.all (instETFL ·.inst) && termE b.term) &&
-    opsTypedTCF f && edgeClassOk f
+      b.params.all (tyM ·.2) && b.body.all (instETFLO ·.inst) && termE b.term) &&
+    opsTypedTCF f && edgeClassOk f && fmaNegYFree f
 
 /-- **The scope with typed `try_call`s is in the scope with the float operations.** -/
 theorem functionETCF_of_functionETC {f : Function} (h : functionETC f = true) :
@@ -115,14 +161,23 @@ theorem functionETCF_of_functionETC {f : Function} (h : functionETC f = true) :
   simp only [functionETC, Bool.and_eq_true, List.all_eq_true] at h
   obtain ⟨⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, -⟩, hb⟩, ho⟩, he⟩ := h
   simp only [functionETCF, Bool.and_eq_true, List.all_eq_true]
-  refine ⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, fun b hb' => ?_⟩, ?_⟩, he⟩
+  refine ⟨⟨⟨⟨⟨⟨hs, hg⟩, hx⟩, fun b hb' => ?_⟩, ?_⟩, he⟩, ?_⟩
   · obtain ⟨⟨hp, hi⟩, ht⟩ := hb b hb'
-    exact ⟨⟨hp, fun s hs' => instETFL_of_instETF (instETF_of_instET (hi s hs'))⟩, ht⟩
+    exact ⟨⟨hp, fun s hs' => instETFLO_of_instETFL (instETFL_of_instETF (instETF_of_instET
+      (hi s hs')))⟩, ht⟩
   · simp only [opsTypedTC, opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at ho ⊢
     intro b hb'
     refine ⟨fun s hs' x hx => ?_, (ho b hb').2⟩
     have hx' := intOperandsFC_sub hx
     rw [intOperandsF_eq ((hb b hb').1.2 s hs')] at hx'
     exact (ho b hb').1 s hs' x hx'
+  · exact fmaNegYFree_of_instETFL fun b hb' s hs' =>
+      instETFL_of_instETF (instETF_of_instET ((hb b hb').1.2 s hs'))
+
+/-- The scope's `fma`s have no `fneg`-defined second operand (`functionETCF`'s last conjunct). -/
+theorem fmaNegYFree_of_functionETCF {f : Function} (h : functionETCF f = true) :
+    fmaNegYFree f = true := by
+  simp only [functionETCF, Bool.and_eq_true] at h
+  exact h.2
 
 end Compile

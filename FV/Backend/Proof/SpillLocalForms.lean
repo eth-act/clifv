@@ -8,7 +8,8 @@ import FV.Backend.Proof.IselCtlTerm
 # The instruction facts of the instruction forms the lowering emits (V4 (a), step 3)
 
 `spillInstOk_of_formOk`: every covered straight-line form (`FormOk`) meets `SpillInstOk` (at
-most four register operands, all `reg`-constrained, at most one def; `movK` reuses its use).
+most four register operands, all `reg`-constrained, at most one def; `movK` reuses its use,
+`fpuRRIMod` its first use).
 `spillInstOk_mapRegs`: a vreg renaming keeps `SpillInstOk` when it keeps the defs distinct.
 -/
 
@@ -64,11 +65,32 @@ theorem opsOk_movK (n d : Nat) :
   · intro c; cases c <;> simp [nScratch, scratch, freeRegs, fixedRegs, spillPool]
   · simp
 
+/-- `fpuRRIMod`'s operands (#35, `sli`): a def reusing the first of two uses. -/
+theorem opsOk_fpuRRIMod (d i n : Nat) :
+    OpsOk #[⟨d, .float, .def, .late, .reuse 1⟩, ⟨i, .float, .use, .early, .reg⟩,
+      ⟨n, .float, .use, .early, .reg⟩] [] := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro o ho h; simp at ho; rcases ho with rfl | rfl | rfl <;> cases h
+  · intro o ho h; simp at ho; rcases ho with rfl | rfl | rfl <;> first | rfl | cases h
+  · intro o ho p h; simp at ho; rcases ho with rfl | rfl | rfl <;> cases h
+  · intro o ho o' _ p _ _ h; simp at ho; rcases ho with rfl | rfl | rfl <;> cases h
+  · intro j j' o o' p hj _ _ _ h
+    rcases j with _ | _ | _ | j <;> simp at hj <;> subst hj <;> cases h
+  · intro o ho p _ h; simp at ho; rcases ho with rfl | rfl | rfl <;> cases h
+  · intro o ho h1 h2; simp at ho; rcases ho with rfl | rfl | rfl <;> simp_all
+  · intro j o i hj h
+    rcases j with _ | _ | _ | j <;> simp at hj <;> subst hj <;> cases h
+    refine ⟨rfl, rfl, _, rfl, rfl, rfl, rfl, fun j' o' hj' h' => ?_⟩
+    rcases j' with _ | _ | _ | j' <;> simp at hj' <;> subst hj' <;> cases h' <;> rfl
+  · intro c; cases c <;> simp [nScratch, scratch, freeRegs, fixedRegs, spillPool] <;> decide
+  · simp
+
 /-- The tactic for one covered form: compute the operands, then `opsOk_simple`. -/
 syntax "spill_form" : tactic
 macro_rules
   | `(tactic| spill_form) => `(tactic| first
     | exact ⟨_, rfl, opsOk_movK _ _, fun _ h => by cases h⟩
+    | exact ⟨_, rfl, opsOk_fpuRRIMod _ _ _, fun _ h => by cases h⟩
     | (refine ⟨_, rfl, opsOk_simple ?_ ?_ ?_ ?_, fun _ h => by cases h⟩ <;>
         simp [OpSpec.use, OpSpec.def_, OpSpec.earlyDef]))
 

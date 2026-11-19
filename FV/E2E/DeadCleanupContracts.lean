@@ -8,6 +8,7 @@ private theorem pureForm_mapRegs (g : Reg → Reg) (i : MInst) :
     pureForm (i.mapRegs g) = pureForm i := by
   cases i <;> simp [MInst.mapRegs, pureForm]
   case aluRRRR op size rd rn rm ra => cases op <;> rfl
+  case fpuRR op size rd rn => cases op <;> rfl
 
 /-- A vreg renaming keeps the compare forms (`xzr` and real registers are fixed, vregs stay
 vregs). -/

@@ -489,7 +489,7 @@ theorem isExcl_norm (a : Arm.ArmInst) : isExcl a.norm = isExcl a := by
   | BR i => cases i <;> rfl
   | DPI i => cases i <;> rfl
   | DPR i => cases i <;> rfl
-  | DPSFP i => cases i <;> rfl
+  | DPSFP i => cases i <;> first | rfl | (simp only [Arm.ArmInst.norm]; split <;> rfl)
   | RES i => cases i <;> rfl
 
 theorem clsOf_ne_stx {a : Arm.ArmInst} (h : isExcl a = false) (rel : Bool) (rs rn : BitVec 5) :

@@ -358,6 +358,11 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
             pure (instDataV "FloatCompare"
               [opcodeV "Fcmp", .values [x, y], mkVariant TyId.FloatCC (floatccName cc)])
           else throw s!"fcmp.{ty.name} {cc.name}"
+        -- #35: `fcopysign` at `f32`/`f64` (`lower.isle:685`, `fcopy_sign`'s scalar rule
+        -- `inst.isle:4612`: `ushr` + `sli`); the vector rule is outside E
+        | .fcopysign =>
+          if ty.isArithFloat then pure (instDataV "Binary" [opcodeV "Fcopysign", .values [x, y]])
+          else throw s!"Fcopysign.{ty.name}"
         | _ => throw s!"`{op.name}` with two operands is not in the lowering"
     | [x] =>
       match fUnaryOpcode op with
@@ -370,7 +375,18 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
           if fCvtTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
           else throw s!"{n}.{ty.name}"
         | none => throw s!"`{op.name}` with one operand is not in the lowering"
-    | _ => throw s!"`{op.name}` is not in the lowering"
+    | _ =>
+      match op with
+      -- #35: `fma` of three operands at `f32`/`f64` (`InstructionData::Ternary`;
+      -- `lower.isle:608`/`609`, the helpers' scalar rules `fmadd`/`fmsub`/`fnmadd`/`fnmsub`);
+      -- the vector rules are outside E
+      | .fma =>
+        match args with
+        | [x, y, z] =>
+          if ty.isArithFloat then pure (instDataV "Ternary" [opcodeV "Fma", .values [x, y, z]])
+          else throw s!"Fma.{ty.name}"
+        | _ => throw s!"`fma` with {args.length} operands is not in the lowering"
+      | _ => throw s!"`{op.name}` is not in the lowering"
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)
@@ -1222,6 +1238,16 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | TId.asimd_fp_mod_imm_from_u64, [.int v, s] => match s.scalarSize? with
     | some sz => optOk ((fpModImm? (u64 v) sz).map (.op ∘ .fpModImm))
     | none => .unmodeled "asimd_fp_mod_imm_from_u64"
+  -- `fpu_op_ri_ushr`/`fpu_op_ri_sli` (aarch64/lower/isle.rs:777-803): `UShr32`/`Sli32` at 32 bits,
+  -- `UShr64`/`Sli64` at 64, the immediate `FPURightShiftImm`/`FPULeftShiftImm::maybe_from_u8(
+  -- shift, ty_bits)` (`FPUOpRI.toV`/`FPUOpRIMod.toV`); its `.unwrap()` on an out-of-range shift
+  -- and the `unimplemented!` of another size panic (unmodeled)
+  | TId.fpu_op_ri_ushr, [.int b, .int s] =>
+    if ushrImmOk s b then ok (.data tyFPUOpRI (laneVariant b) [.int s, .int b])
+    else .unmodeled "fpu_op_ri_ushr: size not 32/64 or shift out of range"
+  | TId.fpu_op_ri_sli, [.int b, .int s] =>
+    if sliImmOk s b then ok (.data tyFPUOpRIMod (laneVariant b) [.int s, .int b])
+    else .unmodeled "fpu_op_ri_sli: size not 32/64 or shift out of range"
   | TId.move_wide_const_from_u64, [.ty ty, .int n] =>
     let n := if ty.bits < 64 then u64 n % 2 ^ ty.bits else u64 n
     optOk ((MoveWideConst.ofNat? n).map (.op ∘ .moveWideConst))

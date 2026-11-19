@@ -435,7 +435,7 @@ theorem cov_aluRRRExtend {a1 a2 a3 a4 a5 a6 : AT} {v1 v3 v4 v5 : V} {op : ALUOp}
     · rcases addS_subS ho g1 o1 with rfl | rfl <;> rfl
 
 section simple
-variable {a1 a2 a3 a4 a5 a6 : AT} {v1 v2 v3 v4 v5 : V}
+variable {a1 a2 a3 a4 a5 a6 : AT} {v1 v2 v3 v4 v5 v6 : V}
 
 theorem cov_bitRR {op : BitOp} {s : OperandSize} {rd rn : Reg} (hc : AT.cOp2 [a1, a2, a3, a4] = true)
     (g3 : γ f ctx a3 v3) (g4 : γ f ctx a4 v4) (r3 : v3.reg? = some rd) (r4 : v4.reg? = some rn) :
@@ -629,6 +629,31 @@ theorem cov_intToFpu {op : IntToFpuOp} {rd rn : Reg}
     (r2 : v2.reg? = some rd) (r3 : v3.reg? = some rn) : Covered (.intToFpu op rd rn) = true := by
   simp only [AT.cIntToFpu, Bool.and_eq_true] at hc
   obtain ⟨_, rfl⟩ := F_of hc.1 g2 r2; obtain ⟨_, rfl⟩ := V_of hc.2 g3 r3; rfl
+
+theorem cov_fpuRRI {op : FPUOpRI} {rd rn : Reg}
+    (hc : AT.cFpuRRI [a1, a2, a3] = true) (g2 : γ f ctx a2 v2) (g3 : γ f ctx a3 v3)
+    (r2 : v2.reg? = some rd) (r3 : v3.reg? = some rn) : Covered (.fpuRRI op rd rn) = true := by
+  simp only [AT.cFpuRRI, Bool.and_eq_true] at hc
+  obtain ⟨_, rfl⟩ := F_of hc.1 g2 r2; obtain ⟨_, rfl⟩ := F_of hc.2 g3 r3; rfl
+
+theorem cov_fpuRRIMod {op : FPUOpRIMod} {rd ri rn : Reg}
+    (hc : AT.cFpuRRIMod [a1, a2, a3, a4] = true) (g2 : γ f ctx a2 v2) (g3 : γ f ctx a3 v3)
+    (g4 : γ f ctx a4 v4) (r2 : v2.reg? = some rd) (r3 : v3.reg? = some ri)
+    (r4 : v4.reg? = some rn) : Covered (.fpuRRIMod op rd ri rn) = true := by
+  simp only [AT.cFpuRRIMod, Bool.and_eq_true] at hc
+  obtain ⟨⟨h1, h2⟩, h3⟩ := hc
+  obtain ⟨_, rfl⟩ := F_of h1 g2 r2; obtain ⟨_, rfl⟩ := F_of h2 g3 r3
+  obtain ⟨_, rfl⟩ := F_of h3 g4 r4; rfl
+
+theorem cov_fpuRRRR {op : FPUOp3} {sz : ScalarSize} {rd rn rm ra : Reg}
+    (hc : AT.cFpuRRRR [a1, a2, a3, a4, a5, a6] = true) (g3 : γ f ctx a3 v3)
+    (g4 : γ f ctx a4 v4) (g5 : γ f ctx a5 v5) (g6 : γ f ctx a6 v6) (r3 : v3.reg? = some rd)
+    (r4 : v4.reg? = some rn) (r5 : v5.reg? = some rm) (r6 : v6.reg? = some ra) :
+    Covered (.fpuRRRR op sz rd rn rm ra) = true := by
+  simp only [AT.cFpuRRRR, Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := hc
+  obtain ⟨_, rfl⟩ := F_of h1 g3 r3; obtain ⟨_, rfl⟩ := F_of h2 g4 r4
+  obtain ⟨_, rfl⟩ := F_of h3 g5 r5; obtain ⟨_, rfl⟩ := F_of h4 g6 r6; rfl
 
 theorem cov_vecDupImm {rd : Reg} {imm : ASIMDMovModImm} {inv : Bool} {s : VectorSize}
     (hc : AT.cVecDupImm [a1, a2, a3, a4] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)
@@ -831,6 +856,9 @@ theorem covOk_sound {t k : Nat} {as : List AT} {vs : List V} (hc : AT.covOk k as
        | (apply cov_fpuRound hc <;> assumption)
        | (apply cov_fpuToInt hc <;> assumption)
        | (apply cov_intToFpu hc <;> assumption)
+       | (apply cov_fpuRRI hc <;> assumption)
+       | (apply cov_fpuRRIMod hc <;> assumption)
+       | (apply cov_fpuRRRR hc <;> assumption)
        | (apply cov_fpuLoad32 hc <;> assumption)
        | (apply cov_fpuLoad64 hc <;> assumption)
        | (apply cov_fpuStore32 hc <;> assumption)
