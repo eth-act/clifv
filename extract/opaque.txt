@@ -1,6 +1,13 @@
 # Charon name patterns passed as `--opaque` (one per line; `#` comments).
-# The e-graph mid-end stays opaque until Step 10 (the Lean model fails if reached).
-cranelift_codegen::context::{cranelift_codegen::context::Context}::egraph_pass
+# Each opaque function gets a Lean model that fails (`fail .panic`) if it is ever reached;
+# gate G1 shows these are not reached on the compile path.
+#
+# The e-graph mid-end stays opaque until Step 10. (`_` matches the inherent impl element.)
+cranelift_codegen::context::_::egraph_pass
 # Formatting is never part of the compile result (an impl pattern matches that impl anywhere).
 {impl core::fmt::Debug for _}
 {impl core::fmt::Display for _}
+# Disassembly text: only reached from `VCode::emit` when `want_disasm` (false for
+# `Context::compile`) and from trace logging (the `log` model reports logging disabled).
+cranelift_codegen::isa::aarch64::inst::_::print_with_state
+cranelift_codegen::machinst::vcode::_::log_value_labels_ranges
