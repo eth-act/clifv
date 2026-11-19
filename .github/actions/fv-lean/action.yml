@@ -68,7 +68,7 @@ runs:
           echo "FV_MEMCAP_OFF=1"
           echo "LEAN_NUM_THREADS=2"
         } >> "$GITHUB_ENV"
-        command -v /usr/bin/time > /dev/null || { sudo apt-get update -q && sudo apt-get install -yq time; }
+        command -v /usr/bin/time > /dev/null || .github/scripts/apt-install.sh time
         # some FVTest modules read Cranelift's ISLE sources while they elaborate (FVTest.Isle.*)
         scripts/fetch-third-party.sh wasmtime
     - name: Cache Lean toolchain
