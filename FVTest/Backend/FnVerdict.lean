@@ -224,4 +224,76 @@ def unwindThm (cleanup opt legal cp : Bool) (cpT : String) : String :=
   else if opt then s!"E2E.backend_correct_opt_exe{c}_unwind_any"
   else s!"E2E.backend_correct_final{c}_unwind_any"
 
+/-! ## Through the mid-end validator (#1119, `lean-backend --midval-opt`)
+
+`lean-backend <f.unopt.clif> --midval-opt <g.opt.clif>` decides `Opt.MidVal.checkCert
+(Opt.ConstPhi.run f) g cert` (the certificate from `Opt.MidVal.emit`) and, when it holds, compiles
+Cranelift's optimised function `g` in place of cg_clif's source function `f`. The facts below are
+then those of the compiled `g`; the theorem named is the one of `FV/E2E/MidValPass.lean` /
+`MidValPassLegacy.lean` composed with what ran on `g`, about the source function `f`. When `g`'s
+verdict names no theorem, or no theorem through the validator composes what ran (`--opt`, no dead
+cleanup, the typed scope after the `i128` legalisation or constant-phi removal, constant-phi
+removal whose source is outside the scope), `midvalVerdict` says why and `lean-backend` compiles `f`
+exactly as without the option. -/
+
+/-- What a theorem through the mid-end validator is about. -/
+def midAbout : String :=
+  "the source function (.unopt.clif), compiled from cg_clif's optimised dump validated by Opt.MidVal"
+
+/-- The premise `lean-backend --midval-opt` decides for every theorem through the validator. -/
+def midCheck : String :=
+  "Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert (cert: Opt.MidVal.emit)"
+
+/-- The Stock path's theorem through the validator for the facts of the compiled `g`. -/
+def stockMidThm (x : Facts) : Except String String :=
+  if x.cp && !x.cpSrcE then
+    .error "constant-phi removal changed g and g is not Backend.verifiable: no Stock theorem composes the pass"
+  else if x.cp then
+    if x.legal then .ok s!"E2E.backend_correct_midval_legal_pass_wide_semantic_return_pins (T := {x.cpT})"
+    else .ok s!"E2E.backend_correct_midval_pass_semantic_return_pins (T := {x.cpT})"
+  else if x.legal then .ok "E2E.backend_correct_midval_legal_wide_semantic_return_pins"
+  else .ok "E2E.backend_correct_midval_semantic_return_pins"
+
+/-- The theorem through the validator for the facts of the compiled `g`, or why none composes. -/
+def midvalThm (x : Facts) : Except String String :=
+  if x.opt then .error "--opt: no theorem composes the Lean mid-end with the validator"
+  else if !x.cleanup then
+    .error "no dead cleanup: the theorems through the validator are about the dead-cleanup pipeline"
+  else match x.scope, x.path with
+    | .integer, .stock => stockMidThm x
+    | .integer, .legacy =>
+      if x.d0 then stockMidThm x
+      else if x.cp && !x.cpSrc then
+        .error "constant-phi removal changed g and g is outside the scope: no theorem composes the pass"
+      else if x.cp then
+        if x.legal then .ok s!"E2E.backend_correct_midval_legal_pass_wide_cleanup (T := {x.cpT})"
+        else .ok s!"E2E.backend_correct_midval_pass_cleanup (T := {x.cpT})"
+      else if x.legal then .ok "E2E.backend_correct_midval_legal_wide_cleanup"
+      else .ok "E2E.backend_correct_midval_final_cleanup"
+    | scope, _ =>
+      if x.legal || x.cp then
+        .error "typed scope after the i128 legalisation or constant-phi removal of g: no typed theorem composes them"
+      else match scope with
+        | .typedT => .ok "E2E.backend_correct_midval_final_cleanupT"
+        | .typedTC => .ok "E2E.backend_correct_midval_world_cleanupTC"
+        | _ => .ok "E2E.backend_correct_midval_world_cleanupTCF"
+
+/-- **The verdict of a function compiled from the validated `g`** (module section above): the
+theorem through the validator with today's decided checks of `g` and `midCheck`, about the source
+function; `.error why` when `g`'s verdict names no theorem or none composes. -/
+def midvalVerdict (x : Facts) : Except String Verdict :=
+  let v := verdict x
+  match v.thm with
+  | none => .error s!"the compiled g is unverified ({v.fail.getD "?"})"
+  | some _ => (midvalThm x).map fun t => { thm := some t, about := midAbout, checks := v.checks ++ [midCheck] }
+
+/-- The unwinding theorem through the validator of a `try_call` function compiled from `g` (dead
+cleanup, no `--opt`), composed as `unwindThm`. -/
+def unwindMidThm (legal cp : Bool) (cpT : String) : String :=
+  if cp then
+    (if legal then "E2E.backend_correct_midval_legal_pass_unwind_any"
+      else "E2E.backend_correct_midval_pass_cleanup_unwind_any") ++ s!" (T := {cpT})"
+  else if legal then "E2E.backend_correct_midval_legal_unwind_any"
+  else "E2E.backend_correct_midval_final_cleanup_unwind_any"
+
 end FVTest.Backend.FnVerdict

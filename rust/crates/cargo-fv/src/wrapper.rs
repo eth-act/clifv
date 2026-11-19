@@ -264,6 +264,7 @@ fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitRep
                             theorem: None,
                             about: None,
                             unopt_input_opt_level: None,
+                            midval: None,
                         });
                     }
                 }

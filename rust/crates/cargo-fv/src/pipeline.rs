@@ -33,7 +33,7 @@
 //! Any failure leaves the object untouched and reports the functions as fallback: the build
 //! never fails because of us.
 use crate::config::{Config, Mode};
-use crate::report::{FnReport, Status};
+use crate::report::{FnReport, MidvalReport, Status};
 use object::read::{Object, ObjectSymbol};
 use object::{SymbolKind, SymbolScope};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -284,6 +284,7 @@ fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
             theorem: None,
             about: None,
             unopt_input_opt_level: None,
+            midval: None,
         })
         .collect()
 }
@@ -325,6 +326,7 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
             theorem: None,
             about: None,
             unopt_input_opt_level: None,
+            midval: None,
         });
         false
     });
@@ -409,7 +411,7 @@ fn compile_one(
     d: &Dump,
     sym: &str,
 ) -> Compiled {
-    let run_backend = |input: &Path, out: &Path| -> Compiled {
+    let run_backend = |input: &Path, out: &Path, midval: Option<&Path>| -> Compiled {
         if !input.exists() {
             let err = input.with_file_name(format!("{}.err", input.file_name().unwrap_or_default().to_string_lossy()));
             return Compiled::Fallback(match fs::read_to_string(&err) {
@@ -431,6 +433,11 @@ fn compile_one(
             // `--lean-link` keeps cg_clif's code for an unverified function: one unverified
             // before it is compiled is not compiled (#1074)
             .args(cfg.lean_link.then_some("--skip-unverified"));
+        // #1119: Cranelift's optimised function, compiled when lean-backend decides the mid-end
+        // validator's re-check on the pair (else the `.unopt.clif`, as without it)
+        if let Some(g) = midval {
+            cmd.arg("--midval-opt").arg(g);
+        }
         // `--keep-temps`: keep the register allocator's answers next to the object (`cargo fv
         // link-proof` and `lean-link` rebuild the allocations from them in Lean): lean-backend
         // writes regalloc2's answers to `$FV_RA_OUT` (`FVTest/Backend/Main.lean`)
@@ -447,21 +454,30 @@ fn compile_one(
         }
     };
     let out = outdir.join(format!("f{i}.o"));
-    let c = run_backend(&split.join(format!("{}.unopt.clif", d.stem)), &out);
+    let opt = split.join(format!("{}.opt.clif", d.stem));
+    // #1119: the mid-end validator in plain mode without `--lean-link` (whose linker and
+    // link-check do not re-decide the pair yet), for a function cg_clif optimised
+    let midval = (cfg.midval
+        && cfg.mode == Mode::Plain
+        && !cfg.lean_link
+        && !d.opt_level.is_empty()
+        && d.opt_level != "none"
+        && opt.exists())
+    .then_some(opt.as_path());
+    let c = run_backend(&split.join(format!("{}.unopt.clif", d.stem)), &out, midval);
     if let Compiled::Ok { .. } = &c {
         if let Some(why) = missing_ref(&out, syms) {
-            let opt = split.join(format!("{}.opt.clif", d.stem));
             if why.contains("neither defines nor references") && opt.exists() {
                 let out_opt = outdir.join(format!("f{i}.opt.o"));
-                let c2 = run_backend(&opt, &out_opt);
-                if let Compiled::Ok { obj, unverified, normal_returns, theorem, clif } = c2 {
+                let c2 = run_backend(&opt, &out_opt, None);
+                if let Compiled::Ok { obj, unverified, normal_returns, theorem, clif, .. } = c2 {
                     if missing_ref(&obj, syms).is_none() {
                         // the theorem is about the function as Cranelift's optimiser left it
                         let theorem = theorem.map(|v| Verdict {
                             about: format!("{}, compiled from cg_clif's optimised dump (.opt.clif)", v.about),
                             ..v
                         });
-                        return Compiled::Ok { obj, unverified, normal_returns, theorem, clif };
+                        return Compiled::Ok { obj, unverified, normal_returns, theorem, clif, midval: None };
                     }
                 }
             }
@@ -637,9 +653,16 @@ fn trap_bodies(obj: &Path, names: &[String]) -> Result<(), String> {
 /// How lean-backend classified one function (`normal_returns`: a `try_call` function the
 /// theorem covers for its normal returns only; `theorem`: the per-function theorem lean-backend
 /// named with every checkable premise decided, and what it is about; `clif`: the file it
-/// compiled).
+/// compiled; `midval`: lean-backend's `--midval-opt` outcome and reason, #1119).
 enum Compiled {
-    Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool, theorem: Option<Verdict>, clif: PathBuf },
+    Ok {
+        obj: PathBuf,
+        unverified: Option<String>,
+        normal_returns: bool,
+        theorem: Option<Verdict>,
+        clif: PathBuf,
+        midval: Option<(String, Option<String>)>,
+    },
     Fallback(String),
     /// Killed at `FV_FN_TIME_LIMIT`: the build fails ([`time_limit_error`]).
     TimedOut,
@@ -684,6 +707,23 @@ pub(crate) fn verdict_of(line: &str) -> Option<(Verdict, bool)> {
     Some((Verdict { theorem: theorem.to_string(), about: about.to_string() }, normal))
 }
 
+/// lean-backend's `--midval-opt` line (#1119, `FVTest/Backend/Main.lean`), as (outcome, reason):
+/// `…: midval: validated (…), compiled from the optimised dump …` → `validated`;
+/// `…: midval: rejected (<why>); compiled from the .unopt.clif as without --midval-opt` →
+/// `rejected`, likewise `validated, not composed (<why>)` → `not composed` and
+/// `not attempted (<why>)` → `not attempted`.
+pub(crate) fn midval_of(line: &str) -> Option<(String, Option<String>)> {
+    let rest = line.split_once(": midval: ")?.1;
+    if rest.starts_with("validated (") {
+        return Some(("validated".into(), None));
+    }
+    let rest = rest.strip_suffix("; compiled from the .unopt.clif as without --midval-opt").unwrap_or(rest);
+    let (outcome, why) = rest.split_once(" (").unwrap_or((rest, ""));
+    let outcome = outcome.strip_prefix("validated, ").unwrap_or(outcome);
+    let why = why.strip_suffix(')').unwrap_or(why);
+    Some((outcome.to_string(), (!why.is_empty()).then(|| why.to_string())))
+}
+
 fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, input: &Path) -> Compiled {
     let strip = |l: &str| -> String {
         // `lean-backend: <input>: %name: …` / `lean-backend: <input>: …`
@@ -701,7 +741,13 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
     let mut outside_closure: Option<String> = None;
     let mut normal_returns = false;
     let mut theorem: Option<Verdict> = None;
+    let mut midval: Option<(String, Option<String>)> = None;
     for l in stderr.lines() {
+        // `--midval-opt` (#1119): its own line, whose reason may quote any other line's text
+        if let Some(m) = midval_of(l) {
+            midval = Some(m);
+            continue;
+        }
         // `--skip-unverified`: the reason the compiled function would get, and its fallback
         if let Some((_, rest)) = l.split_once(": not compiled (--skip-unverified), unverified (") {
             let u = match rest.split_once("): ") {
@@ -751,7 +797,7 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, inpu
         theorem = None;
         normal_returns = false;
     }
-    Compiled::Ok { obj: out.to_path_buf(), unverified, normal_returns, theorem, clif: input.to_path_buf() }
+    Compiled::Ok { obj: out.to_path_buf(), unverified, normal_returns, theorem, clif: input.to_path_buf(), midval }
 }
 
 fn write_list(path: &Path, items: impl IntoIterator<Item = String>) -> Result<(), String> {
@@ -996,9 +1042,15 @@ fn process_in(
     let mut declared: BTreeSet<String> = BTreeSet::new();
     for ((sym, d), c) in funcs.iter().zip(results) {
         // #1119 (`from_unopt`): a Lean-compiled function compiled from its `.unopt.clif` (not the
-        // `.opt.clif` retry); with the dump's header saying cg_clif optimised it, stock compiles
-        // Cranelift's optimised function while the theorem is about the unoptimised one
-        let mut report = |status: Status, reason: Option<String>, normal_returns: bool, theorem: Option<Verdict>, from_unopt: bool| {
+        // `.opt.clif` retry, not the validated optimised function of `--midval`); with the dump's
+        // header saying cg_clif optimised it, stock compiles Cranelift's optimised function while
+        // the theorem is about the unoptimised one
+        let mut report = |status: Status,
+                          reason: Option<String>,
+                          normal_returns: bool,
+                          theorem: Option<Verdict>,
+                          from_unopt: bool,
+                          midval: Option<(String, Option<String>)>| {
             let (theorem, about) = match theorem {
                 Some(v) => (Some(v.theorem), Some(v.about)),
                 None => (None, None),
@@ -1013,13 +1065,15 @@ fn process_in(
                 theorem,
                 about,
                 unopt_input_opt_level: optimised.then(|| d.opt_level.clone()),
+                midval: midval.map(|(outcome, reason)| MidvalReport { outcome, reason, opt_level: d.opt_level.clone() }),
             })
         };
         match c {
-            Compiled::Fallback(why) => report(Status::Fallback, Some(why), false, None, false),
+            Compiled::Fallback(why) => report(Status::Fallback, Some(why), false, None, false, None),
             Compiled::TimedOut => return Err(CguFail::Fatal(time_limit_error(cfg.fn_time_limit, sym, &d.instance))),
-            Compiled::Ok { obj: o, unverified, normal_returns, theorem, clif } => {
-                let from_unopt = clif.ends_with(format!("{}.unopt.clif", d.stem));
+            Compiled::Ok { obj: o, unverified, normal_returns, theorem, clif, midval } => {
+                let validated = midval.as_ref().is_some_and(|(o, _)| o == "validated");
+                let from_unopt = clif.ends_with(format!("{}.unopt.clif", d.stem)) && !validated;
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
                 let extra: Vec<&String> = f.text.iter().filter(|(n, g)| **g && *n != sym).map(|(n, _)| n).collect();
@@ -1037,7 +1091,7 @@ fn process_in(
                     }
                 }
                 match bad {
-                    Some(b) => report(Status::Fallback, Some(b), false, None, false),
+                    Some(b) => report(Status::Fallback, Some(b), false, None, false, None),
                     None => {
                         referenced_locals.extend(locals);
                         if cfg.lean_link {
@@ -1062,8 +1116,8 @@ fn process_in(
                         }));
                         ours.push((sym.clone(), o));
                         match unverified {
-                            Some(u) => report(Status::Unverified, Some(u), false, None, from_unopt),
-                            None => report(Status::Verified, None, normal_returns, theorem, from_unopt),
+                            Some(u) => report(Status::Unverified, Some(u), false, None, from_unopt, midval),
+                            None => report(Status::Verified, None, normal_returns, theorem, from_unopt, midval),
                         }
                     }
                 }
@@ -1207,6 +1261,7 @@ mod tests {
             lean_ld: false,
             pkg_skip: vec![],
             fn_time_limit: limit,
+            midval: false,
         }
     }
 
@@ -1317,6 +1372,23 @@ mod tests {
         // not verdict lines
         assert!(verdict_of("lean-backend: x.clif: %f: compiled, unverified (outside backend_correct): formsCoveredB fails").is_none());
         assert!(verdict_of("lean-backend: x.clif: %f: frameless leaf, backend_correct_final_cleanup_leaf").is_none());
+    }
+
+    /// #1119: lean-backend's `--midval-opt` lines (`FVTest/Backend/Main.lean`), and the theorem
+    /// line of a validated function.
+    #[test]
+    fn midval_lines() {
+        let v = midval_of("lean-backend: x.unopt.clif: %f: midval: validated (Opt.MidVal.checkCert decided), compiled from the optimised dump x.opt.clif");
+        assert_eq!(v, Some(("validated".into(), None)));
+        let r = midval_of("lean-backend: x.unopt.clif: %f: midval: rejected (Opt.MidVal.check rejects: rewrite:operand (iadd)); compiled from the .unopt.clif as without --midval-opt");
+        assert_eq!(r, Some(("rejected".into(), Some("Opt.MidVal.check rejects: rewrite:operand (iadd)".into()))));
+        let n = midval_of("lean-backend: x.unopt.clif: %f: midval: validated, not composed (the compiled g is unverified (x: unsupported: y)); compiled from the .unopt.clif as without --midval-opt");
+        assert_eq!(n, Some(("not composed".into(), Some("the compiled g is unverified (x: unsupported: y)".into()))));
+        assert!(midval_of("lean-backend: x.clif: %f: unsupported: y").is_none());
+        let l = "lean-backend: x.unopt.clif: %f: compiled, verified by E2E.backend_correct_midval_semantic_return_pins (about the source function (.unopt.clif), compiled from cg_clif's optimised dump validated by Opt.MidVal; decided: prepCheck, Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert (cert: Opt.MidVal.emit))";
+        let (v, _) = verdict_of(l).expect("a verdict line");
+        assert_eq!(v.theorem, "E2E.backend_correct_midval_semantic_return_pins");
+        assert_eq!(v.about, crate::report::MIDVAL_ABOUT);
     }
 
     /// #1119: the dump's header gives cg_clif's `opt_level` per function (a release build and a
