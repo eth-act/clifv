@@ -19,6 +19,7 @@ import FV.E2E.OptUnwind
 import FV.E2E.LegalOptUnwind
 import FV.Backend.StockCheckCalls
 import FV.E2E.SemanticReturnPinsPass
+import FV.E2E.MidValPassLegacy
 
 /-! # Tests of `lean-backend`'s per-function verdict (#1096)
 
@@ -59,7 +60,10 @@ run_cmd do
           for l in [true, false] do
             for p in [true, false] do
               u := unwindThm c o l p "Opt.ConstPhi.run" :: u
-      return u)
+      return u) ++
+    -- through the mid-end validator (#1119)
+    (allFacts.filterMap fun x => (midvalVerdict x).toOption.bind (·.thm)) ++
+    ([true, false].flatMap fun l => [true, false].map fun p => unwindMidThm l p "Opt.ConstPhi.run")
   for n in names.eraseDups do
     match env.find? (declOf n).toName with
     | some (.thmInfo _) => pure ()
@@ -133,5 +137,31 @@ run_cmd do
   "compiled, verified by E2E.backend_correct_final_cleanup (about "
 #guard unwindThm true false true true "Opt.ConstPhi.run" =
   "E2E.backend_correct_legal_pass_unwind_any (T := Opt.ConstPhi.run)"
+-- through the mid-end validator (#1119): the theorem of `g`'s path, about the source function
+#guard (midvalVerdict { scope := .integer, path := .stock }).toOption.bind (·.thm) =
+  some "E2E.backend_correct_midval_semantic_return_pins"
+#guard (midvalVerdict { scope := .integer, path := .stock }).toOption.map (·.about) = some midAbout
+#guard (midvalVerdict { scope := .integer, path := .stock }).toOption.map (·.checks.getLast?) =
+  some (some midCheck)
+#guard (midvalVerdict { scope := .integer, path := .stock, cp := true, legal := true }).toOption.bind
+  (·.thm) = some "E2E.backend_correct_midval_legal_pass_wide_semantic_return_pins (T := Opt.ConstPhi.run)"
+#guard (midvalVerdict { scope := .integer, path := .legacy }).toOption.bind (·.thm) =
+  some "E2E.backend_correct_midval_final_cleanup"
+#guard (midvalVerdict { scope := .integer, path := .legacy, d0 := true }).toOption.bind (·.thm) =
+  some "E2E.backend_correct_midval_semantic_return_pins"
+#guard (midvalVerdict { scope := .typedTCF, path := .stock }).toOption.bind (·.thm) =
+  some "E2E.backend_correct_midval_world_cleanupTCF"
+-- not composed: lean-backend then compiles the source function as without --midval-opt
+#guard (midvalVerdict { scope := .typedTCF, path := .stock, cp := true }).isOk = false
+#guard (midvalVerdict { scope := .integer, path := .legacy, cleanup := false }).isOk = false
+#guard (midvalVerdict { scope := .integer, path := .legacy, opt := true, optProven := true }).isOk = false
+#guard (midvalVerdict { scope := .integer, path := .stock, cp := true, cpSrcE := false }).isOk = false
+#guard (midvalVerdict { scope := .integer, path := .stock, covered := false }).isOk = false
+-- every composed verdict is about the source function
+#guard allFacts.all fun x => match midvalVerdict x with
+  | .ok v => v.about == midAbout && v.thm.isSome
+  | .error _ => true
+#guard unwindMidThm false true "Opt.ConstPhi.run" =
+  "E2E.backend_correct_midval_pass_cleanup_unwind_any (T := Opt.ConstPhi.run)"
 
 end FVTest.Backend.FnVerdictTest
