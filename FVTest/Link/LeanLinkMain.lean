@@ -330,7 +330,10 @@ program only drops conjuncts of the other functions' per-function conditions (ea
 over the program's functions), and every condition is decided again on the relinked
 executable. `only`: just `extra` (with the program-wide conditions): the typed Stock route's
 failures (`TypedStockShared.stockFails`), whose theorem `attemptT_correct` has none of the per-function
-conditions above as premises (#754).
+conditions above as premises (#754). `S` is the bundle's spec `S0`: the source-domain conditions
+are `SrcScopeB`'s on the bundle's program, which is what `--verified` and the `…_sourceCp`
+theorems require (#1089); on `S0.cp` a function constant-phi removal changed is printed after
+the `i128` legalisation, so `declSigB` would fail where it meets an unchanged one (#1123).
 
 `typedNext` (the exits before the route is chosen: the source domain and the admission, #1076):
 the program-level conditions (`scopeFails`) are premises of the integer route only (`compile`,
@@ -926,7 +929,7 @@ def main (args0 : List String) : IO UInt32 := do
         let badFns := (bad.filter (·.1 != "<global>")).map (·.1)
         if !badFns.isEmpty && badFns.length < min typedN stockFns.length then
           IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route: leaving out the {badFns.length} function(s) failing the typed checks; not written"
-          printExclusions exe S SC true badFns (only := true)
+          printExclusions exe S0 SC true badFns (only := true)
           return 1
         -- #1075: where the route's code is not the units' (`lean-backend` compiles a unit with
         -- an `sret` copy or a void call with the return-pin lowering `Stock.VoidCall.NI`; on
@@ -939,12 +942,12 @@ def main (args0 : List String) : IO UInt32 := do
         let moved := if e == SemanticCompilerWith.outOkTSMsg then [] else (spanFails SP markers).map (·.1)
         if badFns.isEmpty && !moved.isEmpty && moved.length < min typedN stockFns.length then
           IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route: leaving out the {moved.length} function(s) whose placed code is not the units' (span to the next function not rust-lld's) {moved.take 3}; not written"
-          printExclusions exe S SC true moved (only := true)
+          printExclusions exe S0 SC true moved (only := true)
           return 1
       let typedSmaller := typedN ≤ stockFns.length
       IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {stockFns.length} function(s) compiled by the Stock lowering, which compileExeT does not reproduce (lowerFunction) {stockFns.take 3}; leaving out {if typedSmaller then s!"the {typedN} typed function(s)" else s!"those {stockFns.length}"}; not written"
-      if typedSmaller then printExclusions exe S SC false
-      else printExclusions exe S SC true stockFns
+      if typedSmaller then printExclusions exe S0 SC false
+      else printExclusions exe S0 SC true stockFns
       return 1
     match Link.DeadCleanup.compileExeT SC file0 with
     | .ok file =>
@@ -967,7 +970,7 @@ def main (args0 : List String) : IO UInt32 := do
       IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}; not written"
       for (n, fs) in bad do
         IO.eprintln s!"lean-link:   {n}: {fs}"
-      printExclusions exe S SC true (bad.map (·.1))
+      printExclusions exe S0 SC true (bad.map (·.1))
       return 1
   -- This complete-file attempt leaves every previous mode and retry action below intact.
   let returnPinEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
@@ -1097,7 +1100,7 @@ def main (args0 : List String) : IO UInt32 := do
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     if verified then
-      printExclusions exe S SC typedOk
+      printExclusions exe S0 SC typedOk
       return 1
     -- #734 (#691 without `--verified`): where `lean-backend` compiled a function with the Stock
     -- lowering (`stockDiffersB`), the typed compilers and `link SC` (`lowerFunction` on every
