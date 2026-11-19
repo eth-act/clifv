@@ -312,6 +312,54 @@ def bindRes (fSide : Bool) (rs : List ValueId) (bi k : Nat) : M (List Nat) := do
     else modify fun s => { s with envG := s.envG.insert r t }
   pure ts
 
+/-- The reason when `f`'s skeleton statement `s` (class `cls` if `g`'s next statement has
+another shape) has no counterpart: an operand rewrite when `g`'s next statement has the same
+shape, a moved `can_move` load, else `cls`. -/
+def missReason (fid : BlockId) (s : Stmt) (gt? : Option Stmt) (cls : String) : Reject :=
+  match gt? with
+  | some t =>
+    if shape t.inst == shape s.inst then s!"rewrite:operand {opName s.inst} block{fid}"
+    else if movedLoad t.inst then s!"alias:load-moved block{fid}"
+    else s!"{cls} {opName s.inst}/{opName t.inst} block{fid}"
+  | none => if movedLoad s.inst then s!"alias:load-moved block{fid}"
+    else s!"{cls} {opName s.inst} block{fid}"
+where
+  movedLoad : Inst → Bool
+    | .load _ _ fl _ _ => fl.canMove
+    | _ => false
+
+/-- Bind the result of `f`'s statement `s` (at most one) to term `t`. -/
+def bindF (s : Stmt) (t : Nat) : M Unit :=
+  match s.results with
+  | [r] => modify fun st => { st with envF := st.envF.insert r t }
+  | [] => pure ()
+  | _ => throw "wf:arity"
+
+/-- `f`'s skeleton statement `s` (term operands `s'`) at statement `k` of block `bi`, memory
+version `ver`, has no counterpart in `g` (whose next statement is `gt?`): accept it when its
+removal is justified (module doc), else reject. -/
+def removeF (c : Ctx) (fid : BlockId) (bi k : Nat) (ver : Ver) (s : Stmt) (s' : Inst)
+    (gt? : Option Stmt) : M Unit := do
+  match s' with
+  | .load _ _ fl _ _ =>
+    let some (key, _) := keyOf ver s' | throw "wf:internal"
+    if let some v ← lookupFact c key bi then
+      bindF s v
+    else if fl.trapCode.isNone then
+      bindF s (← intern (.poison bi k))
+    else throw (missReason fid s gt? "alias:load")
+  | .store _ _ _ x _ _ =>
+    let some (key, _) := keyOf ver s' | throw "wf:internal"
+    if (← lookupFact c key bi) != some x then throw (missReason fid s gt? "alias:store")
+  | i =>
+    if !mergeK i then throw (missReason fid s gt? "rewrite:skeleton-removed")
+    let nt ← intern (.node s')
+    let some (rt, _) := ((← get).merges.getD nt #[]).find? (fun (_, d) => c.dom d bi)
+      | throw (missReason fid s gt? "rewrite:skeleton-removed")
+    match rt with
+    | some v => bindF s v
+    | none => if s.results.isEmpty then pure () else throw "wf:merge arity"
+
 /-- Check one block (layout index `bi`). -/
 def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
   if fb.params.map (·.2) != gb.params.map (·.2) then throw s!"shape:params block{fb.id}"
@@ -382,66 +430,11 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
         seg := seg + 1
       else
         -- `f`'s statement has no counterpart in `g`
-        match s' with
-        | .load _ _ fl _ _ =>
-          let some (key, _) := keyOf ver s' | throw "wf:internal"
-          match ← lookupFact c key bi with
-          | some v =>
-            if let [r] := s.results then modify fun st => { st with envF := st.envF.insert r v }
-            else throw "wf:load arity"
-          | none =>
-            if fl.trapCode.isNone then
-              let p ← intern (.poison bi k)
-              if let [r] := s.results then modify fun st => { st with envF := st.envF.insert r p }
-            else
-              match gt? with
-              | some t => if (shape t.inst) == shape s.inst then
-                  throw s!"rewrite:operand load block{fb.id}"
-                else throw s!"alias:load block{fb.id}"
-              | none => throw s!"alias:load block{fb.id}"
-        | .store _ _ _ x _ _ =>
-          let some (key, _) := keyOf ver s' | throw "wf:internal"
-          match ← lookupFact c key bi with
-          | some v => if v != x then
-              match gt? with
-              | some t => if shape t.inst == shape s.inst then throw s!"rewrite:operand store block{fb.id}"
-                else throw s!"alias:store block{fb.id}"
-              | none => throw s!"alias:store block{fb.id}"
-          | none =>
-            match gt? with
-            | some t => if shape t.inst == shape s.inst then throw s!"rewrite:operand store block{fb.id}"
-              else throw s!"alias:store block{fb.id}"
-            | none => throw s!"alias:store block{fb.id}"
-        | i =>
-          if mergeK i then
-            let nt ← intern (.node s')
-            match ((← get).merges.getD nt #[]).find? (fun (_, d) => c.dom d bi) with
-            | some (rt, _) =>
-              match s.results, rt with
-              | [r], some v => modify fun st => { st with envF := st.envF.insert r v }
-              | [], _ => pure ()
-              | _, _ => throw "wf:merge arity"
-            | none =>
-              match gt? with
-              | some t => if shape t.inst == shape s.inst then throw s!"rewrite:operand {opName i} block{fb.id}"
-                else throw s!"rewrite:skeleton-removed {opName i} block{fb.id}"
-              | none => throw s!"rewrite:skeleton-removed {opName i} block{fb.id}"
-          else
-            match gt? with
-            | some t =>
-              if shape t.inst == shape s.inst then throw s!"rewrite:operand {opName i} block{fb.id}"
-              else match t.inst with
-                | .load _ _ fl _ _ => if fl.canMove then throw s!"alias:load-moved block{fb.id}"
-                  else throw s!"rewrite:skeleton {opName i}/{opName t.inst} block{fb.id}"
-                | _ => throw s!"rewrite:skeleton {opName i}/{opName t.inst} block{fb.id}"
-            | none => throw s!"rewrite:skeleton-removed {opName i} block{fb.id}"
+        removeF c fb.id bi k ver s s' gt?
         k := k + 1
         seg := seg + 1
     | none, some t =>
-      match t.inst with
-      | .load _ _ fl _ _ => if fl.canMove then throw s!"alias:load-moved block{fb.id}"
-        else throw s!"rewrite:skeleton-added load block{fb.id}"
-      | i => throw s!"rewrite:skeleton-added {opName i} block{fb.id}"
+      throw (missReason fb.id t none "rewrite:skeleton-added")
   for pt in pend do
     let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
       (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
