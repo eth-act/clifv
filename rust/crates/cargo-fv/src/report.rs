@@ -1,7 +1,7 @@
 //! Report types: one `UnitReport` per compiled crate unit (written by fv-rustc), aggregated by
 //! `cargo fv` into `target/fv-report.json`.
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -40,6 +40,12 @@ pub struct FnReport {
     /// mid-end, Cranelift's optimiser for an `.opt.clif` retry).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub about: Option<String>,
+    /// A Lean-compiled function compiled from its `.unopt.clif` (not the `.opt.clif` retry)
+    /// while cg_clif optimised it: Cranelift's `opt_level` in the dump's header, when it is not
+    /// `none` (`--release`, or a profile raising `opt-level`). Stock compiles Cranelift's
+    /// optimised function; the theorem is about the unoptimised one (#1119).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unopt_input_opt_level: Option<String>,
 }
 
 impl FnReport {
@@ -148,6 +154,10 @@ pub struct Counts {
     /// Of `verified`: per theorem (`FnReport::theorem_key`), how many functions.
     #[serde(default)]
     pub by_theorem: BTreeMap<String, usize>,
+    /// Of `verified` + `unverified`: compiled from the `.unopt.clif` while cg_clif optimised the
+    /// function (`FnReport::unopt_input_opt_level`, #1119).
+    #[serde(default)]
+    pub unopt_input_optimised: usize,
 }
 
 impl Counts {
@@ -169,7 +179,13 @@ impl Counts {
                 *self.by_theorem.entry(f.theorem_key()).or_default() += 1;
             }
             Status::Unverified => self.unverified += 1,
-            Status::Fallback => self.fallback += 1,
+            Status::Fallback => {
+                self.fallback += 1;
+                return;
+            }
+        }
+        if f.unopt_input_opt_level.is_some() {
+            self.unopt_input_optimised += 1;
         }
     }
     fn sum(&mut self, o: &Counts) {
@@ -178,6 +194,7 @@ impl Counts {
         self.unverified += o.unverified;
         self.fallback += o.fallback;
         self.verified_normal_returns += o.verified_normal_returns;
+        self.unopt_input_optimised += o.unopt_input_optimised;
         for (t, n) in &o.by_theorem {
             *self.by_theorem.entry(t.clone()).or_default() += n;
         }
@@ -261,6 +278,32 @@ impl Report {
             .filter_map(|u| u.unit.binary.as_ref())
             .flat_map(|b| b.mismatches.iter().map(move |m| format!("{}: {m}", b.path)))
             .collect()
+    }
+
+    /// #1119: cargo fv's line about the Lean-compiled functions compiled from cg_clif's
+    /// unoptimised CLIF while cg_clif optimised them (the dumps' header, so a profile raising
+    /// `opt-level` counts as `--release` does); `None` when there is none.
+    pub fn unopt_input_note(&self) -> Option<String> {
+        let t = &self.totals;
+        if t.unopt_input_optimised == 0 {
+            return None;
+        }
+        let levels: BTreeSet<&str> = self
+            .units
+            .iter()
+            .flat_map(|u| u.unit.functions.iter())
+            .filter(|f| f.status != Status::Fallback)
+            .filter_map(|f| f.unopt_input_opt_level.as_deref())
+            .collect();
+        Some(format!(
+            "{} of the {} Lean-compiled functions were compiled from cg_clif's unoptimised CLIF (.unopt.clif) while cg_clif \
+             optimised them (opt_level={} in their dumps' header): a verified one's theorem is about the unoptimised \
+             function, Cranelift's mid-end is neither applied to it nor trusted, and stock compiles Cranelift's optimised \
+             function, so the code is in general not byte-equal to stock's (docs/USAGE.md \"Optimised builds\", #1119)",
+            t.unopt_input_optimised,
+            t.verified + t.unverified,
+            levels.into_iter().collect::<Vec<_>>().join(", ")
+        ))
     }
 
     /// Human summary; `functions` lists every function.
@@ -482,7 +525,68 @@ mod tests {
             normal_returns: normal,
             theorem: theorem.map(String::from),
             about: about.map(String::from),
+            unopt_input_opt_level: None,
         }
+    }
+
+    fn unit(dep: bool, functions: Vec<FnReport>) -> UnitReport {
+        UnitReport {
+            unit: "u".into(),
+            crate_name: "c".into(),
+            package: "p".into(),
+            kind: "lib".into(),
+            src: "src/lib.rs".into(),
+            dep,
+            std: false,
+            artifact: "a".into(),
+            mode: "plain".into(),
+            cgu_errors: vec![],
+            functions,
+            binary: None,
+        }
+    }
+
+    /// #1119: functions compiled from the `.unopt.clif` while cg_clif optimised them are counted
+    /// (of the Lean-compiled ones) and named in one line; a build without them has no line and
+    /// writes no per-function field.
+    #[test]
+    fn unopt_input_of_optimised_functions() {
+        let th = Some("E2E.backend_correct_world_niX_semantic_return_pins");
+        let opt = |mut r: FnReport| {
+            r.unopt_input_opt_level = Some("speed_and_size".into());
+            r
+        };
+        let members = vec![
+            opt(f(Status::Verified, th, Some("the source function"), false)),
+            opt(f(Status::Verified, th, Some("the source function"), false)),
+            opt(f(Status::Unverified, None, None, false)),
+            // the `.opt.clif` retry: compiled from Cranelift's optimised function
+            f(Status::Verified, th, Some("the source function, compiled from cg_clif's optimised dump (.opt.clif)"), false),
+            // cg_clif's code: not counted, whatever the field says
+            opt(f(Status::Fallback, None, None, false)),
+        ];
+        let deps = vec![opt(f(Status::Verified, th, Some("the source function"), false)), f(Status::Fallback, None, None, false)];
+        let r = Report::new("release", "plain", "", vec![unit(false, members), unit(true, deps)]);
+        assert_eq!((r.totals.unopt_input_optimised, r.members.unopt_input_optimised, r.deps.unopt_input_optimised), (4, 3, 1));
+        // nothing else changes: the counts are the ones without the field
+        assert_eq!((r.totals.functions, r.totals.verified, r.totals.unverified, r.totals.fallback), (7, 4, 1, 2));
+        let note = r.unopt_input_note().expect("a line");
+        assert!(note.starts_with("4 of the 5 Lean-compiled functions were compiled from cg_clif's unoptimised CLIF"), "{note}");
+        assert!(note.contains("(opt_level=speed_and_size in their dumps' header)") && note.ends_with("#1119)"), "{note}");
+        let json = serde_json::to_value(&r).unwrap();
+        assert_eq!(json["totals"]["unopt_input_optimised"], 4);
+
+        // a build at opt_level=none: no line, no per-function field, the count 0
+        let plain = Report::new("debug", "plain", "", vec![unit(false, vec![f(Status::Verified, th, Some("the source function"), false)])]);
+        assert!(plain.unopt_input_note().is_none());
+        let json = serde_json::to_value(&plain).unwrap();
+        assert_eq!(json["totals"]["unopt_input_optimised"], 0);
+        assert!(json["units"][0]["functions"][0].get("unopt_input_opt_level").is_none());
+        // reports written before the field read as 0
+        let mut old = json.clone();
+        old["totals"].as_object_mut().unwrap().remove("unopt_input_optimised");
+        let old: Report = serde_json::from_value(old).unwrap();
+        assert_eq!(old.totals.unopt_input_optimised, 0);
     }
 
     #[test]
