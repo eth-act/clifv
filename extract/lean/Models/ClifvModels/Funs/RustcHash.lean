@@ -78,6 +78,12 @@ def hashBytes (b : Array UInt8) : UInt64 := Id.run do
 end ClifvModels.RustcHash
 
 open ClifvModels.RustcHash in
+/-- [rustc_hash::{rustc_hash::FxHasher}::default]: the inherent `const fn default()`,
+`FxHasher { hash: 0 }` (an item once the whole `Hasher` impl is translated). -/
+def rustc_hash.FxHasher.default : Result rustc_hash.FxHasher :=
+  ok ⟨toUsize 0⟩
+
+open ClifvModels.RustcHash in
 /-- [rustc_hash::{core::default::Default<rustc_hash::FxHasher>}::default]: `FxHasher { hash: 0 }`. -/
 def rustc_hash.FxHasher.Insts.CoreDefaultDefault.default : Result rustc_hash.FxHasher :=
   ok ⟨toUsize 0⟩
