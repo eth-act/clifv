@@ -28,12 +28,19 @@
 # time (~40 s per variant).
 #
 #   scripts/build-cg-clif.sh      (run it through scripts/memcap.sh on shared machines)
+#
+# Experiment (agent/NightlyPin1, not for main): FV_CG_CLIF_CRANELIFT=0.136.1 builds the same
+# nightly's cg_clif against that Cranelift version instead of the one its Cargo.lock pins
+# (output target/cg_clif-cl<version>/…; API adaptations in scripts/patches/cg-clif-cl<version>.patch
+# when that file exists).
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TC=${FV_TOOLCHAIN:-nightly-2026-09-26}
-OUT=$ROOT/target/cg_clif
+CL=${FV_CG_CLIF_CRANELIFT:-}
+OUT=$ROOT/target/cg_clif${CL:+-cl$CL}
 SRC=$OUT/rust
 PATCH=$ROOT/scripts/patches/cg-clif-extnames.patch
+CLPATCH=$ROOT/scripts/patches/cg-clif-cl$CL.patch
 commit=$(rustc +"$TC" -vV | sed -n 's/^commit-hash: //p')
 [[ -n "$commit" ]] || { echo "no commit-hash in rustc +$TC -vV" >&2; exit 1; }
 rustup component add rustc-dev rust-src --toolchain "$TC"
@@ -50,6 +57,14 @@ fi
 # the patch, exactly: reset the patched files, then apply
 git -C "$SRC" checkout -q -- compiler/rustc_codegen_cranelift
 git -C "$SRC" apply "$PATCH"
+if [[ -n "$CL" ]]; then
+  cg="$SRC/compiler/rustc_codegen_cranelift"
+  sed -i -E "s/^(cranelift-[a-z]+ = \{ version = \")[0-9.]+\"/\1$CL\"/" "$cg/Cargo.toml"
+  grep -E '^cranelift-' "$cg/Cargo.toml"
+  (cd "$cg" && cargo +"$TC" update -p cranelift-codegen -p cranelift-frontend -p cranelift-module \
+    -p cranelift-native -p cranelift-jit -p cranelift-object)
+  if [[ -f "$CLPATCH" ]]; then git -C "$SRC" apply "$CLPATCH"; fi
+fi
 sysroot=$(rustc +"$TC" --print sysroot)
 for variant in unwind abort; do
   features=()
