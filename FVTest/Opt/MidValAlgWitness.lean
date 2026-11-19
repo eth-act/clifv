@@ -17,7 +17,10 @@ look-alike it rejects.
 * `redExt`: `ireduce.i16 (sextend.i64 y)` with `y` an `i8` node is `sextend.i16 y` (`pos_red`);
   the look-alike `uextend.i16 y` is rejected (`neg_red`) and no simulation (`red_not_sim`: for
   `y = 0x80`, `f` returns `0xff80`, `g` `0x0080`), so every certificate is rejected
-  (`red_rejected`).
+  (`red_rejected`). The unsound shape without a width check, `ireduce.i16 (uextend.i64 v0)` with
+  `v0` an `i8` parameter (an atom: its type is not in the table) folded to `v0`, is rejected
+  (`neg_redAtom`) and no simulation (`redAtom_not_sim`: for `v0 = 0x80`, `f` returns the `i16`
+  `0x0080`, `g` the `i8` `0x80`), so every certificate is rejected (`redAtom_rejected`).
 
 **Real pairs** (crypto-bigint 0.7.11's test build, `FVTest/Opt/midval/real_alg_*.clif`), each
 rejected by family 1 alone, accepted by the re-check with `Norm.std` (decided), with the
@@ -75,6 +78,11 @@ theorem pos_red : accepts redF redGs = some true := by native_decide
 theorem pos_red_const_rejects : acceptsConst redF redGs = some false := by native_decide
 theorem neg_red : accepts redF redGu = some false := by native_decide
 
+def redAtomF : String := "function %f(i8) -> i16 {\nblock0(v0: i8):\n    v1 = uextend.i64 v0\n    v2 = ireduce.i16 v1\n    return v2\n}"
+def redAtomG : String := "function %f(i8) -> i16 {\nblock0(v0: i8):\n    return v0\n}"
+
+theorem neg_redAtom : accepts redAtomF redAtomG = some false := by native_decide
+
 /-! ## Two look-alikes are no simulations -/
 
 /-- A one-parameter function of one block. -/
@@ -93,11 +101,17 @@ def redFn : Function :=
 def redGun : Function :=
   fn1 .i8 .i16 [{ results := [1], inst := .binary .iadd .i8 0 0 },
     { results := [3], inst := .extend .uextend .i16 1 }] 3
+def redAtomFn : Function :=
+  fn1 .i8 .i16 [{ results := [1], inst := .extend .uextend .i64 0 },
+    { results := [2], inst := .ireduce .i16 1 }] 2
+def redAtomGn : Function := fn1 .i8 .i16 [] 0
 
 theorem selNegF_text : fn? selNegF = some selNegFn := by native_decide
 theorem selNegG_text : fn? selNegG = some selNegGn := by native_decide
 theorem redF_text : fn? redF = some redFn := by native_decide
 theorem redGu_text : fn? redGu = some redGun := by native_decide
+theorem redAtomF_text : fn? redAtomF = some redAtomFn := by native_decide
+theorem redAtomG_text : fn? redAtomG = some redAtomGn := by native_decide
 
 theorem sel_not_sim : ¬ FunSimMU selNegFn selNegGn :=
   not_funSimMU_ret_ne (b := selNegFn.blocks.head!) (b' := selNegGn.blocks.head!)
@@ -126,6 +140,20 @@ theorem red_rejected (cert : Cert) :
   cases h : checkCert (ConstPhi.run redFn) redGun cert
   · rfl
   · exact absurd (checked_simMU h) red_not_sim
+
+theorem redAtom_not_sim : ¬ FunSimMU redAtomFn redAtomGn :=
+  not_funSimMU_ret_ne (b := redAtomFn.blocks.head!) (b' := redAtomGn.blocks.head!)
+    (args := [⟨.i8, 0x80⟩]) (regs := Regs.empty.set 0 ⟨.i8, 0x80⟩) (m := Mem.empty)
+    (vals := [⟨.i16, 0x0080⟩]) (vals' := [⟨.i8, 0x80⟩])
+    rfl rfl rfl rfl rfl (.step rfl (.step rfl (.refl _ _))) rfl
+    (.refl _ _) rfl (by decide)
+
+/-- The re-check rejects every certificate for `neg_redAtom`. -/
+theorem redAtom_rejected (cert : Cert) :
+    checkCert (ConstPhi.run redAtomFn) redAtomGn cert = false := by
+  cases h : checkCert (ConstPhi.run redAtomFn) redAtomGn cert
+  · rfl
+  · exact absurd (checked_simMU h) redAtom_not_sim
 
 /-! ## Real pairs -/
 

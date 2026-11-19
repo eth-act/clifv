@@ -465,14 +465,19 @@ import FVTest.Opt.MidValAlgWitness
 #print axioms Opt.MidVal.AlgWitness.pos_red -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.pos_red_const_rejects -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.neg_red -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.neg_redAtom -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.selNegF_text -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.selNegG_text -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.redF_text -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.redGu_text -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.redAtomF_text -- witness: native_decide
+#print axioms Opt.MidVal.AlgWitness.redAtomG_text -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.sel_not_sim
 #print axioms Opt.MidVal.AlgWitness.sel_rejected
 #print axioms Opt.MidVal.AlgWitness.red_not_sim
 #print axioms Opt.MidVal.AlgWitness.red_rejected
+#print axioms Opt.MidVal.AlgWitness.redAtom_not_sim
+#print axioms Opt.MidVal.AlgWitness.redAtom_rejected
 #print axioms Opt.MidVal.AlgWitness.sim_of_checked
 #print axioms Opt.MidVal.AlgWitness.real_mul_const_rejects -- witness: native_decide
 #print axioms Opt.MidVal.AlgWitness.real_mul_checked -- witness: native_decide
