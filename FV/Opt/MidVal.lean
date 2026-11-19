@@ -287,9 +287,9 @@ constants, by `Clif.evalInst` (no rewrite rule: the semantics itself). -/
 def evalConst (tms : Array Tm) (i : Inst) : Option Tm := do
   let ops := operands i
   if ops.isEmpty || !isPure i || partialK i then none
-  let vals ← ops.mapM fun o => match tms[o]? with
-    | some (.node (.iconst ty imm)) => some (Val.mk ty imm)
-    | _ => none
+  let vals ← ops.mapM fun o => match (tms[o]? : Option Tm) with
+    | some (Tm.node (Inst.iconst ty imm)) => some (Val.mk ty imm)
+    | _ => (none : Option Val)
   let regs : Regs := fun x => (ops.zip vals).lookup x
   let fr : Frame := { func := default, regs, slots := [], body := [], term := .ret [] }
   match evalInst fr Mem.empty i with
