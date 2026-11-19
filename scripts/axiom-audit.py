@@ -16,28 +16,32 @@ followed by ` (remark)`) marks a non-vacuity witness, which may also depend on t
 `native_decide` adds (`Y._native.native_decide.ax_…`); compiler theorems may not.
 
 The policy is decided twice, and both must pass (#1133):
-- In Lean: the file runs as a copy in PKG/.lake/axiom-audit/ with `import Lean` prepended and
-  LEAN_CHECK below appended: the command `#axiom_audit "<nonce>" "<flags>" X₁ … Xₙ` (the commands'
-  names in order, flag 1 for a witness) compares every axiom of every Xₖ with the allowed names and
-  prints `axiom-audit <nonce> <k> 'Xₖ' native=<m>` per command, `axiom-audit <nonce> native A
-  <module> <line> <column>` per native axiom A of a witness (A must be an axiom `e = true` for a
-  closed Bool `e`; the position is where Lean recorded A's declaration) and
-  `axiom-audit <nonce> done <n>` at the end. The nonce is fresh per run, so no command of the file
-  can print these lines, and a file that stops early (`#exit`) or swallows them fails. The source
-  text at each native axiom's position must be the tactic that adds such axioms (`native_decide`,
-  `decide +native`): an axiom declared by hand under such a name sits at `axiom` and fails.
-  (Evaluating each `e` again instead took the audit from 6 to 74 minutes on main, 2026-11-19.)
+- In Lean: the file runs as a copy in PKG/.lake/axiom-audit/: `import Lean`, the file's imports,
+  LEAN_CHECK below, the command `#axiom_audit "<nonce>" "top" "<flags>" X₁ … Xₙ` (the commands'
+  names in order, flag 1 for a witness), the rest of the file, and the same command with "end".
+  The command compares every axiom of every Xₖ with the allowed names (by `Name`) and prints
+  `axiom-audit <nonce> <phase> <k> 'Xₖ' native=<m>` per command (or `… <k> deferred` at the top
+  for a theorem the file itself declares) and `axiom-audit <nonce> <phase> done <n>`. Each native
+  axiom `Y._native.native_decide.ax_…` of a witness must be an axiom `e = true` for a closed Bool
+  `e`, declared (by Lean's recorded range) inside declaration Y of the same module, as the
+  `native_decide` in Y's proof that added it: one declared by hand (`axiom`, or a command macro)
+  sits outside Y and fails. (Evaluating each `e` again instead took the audit from 6 to 74 minutes
+  on main, 2026-11-19.) The top block runs before any code of the file and is the verdict for every
+  theorem it resolves; both blocks must be complete, and the nonce is fresh per run, so no command
+  of the file can print these lines unseen, and a file that stops early (`#exit`) fails.
 - From the output: Lean prints one message per command, in command order:
   `'X' depends on axioms: [a, b, …]` (the list may wrap over several lines) or
   `'X' does not depend on any axioms`. The k-th message is the k-th command's result: its name
   must be the command's name and the number of messages the number of commands, so no result can
   be dropped, added or attributed to another command.
+Not covered: Lean metaprograms written to deceive the audit (an elaborator that declares such an
+axiom inside Y, code in a file that shadows what LEAN_CHECK calls for the end block); the audit
+trusts the code it imports as it trusts the kernel check.
 
 One line per file: results / commands, Lean errors, disallowed axioms in the printed lists, native
-axioms checked at their declaration, other problems. Exit status 0 iff every file compiles without
-an error (a file may also check by other commands, e.g. a `run_cmd` that fails on an unexpected
-axiom), every command has its own result and its own line from LEAN_CHECK, every native axiom of a
-witness was added by a `native_decide`, and no disallowed axiom appears.
+axioms checked, other problems. Exit status 0 iff every file compiles without an error (a file may
+also check by other commands, e.g. a `run_cmd` that fails on an unexpected axiom), every command
+has its own result and its own lines from LEAN_CHECK, and no disallowed axiom appears.
 """
 import argparse, pathlib, re, secrets, subprocess, sys
 
@@ -53,51 +57,58 @@ RESULT = re.compile(r"^'([^\n]*?)' (?:depends on axioms: \[([^\]]*)\]|does not d
 PHRASE = re.compile(r"depends on axioms|does not depend on any axioms")
 CHAR = re.compile(r"'(?:\\(?:x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|.)|[^\\\n'])'")
 RAW = re.compile(r'r(#*)"')
-SITE = re.compile(r"(?:native_decide|decide)\b")
 
-# Appended to the copy of every audit file. Names resolve as `#print axioms` resolves them
-# (`realizeGlobalConstWithInfos`, at the end of the file); `collectAxioms` is what it prints; native
-# axioms are named as `#print axioms` names them (`MessageData.ofConstName`).
+# Inserted after the file's imports, before any of its code; full names only, no `open`. Names
+# resolve as `#print axioms` resolves them (`realizeGlobalConstWithInfos`); `collectAxioms` is
+# what it prints.
 LEAN_CHECK = """
-open Lean Elab Command Meta in
 /-- scripts/axiom-audit.py: the axiom policy of the file's `#print axioms` commands. -/
-elab "#axiom_audit " nonce:str flags:str ids:ident* : command => do
+elab "#axiom_audit " nonce:str phase:str flags:str ids:ident* : command => do
   let nonce := nonce.getString
+  let phase := phase.getString
   let flags := flags.getString.toList.toArray
   unless flags.size == ids.size do
     throwError "axiom-audit: {flags.size} flags for {ids.size} names"
   let standard := [``propext, ``Classical.choice, ``Quot.sound]
-  let isNative : Name → Bool := fun ax => match ax.eraseMacroScopes with
+  let isNative : Lean.Name → Bool := fun ax => match ax.eraseMacroScopes with
     | .str (.str (.str _ "_native") "native_decide") s => s.startsWith "ax_"
     | _ => false
-  let mut done : NameSet := {}
+  let le : Lean.Position → Lean.Position → Bool := fun a b =>
+    a.line < b.line || (a.line == b.line && a.column ≤ b.column)
+  let mut done : Lean.NameSet := {}
   for i in [0:ids.size] do
     let witness := flags[i]! == '1'
-    for c in ← liftCoreM (realizeGlobalConstWithInfos ids[i]!) do
+    let cs ← try Lean.Elab.Command.liftCoreM (Lean.Elab.realizeGlobalConstWithInfos ids[i]!)
+      catch ex => if phase == "top" then pure [] else throw ex
+    if cs.isEmpty then
+      Lean.logInfo m!"axiom-audit {nonce} {phase} {i} deferred"
+    for c in cs do
       let mut n : Nat := 0
-      for ax in ← collectAxioms c do
+      for ax in ← Lean.collectAxioms c do
         if standard.contains ax then continue
         unless witness && isNative ax do
-          logError m!"axiom-audit: '{c}' depends on the disallowed axiom {ax}"
+          Lean.logError m!"axiom-audit: '{c}' depends on the disallowed axiom {ax}"
           continue
         n := n + 1
         if done.contains ax then continue
         done := done.insert ax
-        let env ← getEnv
+        let env ← Lean.getEnv
         let some (.axiomInfo v) := env.find? ax
           | throwError "axiom-audit: native axiom {ax} is not an axiom"
         let some (ty, e, rhs) := v.type.eq?
           | throwError "axiom-audit: native axiom {ax} does not state `e = true`"
         unless ty.isConstOf ``Bool && rhs.isConstOf ``Bool.true && !e.hasFVar && !e.hasMVar do
           throwError "axiom-audit: native axiom {ax} does not state `e = true` for a closed Bool `e`"
-        let some r ← findDeclarationRanges? ax
+        let y := ax.eraseMacroScopes.getPrefix.getPrefix.getPrefix
+        let some r ← Lean.findDeclarationRanges? ax
           | throwError "axiom-audit: native axiom {ax} has no declaration range"
-        let mod := match env.getModuleIdxFor? ax with
-          | some i => env.allImportedModuleNames[i.toNat]!
-          | none => Name.anonymous
-        logInfo m!"axiom-audit {nonce} native {MessageData.ofConstName ax} {mod} {r.range.pos.line} {r.range.pos.column}"
-      logInfo m!"axiom-audit {nonce} {i} '{c}' native={n}"
-  logInfo m!"axiom-audit {nonce} done {ids.size}"
+        let some ry ← Lean.findDeclarationRanges? y
+          | throwError "axiom-audit: native axiom {ax}: {y} has no declaration range"
+        unless env.getModuleIdxFor? ax == env.getModuleIdxFor? y && le ry.range.pos r.range.pos
+            && le r.range.endPos ry.range.endPos do
+          throwError "axiom-audit: native axiom {ax} is not declared inside {y}"
+      Lean.logInfo m!"axiom-audit {nonce} {phase} {i} '{c}' native={n}"
+  Lean.logInfo m!"axiom-audit {nonce} {phase} done {ids.size}"
 """
 
 
@@ -174,17 +185,22 @@ def full_name(written):
 
 
 def check_source(text, nonce):
-    """The copy of an audit file that Lean runs: `import Lean`, `text`, LEAN_CHECK on its commands."""
+    """The copy of an audit file that Lean runs: `import Lean`, the file's imports, LEAN_CHECK and
+    its top block, the rest of the file, the end block."""
     cmds = commands(text)[0]
-    flags = "".join("1" if witness else "0" for _, witness in cmds)
-    return ("import Lean\n" + text + ("" if text.endswith("\n") else "\n") + LEAN_CHECK
-            + f'#axiom_audit "{nonce}" "{flags}"' + "".join(" " + name for name, _ in cmds) + "\n")
+    args = (f'"{"".join("1" if witness else "0" for _, witness in cmds)}"'
+            + "".join(" " + name for name, _ in cmds))
+    lines = text.split("\n")
+    code = strip_comments(text).split("\n")
+    head = next((k for k, c in enumerate(code) if c.strip() and not c.strip().startswith("import ")),
+                len(lines))
+    return "\n".join(["import Lean"] + lines[:head] + [LEAN_CHECK, f'#axiom_audit "{nonce}" "top" {args}']
+                     + lines[head:] + [f'#axiom_audit "{nonce}" "end" {args}', ""])
 
 
-def audit(text, out, rc, nonce, read_module):
+def audit(text, out, rc, nonce):
     """Verdict on one file from its source `text`, the output `out` and exit code `rc` of Lean on
-    `check_source(text, nonce)`; `read_module(m)`: the source text of module m, or None.
-    Returns (ok, summary, problems)."""
+    `check_source(text, nonce)`. Returns (ok, summary, problems)."""
     cmds, occurrences = commands(text)
     res = results(out)
     problems = []
@@ -201,41 +217,27 @@ def audit(text, out, rc, nonce, read_module):
         for x in axioms or []:
             if x not in STANDARD and not (witness and NATIVE.fullmatch(x)):
                 other.append(f"{printed}: {x}")
-    natives = [[x for x in axioms or [] if NATIVE.fullmatch(x)] if witness else []
+    natives = [sum(bool(NATIVE.fullmatch(x)) for x in axioms or []) if witness else 0
                for (_, witness), (_, axioms) in zip(cmds, res)]
-    want = [(k, full_name(written), len(xs)) for k, ((written, _), xs) in enumerate(zip(cmds, natives))]
-    checked = [(int(k), name, int(m)) for k, name, m in
-               re.findall(rf"^axiom-audit {nonce} (\d+) '([^\n]*?)' native=(\d+)$", out, re.M)]
-    sites = re.findall(rf"^axiom-audit {nonce} native (.+) (\S+) (\d+) (\d+)$", out, re.M)
-    done = re.findall(rf"^axiom-audit {nonce} done (\d+)$", out, re.M)
-    if len(re.findall(nonce, out)) != len(checked) + len(sites) + len(done):
+    want = [(str(k), full_name(written), str(m)) for k, ((written, _), m) in enumerate(zip(cmds, natives))]
+    lines = re.findall(rf"^axiom-audit {nonce} (top|end) (?:(\d+) (?:'([^\n]*?)' native=(\d+)|deferred)|done (\d+))$",
+                       out, re.M)
+    if len(re.findall(nonce, out)) != len(lines):
         problems.append("a check message not at the start of a line")
-    if done != [str(len(cmds))] or len(res) != len(cmds) or checked != want:
-        problems.append(f"Lean's checks {checked} done {done} for the commands {want}")
-    if sorted(ax for ax, *_ in sites) != sorted({x for xs in natives for x in xs}):
-        problems.append(f"native axioms checked in Lean {sorted(ax for ax, *_ in sites)}")
-    sources = {"[anonymous]": check_source(text, nonce)}
-    for ax, mod, line, col in sites:
-        if mod not in sources:
-            sources[mod] = read_module(mod) or ""
-        lines, line, col = sources[mod].split("\n"), int(line), int(col)
-        at = lines[line - 1][col:] if 0 < line <= len(lines) else ""
-        if not SITE.match(at):
-            problems.append(f"native axiom {ax} declared at {mod}:{line}:{col}, not at a native_decide: {at[:40]!r}")
+    top = [l[1:4] for l in lines if l[0] == "top" and not l[4]]
+    end = [l[1:4] for l in lines if l[0] == "end" and not l[4]]
+    done = [(l[0], l[4]) for l in lines if l[4]]
+    deferred = sum(1 for k, name, _ in top if not name)
+    if (done != [("top", str(len(cmds))), ("end", str(len(cmds)))] or len(res) != len(cmds) or end != want
+            or [t if t[1] else (t[0], *w[1:]) for t, w in zip(top, want)] != want or len(top) != len(want)):
+        problems.append(f"Lean's checks top {top} end {end} done {done} for the commands {want}")
     errors = len(re.findall(r"\berror\b", out))
     ok = rc == 0 and errors == 0 and not other and not problems
     summary = (f"theorems {len(res)}/{len(cmds)} rc={rc} errors={errors} "
-               f"other_axioms=[{', '.join(sorted(set(other)))}] native_sites={len(sites) if ok else 0}"
+               f"other_axioms=[{', '.join(sorted(set(other)))}] native={sum(natives)}"
+               + (f" checked_after_the_file={deferred}" if deferred else "")
                + (f" problems=[{'; '.join(problems)}]" if problems else ""))
     return ok, summary, problems
-
-
-def module_reader(pkg):
-    """`read_module` for the modules of the Lake package in directory `pkg`."""
-    def read(mod):
-        p = pkg / (mod.replace(".", "/") + ".lean")
-        return p.read_text() if p.is_file() else None
-    return read
 
 
 def main():
@@ -263,7 +265,7 @@ def main():
         out = r.stdout + r.stderr
         if a.log_dir:
             (pathlib.Path(a.log_dir) / f"{f.stem}.log").write_text(out)
-        ok, summary, _ = audit(text, out, r.returncode, nonce, module_reader(cwd))
+        ok, summary, _ = audit(text, out, r.returncode, nonce)
         bad += not ok
         print(f"{'ok  ' if ok else 'FAIL'} {f.name}: {summary}", flush=True)
         if not ok:

@@ -39,35 +39,22 @@ def source(lines):
     return "import ProbeDefs\n" + "\n".join(lines) + "\n"
 
 
-# The probe module's source: every native axiom of the probes was added by this line's tactic.
-PROBE_SRC = "theorem w : (12:Nat) + 10 = 22 := by native_decide\n"
-SITE = PROBE_SRC.index("native_decide")
+def block(text, phase, nonce=NONCE, deferred=()):
+    """The lines LEAN_CHECK's `phase` block prints when every command passes it."""
+    cmds = aa.commands(text)[0]
+    return ("".join(f"axiom-audit {nonce} {phase} {k} deferred\n" if k in deferred else
+                    f"axiom-audit {nonce} {phase} {k} '{aa.full_name(name)}' native={NATIVES.get(name, 0) if w else 0}\n"
+                    for k, (name, w) in enumerate(cmds))
+            + f"axiom-audit {nonce} {phase} done {len(cmds)}\n")
 
 
-def lean_check(text, nonce=NONCE, module="ProbeDefs", line=1, col=SITE):
-    """The lines LEAN_CHECK prints when every command passes it; native axioms declared at
-    `module`:`line`:`col`."""
-    cmds, seen, out = aa.commands(text)[0], set(), ""
-    for k, (name, w) in enumerate(cmds):
-        axioms = aa.results(OUT[name])[0][1] if name in OUT and w else None
-        for x in axioms or []:
-            if aa.NATIVE.fullmatch(x) and x not in seen:
-                seen.add(x)
-                out += f"axiom-audit {nonce} native {x} {module} {line} {col}\n"
-        out += f"axiom-audit {nonce} {k} '{aa.full_name(name)}' native={NATIVES.get(name, 0) if w else 0}\n"
-    return out + f"axiom-audit {nonce} done {len(cmds)}\n"
-
-
-def read_module(mod):
-    return PROBE_SRC if mod == "ProbeDefs" else None
-
-
-def verdict(lines, outs, rc=0, check=None):
-    """audit() of a file made of `lines` whose `#print axioms` output is `outs`, followed by
-    LEAN_CHECK's lines `check` (default: those of a passing check)."""
+def verdict(lines, outs, rc=0, top=None, end=None):
+    """audit() of a file made of `lines` whose `#print axioms` output is `outs`, between
+    LEAN_CHECK's blocks `top` and `end` (default: those of a passing check)."""
     text = source(lines)
-    out = "".join(outs) + (lean_check(text) if check is None else check)
-    return aa.audit(text, out, rc, NONCE, read_module)
+    out = ((block(text, "top") if top is None else top) + "".join(outs)
+           + (block(text, "end") if end is None else end))
+    return aa.audit(text, out, rc, NONCE)
 
 
 class Attribution(unittest.TestCase):
@@ -75,7 +62,7 @@ class Attribution(unittest.TestCase):
         ok, summary, _ = verdict([p("clean1"), p("nativeW", True), p("std1")],
                                  [OUT["clean1"], OUT["nativeW"], OUT["std1"]])
         self.assertTrue(ok, summary)
-        self.assertIn("native_sites=1", summary)
+        self.assertIn("native=1", summary)
 
     def test_bad_theorem_after_and_before_axiom_free_one(self):
         for bad, ax in BAD.items():
@@ -91,7 +78,7 @@ class Attribution(unittest.TestCase):
         ok, summary, _ = verdict([p("clean1"), p(LONGN, True), p("std1")],
                                  [OUT["clean1"], OUT[LONGN], OUT["std1"]])
         self.assertTrue(ok, summary)
-        self.assertIn("native_sites=3", summary)
+        self.assertIn("native=3", summary)
 
     def test_witness_mark_is_per_command_not_per_name_prefix(self):
         for marked, plain in (("native1", "native1_ext"), ("native1_ext", "native1")):
@@ -177,29 +164,44 @@ class Forged(unittest.TestCase):
         # a result message that does not start a line is not a result, and fails
         self.assertFalse(verdict([p("clean1")], ["x " + OUT["clean1"]])[0])
 
-    def test_exit_before_the_command_runs(self):
+    def test_exit_before_the_end_block(self):
         # `#eval IO.println "'sorry1' does not depend on any axioms"`, `#exit`, `#print axioms sorry1`:
-        # the forged result matches, but LEAN_CHECK never runs (and no file knows the nonce)
+        # the forged result matches, the top block reports sorryAx, the end block never runs
         forged = "'sorry1' does not depend on any axioms\n"
         lines = ['#eval IO.println "\'sorry1\' does not depend on any axioms"', "#exit", p("sorry1")]
-        self.assertFalse(verdict(lines, [forged], check="")[0])
-        stale = lean_check(source(lines), nonce="f" * 32)
-        self.assertFalse(verdict(lines, [forged], check=stale)[0])
+        err = "/x/f.lean:9:0: error: axiom-audit: 'sorry1' depends on the disallowed axiom sorryAx\n"
+        self.assertFalse(verdict(lines, [forged], rc=1, top=err + block(source(lines), "top"), end="")[0])
+        # even a clean theorem fails when the end block does not run, or prints another nonce
+        lines = ["#exit", p("clean1")]
+        self.assertFalse(verdict(lines, [OUT["clean1"]], end="")[0])
+        self.assertFalse(verdict(lines, [OUT["clean1"]], end=block(source(lines), "end", nonce="f" * 32))[0])
 
     def test_check_lines_must_match_the_commands(self):
         lines = [p("clean1"), p("nativeW", True), p(LONGN, True)]
         outs = [OUT["clean1"], OUT["nativeW"], OUT[LONGN]]
-        good = lean_check(source(lines)).splitlines(keepends=True)
-        # 0 clean1, native of nativeW, 1 nativeW, three natives of LONGN, 2 LONGN, done
-        self.assertEqual(len(good), 8)
+        text = source(lines)
+        top, end = block(text, "top").splitlines(keepends=True), block(text, "end")
         self.assertTrue(verdict(lines, outs)[0])
-        for check in ("".join(good[:-1]), "".join(good[1:]), "".join(good[:3] + good[4:]),
-                      "".join(good[:2] + good[1:]), "".join([good[2], good[1], good[0]] + good[3:]),
-                      "".join(good).replace("native=3", "native=2"),
-                      "".join(good).replace("done 3", "done 2"),
-                      "x " + "".join(good)):
-            with self.subTest(check=check):
-                self.assertFalse(verdict(lines, outs, check=check)[0])
+        for t in (top[:-1], top[1:], top[:1] + top[:], [top[1], top[0]] + top[2:],
+                  [l.replace("native=3", "native=2") for l in top], [l.replace("done 3", "done 2") for l in top],
+                  ["x " + top[0]] + top[1:], [top[0].replace("'clean1'", "'std1'")] + top[1:]):
+            with self.subTest(top=t):
+                self.assertFalse(verdict(lines, outs, top="".join(t))[0])
+        for e in ("", end.replace("native=1", "native=0"), end + end, end.replace(" end ", " top ")):
+            with self.subTest(end=e):
+                self.assertFalse(verdict(lines, outs, end=e)[0])
+        # forged extra lines with the right nonce (read from the file) fail too
+        self.assertFalse(verdict(lines, outs, end=end + top[0])[0])
+
+    def test_theorem_declared_by_the_file(self):
+        # stock-logical-source-transfer-witness.lean: the top block cannot resolve it yet
+        lines = ["theorem clean1 : True := trivial", p("clean1")]
+        text = source(lines)
+        top = block(text, "top", deferred={0})
+        ok, summary, _ = verdict(lines, [OUT["clean1"]], top=top)
+        self.assertTrue(ok, summary)
+        self.assertIn("checked_after_the_file=1", summary)
+        self.assertFalse(verdict(lines, [OUT["clean1"]], top=top, end="")[0])
 
     def test_lean_check_error_with_forged_clean_output(self):
         # `#guard_msgs` swallowed the real result and an `#eval` printed a clean one; the check in
@@ -207,37 +209,24 @@ class Forged(unittest.TestCase):
         lines = [p("sorry1")]
         err = "/x/.lake/axiom-audit/f.lean:9:0: error: axiom-audit: 'sorry1' depends on the disallowed axiom sorryAx\n"
         self.assertFalse(verdict(lines, ["'sorry1' does not depend on any axioms\n"], rc=1,
-                                 check=err + lean_check(source(lines)))[0])
+                                 top=err + block(source(lines), "top"))[0])
 
     def test_native_axiom_declared_by_hand(self):
-        # `axiom fake2._native.native_decide.ax_1 : decide ((1:Nat) = 2) = true` in module Fake,
-        # used by a marked witness: Lean records the axiom's declaration at `axiom`
-        out = "'fake2W' depends on axioms: [fake2._native.native_decide.ax_1]\n"
-        check = (f"axiom-audit {NONCE} native fake2._native.native_decide.ax_1 Fake 3 0\n"
-                 f"axiom-audit {NONCE} 0 'fake2W' native=1\naxiom-audit {NONCE} done 1\n")
-        text = source([p("fake2W", True)])
-        fake = "import ProbeDefs\n\naxiom fake2._native.native_decide.ax_1 : decide ((1:Nat) = 2) = true\n"
-        ok, summary, _ = aa.audit(text, out + check, 0, NONCE, {"Fake": fake}.get)
-        self.assertFalse(ok)
-        self.assertIn("declared at Fake:3:0, not at a native_decide: 'axiom fake2.", summary)
-        # a module whose source is not found fails too
-        self.assertFalse(aa.audit(text, out + check, 0, NONCE, read_module)[0])
-        # the same line pointing at a real `native_decide` passes
-        self.assertTrue(aa.audit(text, out + check.replace("Fake 3 0", f"ProbeDefs 1 {SITE}"), 0, NONCE,
-                                 read_module)[0])
-
-    def test_native_axiom_of_another_shape(self):
-        # `axiom fake._native.native_decide.ax_1 : False`: LEAN_CHECK stops with an error
-        err = ("/x/.lake/axiom-audit/h.lean:29:0: error: axiom-audit: native axiom "
-               "fake._native.native_decide.ax_1 does not state `e = true`\n")
-        out = "'fakeW' depends on axioms: [fake._native.native_decide.ax_1]\n"
-        self.assertFalse(verdict([p("fakeW", True)], [out], rc=1, check=err)[0])
+        # `axiom fake2._native.native_decide.ax_1 : decide ((1:Nat) = 2) = true` (or `: False`),
+        # used by a marked witness: LEAN_CHECK stops with an error
+        for why in ("is not declared inside fake2", "does not state `e = true`"):
+            with self.subTest(why=why):
+                err = f"/x/.lake/axiom-audit/h.lean:5:0: error: axiom-audit: native axiom fake2._native.native_decide.ax_1 {why}\n"
+                out = "'fake2W' depends on axioms: [fake2._native.native_decide.ax_1]\n"
+                self.assertFalse(verdict([p("fake2W", True)], [out], rc=1, top=err, end=err)[0])
 
     def test_check_source(self):
-        src = aa.check_source("import A\n" + p("w", True) + "\n" + p("_root_.v") + "\n", NONCE)
-        self.assertTrue(src.startswith("import Lean\nimport A\n"))
-        self.assertIn('elab "#axiom_audit " nonce:str flags:str ids:ident* : command', src)
-        self.assertTrue(src.endswith(f'\n#axiom_audit "{NONCE}" "10" w _root_.v\n'))
+        src = aa.check_source("import A\n-- c\nimport B\nopen X\n" + p("w", True) + "\n" + p("_root_.v") + "\n", NONCE)
+        top = f'#axiom_audit "{NONCE}" "top" "10" w _root_.v\n'
+        self.assertTrue(src.startswith("import Lean\nimport A\n-- c\nimport B\n"))
+        self.assertIn('elab "#axiom_audit " nonce:str phase:str flags:str ids:ident* : command', src)
+        self.assertIn(top + "open X\n", src)
+        self.assertTrue(src.endswith(f'\n#axiom_audit "{NONCE}" "end" "10" w _root_.v\n'))
 
 
 class AuditFiles(unittest.TestCase):
