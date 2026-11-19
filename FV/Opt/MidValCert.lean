@@ -225,6 +225,12 @@ def blocksOk : Nat → List Block → List Block → Bool
   | _, [], [] => true
   | _, _, _ => false
 
+/-- Static sites: the term of every value of `f` is no later than its definition site; the term
+of every value of `g` defined in block `d` has its site in `d` or a dominator of `d`. -/
+def sitesOk (f g : Function) : Bool :=
+  ((defSites f).all fun (v, s) => c.le (c.siteOf (c.ef v)) s) &&
+  ((defSites g).all fun (v, d, _) => c.anc (c.siteOf (c.eg v)).1 d)
+
 end CC
 
 /-- **The re-check of the certificate** (module doc): what the soundness theorem is about. -/
@@ -235,7 +241,7 @@ def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
     g.blocks.map (·.id) == f.blocks.map (·.id) && gi.cfg.idom == fi.cfg.idom &&
     let c : CC := { idom := fi.cfg.idom, index := fi.cfg.index.get?, fty := fi.types.get?,
                     gty := gi.types.get?, cert, norm }
-    c.tmsOk && (c.factsAt 0).isEmpty && c.blocksOk 0 f.blocks g.blocks
+    c.tmsOk && (c.factsAt 0).isEmpty && c.sitesOk f g && c.blocksOk 0 f.blocks g.blocks
   | _, _ => false
 
 /-! ## Emission (untrusted) -/

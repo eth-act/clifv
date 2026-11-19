@@ -74,8 +74,14 @@ moved `can_move` loads, the two checker gaps below.
    fact (one alias region), and each block's entry facts must be among the facts at the end of
    every predecessor (`CC.blockOk`), so the proof needs no dataflow fixpoint. Measured below:
    the same verdict as `check` on every pair.
-3. `FV/Opt/Proof/SemSimM*.lean`: `IsSimM`/`FunSimMU`, `toMU`, `trans`, `runLoopX_refinesMU`
-   (the lifting of `SemSim`/`SemSimX`/`SemSimU` with memory threaded through the relation).
+3. `FV/Opt/Proof/SemSimM*.lean` — **done**: `ContM`, `IsSimM`, `CIOkM`, `TContM`, `HContM`,
+   `TryOkMU`, `IsSimMU`, `FunSimMU` (the frame relation `R : Frame → Frame → Mem → Prop`; each
+   local step matched from the same memory; after a call, a `try_call` return or at a handler the
+   relation holds for every memory with the same symbols), `IsSimU.toMU`, `FunSimU.toMU`,
+   `FunSimMU.refl`, `FunSimMU.trans`, `FunsSimMU`, the state relation `SRMU` with `SRU.toMU`,
+   `runLoopX_refinesSRMU` and **`runLoopX_refinesMU`** (from `FunsSimMU p.funcs q.funcs`, exactly
+   the conclusion of `runLoopX_refinesU`: `∀ n xs xs', SRU syms xs xs' → ∃ n',
+   XOutcomeRefines …`); witness `SemSimMWitness.lean` (the ConstPhi witness pair, run to a return).
 4. `FV/Opt/Proof/MidValTerm.lean`: term evaluation, `NormSound`, totality of typed pure nodes.
 5. `FV/Opt/Proof/MidValSim.lean`: the relation (a valuation of the atoms; registers are the
    terms' values; the known values hold in memory at the current version), step lemmas, block
@@ -98,6 +104,7 @@ rest the two checker gaps. Details and per-crate tables: #1119 issuecomment-7009
 **Re-check (`midval-check --cert`, 2026-11-19, the same 121,879 pairs regenerated):** every pair
 gets the same verdict and reason as `check` (10 autocfg probes differ only in their per-build
 symbol hash); `checkCert (emit f g)` is `true` on all 73,703 accepted pairs. Time per accepted
-pair: `check` median 91 µs (mean 157, p99 924, max 159 ms), `checkCert` median 41 µs (mean 76,
-p99 451, max 90 ms; 5.6 s in total). The 12 hand-made pairs: the 4 positive ones re-check `ok`,
-the 8 negative ones are rejected by `check` (no certificate).
+pair: `check` median 91 µs (mean 157, p99 924, max 159 ms), `checkCert` median 33 µs (mean 56,
+p99 320, max 54 ms; 4.1 s in total; second run, with the static site check `CC.sitesOk`). The 12
+hand-made pairs: the 4 positive ones re-check `ok`, the 8 negative ones are rejected by `check`
+(no certificate).
