@@ -40,7 +40,7 @@ def main (args : List String) : IO UInt32 := do
     let mut stems : Array String := #[]
     for e in ← System.FilePath.readDir dir do
       if e.fileName.endsWith ".unopt.clif" then
-        stems := stems.push (e.fileName.dropRight ".unopt.clif".length).toString
+        stems := stems.push (e.fileName.dropEnd ".unopt.clif".length).toString
     for stem in stems.qsort (· < ·) do
       let gp := System.FilePath.mk dir / s!"{stem}.opt.clif"
       if !(← gp.pathExists) then
