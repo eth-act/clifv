@@ -385,8 +385,9 @@ version `ver`, has no counterpart in `g` (whose next statement is `gt?`): accept
 removal is justified (module doc), else reject. -/
 def removeF (c : Ctx) (fid : BlockId) (bi k : Nat) (ver : Ver) (s : Stmt) (s' : Inst)
     (gt? : Option Stmt) (t'? : Option Inst) : M Unit := do
+  let tms := (← get).tms
   let det := match t'? with
-    | some t' => diffOps (← get).tms (operands s') (operands t')
+    | some t' => diffOps tms (operands s') (operands t')
     | none => ""
   match s' with
   | .load _ _ fl _ _ =>
