@@ -222,7 +222,11 @@ Stock theorem's path, the typed scope. For the functions of an
 executable that `lean-link --verified` writes on a route with a `_sourceCp` theorem, the
 executable-level theorem composes the passes (`Link.cpSource`; the routes and their theorems:
 "Constant-phi removal" below, and `lean-link`'s `coverage:` line names them per executable). A function compiled from cg_clif's
-optimised dump (`cargo fv`'s `.opt.clif` retry) is about that dump.
+optimised dump (`cargo fv`'s `.opt.clif` retry) is about that dump. Every other function `cargo fv`
+compiles comes from cg_clif's `.unopt.clif`, its output before Cranelift's mid-end, in every
+profile: in a build whose Cranelift `opt_level` is not `none` (`--release`, or a profile raising
+`opt-level`) stock cg_clif compiles Cranelift's optimised function instead, and no theorem is
+about that function or about Cranelift's mid-end (docs/USAGE.md "Optimised builds", #1119).
 
 **Hypotheses no tool decides** (premises of every theorem in the table; "Final hypotheses" above
 gives them in full): the callee contracts at the call sites of the compiled code (`CalleeOk`,
