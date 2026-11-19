@@ -2,6 +2,7 @@ import FV.Backend.Proof.StockD0Code
 import FV.Backend.SemanticNICheck
 import FV.E2E.LinkCheckFast
 import FV.E2E.LinkIdx
+import FV.E2E.LinkIdxSigI
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
@@ -52,21 +53,26 @@ theorem okRSemanticNI_img (stage : Clif.Function → VCode → VCode) {I : LinkI
     (by simp [globalChks])
 
 /-- `okRSemanticNI` with the lookups of `linkChks`/`globalChks` computed once
-(`LinkCtx.of`, `linkChksWith_of`, `globalChksWith_of`) and the program's scans per call site
-indexed (`LinkIdx.of`, `linkChksWithI_of`, #1062). The compiler evaluates this in place
-of `okRSemanticNI` (`okRSemanticNI_eq_fast`, `@[csimp]`): the list lookups per call site made
-the Stock routes' checks hours long on 15k-function programs (#683). No statement changes. -/
+(`LinkCtx.of`, `linkChksWith_of`, `globalChksWith_of`), the program's scans per call site
+indexed (`LinkIdx.of`, #1062), the signatures a `blr` site or an indirect call may enter indexed
+(`sigIdx`, `linkChksWithIX_of`, #1108) and the per-function checks in parallel tasks
+(`Link.parMap`). The compiler evaluates this in place of `okRSemanticNI`
+(`okRSemanticNI_eq_fast`, `@[csimp]`): the list lookups per call site made the Stock routes'
+checks hours long on 15k-function programs (#683), the scans of the candidates and the
+sequential evaluation hours long on ruint's 227k functions (#1108). No statement changes. -/
 def okRSemanticNIFast (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
   let X := LinkIdx.of P C.ents
+  let SI := sigIdx P C.S
   (globalChksWith C I P T).all (·.2) &&
-    R.all fun e => (staticChksSemanticNI stage I e.1 e.2 ++ linkChksWithI C X P e.1 e.2).all (·.2)
+    (Link.parMap (fun e => (staticChksSemanticNI stage I e.1 e.2 ++ linkChksWithIX C X SI e.1 e.2).all
+      (·.2)) R).all id
 
 @[csimp] theorem okRSemanticNI_eq_fast : @okRSemanticNI = @okRSemanticNIFast := by
   funext stage I R
-  simp only [okRSemanticNIFast, okRSemanticNI, chksSemanticNI, linkChksWithI_of, linkChksWith_of,
-    globalChksWith_of]
+  simp only [okRSemanticNIFast, okRSemanticNI, chksSemanticNI, linkChksWithIX_of, linkChksWith_of,
+    globalChksWith_of, Link.parMap_eq, List.all_map, Function.comp_def, id]
 
 end E2E.LinkCheck

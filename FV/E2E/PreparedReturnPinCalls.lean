@@ -2,6 +2,7 @@ import FV.E2E.PreparedReturnPinProgram
 import FV.E2E.ReturnPinPipelineRetry
 import FV.E2E.ProductionPipelineWith
 import FV.Backend.Lowering.StockVoidCallNI
+import FV.E2E.ReturnPinCheckIdx
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
@@ -15,16 +16,21 @@ def returnPinCallsExtra (f : Clif.Function) (vc : VCode) : Bool :=
 def okRReturnPinCalls (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   okRSemanticFor returnPinCallsExtra stage I R && (progOf R).funcs.all (returnPinChecks I R)
 
-/-- Reuse the proved physical return cache once for the complete program. -/
+/-- Reuse the proved physical return cache once for the complete program, with each function's
+call sites tested against the entries they may enter (`returnPinsIdx_eq`, #1108) and the functions
+in parallel tasks (`Link.parMap`). -/
 def okRReturnPinCallsFast (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   okRSemanticFor returnPinCallsExtra stage I R &&
     let C := ReturnPinCtx.of I R
-    (progOf R).funcs.all (returnPinsWith C)
+    let Y := ReturnPinIdx.of C
+    (Link.parMap (returnPinsIdx C Y) (progOf R).funcs).all id
 
 @[csimp] theorem okRReturnPinCalls_eq_fast : @okRReturnPinCalls = @okRReturnPinCallsFast := by
   funext stage I R
   unfold okRReturnPinCalls okRReturnPinCallsFast
   dsimp only
+  rw [Link.parMap_eq, List.all_map]
+  simp only [Function.comp_def, id_eq, returnPinsIdx_eq]
   rw [show returnPinsWith (ReturnPinCtx.of I R) = returnPinChecks I R from
     funext (returnPinsWith_of I R)]
 
