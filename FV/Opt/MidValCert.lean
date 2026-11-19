@@ -265,20 +265,20 @@ def checkCertWith (hoist : Bool) (f g : Function) (cert : Cert) (norm : Norm) : 
   | _, _ => false
 
 /-- **The re-check of the certificate** (module doc): what the soundness theorem is about. -/
-def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
+def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.std) : Bool :=
   checkCertWith false f g cert norm
 
 /-- **The re-check in the hoisting mode**: `g` may evaluate a `symbol_value`, `tls_value` or
 `func_addr` that `f` contains earlier than `f` does. Its soundness theorem assumes the function's
 global values resolve (`globalsResolve`). -/
-def checkCertSyms (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
+def checkCertSyms (f g : Function) (cert : Cert) (norm : Norm := Norm.std) : Bool :=
   checkCertWith true f g cert norm
 
 /-! ## Emission (untrusted) -/
 
 /-- The certificate of an accepted pair, from the final state of `check` (`checkRun`; `hoist`:
 the hoisting mode, whose partial terms evaluated by `g` first are facts of every block). -/
-def emit (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) : Except Reject Cert := do
+def emit (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) : Except Reject Cert := do
   let (st, c, fi) ← checkRun f g norm hoist
   let idom := fi.cfg.idom
   let anc := fun a b => ancB idom idom.size a b
