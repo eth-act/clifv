@@ -1,0 +1,76 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC9criterion12HfNVJlKK03zX
+function u0:5303(i64) system_v {
+; symbol _RNxC9criterion12HfNVJlKK03zX
+; instance Instance { def: Item(DefId(42:5622 ~ rayon[3506]::slice::sort::{impl#0}::drop)), args: [f64] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut rayon::slice::sort::InsertionHole<f64>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut rayon::slice::sort::InsertionHole<f64>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut rayon::slice::sort::InsertionHole<f64>    8b 8                var=1
+; ssa   _2    *const f64                        8b 8                var=2
+; ssa   _3    *mut f64                          8b 8                var=3
+
+    sig0 = (i64, i64, i64) -> i64 system_v
+    fn0 = %Memcpy sig0
+
+block0(v0: i64):
+    v1 -> v0
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} mut rayon::slice::sort::InsertionHole<f64> <- ByVal(v0): &'{erased} mut rayon::slice::sort::InsertionHole<f64>
+    jump block1
+
+block1:
+    nop 
+; _2 = copy ((*_1).0: *const T)
+; write_cvalue: Var(_2, var2): *const f64 <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): *const f64
+    v2 = load.i64 notrap v1
+; _3 = copy ((*_1).1: *mut T)
+; write_cvalue: Var(_3, var3): *mut f64 <- ByRef(Pointer { base: Addr(v1), offset: Offset32(8) }, None): *mut f64
+    v3 = load.i64 notrap v1+8
+; copy_nonoverlapping(dst = copy _3, src = copy _2, count = const 1_usize)
+    v4 = iconst.i64 1
+    v5 = iconst.i64 8
+    v6 = imul v4, v5  ; v4 = 1, v5 = 8
+    v7 = call fn0(v3, v2, v6)
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; decl u0:5303 func local "_RNxC9criterion12HfNVJlKK03zX"
+; libcall %Memcpy "memcpy"
+; end clifv-extnames

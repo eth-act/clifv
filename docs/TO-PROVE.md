@@ -1087,8 +1087,10 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   `scripts/lake-serial-build.py`); `lake build` in `crate-proofs/`;
   `scripts/axiom-audit.py`: `#print axioms` of the E2E theorems, the files in `scripts/audit/` (all of
   them: docs/research/axiom-audit.md; a theorem that joins the E2E list gets a line there; a non-vacuity
-  witness that uses `native_decide` is marked `-- witness: native_decide`, every other theorem must
-  print only `propext`, `Classical.choice`, `Quot.sound`);
+  witness that uses `native_decide` is marked `-- witness: native_decide` on its own `#print axioms`
+  line, and its `native_decide` axioms are evaluated again in the audit run; every other theorem must
+  print only `propext`, `Classical.choice`, `Quot.sound`; the k-th result belongs to the k-th command,
+  by name and count, #1133);
   `scripts/lean-backend-filetests.sh` (corpus 114/114, runtests ≥ 4672/0/0);
   `scripts/lean-backend-encode-check.sh` (0 differ); `lean-e2e-check` (≥ 1149 accepted, 0 rejected);
   `scripts/arm-fault-cosim.sh` (memory-fault co-simulation against qemu: faulting vectors, 0 failures);

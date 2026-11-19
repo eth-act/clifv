@@ -66,7 +66,7 @@ theorem callind_checked :
 theorem callind_simMU : ∃ f g, ((pairOf callindF callindG false).map fun p => (p.1, p.2.1)) =
     some (f, g) ∧ FunSimMU f g := by
   obtain ⟨f, g, cert, hp, hc⟩ := pair_of callind_checked
-  exact ⟨f, g, by rw [hp]; rfl, checked_simMU hc⟩
+  exact ⟨f, g, by rw [hp]; rfl, (ConstPhi.run_simU f).toMU.trans (check_sound_norm hc normSound_id)⟩
 
 /-! ## `bitcast` -/
 
@@ -86,7 +86,7 @@ theorem bitcast_checked :
 theorem bitcast_simMU : ∃ f g, ((pairOf bitcastF bitcastG false).map fun p => (p.1, p.2.1)) =
     some (f, g) ∧ FunSimMU f g := by
   obtain ⟨f, g, cert, hp, hc⟩ := pair_of bitcast_checked
-  exact ⟨f, g, by rw [hp]; rfl, checked_simMU hc⟩
+  exact ⟨f, g, by rw [hp]; rfl, (ConstPhi.run_simU f).toMU.trans (check_sound_norm hc normSound_id)⟩
 
 /-! ## A hoisted `symbol_value` -/
 
@@ -100,6 +100,13 @@ theorem hoist_plain_rejects :
 theorem hoist_checked :
     ((pairOf hoistF hoistG true).map fun p =>
       checkCertWith true (ConstPhi.run p.1) p.2.1 p.2.2 Norm.id) = some true := by
+  native_decide
+
+/-- The same certificate is accepted by the re-check with the validator's default normaliser
+(`Norm.std`; decided): the program corollary is about that one. -/
+theorem hoist_checked_std :
+    ((pairOf hoistF hoistG true).map fun p =>
+      checkCertSyms (ConstPhi.run p.1) p.2.1 p.2.2) = some true := by
   native_decide
 
 /-- The premise is satisfiable: the function's global values resolve in a symbol table that maps
@@ -118,10 +125,11 @@ theorem hoist_sim : ∃ f g, ((pairOf hoistF hoistG true).map fun p => (p.1, p.2
       ∀ n (xs xs' : XState), SRU (fun _ => some 0) xs xs' →
         ∃ n', XOutcomeRefines (Clif.runLoopX env { funcs := [f] } n xs)
           (Clif.runLoopX env { funcs := [g] } n' xs') := by
-  obtain ⟨f, g, cert, hp, hc⟩ := pair_of hoist_checked
+  obtain ⟨f, g, cert, hp, -⟩ := pair_of hoist_checked
   have hres := hoist_resolves
-  rw [hp] at hres
-  simp only [Option.map_some, Option.some.injEq] at hres
+  have hc := hoist_checked_std
+  rw [hp] at hres hc
+  simp only [Option.map_some, Option.some.injEq] at hres hc
   exact ⟨f, g, by rw [hp]; rfl, hres, fun syms h => checkedSyms_simMUAt hc h, fun env hE =>
     validated_refines_syms (p := { funcs := [f] }) (q := { funcs := [g] }) hE
       (.checkedSyms cert hc hres .nil)⟩
