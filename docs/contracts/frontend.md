@@ -115,6 +115,7 @@ an error.
       "functions": [
         { "name": "<CLIF name>", "final": "<linked name>",
           "dump": "<path: cg_clif's dump of the function, the stage lean-backend compiled>",
+          "src_dump": "<optional path (#1119, --midval): cg_clif's unoptimised dump of a function compiled from its optimised dump>",
           "ra": "<path: the register allocator's answers for its decoding (lean-backend, $FV_RA_OUT)>" }
       ],
       "data": "<path: the unit's data.clif, its `; data:` lines (every data object of the object)>",
@@ -147,6 +148,13 @@ an error.
   gives them to the placement (`LinkSpec.aligns`, `Link.offsA`); `symsOkB` checks that rust-lld
   placed the functions there. `cargo fv link-proof` fails if a function's marker is not at a
   multiple of its object's alignment.
+* `src_dump` (optional, #1119, `cargo fv --midval`): a function `lean-backend` compiled from
+  Cranelift's optimised dump (`dump` = its `.opt.clif`) because the mid-end validator accepted the
+  pair has its unoptimised dump (`.unopt.clif`). `Front.readSrcBundle` reads the bundle with
+  those dumps in place of `dump`; its `assemble` is the program the executable theorems are about.
+  `link-check` and `lean-link --verified` re-decide every pair on these texts (`Link.midPairB`)
+  and name the theorems through the validator (`…_mid`, `…Mid`); `link-check --lean` /
+  `--input-only` refuse such a bundle.
 
 Version 1 (#222) named the decoded file `normalize.py` wrote (`"clif"`); it is not read any more.
 

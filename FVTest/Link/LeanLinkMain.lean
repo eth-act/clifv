@@ -28,6 +28,7 @@ import FV.Link.SemanticCompileT
 import FV.E2E.SrcScopeFast
 import FV.Link.TypedStockShared
 import FV.Front.BundleFast
+import FV.Link.MidPair
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -775,6 +776,54 @@ def main (args0 : List String) : IO UInt32 := do
     -- (`exclusions`' `typedNext`, #1076), there `SrcScopeTB`'s (`srcT`)
     printExclusions exe S0 SC typedOk (typedNext := true) (srcT := typedOk)
     return 1
+  -- #1119 (`cargo fv --midval`): the functions compiled from Cranelift's optimised dumps
+  -- (`dump`) carry their unoptimised dumps (`src_dump`). Each pair is re-decided here on the
+  -- bundle's own texts (`Link.midPairB`; nothing cargo fv or lean-backend said is trusted): a
+  -- failing one is left out of the region (`--verified: exclude:`). When all hold
+  -- (`Link.midValidatedB_sound`: `Opt.MidVal.Validated I0.srcProg.funcs S0.input0.srcProg.funcs`,
+  -- `I0` the bundle with the source dumps), the source theorems named are the `…Mid` ones, about
+  -- the bundle's source program (the unoptimised dumps), on `SrcScopeB S0.input0` (`srcOk`).
+  let midSrc ← try Front.readSrcBundle dir
+    catch e => do IO.eprintln s!"lean-link: {e}"; return 2
+  let midN : Nat ← match midSrc with
+    | none => pure 0
+    | some (bs, srcNames) => do
+      if !verified then
+        IO.eprintln s!"lean-link: {exe}: {srcNames.length} function(s) compiled from optimised dumps (src_dump, #1119): only with --verified; not written"
+        return 1
+      let A0 ← match Front.assemble bs with
+        | .ok A0 => pure A0
+        | .error e => do IO.eprintln s!"lean-link: {exe}: the source dumps (src_dump): {e}"; return 1
+      let fs0 := A0.funcs.map FnInput.src
+      let fs1 := S0.input0.srcProg.funcs
+      if fs0.map (·.name) != fs1.map (·.name) then
+        IO.eprintln s!"lean-link: {exe}: the source dumps (src_dump) assemble to other function names than the dumps; not written"
+        return 1
+      let pairs := fs0.zip fs1
+      let oks := parMap (fun (p : Clif.Function × Clif.Function) => Link.midPairB p.1 p.2) pairs
+      let bad := (pairs.zip oks).filterMap fun (p, b) => if b then none else some p.2.name
+      if !bad.isEmpty then
+        IO.eprintln s!"lean-link: {exe}: --verified: the mid-end validator's pair fails (Link.midPairB, re-decided on the bundle's dumps): {bad.length} function(s) {bad.take 3}; not written"
+        printExclusions exe S0 SC typedOk bad (only := true)
+        return 1
+      if !srcOk then
+        let mids := pairs.filterMap fun (f0, f1) => if f0 = f1 then none else some f1.name
+        IO.eprintln s!"lean-link: {exe}: --verified: the bundle's program is outside SrcScopeB, which the theorems through the mid-end validator take: the {mids.length} function(s) compiled from optimised dumps are left out {mids.take 3}; not written"
+        printExclusions exe S0 SC typedOk mids (only := true)
+        return 1
+      IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midValidatedB holds against the source dumps (src_dump): the source theorems below are the …Mid ones, about the bundle's source program (unoptimised dumps)"
+      pure srcNames.length
+  -- a coverage line through the validator: the `…Cp` source theorems by their `…Mid`
+  -- compositions (`FV/Link/MidSourceRoutes.lean`), about the unoptimised dumps; `Front.…TCp`
+  -- (about the dumps compiled) not named
+  let midCov (s : String) : String := if midN == 0 then s else
+    let s := (s.replace "_sourceCp" "_sourceMid").replace "_source_peakCp" "_source_peakMid"
+    let s := s.replace "; cg_clif's program: Front.bundle_correct_rawTCp, Front.bundle_correct_raw_peakTCp" ""
+    let s := s.replace "the bundle's program (before the i128 legalisation and constant-phi removal)"
+      "about the bundle's source program (unoptimised dumps; through the mid-end validator, Link.midValidatedB decided; before the i128 legalisation and constant-phi removal)"
+    s ++ (if (s.splitOn "Mid").length > 1 then
+        s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps"
+      else s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps, and no theorem named here is about their unoptimised dumps")
   -- the input conditions decided on the CLIF alone (`fnScopeInB`, `addrSlotsInputB`); with
   -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`; with the cleanup
   -- compiler, an input outside `fnScopeInB` whose functions all meet the typed `fnScopeInTB`
@@ -912,7 +961,7 @@ def main (args0 : List String) : IO UInt32 := do
         let srcCp := if srcOk then
             "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.SemanticCompilerWith.attemptT_correct_sourceCp, Link.SemanticCompilerWith.attemptT_correct_source_peakCp"
           else ""
-        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
+        IO.println <| midCov s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class; per function the typed checks okRWithTS); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
         return 0
       if let .error e := att then
         let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
@@ -956,7 +1005,7 @@ def main (args0 : List String) : IO UInt32 := do
       -- #1088: through the frontend, `Front.bundle_correct_rawTCp`/`…raw_peakTCp` at `S0` (`hb`:
       -- `buildSpec` of the bundle read gave `S0` above), `SC` (`hcp`: `Front.placedFrom_cp_funcs`,
       -- `rfl`: `SC0 = S0.cp` on this route) and `hsrc = srcOk` (decided above)
-      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; cg_clif's program: Front.bundle_correct_rawTCp, Front.bundle_correct_raw_peakTCp; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem covers this executable (Link.DeadCleanup.compileExeT_total_reach_input needs InScopeIn; {typedN} function(s) are outside fnScopeInB); {tcbN} function(s) admitted only through fnScopeInTCB"
+      IO.println <| midCov s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.DeadCleanup.compileExeT_correct_sourceCp, Link.DeadCleanup.compileExeT_correct_source_peakCp; cg_clif's program: Front.bundle_correct_rawTCp, Front.bundle_correct_raw_peakTCp; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem covers this executable (Link.DeadCleanup.compileExeT_total_reach_input needs InScopeIn; {typedN} function(s) are outside fnScopeInB); {tcbN} function(s) admitted only through fnScopeInTCB"
       IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
       return 0
@@ -991,7 +1040,7 @@ def main (args0 : List String) : IO UInt32 := do
       let src := if srcOk then
           "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.ReturnPinCompilerWith.attempt_correct_sourceCp, Link.ReturnPinCompilerWith.attempt_correct_source_peakCp"
         else "; outside SrcScopeB: about the legalised program only"
-      IO.println s!"lean-link: {exe}: coverage: Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth{src}"
+      IO.println <| midCov s!"lean-link: {exe}: coverage: Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth{src}"
       return 0
     | .error _ => pure ()
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
@@ -1012,7 +1061,7 @@ def main (args0 : List String) : IO UInt32 := do
           "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.SemanticCompilerWith.attempt_correct_sourceCp, Link.SemanticCompilerWith.attempt_correct_source_peakCp"
         else "; outside SrcScopeB: about the legalised program only"
       let scope := if verified then "; input conditions InScopeIn decided (--verified; no totality theorem for this route)" else ""
-      IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attempt_correct, Link.SemanticCompilerWith.attempt_correct_depth, Link.SemanticCompilerWith.attempt_correct_peak{src}{scope}"
+      IO.println <| midCov s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attempt_correct, Link.SemanticCompilerWith.attempt_correct_depth, Link.SemanticCompilerWith.attempt_correct_peak{src}{scope}"
       return 0
     -- the unwind tables (S10f): with the cleanup compiler, `compileExeU SC file0 = .ok file`
     let unwOk := deadCleanup && Link.DeadCleanup.unwOkB SC file
@@ -1049,7 +1098,7 @@ def main (args0 : List String) : IO UInt32 := do
           s!"; exceptional edges: {thm "compileExeOpt_correct_unwind"}, {thm "compileExeOpt_correct_unwind_peak"}"
         else s!"; exceptional edges: {thm "compileExe_correct_unwind"}, {thm "compileExe_correct_unwind_peak"}"
       else ""
-    IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}{unw}"
+    IO.println <| midCov s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}{unw}"
     if deadCleanup && !unwOk then
       IO.println s!"lean-link: {exe}: exceptional edges not covered (unwOkB: {Link.DeadCleanup.unwFail SC file})"
     -- report only (S10g, #404): the unwinding conditions of the totality argument, measured
@@ -1072,7 +1121,7 @@ def main (args0 : List String) : IO UInt32 := do
           let src := if srcOk then
               "; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: Link.TypedCompilerWith.attempt_correct_sourceCp, Link.TypedCompilerWith.attempt_correct_source_peakCp"
             else "; outside SrcScopeB: about the legalised program only"
-          IO.println s!"lean-link: {exe}: coverage: Link.TypedCompilerWith.attempt_correct, Link.TypedCompilerWith.attempt_correct_depth, Link.TypedCompilerWith.attempt_correct_peak{src}"
+          IO.println <| midCov s!"lean-link: {exe}: coverage: Link.TypedCompilerWith.attempt_correct, Link.TypedCompilerWith.attempt_correct_depth, Link.TypedCompilerWith.attempt_correct_peak{src}"
           return 0
         | .error _ => pure ()
     if e != outOfScopeMsg && e != outOfScopeInMsg then
@@ -1119,7 +1168,7 @@ def main (args0 : List String) : IO UInt32 := do
       | .ok file =>
         IO.FS.writeBinFile exe file
         IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT3 (Link.DeadCleanup.compileExeT3_correct)"
-        IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT3_correct (typed scope InScopeInT3, OutOkTCleanup; returned values by class)"
+        IO.println <| midCov s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT3_correct (typed scope InScopeInT3, OutOkTCleanup; returned values by class)"
         return 0
       | .error e3 =>
         IO.eprintln s!"lean-link: {exe}: decider-free typed scope: {e3}"
@@ -1127,7 +1176,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .ok file =>
           IO.FS.writeBinFile exe file
           IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
-          IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct (typed scope InScopePT, OutOkTCleanup; returned values by class)"
+          IO.println <| midCov s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct (typed scope InScopePT, OutOkTCleanup; returned values by class)"
           return 0
         | .error e => IO.eprintln s!"lean-link: {exe}: typed scope: {e}"
     if !stockFns.isEmpty then
@@ -1137,7 +1186,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .ok file =>
           IO.FS.writeBinFile exe file
           IO.println s!"lean-link: {exe}: {summary} written by Link.leanLinkProductionWith (Stock route {i})"
-          IO.println s!"lean-link: {exe}: coverage: none (outside {scopeName}; Link.leanLinkProductionWith, no compiler theorem)"
+          IO.println <| midCov s!"lean-link: {exe}: coverage: none (outside {scopeName}; Link.leanLinkProductionWith, no compiler theorem)"
           return 0
         | .error e => IO.eprintln s!"lean-link: {exe}: Stock route {i}: {e}"
       return 1
@@ -1146,5 +1195,5 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok file =>
       IO.FS.writeBinFile exe file
       IO.println s!"lean-link: {exe}: {summary} written by {linkerName}"
-      IO.println s!"lean-link: {exe}: coverage: none (outside {scopeName}; {linkerName}, no compiler theorem)"
+      IO.println <| midCov s!"lean-link: {exe}: coverage: none (outside {scopeName}; {linkerName}, no compiler theorem)"
       return 0

@@ -80,4 +80,37 @@ def readBundle (dir : System.FilePath) (sizes : List (String × Nat)) :
     | .error _ => pure [])
   pure ({ units := units.toList, symbols, markers, sizes, skipped, aligns }, exe)
 
+/-- **The bundle's source dumps** (#1119, `cargo fv --midval`): a function cargo fv compiled
+from Cranelift's optimised dump (`"dump"`, the `.opt.clif`) because the mid-end validator
+accepted it has `"src_dump"`, cg_clif's unoptimised dump of it (`.unopt.clif`). The bundle of
+`dir` (`readBundle dir []`) with each such function's dump replaced by its source dump, with the
+names of those functions (as the bundle names them), or `none` when no function has one (then
+no dump is read). Its `Front.assemble` is the program the executable theorems are about (the
+unoptimised dumps); `readBundle`'s is the program compiled. -/
+def readSrcBundle (dir : System.FilePath) : IO (Option (Bundle × List String)) := do
+  let p := dir / "bundle.json"
+  let j ← liftE p.toString (Json.parse (← IO.FS.readFile p))
+  let ujs ← liftE p.toString (arr j "units")
+  let srcs ← ujs.toList.mapM fun uj => do
+    let fjs ← liftE p.toString (arr uj "functions")
+    pure (fjs.toList.map fun fj => (fj.getObjVal? "src_dump").toOption.bind (·.getStr?.toOption))
+  if srcs.all (·.all Option.isNone) then return none
+  let (b, _) ← readBundle dir []
+  if srcs.length != b.units.length then
+    throw (IO.userError s!"{p}: {srcs.length} units, the bundle read has {b.units.length}")
+  let mut names : Array String := #[]
+  let mut units : Array Cgu := #[]
+  for (ss, u) in srcs.zip b.units do
+    if ss.length != u.funcs.length then
+      throw (IO.userError s!"{p}: unit {u.tag}: {ss.length} functions, the bundle read has {u.funcs.length}")
+    let mut fns : Array FnFile := #[]
+    for (s, fn) in ss.zip u.funcs do
+      match s with
+      | some sp =>
+        names := names.push fn.name
+        fns := fns.push { fn with dump := ← IO.FS.readFile sp }
+      | none => fns := fns.push fn
+    units := units.push { u with funcs := fns.toList }
+  pure (some ({ b with units := units.toList }, names.toList))
+
 end Front

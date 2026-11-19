@@ -18,6 +18,7 @@ import FV.Link.ConstPhiCompile
 import FV.E2E.StaticShare
 import FV.Front.BundleFast
 import FV.E2E.ReturnPinCheckIdx
+import FV.Link.MidPair
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -54,6 +55,30 @@ def main (args : List String) : IO UInt32 := do
   -- the CLIF `lean-backend` compiled: each function after constant-phi removal when
   -- `Opt.ConstPhi.keeps` holds (`FnInput.cp`, `lean-backend`'s decision, #990)
   let fis := (A.funcs.map FnInput.cp).toArray
+  -- #1119 (`cargo fv --midval`): the functions compiled from Cranelift's optimised dumps carry
+  -- their unoptimised dumps (`src_dump`); the program the theorem is about is the bundle's with
+  -- those (`src0`: name → the function link-check's theorem is about without --midval, as `fis`
+  -- from the source dumps). Each pair is re-decided here (`Link.midPairB`), nothing cargo fv or
+  -- lean-backend said is trusted; a failing pair fails that function's checks (`--prune` drops
+  -- it and its callers), and the theorem is named through the validator (`_mid`) only when
+  -- `Link.midValidatedB` holds on the (pruned) program.
+  let b0 ← try Front.readSrcBundle dir
+    catch e => do IO.eprintln s!"link-check: {exe}: {e}"; return 1
+  let src0 : Option (Std.HashMap String Clif.Function) ← match b0 with
+    | none => pure none
+    | some (b0, _) => match Front.assemble b0 with
+      | .ok A0 => pure (some ((A0.funcs.map FnInput.cp).foldl (fun m fi => m.insert fi.func.name fi.func) {}))
+      | .error e => do IO.eprintln s!"link-check: {exe}: the source dumps (src_dump): {e}"; return 1
+  let nSrc := (b0.map (·.2.length)).getD 0
+  if src0.isSome && (o.lean.isSome || o.inputOnly.isSome) then
+    IO.eprintln s!"link-check: {exe}: --lean / --input-only: not for a bundle with functions compiled from optimised dumps (#1119)"
+    return 1
+  let midStat : Std.HashMap String Bool := match src0 with
+    | none => {}
+    | some m => (Link.parMap (fun (fi : FnInput) =>
+        (fi.func.name, match m[fi.func.name]? with
+          | some f0 => Link.midPairB f0 fi.func
+          | none => false)) fis.toList).foldl (fun s p => s.insert p.1 p.2) {}
   -- the executable and the data objects the functions reach (renamed to the linked symbols)
   let file ← IO.FS.readBinFile exe
   let dataLines : List String := A.data.map Clif.dataObject
@@ -202,6 +227,12 @@ def main (args : List String) : IO UInt32 := do
           s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used", lowerName)
       else (false, false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones", lowerName)
     else (false, false, R0I, statI, "", lowerName)
+  -- #1119: the mid-end validator's pair is one more check of each function
+  let midChk := "Link.midPairB (the compiled function validated against the unoptimised one)"
+  let stat := if src0.isNone then stat else
+    stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)])
+  if src0.isSome then
+    IO.println s!"  mid-end validator: {nSrc} function(s) compiled from Cranelift's optimised dumps (src_dump: the unoptimised one); Link.midPairB fails for {(midStat.toList.filter (!·.2)).length}"
   let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
   if !note.isEmpty then IO.println note
   IO.println s!"  checker: {if typedS then "typed Stock (okRWithTS)" else if typed then "typed (okBCleanupT)" else "integer"}"
@@ -445,7 +476,17 @@ def main (args : List String) : IO UInt32 := do
   -- is a fact about the program and the file holds (`FVTest.E2E.BinVerdict`)
   let checker : FVTest.E2E.BinVerdict.Checker :=
     if typedS then .typedStock else if typed then .typed else .integer
-  IO.println s!"  {FVTest.E2E.BinVerdict.binVerdict checker (!bad.isEmpty) ok binOk codeOk gotOk}"
+  -- #1119: with source dumps, the theorem through the validator (`…_mid`), about the program of
+  -- the unoptimised dumps; its premise `Opt.MidVal.Validated P0.funcs (prog I).funcs` decided
+  -- here on the (pruned) program (`Link.midValidatedB_sound`)
+  let midOk : Bool := match src0 with
+    | none => true
+    | some m => Link.midValidatedB (Pk.funcs.map fun g => (m[g.name]?).getD default) Pk.funcs
+  if src0.isSome then
+    IO.println s!"  mid-end validator: midValidatedB {if midOk then "holds" else "FAILS"} on the (pruned) program ({Pk.funcs.length} functions)"
+    IO.println s!"  {FVTest.E2E.BinVerdict.binVerdictMid checker (!bad.isEmpty) ok binOk codeOk gotOk midOk}"
+  else
+    IO.println s!"  {FVTest.E2E.BinVerdict.binVerdict checker (!bad.isEmpty) ok binOk codeOk gotOk}"
   -- no caller: no function declares it, and no indirect call can enter it (`edgeB`)
   let cs := calleeSet Pk
   let iSigs := (Pk.funcs.filter (!indFreeB ·)).flatMap indSigs
@@ -503,4 +544,4 @@ def main (args : List String) : IO UInt32 := do
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"
     IO.println s!"  {funcs.length} functions, {entries.length} entries"
-  return (if ok && binOk && codeOk && gotOk then 0 else 1)
+  return (if ok && binOk && codeOk && gotOk && midOk then 0 else 1)

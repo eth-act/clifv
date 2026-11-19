@@ -4,6 +4,7 @@ import FV.E2E.SemanticExecTS
 import FV.E2E.DeadCleanupExecProvenT
 import FV.E2E.DeadCleanupExecPeakT
 import FV.E2E.GotTab
+import FV.E2E.MidValExecProven
 
 /-! # Tests of `link-check`'s verdict (#1092, #1093)
 
@@ -36,6 +37,22 @@ run_cmd do
 #guard binVerdict .typedStock false true true true false = "theorem: none (GotOk fails)"
 #guard binVerdict .integer false true false true true = "theorem: none (the binary checks fail)"
 #guard binVerdict .typed false false true true true = "theorem: none (the checker typed (okBCleanupT) fails)"
+
+-- #1119: every `_mid` theorem `binTheoremMid` names is a declared theorem; a failing
+-- `midValidatedB` names none
+run_cmd do
+  let env ← getEnv
+  for c in [Checker.integer, .typedStock, .typed] do
+    let (t, p) := theoremsMid c
+    for n in [t, p] do
+      match env.find? n.toName with
+      | some (.thmInfo _) => pure ()
+      | some _ => throwError "{n} is not a theorem"
+      | none => throwError "{n} does not exist"
+#guard binVerdictMid .integer false true true true true true =
+  "theorem: E2E.ReturnPinExecBytes.binary_correct_exec_proven_mid (about the program of the unoptimised dumps)"
+#guard binVerdictMid .integer false true true true true false = "theorem: none (Link.midValidatedB fails)"
+#guard binVerdictMid .typed false true true false true true = "theorem: none (codeMapB fails)"
 
 -- the GOT decider's soundness and the `ldr` form it keys on
 example : E2E.GotTab.ldrFormB (E2E.BinCheck.ldrW 3 3 5) = true := E2E.GotTab.ldrFormB_ldrW (by decide) (by decide)

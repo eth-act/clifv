@@ -455,11 +455,11 @@ fn compile_one(
     };
     let out = outdir.join(format!("f{i}.o"));
     let opt = split.join(format!("{}.opt.clif", d.stem));
-    // #1119: the mid-end validator in plain mode without `--lean-link` (whose linker and
-    // link-check do not re-decide the pair yet), for a function cg_clif optimised
+    // #1119: the mid-end validator in plain mode (with `--lean-link`, `--verified` only: lean-link
+    // and link-check re-decide the pair), for a function cg_clif optimised
     let midval = (cfg.midval
         && cfg.mode == Mode::Plain
-        && !cfg.lean_link
+        && (!cfg.lean_link || cfg.lean_link_verified)
         && !d.opt_level.is_empty()
         && d.opt_level != "none"
         && opt.exists())
@@ -1095,7 +1095,10 @@ fn process_in(
                     None => {
                         referenced_locals.extend(locals);
                         if cfg.lean_link {
-                            for n in clif_decl_names(&clif)? {
+                            // the declarations of the file compiled (the optimised one for a
+                            // function the mid-end validator accepted, #1119)
+                            let compiled = if validated { clif.with_file_name(format!("{}.opt.clif", d.stem)) } else { clif.clone() };
+                            for n in clif_decl_names(&compiled)? {
                                 let o = obj_name_of(&n);
                                 if syms.local_count.get(&o) == Some(&1) {
                                     referenced_locals.insert(o);
@@ -1103,17 +1106,25 @@ fn process_in(
                                 declared.insert(n);
                             }
                         }
-                        // the dump the compiled (decoded) file came from: same file name
+                        // the dump the compiled (decoded) file came from: same file name; a
+                        // function the mid-end validator accepted (#1119) was compiled from its
+                        // optimised dump, and its unoptimised dump (`src_dump`) is what the
+                        // executable theorems are about (link-check and lean-link re-decide the
+                        // pair)
                         let dump = clif.file_name().map(|n| work.join("c.clif").join(n)).unwrap_or_default();
-                        link_fns.push(serde_json::json!({
+                        let mut entry = serde_json::json!({
                             "symbol": sym,
-                            "dump": dump,
+                            "dump": if validated { work.join("c.clif").join(format!("{}.opt.clif", d.stem)) } else { dump.clone() },
                             "ra": o.with_extension("ra.json"),
                             "verified": unverified.is_none(),
                             "reason": unverified,
                             // where `ld -r` starts it in the program part (`--lean-link`, #1061)
                             "align": text_align(&o)?,
-                        }));
+                        });
+                        if validated {
+                            entry["src_dump"] = serde_json::json!(dump);
+                        }
+                        link_fns.push(entry);
                         ours.push((sym.clone(), o));
                         match unverified {
                             Some(u) => report(Status::Unverified, Some(u), false, None, from_unopt, midval),
