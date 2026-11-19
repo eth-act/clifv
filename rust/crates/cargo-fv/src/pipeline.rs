@@ -1094,16 +1094,24 @@ fn process_in(
                     Some(b) => report(Status::Fallback, Some(b), false, None, false, None),
                     None => {
                         referenced_locals.extend(locals);
-                        if cfg.lean_link {
-                            // the declarations of the file compiled (the optimised one for a
-                            // function the mid-end validator accepted, #1119)
-                            let compiled = if validated { clif.with_file_name(format!("{}.opt.clif", d.stem)) } else { clif.clone() };
-                            for n in clif_decl_names(&compiled)? {
-                                let o = obj_name_of(&n);
-                                if syms.local_count.get(&o) == Some(&1) {
-                                    referenced_locals.insert(o);
+                        // `--lean-link`, and a function the mid-end validator accepted (#1119):
+                        // every name the compiled file declares gets its linked name (the
+                        // optimised function may declare names its code no longer references);
+                        // for a validated function also the names its unoptimised dump declares,
+                        // the source program `link-check` and `lean-link` assemble (`src_dump`)
+                        if cfg.lean_link || validated {
+                            let mut files = vec![clif.clone()];
+                            if validated {
+                                files.push(clif.with_file_name(format!("{}.opt.clif", d.stem)));
+                            }
+                            for file in &files {
+                                for n in clif_decl_names(file)? {
+                                    let o = obj_name_of(&n);
+                                    if syms.local_count.get(&o) == Some(&1) {
+                                        referenced_locals.insert(o);
+                                    }
+                                    declared.insert(n);
                                 }
-                                declared.insert(n);
                             }
                         }
                         // the dump the compiled (decoded) file came from: same file name; a

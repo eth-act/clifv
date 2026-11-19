@@ -19,6 +19,7 @@ import FVTest.Backend.FnVerdict
 import FV.Opt.MidValCert
 import FV.Link.ConstPhiCompile
 import FV.Link.MidPair
+import FV.E2E.SrcScopeDefs
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -831,11 +832,15 @@ def midvalDecide (src srcOpt : String) : Except (Option String × String) (Strin
     | .error e => throw (some p.name, s!"Opt.MidVal.check rejects: {e}")
   if !Opt.MidVal.checkCert f' g cert then
     throw (some p.name, "Opt.MidVal.checkCert rejects the emitted certificate")
-  -- #1119 layer 2: the pair `link-check` decides for the binary theorem (`…_mid`)
+  -- #1119 layer 2: the pair `link-check` decides for the binary theorem (`…_mid`), and `g`'s
+  -- printed CLIF parsing back to it (`Front.mkInput`: else `link-check` cannot assemble the bundle)
   let fi0 : E2E.LinkCheck.FnInput := { clif := src, ra := "" }
   let fi1 : E2E.LinkCheck.FnInput := { clif := srcOpt, ra := "", k }
   if !Link.midPairB fi0.cp.func fi1.cp.func then
     throw (some p.name, "Link.midPairB rejects the pair after constant-phi removal and the i128 legalisation (link-check's pair)")
+  let fiP : E2E.LinkCheck.FnInput := { clif := Link.clifHeader srcOpt ++ g.print, ra := "" }
+  if !decide (fiP.src = g) then
+    throw (some p.name, "the optimised function's printed CLIF does not parse back to it (link-check's bundle, Front.mkInput)")
   pure (p.name, g)
 
 /-- `lean-backend`: one compilation (`runCore`), its effects replayed. With `--midval-opt` (#1119)
