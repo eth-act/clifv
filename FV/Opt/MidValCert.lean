@@ -238,7 +238,8 @@ def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
   sameHeader f g && g.sigDecls == f.sigDecls &&
   match Opt.check f, Opt.check g with
   | .ok fi, .ok gi =>
-    g.blocks.map (·.id) == f.blocks.map (·.id) && gi.cfg.idom == fi.cfg.idom &&
+    g.blocks.map (·.id) == f.blocks.map (·.id) &&
+    g.blocks.head?.map (·.params) == f.blocks.head?.map (·.params) && gi.cfg.idom == fi.cfg.idom &&
     let c : CC := { idom := fi.cfg.idom, index := fi.cfg.index.get?, fty := fi.types.get?,
                     gty := gi.types.get?, cert, norm }
     c.tmsOk && (c.factsAt 0).isEmpty && c.sitesOk f g && c.blocksOk 0 f.blocks g.blocks

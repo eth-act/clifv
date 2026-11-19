@@ -569,6 +569,8 @@ def checkRun (f g : Function) (norm : Norm := Norm.id) : Except Reject (St × Ct
   let fi ← (Opt.check f).mapError (s!"wf:f {·}")
   let gi ← (Opt.check g).mapError (s!"wf:g {·}")
   if g.blocks.map (·.id) != f.blocks.map (·.id) then throw "rewrite:blocks"
+  -- the entry block takes the function's arguments: the same parameters (ids and types)
+  if g.blocks.head?.map (·.params) != f.blocks.head?.map (·.params) then throw "shape:entry params"
   if gi.cfg.idom != fi.cfg.idom then throw "rewrite:domtree"
   let (pre, post, order) := domIntervals fi.cfg.idom
   let c : Ctx := { pre, post, ver := versions g gi.cfg, fty := fi.types.get?, gty := gi.types.get? }
