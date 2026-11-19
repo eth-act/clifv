@@ -133,8 +133,14 @@ def run (request : Lean.Json) : IO Out := do
   let isaFlags ← ex (settingsOf (request.getObjValD "isa_flags"))
   let res := compile_aarch64 (← ex (strOf clif)) spec flags isaFlags
   match res.match with
-  | .div => throw (IO.userError "extracted compile_aarch64 diverged")
-  | .vis (.fail e) _ => throw (IO.userError s!"extracted compile_aarch64 failed: {repr e}")
+  | .div =>
+    return .obj [("reason", .str "lean_div"), ("schema", .num 1), ("status", .str "error")]
+  | .vis (.fail e) _ =>
+    -- `undef`: an unmodeled external or a function whose translation failed was reached.
+    let detail := match e with
+      | .undef => "lean_fail_undef" | .panic => "lean_fail_panic"
+      | .integerOverflow => "lean_fail_overflow" | _ => "lean_fail"
+    return .obj [("reason", .str detail), ("schema", .num 1), ("status", .str "error")]
   | .ok (.Err f) =>
     return .obj [("schema", .num 1), ("stage", .str (stage f)), ("status", .str "rejected")]
   | .ok (.Ok a) =>

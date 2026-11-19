@@ -62,15 +62,21 @@ def generate(template: Path, out: Path, kind: str):
         else:
             kept.append((name, item))
     if kind == "Funs":
-        for _, item in kept:
+        for name, item in kept:
             i = next(i for i, l in enumerate(item) if is_axiom(l))
             item[i] = "opaque" + item[i][len("axiom"):]
+            # The implementation: `stub_fail` (fails with `undef` after printing the name of
+            # the function to standard error); non-monadic items (constants) use `default`.
+            last = max(j for j, l in enumerate(item) if l.strip())
+            item[last] += (
+                f' := by first | (intros; exact stub_fail "{name}") | exact default'
+            )
     imp = max(i for i, l in enumerate(header) if l.startswith("public import"))
     header = header[: imp + 1] + [f"public import {m}" for m in modules] + header[imp + 1 :]
     header = [l for l in header if not l.startswith("-- This is a template file")]
     if kind == "Funs":
         header += [
-            "/-- The implementation of the functions without a model: fail with `undef`. -/",
+            "/-- The `default` of the non-monadic items without a model: fail with `undef`. -/",
             "local instance (priority := high) unmodeled (α : Type _) : Inhabited (Result α) :=",
             "  ⟨fail .undef⟩",
             "",
