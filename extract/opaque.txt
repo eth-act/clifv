@@ -1,0 +1,6 @@
+# Charon name patterns passed as `--opaque` (one per line; `#` comments).
+# The e-graph mid-end stays opaque until Step 10 (the Lean model fails if reached).
+cranelift_codegen::context::{cranelift_codegen::context::Context}::egraph_pass
+# Formatting is never part of the compile result (an impl pattern matches that impl anywhere).
+{impl core::fmt::Debug for _}
+{impl core::fmt::Display for _}
