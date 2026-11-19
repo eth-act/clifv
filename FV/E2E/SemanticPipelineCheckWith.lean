@@ -46,20 +46,24 @@ theorem okRSemanticFor_names (extra : Clif.Function → VCode → Bool)
   simpa using names
 
 /-- Retain the existing cached link context for the extended validator, with the program's scans
-per call site indexed (`LinkIdx.of`, `linkChksWithI_of`, #1062). -/
+per call site indexed (`LinkIdx.of`, #1062), the signatures a `blr` site or an indirect call may
+enter indexed (`sigIdx`, `linkChksWithIX_of`, #1108) and the per-function checks in parallel
+tasks (`Link.parMap`). -/
 def okRSemanticForFast (extra : Clif.Function → VCode → Bool)
     (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
   let X := LinkIdx.of P C.ents
+  let SI := sigIdx P C.S
   (globalChksWith C I P T).all (·.2) &&
-    R.all fun e => (staticChksSemanticFor extra stage I e.1 e.2 ++ linkChksWithI C X P e.1 e.2).all (·.2)
+    (Link.parMap (fun e => (staticChksSemanticFor extra stage I e.1 e.2 ++
+      linkChksWithIX C X SI e.1 e.2).all (·.2)) R).all id
 
 @[csimp] theorem okRSemanticFor_eq_fast : @okRSemanticFor = @okRSemanticForFast := by
   funext extra stage I R
-  simp only [okRSemanticForFast,okRSemanticFor,chksSemanticFor,linkChksWithI_of,linkChksWith_of,
-    globalChksWith_of]
+  simp only [okRSemanticForFast,okRSemanticFor,chksSemanticFor,linkChksWithIX_of,linkChksWith_of,
+    globalChksWith_of,Link.parMap_eq,List.all_map,Function.comp_def,id]
 
 /-- Expanding the extended list changes only its lowering verdict. -/
 theorem staticChksSemanticFor_expanded (extra : Clif.Function → VCode → Bool)
