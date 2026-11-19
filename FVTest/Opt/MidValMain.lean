@@ -1,6 +1,6 @@
 import FV.Front.Raw
 import FV.Opt.ConstPhi
-import FV.Opt.MidVal
+import FV.Opt.MidValCert
 
 /-! # `lake exe midval-check DIR...`: the mid-end validator on cg_clif's dump pairs (#1119)
 
@@ -11,6 +11,10 @@ function goes through `Opt.ConstPhi.run` (as `lean-backend` compiles it) and is 
 the optimised one (`Opt.MidVal.check`). One tab-separated line per pair on stdout:
 
 `DIR  X  accept|reject  reason  insts(f)  insts(g)  microseconds(check)`
+
+With `--cert`, two more columns: the re-check of the emitted certificate
+(`Opt.MidVal.checkCert f g (emit f g)`: `ok` when it gives `check`'s verdict, `MISMATCH`
+otherwise, `-` for a rejected pair) and its microseconds (`checkCert` alone, not the emission).
 
 Measurement tool only: it states no theorem.
 -/
@@ -26,14 +30,36 @@ def decodeOne (p : System.FilePath) : IO (Except String Clif.Function) := do
 
 def firstWord (s : String) : String := (s.splitOn " ").headD s
 
+def normOf (fold : Bool) : Opt.MidVal.Norm :=
+  if fold then Opt.MidVal.evalConst else Opt.MidVal.Norm.id
+
 /-- Constant-phi removal and the check, evaluated inside the call (timing). -/
 @[noinline] def runCheck (fold : Bool) (f0 g : Clif.Function) :
     IO (Clif.Function × Except String Unit) := do
   let f := Opt.ConstPhi.run f0
-  let r := Opt.MidVal.check f g (if fold then Opt.MidVal.evalConst else Opt.MidVal.Norm.id)
+  let r := Opt.MidVal.check f g (normOf fold)
   match r with
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
+
+/-- The certificate of an accepted pair (`Opt.MidVal.emit`). -/
+@[noinline] def runEmit (fold : Bool) (f g : Clif.Function) : IO (Except String Opt.MidVal.Cert) :=
+  pure (Opt.MidVal.emit f g (normOf fold))
+
+/-- The re-check (`Opt.MidVal.checkCert`), evaluated inside the call (timing). -/
+@[noinline] def runRecheck (fold : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert) : IO Bool :=
+  pure (Opt.MidVal.checkCert f g cert (normOf fold))
+
+/-- `ok`/`MISMATCH`/`-` and the microseconds of `checkCert` (`f` after constant-phi removal). -/
+def recheck (fold : Bool) (f g : Clif.Function) (accepted : Bool) : IO String := do
+  if !accepted then return "-\t0"
+  match ← runEmit fold f g with
+  | .error e => return s!"MISMATCH(emit {e})\t0"
+  | .ok cert =>
+    let t0 ← IO.monoNanosNow
+    let ok ← runRecheck fold f g cert
+    let t1 ← IO.monoNanosNow
+    return s!"{if ok then "ok" else "MISMATCH"}\t{(t1 - t0) / 1000}"
 
 /-- `--pair F G`: the first function of each plain CLIF file (`Clif.parseFile`; tests). -/
 def pairMode (fp gp : String) : IO UInt32 := do
@@ -43,17 +69,20 @@ def pairMode (fp gp : String) : IO UInt32 := do
       | .ok f => pure f
       | .error e => throw (IO.userError s!"{p}: {e}")
     | none => throw (IO.userError s!"{p}: no function")
-  let (_, r) ← runCheck false (← one fp) (← one gp)
+  let g ← one gp
+  let (f, r) ← runCheck false (← one fp) g
   match r with
-  | .ok () => IO.println "accept"; return 0
+  | .ok () => IO.println s!"accept\trecheck {← recheck false f g true}"; return 0
   | .error e => IO.println s!"reject\t{e}"; return 1
 
 def main (args : List String) : IO UInt32 := do
   if let ["--pair", fp, gp] := args then return ← pairMode fp gp
   -- `--fold`: the measurement variant with constant evaluation (`Opt.MidVal.evalConst`)
   let fold := args.contains "--fold"
+  -- `--cert`: re-check the emitted certificate of every accepted pair (`Opt.MidVal.checkCert`)
+  let cert := args.contains "--cert"
   let out ← IO.getStdout
-  for dir in args.filter (· != "--fold") do
+  for dir in args.filter (fun a => a != "--fold" && a != "--cert") do
     let mut stems : Array String := #[]
     for e in ← System.FilePath.readDir dir do
       if e.fileName.endsWith ".unopt.clif" then
@@ -61,15 +90,15 @@ def main (args : List String) : IO UInt32 := do
     for stem in stems.qsort (· < ·) do
       let gp := System.FilePath.mk dir / s!"{stem}.opt.clif"
       if !(← gp.pathExists) then
-        out.putStrLn s!"{dir}\t{stem}\treject\tinput:no-opt-dump\t0\t0\t0"
+        out.putStrLn s!"{dir}\t{stem}\treject\tinput:no-opt-dump\t0\t0\t0{if cert then "\t-\t0" else ""}"
         continue
       let fr ← decodeOne (System.FilePath.mk dir / s!"{stem}.unopt.clif")
       let gr ← decodeOne gp
       match fr, gr with
       | .error e, _ =>
-        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-f {firstWord e}\t0\t0\t0"
+        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-f {firstWord e}\t0\t0\t0{if cert then "\t-\t0" else ""}"
       | _, .error e =>
-        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-g {firstWord e}\t0\t0\t0"
+        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-g {firstWord e}\t0\t0\t0{if cert then "\t-\t0" else ""}"
       | .ok f0, .ok g =>
         let t0 ← IO.monoNanosNow
         let (f, r) ← runCheck fold f0 g
@@ -77,5 +106,6 @@ def main (args : List String) : IO UInt32 := do
         let verdict := match r with
           | .ok () => "accept\t-"
           | .error e => s!"reject\t{e}"
-        out.putStrLn s!"{dir}\t{stem}\t{verdict}\t{Opt.instCount f}\t{Opt.instCount g}\t{(t1 - t0) / 1000}"
+        let rc ← if cert then do pure s!"\t{← recheck fold f g r.isOk}" else pure ""
+        out.putStrLn s!"{dir}\t{stem}\t{verdict}\t{Opt.instCount f}\t{Opt.instCount g}\t{(t1 - t0) / 1000}{rc}"
   return 0

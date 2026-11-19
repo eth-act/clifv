@@ -53,10 +53,11 @@ moved `can_move` loads, the two checker gaps below.
   (`Frame → Frame → Mem → Prop`); `FunSimU` cannot express load removal because memory is
   quantified away at every step. With `FunSimU.toMU`, `FunSimMU.trans` and the program-level
   lifting `runLoopX_refinesMU`, whose conclusion is that of `Opt.runLoopX_refinesU`.
-* `Opt.MidVal.check_sound : checkCert f g norm cert = true → NormSound norm → FunSimMU f g`, where
-  `checkCert` re-checks the certificate the executable checker emits (terms, versions, the
-  alignment script, known values and their sites) and `NormSound` says the normaliser preserves
-  values.
+* `Opt.MidVal.check_sound : checkCert f g cert = true → FunSimMU f g` (stage 1, `Norm.id`; with a
+  normaliser: `checkCert f g cert norm = true → NormSound norm → FunSimMU f g`), where `checkCert`
+  re-checks the certificate the executable checker emits (`Opt.MidVal.emit`: the term table with
+  a dominance site per term, the term of every value of `f` and `g`, the facts at each block's
+  entry) and `NormSound` says the normaliser preserves values.
 * Refinement: `OutcomeRefines` (same return values and final memory, same trap code; nothing
   claimed for a `stuck` or out-of-fuel source run). A removed load never removes a trap: its
   location was accessed successfully at the same version, so `f`'s load succeeds or is `stuck`
@@ -67,8 +68,12 @@ moved `can_move` loads, the two checker gaps below.
 
 1. `FV/Opt/Proof/MidValMem.lean` — **done**: store-to-load and load-to-load facts in either byte
    order, never a trap (`load_of_store`, `load_of_load`; witnesses `MidValMemWitness.lean`).
-2. `FV/Opt/MidValCert.lean`: the certificate and `checkCert` (lists and arrays, no hash maps in
-   what the proof reads), emitted by `check`; the measurement must give the same verdicts.
+2. `FV/Opt/MidValCert.lean` — **done**: the certificate `Cert` and `checkCert` (lists and arrays,
+   structurally recursive; it reads `Opt.check`'s info of `f` and `g`), emitted by `emit` from
+   `check`'s final state. Memory versions are not in the certificate: a writer drops every memory
+   fact (one alias region), and each block's entry facts must be among the facts at the end of
+   every predecessor (`CC.blockOk`), so the proof needs no dataflow fixpoint. Measured below:
+   the same verdict as `check` on every pair.
 3. `FV/Opt/Proof/SemSimM*.lean`: `IsSimM`/`FunSimMU`, `toMU`, `trans`, `runLoopX_refinesMU`
    (the lifting of `SemSim`/`SemSimX`/`SemSimU` with memory threaded through the relation).
 4. `FV/Opt/Proof/MidValTerm.lean`: term evaluation, `NormSound`, totality of typed pure nodes.
@@ -89,3 +94,10 @@ with constant evaluation 63.3 % accepted. Rejections: ISLE rewrites 37.3 %, `cal
 result types in `Opt.check` 1.5 % and `bitcast` typing 0.2 % (checker gaps, follow-up), symbol
 placement 0.3 %, dead-store elimination 5 functions. fv-demo debug: 1,342 / 1,378 accepted, the
 rest the two checker gaps. Details and per-crate tables: #1119 issuecomment-7009839377.
+
+**Re-check (`midval-check --cert`, 2026-11-19, the same 121,879 pairs regenerated):** every pair
+gets the same verdict and reason as `check` (10 autocfg probes differ only in their per-build
+symbol hash); `checkCert (emit f g)` is `true` on all 73,703 accepted pairs. Time per accepted
+pair: `check` median 91 µs (mean 157, p99 924, max 159 ms), `checkCert` median 41 µs (mean 76,
+p99 451, max 90 ms; 5.6 s in total). The 12 hand-made pairs: the 4 positive ones re-check `ok`,
+the 8 negative ones are rejected by `check` (no certificate).

@@ -58,7 +58,7 @@ inductive Tm where
   | res (b k j : Nat)
   | node (i : Inst)
   | poison (b k : Nat)
-  deriving BEq, Hashable, Repr, Inhabited
+  deriving DecidableEq, Hashable, Repr, Inhabited
 
 /-- A memory version (`LastStores::last_fence`): the function entry, the writer at statement
 `k` of block `b` (`k` = body length: the block's `try_call` terminator), or the merge at the
@@ -85,7 +85,7 @@ structure Key where
   ty : Ty
   kind : Kind
   endian : Option Endianness
-  deriving BEq, Hashable, Repr
+  deriving DecidableEq, Hashable, Repr
 
 def loadKind : LoadOp → Kind
   | .load => .plain
@@ -300,6 +300,11 @@ structure St where
   hint : Option Reject := none
   /-- The normaliser of pure nodes (`Norm`): the identity in stage 1. -/
   norm : Norm := Norm.id
+  /-- The facts a removal used (certificate emission, `FV/Opt/MidValCert.lean`): memory
+  locations with their value, merged trapping nodes, partial terms. -/
+  usedMem : Std.HashSet (Key × Nat) := {}
+  usedMerge : Std.HashSet Nat := {}
+  usedPart : Std.HashSet Nat := {}
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -369,7 +374,9 @@ def Tm.inst : Tm → Inst
 /-- A fact at `key` usable in block `b`. -/
 def lookupFact (c : Ctx) (key : Key) (b : Nat) : M (Option Nat) := do
   let s ← get
-  pure <| ((s.facts.getD key #[]).find? fun (_, d) => c.dom d b).map (·.1)
+  let r := ((s.facts.getD key #[]).find? fun (_, d) => c.dom d b).map (·.1)
+  if let some v := r then modify fun s => { s with usedMem := s.usedMem.insert (key, v) }
+  pure r
 
 def addFact (key : Key) (t b : Nat) : M Unit :=
   modify fun s => { s with facts := s.facts.insert key ((s.facts.getD key #[]).push (t, b)) }
@@ -461,6 +468,7 @@ def removeF (c : Ctx) (fid : BlockId) (bi k : Nat) (ver : Ver) (s : Stmt) (s' : 
     let nt ← intern (.node s')
     let some (rt, _) := ((← get).merges.getD nt #[]).find? (fun (_, d) => c.dom d bi)
       | throw (missReason fid s gt? "rewrite:skeleton-removed" det)
+    modify fun st => { st with usedMerge := st.usedMerge.insert nt }
     match rt with
     | some v => bindF s v
     | none => if s.results.isEmpty then pure () else throw "wf:merge arity"
@@ -520,6 +528,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
           let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
             (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
           if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
+          modify fun st => { st with usedPart := st.usedPart.insert pt }
         pend := #[]
         let ts ← bindRes true s.results bi k
         discard (bindRes false t.results bi k)
@@ -545,6 +554,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
     let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
       (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
     if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
+    modify fun st => { st with usedPart := st.usedPart.insert pt }
   let ft ← liftE (mapTermM (← get).envF "f" fb.term)
   let gt ← liftE (mapTermM (← get).envG "g" gb.term)
   if ft != gt then
@@ -552,9 +562,9 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
       throw s!"rewrite:operand {termName fb.term} {diffOps (← get).tms (termOperands ft) (termOperands gt)} block{fb.id}"
     else throw s!"rewrite:term {termName fb.term}/{termName gb.term} block{fb.id}"
 
-/-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
-`g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. -/
-def check (f g : Function) (norm : Norm := Norm.id) : Except Reject Unit := do
+/-- The check, returning its final state, context and `f`'s `Opt.check` info on acceptance
+(certificate emission, `Opt.MidVal.emit`). -/
+def checkRun (f g : Function) (norm : Norm := Norm.id) : Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (Opt.check f).mapError (s!"wf:f {·}")
   let gi ← (Opt.check g).mapError (s!"wf:g {·}")
@@ -569,8 +579,13 @@ def check (f g : Function) (norm : Norm := Norm.id) : Except Reject Unit := do
       checkBlock c bi fbs[bi]! gbs[bi]!
   let (r, st) := (go.run).run { norm }
   match r, st.hint with
-  | .ok (), _ => pure ()
+  | .ok (), _ => pure (st, c, fi)
   | .error e, some h => throw (if e.startsWith "wf:" || e.startsWith "placement" then e else h)
   | .error e, none => throw e
+
+/-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
+`g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. -/
+def check (f g : Function) (norm : Norm := Norm.id) : Except Reject Unit :=
+  (checkRun f g norm).map fun _ => ()
 
 end Opt.MidVal
