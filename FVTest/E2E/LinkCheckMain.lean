@@ -17,6 +17,7 @@ import FVTest.E2E.TypedRouteChoice
 import FV.Link.ConstPhiCompile
 import FV.E2E.StaticShare
 import FV.Front.BundleFast
+import FV.E2E.ReturnPinCheckIdx
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -228,6 +229,10 @@ def main (args : List String) : IO UInt32 := do
     -- `linkChksWithTSI_of`)
     let X := LinkIdx.of P C.ents
     let returnPins := ReturnPinCtx.of I keep
+    -- the return-pin sites tested against the entries they may enter, indexed by GOT name and
+    -- parameter types (`returnPinsIdx_eq`: the same value as `returnPinsWith`, #1108; ruint:
+    -- every `blr` site against all 227,551 entries, hours on 64 cores)
+    let returnPinsY := ReturnPinIdx.of returnPins
     let gl := bad (globalChksWith C I P T)
     -- typed: `chksWithT`'s call-site checks (`linkChksT`: a `blr` that enters no function of the
     -- program may have float uses/defs, `linkChksWithT_of`) and `calleeInt` with `C`'s declared
@@ -238,7 +243,7 @@ def main (args : List String) : IO UInt32 := do
       else []
     let lc := fun (e : Clif.Function × Except String Art) =>
       if typedS then linkChksWithTSI C X P e.1 e.2
-      else if typed then linkChksWithTI C X P e.1 e.2 else linkChksWithI C X P e.1 e.2 ++ [("returnPins", returnPinsWith returnPins e.1)]
+      else if typed then linkChksWithTI C X P e.1 e.2 else linkChksWithI C X P e.1 e.2 ++ [("returnPins", returnPinsIdx returnPins returnPinsY e.1)]
     let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
       match b with
       | [] => none
