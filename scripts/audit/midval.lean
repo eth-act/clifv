@@ -639,6 +639,9 @@ import FVTest.Opt.MidValCondWitness
 #print axioms Opt.MidVal.CondWitness.neG_text -- witness: native_decide
 #print axioms Opt.MidVal.CondWitness.eq_not_sim
 #print axioms Opt.MidVal.CondWitness.eq_rejected
+#print axioms Opt.MidVal.CondWitness.ugt1F_text -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.ugt1_not_sim
+#print axioms Opt.MidVal.CondWitness.ugt1_rejected
 #print axioms Opt.MidVal.CondWitness.simC_of_checked
 #print axioms Opt.MidVal.CondWitness.real_ext_plain_rejects -- witness: native_decide
 #print axioms Opt.MidVal.CondWitness.real_ext_checked -- witness: native_decide

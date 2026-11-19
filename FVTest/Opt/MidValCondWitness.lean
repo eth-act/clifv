@@ -14,7 +14,8 @@ wrappers (`icmp ne x, 0`, `icmp ugt x, 0`, `icmp ult 0, x`, extensions); the re-
   (`*_check_rejects`). The look-alike `brif (icmp eq x, 1)` against `brif x` is rejected
   (`neg_eq`), it is no simulation (`eq_not_sim`: for `x = 2`, `f` returns 0 and `g` 1), so
   every certificate with every hint list is rejected (`eq_rejected`); `icmp ugt x, 1` is rejected
-  too (`neg_ugt1`).
+  too (`neg_ugt1`), no simulation (`ugt1_not_sim`: for `x = 1`) and rejected with every
+  certificate and hint list (`ugt1_rejected`).
 * Real pairs (crypto-bigint 0.7.11's test build, `FVTest/Opt/midval/real_cond_*.clif`), each
   rejected without hints and accepted by `checkCertC` with the hints `emitC` gives (decided),
   with the simulation and the program refinement (`*_sim`, `validatedC_refines`): `ext`
@@ -84,6 +85,26 @@ theorem eq_rejected (cert : Cert) (hints : List (BlockId × List Wrap)) :
   cases h : checkCertC (ConstPhi.run eqFn) brGn cert hints
   · rfl
   · exact absurd (checkedC_simMU h) eq_not_sim
+
+def ugt1Fn : Function :=
+  fnBr [{ results := [1], inst := .iconst .i32 1 }, { results := [2], inst := .icmp .ugt .i32 0 1 }] 2
+
+theorem ugt1F_text : fn? ugt1F = some ugt1Fn := by native_decide
+
+/-- `icmp ugt x, 1` is no simulation of `brif x`: for `x = 1`, `f` returns 0 and `g` 1. -/
+theorem ugt1_not_sim : ¬ FunSimMU ugt1Fn brGn :=
+  not_funSimMU_ret_ne (b := ugt1Fn.blocks.head!) (b' := brGn.blocks.head!)
+    (args := [⟨.i32, 1⟩]) (regs := Regs.empty.set 0 ⟨.i32, 1⟩) (m := Mem.empty)
+    (vals := [⟨.i32, 0⟩]) (vals' := [⟨.i32, 1⟩])
+    rfl rfl rfl rfl rfl (.step rfl (.step rfl (.step rfl (.step rfl (.refl _ _))))) rfl
+    (.step rfl (.step rfl (.refl _ _))) rfl (by decide)
+
+/-- The re-check with hints rejects every certificate and every hint list for `neg_ugt1`. -/
+theorem ugt1_rejected (cert : Cert) (hints : List (BlockId × List Wrap)) :
+    checkCertC (ConstPhi.run ugt1Fn) brGn cert hints = false := by
+  cases h : checkCertC (ConstPhi.run ugt1Fn) brGn cert hints
+  · rfl
+  · exact absurd (checkedC_simMU h) ugt1_not_sim
 
 /-! ## Real pairs -/
 
