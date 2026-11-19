@@ -4,7 +4,9 @@
 Every external item of a template (one `axiom` per item, with its doc comment and attributes)
 is kept unless a handwritten model under extract/lean/Models/ClifvModels/{Types,Funs}/ defines
 the same name; the generated file imports those model modules. So the generated code always
-builds, and `axiom`s are exactly the items without a model yet.
+builds. The unmodeled types stay axioms; the unmodeled functions become `opaque`s whose
+(compiled) implementation fails with `Error.undef`, so that the extracted code is executable
+and reaching an unmodeled function is a distinguishable runtime failure.
 
 Usage: externals.py GENERATED_DIR   (the Aeneas `-dest` directory, containing ClifvGen/)
 Prints a JSON summary: {"types": {"modeled": n, "axioms": [...]}, "funs": {...}}.
@@ -59,9 +61,20 @@ def generate(template: Path, out: Path, kind: str):
             modeled += 1
         else:
             kept.append((name, item))
+    if kind == "Funs":
+        for _, item in kept:
+            i = next(i for i, l in enumerate(item) if is_axiom(l))
+            item[i] = "opaque" + item[i][len("axiom"):]
     imp = max(i for i, l in enumerate(header) if l.startswith("public import"))
     header = header[: imp + 1] + [f"public import {m}" for m in modules] + header[imp + 1 :]
     header = [l for l in header if not l.startswith("-- This is a template file")]
+    if kind == "Funs":
+        header += [
+            "/-- The implementation of the functions without a model: fail with `undef`. -/",
+            "local instance (priority := high) unmodeled (α : Type _) : Inhabited (Result α) :=",
+            "  ⟨fail .undef⟩",
+            "",
+        ]
     text = "\n".join(header) + "\n" + "\n".join(l for _, item in kept for l in item) + "\n"
     out.write_text(text)
     return {"modeled": modeled, "axioms": [n for n, _ in kept]}
