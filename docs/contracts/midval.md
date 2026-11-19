@@ -166,6 +166,7 @@ proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h 
 | 1: constant evaluation | `evalConst` | `normSound_evalConst` | 77,905 (63.9 %) | 76,767 / 77,880 (98.6 %) | 63.1 % |
 | 2: single-node algebraic rules, first set | `Norm.alg` after `evalConst` | `normSound_alg` | 87,451 (71.8 %) | 80,622 / 87,406 (92.2 %) | 66.2 % |
 | 2: second set | `Norm.alg2` before `Norm.alg` | `normSound_alg2`, `normSound_std` | 88,966 (73.0 %) | 81,681 / 88,921 (91.9 %) | 67.1 % |
+| 3: branch conditions (`checkCertC`, hints) | none (`condPrep g hints` re-check) | `condPrep_simU`, `check_soundC` | 91,948 (75.4 %) | 84,317 / 91,898 (91.8 %) | 69.3 % |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -254,3 +255,51 @@ counterfactual.)
   `icmp eq x 0`, and `bmask` of a non-`icmp` shown to be no simulation); five real pairs (`isub 0,
   x`; `imul x, 2`; `icmp ule 48, x`; `icmp ult x, 1`; `icmp eq (select (icmp eq x, -1), 0, 1), 1`),
   each rejected without the second set, `checkCert` decided, simulation and program refinement.
+* **Family 3, branch conditions** (`Opt.MidVal.checkCertC`, `FV/Opt/MidValCond.lean`; proofs
+  `FV/Opt/Proof/MidValCondSim.lean`, `FV/Opt/Proof/MidValCondProg.lean`). Cranelift's mid-end
+  drops the zero test of a `brif` condition: `f` branches on `icmp ne x, 0` (or `icmp ugt x, 0`,
+  `icmp ult 0, x`, an `uextend`/`sextend` of the condition, or a chain of these) where `g` branches
+  on `x`. These are not value rewrites (`icmp ne x, 0` is `0`/`1`, `x` is not), so they are not a
+  `Norm` rule; they hold only where the value is used as a branch condition (`brif` takes its
+  `then` successor iff the value is non-zero). The validator does not relax the terminator
+  comparison of `checkCert`. Instead:
+  - `condPrep g hints` is `g` with, in each hinted block whose terminator is `brif c t e` with `c`
+    below `g.freshValue`, fresh statements appended that rebuild `f`'s wrapper chain on `c`
+    (`z = iconst ty 0; r = icmp ne c, z`, `r = uextend.ty c`, …, values numbered from
+    `g.freshValue` on) and the terminator `brif r t e`. Only wrappers that keep the condition's
+    truth whenever they evaluate are inserted (`Wrap.ok`: `icmp ne` with `0` on either side,
+    `icmp ugt y, 0`, `icmp ult 0, y`, `extend`); any other hint leaves the block unchanged. A
+    hint is a block id with a wrapper chain: it is untrusted (computed by `checkC`, the relaxed
+    executable check), `condPrep` is built from `g` and the hints only, so a wrong hint can only
+    make the re-check reject.
+  - `refsOk g` (side condition, checked in `checkCertC`): every operand of every statement and
+    terminator of `g` is below `g.freshValue`. `g.freshValue` is computed from the values `g`
+    defines (block parameters, results), not from those it reads; without the test a statement
+    of `g` could read a value numbered at or above it, which the inserted statements of
+    `condPrep` write, so `g` and the copy would read different registers there (the proof's
+    frame relation equates them only below `g.freshValue`).
+  - `checkCertC f g cert hints` = `checkCert f g cert` for no hints, else `refsOk g &&
+    checkCert f (condPrep g hints) cert`; `checkCertSymsC` the same for the hoisting mode. The
+    compiled function stays `g`: the copy exists only inside the check, and the inserted values
+    are read only by the copied `brif` (so the zero / non-zero equivalence is used only at that
+    branch, never where a value is observed).
+
+  Theorems (new names; nothing on main restated): `condPrep_simU : refsOk g = true → FunSimU
+  (condPrep g hints) g` (the inserted statements are stuttering steps that write only values
+  `g` never reads; both take the same successor at the `brif`, `prepChain_ok`),
+  `check_soundC_norm`, `check_soundC` (`checkCertC f g cert hints = true → FunSimMU f g`, by
+  `check_sound_norm` and `FunSimMU.trans`), `check_soundSymsC`, `checkedC_simMU`,
+  `ValidatedC`/`ValidatedSymsC` (every `Validated` list is one: `Validated.toC`),
+  `validatedC_refines`, `validatedC_refines_syms` (the conclusions of `validated_refines`/
+  `validated_refines_syms`). Measured (2026-11-19, the same 121,879 pairs, `midval-check --cond
+  --cert`; #1138's binary against this one): 88,966 → 91,948 (+2,982), 0 lost, every accepted
+  pair re-checks `ok` with `checkCertC` and the emitted hints; 2,977 of the newly accepted
+  functions are Lean-compiled and verified from `g` (5 have no record), 2,636 byte-identical to
+  stock. Hoisting mode: 89,065 → 92,096. Witnesses (`FVTest/Opt/MidValCondWitness.lean`): `brif (icmp
+  ne x, 0)` and `brif (uextend.i64 x)` against `brif x` accepted and rejected without hints; the
+  look-alikes `brif (icmp eq x, 1)` and `brif (icmp ugt x, 1)` against `brif x` rejected, shown to
+  be no simulation (`eq_not_sim`, `ugt1_not_sim`), so every certificate with every hint list is
+  rejected (`eq_rejected`, `ugt1_rejected`); two real pairs (crypto-bigint: `brif (uextend.i64
+  (load.i8 …))` → `brif (load.i8 …)`; `brif (icmp ne …, 0)` in a proptest runner with
+  `try_call`s), each rejected without hints, `checkCertC` decided, simulation and program
+  refinement.
