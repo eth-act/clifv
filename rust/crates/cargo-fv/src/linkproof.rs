@@ -15,6 +15,15 @@
 //! CLIF or data text is rewritten here: the decoding of the dumps, the renaming to linked names,
 //! the data closure and the CLIF image's symbols are computed in Lean (`Front.assemble`), with
 //! proofs (`FV/Front/BundleProof.lean`, `FV/Front/RawProof.lean`).
+//!
+//! The codegen units: with `--lean-link`, those whose Lean code is in the executable's region,
+//! the list `lean-link`'s input was built from (the link record's `cgus`), whether or not the
+//! link took the unit's own object: rust-lld and lean-ld leave an archive member out when the
+//! region object defines every symbol the program needs from it, and the unit's functions are
+//! still in the region (#1130). Without `--lean-link`, the units whose object the link map names
+//! (the Lean code is inside that object). Every Lean-compiled function of the executable (its
+//! `__fvlean$` marker is in the link map) that is not in the bundle is named
+//! ([`NOT_IN_BUNDLE`]): the binary check does not cover it.
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -27,6 +36,10 @@ use crate::pipeline::MARKER;
 pub const RA_OUT: &str = "FV_RA_OUT";
 /// The per-codegen-unit record in its work directory.
 pub const CGU_FILE: &str = "fv-link.json";
+/// The text of `link-proof`'s line naming the Lean-compiled functions of the executable that
+/// are not in the bundle (`cargo fv link-proof: <exe>: N Lean-compiled function(s) of the
+/// executable … <NOT_IN_BUNDLE>: <object> (n), …`); the binary check's verdict reads it.
+pub const NOT_IN_BUNDLE: &str = "are not in the bundle, so the binary check does not cover them";
 
 /// One line of an lld link map: address and the (indented) text.
 enum MapLine {
@@ -138,9 +151,11 @@ which premises of LinkSys.Ok fail (per function), and with --lean writes the Lea
 LinkSys.Ok by native_decide and the theorem for the entries (default: every function); put it in
 the repository's crate-proofs/Crates/ and build it there with `lake build Crates.NAME` (the checker
 then runs as compiled code). --prune drops the failing functions until the rest passes. --mode:
-the build's directory under target/fv (default plain). --cgus FILE: the codegen units' work
-directories, one per line, in this order (the Lean linker's placement order, `--lean-link`)
-instead of those the link map names; --no-check: write DIR only.";
+the build's directory under target/fv (default plain). The codegen units: with --lean-link those
+of the executable's region (the list lean-link's input was built from, also units whose own
+object the link did not take), else those whose object the link map names; --cgus FILE: the
+codegen units' work directories, one per line, in this order instead; --no-check: write DIR
+only. A Lean-compiled function of the executable that is not in the bundle is named.";
 
 fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
     let mut o = Opts {
@@ -198,6 +213,84 @@ fn region_aligns(fns: &[(String, u64)]) -> Vec<(String, u64)> {
         .collect()
 }
 
+/// The Lean-compiled functions of the executable that are not in the bundle (#1130): the names
+/// of the markers (`__fvlean$<name>`) among the link map's symbols `map_syms`, other than the
+/// bundle's functions `bundle` and those it lists as skipped (`skipped`), sorted.
+fn not_in_bundle<'a>(
+    map_syms: impl Iterator<Item = &'a str>,
+    bundle: &BTreeMap<String, u64>,
+    skipped: &BTreeSet<&str>,
+) -> Vec<&'a str> {
+    let mut v: Vec<&str> =
+        map_syms.filter_map(|s| s.strip_prefix(MARKER)).filter(|f| !bundle.contains_key(*f) && !skipped.contains(f)).collect();
+    v.sort_unstable();
+    v.dedup();
+    v
+}
+
+/// The codegen units (object names) of the functions `names` among the work directories in
+/// `tmp`, with their counts; `None`: no kept unit has the function.
+fn units_of(tmp: &Path, names: &[&str]) -> BTreeMap<Option<String>, usize> {
+    let want: BTreeSet<&str> = names.iter().copied().collect();
+    let mut unit: HashMap<String, String> = HashMap::new();
+    for e in fs::read_dir(tmp).into_iter().flatten().flatten() {
+        let Ok(j) = read_json(&e.path().join(CGU_FILE)) else { continue };
+        let obj = j["object"].as_str().unwrap_or_default();
+        for f in j["functions"].as_array().into_iter().flatten() {
+            if let Some(fin) = f["final"].as_str().filter(|n| want.contains(n)) {
+                unit.insert(fin.to_string(), obj.to_string());
+            }
+        }
+    }
+    let mut by: BTreeMap<Option<String>, usize> = BTreeMap::new();
+    for n in names {
+        *by.entry(unit.get(*n).cloned()).or_default() += 1;
+    }
+    by
+}
+
+/// The codegen units of the bundle, `(object name, its record, work directory)`: those the list
+/// `list` names, in its order (`--cgus FILE`, or with `--lean-link` the region's list the link
+/// record names: every unit whose Lean code `lean-link` placed, also when the link did not take
+/// the unit's own object, #1130); without a list, those of the work directories in `tmp` whose
+/// object the link map names (`objects`), by object name. Only crate `krate`'s units when given.
+fn select_units(
+    tmp: &Path,
+    list: Option<&Path>,
+    objects: &BTreeSet<String>,
+    krate: Option<&str>,
+) -> Result<Vec<(String, serde_json::Value, PathBuf)>, String> {
+    let dirs: Vec<PathBuf> = match list {
+        Some(f) => fs::read_to_string(f)
+            .map_err(|e| format!("{}: {e}", f.display()))?
+            .lines()
+            .filter(|l| !l.is_empty())
+            .map(PathBuf::from)
+            .collect(),
+        None => fs::read_dir(tmp).map_err(|e| format!("{}: {e}", tmp.display()))?.flatten().map(|e| e.path()).collect(),
+    };
+    let mut cgus = Vec::new();
+    for d in dirs {
+        let p = d.join(CGU_FILE);
+        if !p.exists() {
+            continue;
+        }
+        let j = read_json(&p)?;
+        let obj = j["object"].as_str().unwrap_or_default().to_string();
+        if list.is_none() && !objects.contains(&obj) {
+            continue;
+        }
+        if krate.is_some_and(|k| !obj.starts_with(&format!("{k}-"))) {
+            continue;
+        }
+        cgus.push((obj, j, d));
+    }
+    if list.is_none() {
+        cgus.sort_by(|a, b| a.0.cmp(&b.0));
+    }
+    Ok(cgus)
+}
+
 /// `cargo fv link-proof`; `target`: cargo's target directory, `root`: the repository.
 pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     let o = parse_opts(args, target)?;
@@ -210,11 +303,12 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             let j = read_json(&e.path())?;
             let out = j["output"].as_str().unwrap_or_default().to_string();
             if o.exe.iter().all(|s| out.contains(s.as_str())) {
-                links.push((out, PathBuf::from(j["map"].as_str().unwrap_or_default())));
+                let list = j["cgus"].as_str().map(PathBuf::from);
+                links.push((out, PathBuf::from(j["map"].as_str().unwrap_or_default()), list));
             }
         }
     }
-    let (exe, map_path) = match links.len() {
+    let (exe, map_path, region_list) = match links.len() {
         1 => links.remove(0),
         0 => return Err(format!("no linked executable{} in {} (build with --keep-temps)",
             if o.exe.is_empty() { String::new() } else { format!(" matching {:?}", o.exe) }, tmp.display())),
@@ -226,39 +320,8 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     // code, outside the program)
     let excluded = crate::leanlink::read_exclude(&tmp, &exe);
     let mut n_excluded = 0;
-    // the codegen units linked into it
-    let mut cgus = Vec::new();
-    let mut cgu_dir: HashMap<String, PathBuf> = HashMap::new();
-    let dirs: Vec<PathBuf> = match &o.cgus {
-        Some(f) => fs::read_to_string(f)
-            .map_err(|e| format!("{}: {e}", f.display()))?
-            .lines()
-            .filter(|l| !l.is_empty())
-            .map(PathBuf::from)
-            .collect(),
-        None => fs::read_dir(&tmp).map_err(|e| format!("{}: {e}", tmp.display()))?.flatten().map(|e| e.path()).collect(),
-    };
-    for d in dirs {
-        let p = d.join(CGU_FILE);
-        if !p.exists() {
-            continue;
-        }
-        let j = read_json(&p)?;
-        let obj = j["object"].as_str().unwrap_or_default().to_string();
-        if o.cgus.is_none() && !map.objects.contains(&obj) {
-            continue;
-        }
-        if let Some(k) = &o.krate {
-            if !obj.starts_with(&format!("{k}-")) {
-                continue;
-            }
-        }
-        cgu_dir.insert(obj.clone(), d);
-        cgus.push((obj, j));
-    }
-    if o.cgus.is_none() {
-        cgus.sort_by(|a, b| a.0.cmp(&b.0));
-    }
+    let list = o.cgus.clone().or(region_list);
+    let cgus = select_units(&tmp, list.as_deref(), &map.objects, o.krate.as_deref())?;
     if cgus.is_empty() {
         return Err(format!("no Lean-compiled codegen unit of {exe}{} was kept", o.krate.as_deref().map(|k| format!(" of crate {k}")).unwrap_or_default()));
     }
@@ -270,8 +333,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     let mut aligns: Vec<(String, u64)> = Vec::new();
     let mut skipped: Vec<(String, String)> = Vec::new();
     let mut nfuncs = 0;
-    for (obj, j) in &cgus {
-        let dir = &cgu_dir[obj];
+    for (obj, j, dir) in &cgus {
         let rec = dir.join(CGU_FILE);
         let tag = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         let mut functions = Vec::new();
@@ -377,12 +439,40 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     fs::write(&bp, serde_json::to_string_pretty(&bundle).unwrap_or_default())
         .map_err(|e| format!("{}: {e}", bp.display()))?;
     eprintln!(
-        "cargo fv link-proof: {nfuncs} functions of {} codegen unit(s) of {exe} (skipped {}, left out of the region {n_excluded}), {} executable symbols → {}",
+        "cargo fv link-proof: {nfuncs} functions of {} codegen unit(s) of {exe} ({}; skipped {}, left out of the region {n_excluded}), {} executable symbols → {}",
         cgus.len(),
+        match (&o.cgus, &list) {
+            (Some(_), _) => "the units --cgus lists",
+            (None, Some(_)) => "the region's units, as lean-link placed them",
+            (None, None) => "the units whose object the link map names",
+        },
         skipped.len(),
         symbols.len(),
         bp.display()
     );
+    // #1130: the Lean-compiled functions of the executable (their markers are in the link map)
+    // that are not in the bundle, by codegen unit
+    let named: BTreeSet<&str> = skipped.iter().map(|(n, _)| n.as_str()).collect();
+    let missing = not_in_bundle(map.syms.keys().map(String::as_str), &markers, &named);
+    if !missing.is_empty() {
+        let by_unit: Vec<String> = units_of(&tmp, &missing)
+            .into_iter()
+            .map(|(obj, n)| match obj {
+                Some(obj) => {
+                    let why = if map.objects.contains(&obj) { "its object is linked" } else { "its object is not in the link map" };
+                    format!("{obj} ({n}; {why})")
+                }
+                None => format!("no kept codegen unit ({n})"),
+            })
+            .collect();
+        eprintln!(
+            "cargo fv link-proof: {exe}: {} Lean-compiled function(s) of the executable (their {MARKER} markers are in the link map) {NOT_IN_BUNDLE}: {} unit(s): {}; first: {}",
+            missing.len(),
+            by_unit.len(),
+            by_unit.join(", "),
+            missing[0]
+        );
+    }
     if o.no_check {
         return Ok(0);
     }
@@ -412,7 +502,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::region_aligns;
+    use super::*;
 
     fn fns(l: &[(&str, u64)]) -> Vec<(String, u64)> {
         l.iter().map(|(n, a)| (n.to_string(), *a)).collect()
@@ -432,5 +522,39 @@ mod tests {
         assert_eq!(region_aligns(&fns(&[("p", 8), ("b", 4)])), fns(&[("p", 8)]));
         // a 16-byte constant pool (SIMD) raises the unit's start to 16
         assert_eq!(region_aligns(&fns(&[("a", 4), ("p", 8), ("q", 16)])), fns(&[("a", 16), ("p", 8), ("q", 16)]));
+    }
+
+    /// #1130: a unit whose own object the link did not take (an archive member the region object
+    /// makes unnecessary) is in the region's list, so it is in the bundle; without a list (no
+    /// `--lean-link`: the Lean code is inside the unit's object) only the linked units are.
+    #[test]
+    fn region_list_keeps_units_the_link_did_not_take() {
+        let tmp = std::env::temp_dir().join(format!("cargo-fv-units-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        for (d, obj) in [("u1", "a-1.a.0-cgu.0.rcgu.o"), ("u2", "zerocopy-2.zerocopy.0-cgu.0.rcgu.o")] {
+            fs::create_dir_all(tmp.join(d)).unwrap();
+            fs::write(tmp.join(d).join(CGU_FILE), format!("{{\"object\": \"{obj}\", \"functions\": []}}")).unwrap();
+        }
+        let list = tmp.join("cgus.txt");
+        fs::write(&list, format!("{}\n{}\n", tmp.join("u2").display(), tmp.join("u1").display())).unwrap();
+        let linked: BTreeSet<String> = ["a-1.a.0-cgu.0.rcgu.o".to_string()].into();
+        let objs = |l: Option<&Path>, k: Option<&str>| -> Vec<String> {
+            select_units(&tmp, l, &linked, k).unwrap().into_iter().map(|(o, _, _)| o).collect()
+        };
+        assert_eq!(objs(Some(&list), None), ["zerocopy-2.zerocopy.0-cgu.0.rcgu.o", "a-1.a.0-cgu.0.rcgu.o"]);
+        assert_eq!(objs(Some(&list), Some("a")), ["a-1.a.0-cgu.0.rcgu.o"]);
+        assert_eq!(objs(None, None), ["a-1.a.0-cgu.0.rcgu.o"]);
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    /// #1130: the markers of the link map that the bundle lacks are named, the skipped ones are
+    /// reported as skipped instead; other symbols are not functions.
+    #[test]
+    fn functions_not_in_the_bundle() {
+        let bundle: BTreeMap<String, u64> = [("f".to_string(), 0x10)].into();
+        let skipped: BTreeSet<&str> = ["s"].into();
+        let syms = ["__fvlean$f", "__fvlean$g", "__fvlean$s", "__fvlean$h", "__fvlean$g", "f", "__fvlean_start"];
+        assert_eq!(not_in_bundle(syms.into_iter(), &bundle, &skipped), ["g", "h"]);
+        assert!(not_in_bundle(["__fvlean$f", "f"].into_iter(), &bundle, &skipped).is_empty());
     }
 }

@@ -42,7 +42,10 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   different versions a new version (`merge b`) starts. Explicit traps keep the version. Removed
   stores of `f` are idempotent (memory unchanged), so `g`'s versions are `f`'s memory states.
 
-Not accepted (stage 1): any ISLE rewrite (new pure terms at compared positions, changed
+* **Constant evaluation** (stage 2, the default normaliser `Norm.std` = `evalConst`): a pure
+  node whose operands are all constants is the constant `Clif.evalInst` gives it, on both sides.
+
+Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
 -/
 
@@ -415,12 +418,12 @@ abbrev Reject := String
 
 /-- A **normaliser** of pure nodes: given the term table and a node (term operands), a term
 of the same value under `Clif.evalInst`, or `none` (keep the node). This is the seam of stage 2
-(#1119): the soundness theorem takes it with the one hypothesis that it preserves values;
-stage 1 uses `Norm.id`, and each proven rewrite (constant evaluation, single `simplify` rules)
-can be added as one more `Norm` with its own preservation lemma. -/
+(#1119): the soundness theorem takes it with the one hypothesis that it preserves values
+(`NormSound`); stage 1 used `Norm.id`, the default is `Norm.std` (constant evaluation), and
+each further proven rewrite is one more `Norm` with its own preservation lemma. -/
 abbrev Norm := Array Tm → Inst → Option Tm
 
-/-- The identity normaliser (stage 1). -/
+/-- The identity normaliser (stage 1: no rewrite). -/
 def Norm.id : Norm := fun _ _ => none
 
 structure St where
@@ -437,7 +440,7 @@ structure St where
   /-- The likely cause of a later rejection (reasons only): a load of `f` taken for a dead
   `notrap` load while `g`'s next statement was a load of another address. -/
   hint : Option Reject := none
-  /-- The normaliser of pure nodes (`Norm`): the identity in stage 1. -/
+  /-- The normaliser of pure nodes (`Norm`). -/
   norm : Norm := Norm.id
   /-- The facts a removal used (certificate emission, `FV/Opt/MidValCert.lean`): memory
   locations with their value, merged trapping nodes, partial terms, and the partial terms `g`
@@ -454,19 +457,34 @@ def liftE {α : Type} : Except Reject α → M α
   | .ok a => pure a
   | .error r => throw r
 
-/-- **Measurement variant only** (`midval-check --fold`): the value of a pure node whose
-operands are all constants, by `Clif.evalInst` (no rewrite rule: the semantics itself). -/
-def evalConst : Norm := fun tms i => do
+/-- The constant a term stands for: a node `iconst` (`f32const`/`f64const` included). -/
+def constOf (tms : Array Tm) (o : Nat) : Option Val :=
+  match tms[o]? with
+  | some (.node (.iconst ty imm)) => some ⟨ty, imm⟩
+  | _ => none
+
+/-- The frame in which `evalConst` evaluates a node: its operands `ops` hold the constants
+`vals`; no function, no slots (a pure node with operands reads neither). -/
+def constFrame (ops : List Nat) (vals : List Val) : Frame :=
+  { func := default, regs := fun x => (ops.zip vals).lookup x, slots := [], body := [],
+    term := .ret [] }
+
+/-- **Constant evaluation** (stage 2, family 1): a pure, non-partial node with operands, all of
+them constants (`constOf`), is replaced by its value under `Clif.evalInst` (no rewrite rule:
+the semantics itself, so wrap-around, shift amounts, signedness, float bit patterns are
+`evalInst`'s). Sound: `normSound_evalConst` (`FV/Opt/Proof/MidValNormConst.lean`). -/
+def evalConst : Norm := fun tms i =>
   let ops := operands i
   if ops.isEmpty || !isPure i || partialK i then none
-  let vals ← ops.mapM fun o => match (tms[o]? : Option Tm) with
-    | some (Tm.node (Inst.iconst ty imm)) => some (Val.mk ty imm)
-    | _ => (none : Option Val)
-  let regs : Regs := fun x => (ops.zip vals).lookup x
-  let fr : Frame := { func := default, regs, slots := [], body := [], term := .ret [] }
-  match evalInst fr Mem.empty i with
-  | .ok ([v], _) => some (.node (.iconst v.ty v.bits))
-  | _ => none
+  else match ops.mapM (constOf tms) with
+    | none => none
+    | some vals => match evalInst (constFrame ops vals) Mem.empty i with
+      | .ok ([v], _) => some (.node (.iconst v.ty v.bits))
+      | _ => none
+
+/-- **The validator's default normaliser** (the default `norm` of `check`, `emit`, `checkCert`,
+`checkCertSyms`): constant evaluation (`evalConst`), proved sound (`normSound_std`). -/
+def Norm.std : Norm := evalConst
 
 def intern (t : Tm) : M Nat := do
   let s ← get
@@ -715,7 +733,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
 
 /-- The check, returning its final state, context and `f`'s `wfCheck` info on acceptance
 (certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). -/
-def checkRun (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) :
+def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) :
     Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (wfCheck f).mapError (s!"wf:f {·}")
@@ -741,7 +759,7 @@ def checkRun (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) :
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
 `g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. `hoist`: also accept `g` evaluating
 a `symbol_value`/`func_addr`/`tls_value` of `f` earlier than `f` does (`place`). -/
-def check (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) : Except Reject Unit :=
+def check (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) : Except Reject Unit :=
   (checkRun f g norm hoist).map fun _ => ()
 
 end Opt.MidVal

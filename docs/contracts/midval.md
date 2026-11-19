@@ -44,10 +44,9 @@ function's arguments), the same dominator tree.
 * **Memory versions**: Cranelift 0.135.0's `LastStores` with one region (cg_clif sets no alias
   region): every store, call, `call_indirect`, atomic, `fence` and `try_call` starts a version, a
   join of different versions starts one; explicit traps keep it.
-* **Normaliser seam** (`Norm`): `Norm.id` in stage 1. A stage-2 rewrite (constant evaluation,
-  a proven `simplify` rule) is one more `Norm` with a lemma that it preserves the value under
-  `Clif.evalInst`. `evalConst` (constant evaluation) exists for measurement only
-  (`midval-check --fold`).
+* **Normaliser seam** (`Norm`): `Norm.id` in stage 1; the default is now `Norm.std` (stage 2,
+  below). A stage-2 rewrite is one more `Norm` with a lemma that it preserves the value under
+  `Clif.evalInst` (`NormSound`). `midval-check --norm-id` measures with stage 1's `Norm.id`.
 
 Rejected, with a reason: ISLE rewrites (`rewrite:*`), dead-store elimination (`alias:store`),
 moved `can_move` loads, the two checker gaps below.
@@ -58,12 +57,12 @@ moved `can_move` loads, the two checker gaps below.
   (`Frame → Frame → Mem → Prop`); `FunSimU` cannot express load removal because memory is
   quantified away at every step. With `FunSimU.toMU`, `FunSimMU.trans` and the program-level
   lifting `runLoopX_refinesMU`, whose conclusion is that of `Opt.runLoopX_refinesU`.
-* `Opt.MidVal.check_sound : checkCert f g cert = true → FunSimMU f g` (stage 1, `Norm.id`; with a
-  normaliser: `check_sound_norm : checkCert f g cert norm = true → NormSound norm →
-  FunSimMU f g`), where `checkCert` re-checks the certificate the executable checker emits
-  (`Opt.MidVal.emit`: the term table with a dominance site per term, the term of every value of
-  `f` and `g`, the facts at each block's entry) and `NormSound` says the normaliser preserves
-  values (`normSound_id`).
+* `Opt.MidVal.check_sound : checkCert f g cert = true → FunSimMU f g` (with the default
+  normaliser `Norm.std`; for any normaliser: `check_sound_norm : checkCert f g cert norm = true →
+  NormSound norm → FunSimMU f g`), where `checkCert` re-checks the certificate the executable
+  checker emits (`Opt.MidVal.emit`: the term table with a dominance site per term, the term of
+  every value of `f` and `g`, the facts at each block's entry) and `NormSound` says the
+  normaliser preserves values (`normSound_id`, `normSound_std`).
 * Programs: `Opt.MidVal.validated_refines` — if every function of `q` is the one of `p` or a `g`
   with `checkCert (ConstPhi.run f) g cert = true` (`Validated`), then `∀ n xs xs', SRU syms xs xs'
   → ∃ n', XOutcomeRefines (runLoopX env p n xs) (runLoopX env q n' xs')` (same return values and
@@ -165,3 +164,33 @@ hand-made pairs: the 4 positive ones re-check `ok`, the 8 negative ones are reje
   a rewrite). Every accepted pair re-checks `ok`. Newly accepted, compiled from `g` in
   ReleaseScope1's counterfactual: 1,079 / 1,086 identical to stock (items 1+2), 3 / 15 (hoisting).
   Witnesses on real pairs: `FVTest/Opt/MidValGapWitness.lean`.
+
+## Stage 2: rewrites through the normaliser (agent MidendNorm1)
+
+The default normaliser `Norm.std` of `check`, `emit`, `checkCert` and `checkCertSyms` grows one
+proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h normSound_std`).
+
+| family | normaliser step | proof | accepted (121,879 pairs) | accepted: identical to stock from `g` | projected release parity |
+|---|---|---|---|---|---|
+| stage 1 + gaps (`--norm-id`) | none | `normSound_id` | 74,462 (61.1 %) | 73,597 / 74,437 (98.9 %) | 60.5 % |
+| 1: constant evaluation | `evalConst` | `normSound_evalConst` | 77,905 (63.9 %) | 76,767 / 77,880 (98.6 %) | 63.1 % |
+
+* **Family 1, constant evaluation** (`Opt.MidVal.evalConst`, `FV/Opt/Proof/MidValNormConst.lean`):
+  an `isPure`, non-partial node with at least one operand, every operand an `iconst` term (floats
+  included: `f32const`/`f64const` are `iconst` at a float type), is the constant `Clif.evalInst`
+  gives it in a frame holding those constants. No rewrite rule is involved: wrap-around, shift
+  amounts ≥ width, signedness, `i128` and float bit patterns are `evalInst`'s by construction, and a
+  node `evalInst` does not evaluate to one value is left alone. Proof:
+  `normSound_evalConst : NormSound evalConst` (a pure node with operands reads neither the frame's
+  function nor its slots, `evalInst_isPure_frame`; nor memory, `evalNode_pureK_mem`; its
+  operands' term values are the collected constants, `mapM_lookup`, `tmVal_of_constOf`).
+  Measured (2026-11-19, the 121,879 pairs regenerated, the same binary with and without
+  `--norm-id`): +3,443 accepted, 0 lost, every accepted pair re-checks `ok`; all 3,443 newly
+  accepted functions are Lean-compiled and verified from `g` in ReleaseScope1's counterfactual,
+  3,170 of them byte-identical to stock. Hoisting mode: 74,477 → 77,932. Witnesses
+  (`FVTest/Opt/MidValNormWitness.lean`): a real pair (crypto-bigint's `criterion`
+  `InsertionHole<f64>::drop`, `imul 1, 8` → `iconst 8` passed to `memcpy`: rejected by `Norm.id`,
+  `checkCert` decided, `real_simMU`, `real_refines`); `ishl.i32 1, 33 = 2` (the amount is taken
+  modulo the width) and `sshr.i8 -128, 1 = -64` accepted, the look-alike folds to `0` and `64`
+  rejected and shown to be no simulation, so every certificate is rejected (`shift_rejected`,
+  `sshr_rejected`).

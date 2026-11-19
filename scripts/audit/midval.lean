@@ -7,6 +7,7 @@ import FV.Opt.Proof.MidValNeg
 import FVTest.Opt.MidValWitness
 import FVTest.Opt.MidValNegWitness
 import FVTest.Opt.MidValGapWitness
+import FVTest.Opt.MidValNormWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -318,6 +319,12 @@ import FVTest.Opt.MidValGapWitness
 #print axioms Opt.MidVal.check_soundSyms_norm
 #print axioms Opt.MidVal.check_soundSyms
 #print axioms Opt.MidVal.check_sound
+-- stage 2, family 1: constant evaluation (MidValNormConst)
+#print axioms Opt.MidVal.evalInst_isPure_frame
+#print axioms Opt.MidVal.mapM_lookup
+#print axioms Opt.MidVal.tmVal_of_constOf
+#print axioms Opt.MidVal.normSound_evalConst
+#print axioms Opt.MidVal.normSound_std
 -- (5) MidValProg
 #print axioms Opt.MidVal.checked_simMU
 #print axioms Opt.MidVal.Validated.funsSimMU
@@ -379,8 +386,29 @@ import FVTest.Opt.MidValGapWitness
 #print axioms Opt.MidVal.GapWitness.bitcast_simMU -- witness: native_decide
 #print axioms Opt.MidVal.GapWitness.hoist_plain_rejects -- witness: native_decide
 #print axioms Opt.MidVal.GapWitness.hoist_checked -- witness: native_decide
+#print axioms Opt.MidVal.GapWitness.hoist_checked_std -- witness: native_decide
 #print axioms Opt.MidVal.GapWitness.hoist_resolves -- witness: native_decide
 #print axioms Opt.MidVal.GapWitness.hoist_sim -- witness: native_decide
+-- witnesses of constant evaluation (FVTest/Opt/MidValNormWitness.lean)
+#print axioms Opt.MidVal.NormWitness.pos_shift -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.pos_shift_id_rejects -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.neg_shift -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.pos_sshr -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.pos_sshr_id_rejects -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.neg_sshr -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.shiftF_text -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.shiftG0_text -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.sshrF_text -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.sshrG40_text -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.real_id_rejects -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.real_checked -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.real_some -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.real_simMU -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.real_refines -- witness: native_decide
+#print axioms Opt.MidVal.NormWitness.shift_not_sim
+#print axioms Opt.MidVal.NormWitness.shift_rejected
+#print axioms Opt.MidVal.NormWitness.sshr_not_sim
+#print axioms Opt.MidVal.NormWitness.sshr_rejected
 -- (no axioms at all: last, so the audit's parser does not join them with the next line)
 #print axioms Opt.SemSimMWitness.keeps
 #print axioms Opt.SemSimMWitness.fwd_entry
