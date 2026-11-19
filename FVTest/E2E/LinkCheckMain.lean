@@ -413,8 +413,9 @@ def main (args : List String) : IO UInt32 := do
       s!"  binary: ok ({arts.length} functions, {words} words, {D.length} data objects, {I'.addrs.length - I'.aliases.length} symbols)"
     else s!"  binary: FAIL code={codeBad} data={dataBad} syms={symsBad.length} hdr={if hdrOk then 0 else 1}")
   -- the code map of the executable machine (`codeMapB`, `FV/E2E/CodeMap.lean`: a premise of the
-  -- theorem about the executable's own words, not of `okB`; `codeMapFastB_eq`)
-  let codeOk := codeMapFastB (fun n => (assocMap I'.addrs)[n]?) (fun n => (assocMap I'.syms)[n]?) (tabOf keep)
+  -- theorem about the executable's own words, not of `okB`; evaluated as `codeMapLinB`,
+  -- `@[csimp] codeMapB_eq_lin`, without comparing every pair of functions, #1109)
+  let codeOk := codeMapB I' (tabOf keep)
   IO.println (if codeOk then "  code map: ok" else "  code map: FAIL (codeMapB)")
   -- the GOT slots the program's `adrp`/`ldr` pairs read (`GotOk`, decided on the whole file:
   -- `E2E.SemanticExecBytes.gotTabB_sound`, `E2E.DeadCleanupExecBytes.gotTabB_sound`), #1093
