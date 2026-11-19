@@ -211,6 +211,40 @@ entries of both runs and their relation (`hexp`, `hsl`, `hmem`), `TrapsExplicit`
 and of the transformed run. `FVTest/Backend/SemanticReturnPinsPassWitness.lean` instantiates one
 on a real function of the examples with every checkable premise proved.
 
+**Through the mid-end validator** (#1119, `lean-backend --midval-opt`, `cargo fv --midval`;
+`FV/E2E/MidValPass.lean`, `FV/E2E/MidValPassLegacy.lean`). In a build whose Cranelift
+`opt_level` is not `none`, `lean-backend <f.unopt.clif> --midval-opt <g.opt.clif>` runs
+`Opt.MidVal.emit (Opt.ConstPhi.run f) g` and decides `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g
+cert` itself (docs/contracts/midval.md); when it holds it compiles Cranelift's optimised function
+`g` through the usual `i128` legalisation, constant-phi removal and backend, and names the theorem
+of `g`'s path composed with the validator, `about the source function (.unopt.clif), compiled from
+cg_clif's optimised dump validated by Opt.MidVal`. Each `backend_correct_midval_*` theorem has the
+artifact hypothesis of the theorem named for the compiled `g` (or its legalisation `g'`, or `T g`,
+`T g'` at `T := Opt.ConstPhi.run`), the decided premise `checkCert (ConstPhi.run f) g cert = true`,
+a program `q` of validated functions (`Opt.MidVal.Validated p.funcs q.funcs`), the run premises at
+`f`'s entry `cs` (`q`'s at `midEntry g cs`, the entry of `g` with `cs`'s registers, slots and
+memory), and that theorem's conclusion about the run of the program `p` with the source function:
+
+| `g`'s path | theorems |
+| --- | --- |
+| Stock | `backend_correct_midval_semantic_return_pins`, `_midval_pass_semantic_return_pins`, `_midval_legal_wide_semantic_return_pins`, `_midval_legal_pass_wide_semantic_return_pins` |
+| legacy (dead cleanup) | `backend_correct_midval_final_cleanup`, `_midval_pass_cleanup`, `_midval_legal_wide_cleanup`, `_midval_legal_pass_wide_cleanup` |
+| unwinding | `backend_correct_midval_final_cleanup_unwind_any`, `_midval_pass_cleanup_unwind_any`, `_midval_legal_unwind_any`, `_midval_legal_pass_unwind_any` |
+| typed, `g` not changed by legalisation or constant-phi removal | `backend_correct_midval_final_cleanupT`, `_midval_world_cleanupTC`, `_midval_world_cleanupTCF` |
+
+They compose `midval_entry` / `midval_entryX` (the source run from `f`'s entry is refined by `q`'s
+run from `g`'s entry: `Opt.MidVal.checked_simMU`, `Opt.runLoopX_refinesSRMU`, the plain runs
+through `Clif.runLoopX_toX`) with the theorem of the compiled `g`. Not composed, so `lean-backend`
+compiles `f` exactly as without the option (same objects, same lines, one `midval:` info line):
+`--opt`, no dead cleanup, the stock-configured and settings modes, a typed function whose compiled
+form is a legalisation or constant-phi removal of `g` (no composed typed theorem exists), constant-phi
+removal of a `g` outside the scope, a `try_call` function without the unwinding theorem through the
+validator, and any `g` whose own verdict names no theorem (`FVTest.Backend.FnVerdict.midvalVerdict`).
+Executables: layer 2 (`link-check` re-deciding the pair) is not done, so `cargo fv --midval` runs
+no binary check. `FVTest/Backend/MidValPassWitness.lean` instantiates
+`backend_correct_midval_semantic_return_pins` on a real pair of sha3's release build (a stored value
+forwarded across blocks) with every checkable premise decided; audit `scripts/audit/midval-e2e.lean`.
+
 **About the source function or the compiled function.** `about the source function`: the
 theorem's CLIF function is the one `lean-backend` read (cg_clif's dump, decoded by `cargo fv`),
 with the transformations that changed it composed in. `about the compiled function, after <the
