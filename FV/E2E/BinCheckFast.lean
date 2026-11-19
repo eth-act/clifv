@@ -3,18 +3,17 @@ import FV.E2E.CodeMap
 import FV.E2E.StackBound
 import FV.E2E.LinkCheckFast
 
-/-! # The code map and the stack budgets with hash maps (T3d)
+/-! # The stack budgets with hash maps (T3d)
 
-`codeMapB` (`FV/E2E/CodeMap.lean`) looks every function's address up in the link map
-(`List.lookup`) and compares every pair of functions of the table; `budMap`
-(`FV/E2E/StackBound.lean`) builds the call graph by testing every pair of functions with `g`'s
-externs scanned and the CLIF image's symbols looked up (`List.lookup`) per pair, and finds each
-function's image by a scan of the results (`artOf`). On a 28k-function program (std through
+`budMap` (`FV/E2E/StackBound.lean`) builds the call graph by testing every pair of functions with
+`g`'s externs scanned and the CLIF image's symbols looked up (`List.lookup`) per pair, and finds
+each function's image by a scan of the results (`artOf`). On a 28k-function program (std through
 `cargo fv --build-std`) that is hours of `link-check`.
 
-`codeMapFastB` (`codeMapFastB_eq`) and `budMapFast` (`budMapFast_eq`) are the same functions with
-the lookups in hash maps and each function's facts computed once. `link-check` evaluates these.
-No statement changes.
+`budMapFast` (`budMapFast_eq`) is the same function with the lookups in hash maps and each
+function's facts computed once. `link-check` evaluates it. The code map (`codeMapB`) is decided
+through `codeMapLinB` (`FV/E2E/CodeMapFast.lean`, `@[csimp] codeMapB_eq_lin`). No statement
+changes.
 -/
 
 namespace E2E
@@ -22,40 +21,6 @@ namespace E2E
 open Backend LinkCheck
 
 namespace LinkCheck
-
-/-- `noBlrB I T` with the CLIF image's symbols looked up through `S`. -/
-def noBlrWithB (S : String → Option Nat) (T : List (Clif.Function × Art)) (n : String) : Bool :=
-  (S n).isNone && T.all fun e => !(e.1.externs.any fun x => x.2.name == n) || blrGotB e.2.vcp n
-
-/-- `codeMapB`'s test of the pair (`x`, `y`) of functions of the table, the range test first. -/
-def RaEnt.codeOk (pt : Clif.Program) (x y : RaEnt) : Bool :=
-  decide (x.hi ≤ y.lo ∨ y.hi ≤ x.lo) || x.name == y.name ||
-    (x.art.base == y.art.base && linesAlikeB pt x.art.fa.lines.toList y.art.fa.lines.toList)
-
-theorem or_swap12 (a b c : Bool) : (a || b || c) = (b || a || c) := by
-  cases a <;> cases b <;> rfl
-
-/-- **`codeMapB` with the link map and the symbols in hash maps** (`A`, `S`) and the code ranges
-computed once (`codeMapFastB_eq`). -/
-def codeMapFastB (A S : String → Option Nat) (T : List (Clif.Function × Art)) : Bool :=
-  let E := T.map RaEnt.of
-  let pt := progT T
-  T.all fun e =>
-    (BitVec.ofNat 64 ((A e.1.name).getD 0) + BitVec.ofInt 64 0 == e.2.base ||
-      noBlrWithB S T e.1.name) &&
-    let x := RaEnt.of e
-    E.all fun y => x.codeOk pt y
-
-theorem codeMapFastB_eq (I : LinkInput) (T : List (Clif.Function × Art)) :
-    codeMapFastB (fun n => (assocMap I.addrs)[n]?) (fun n => (assocMap I.syms)[n]?) T =
-      codeMapB I T := by
-  simp only [codeMapFastB, codeMapB, assocMap_fun, List.all_map, Function.comp_def]
-  congr 1
-  funext e
-  congr 1
-  congr 1
-  funext e'
-  exact or_swap12 _ _ _
 
 /-- The compiled image of each function of the results by name, the first one of a name
 (`artOf`: `artMap_artOf`). -/

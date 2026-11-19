@@ -8,8 +8,8 @@ import FV.E2E.LinkIdx
 (`List.lookup`) and, where that is not its load address, scans the table for the functions
 declaring it (`noBlrB`): quadratic, about 5·10¹⁰ pairs on ruint's 232,604 functions (#1108).
 
-`codeMapLinB` decides the same (`codeMapLinB_eq`, `@[csimp] codeMapB_eq_lin`; `link-check`'s
-`codeMapFastB`, `FV/E2E/BinCheckFast.lean`, keeps the scan over pairs):
+`codeMapLinB` decides the same (`codeMapLinB_eq`, `@[csimp] codeMapB_eq_lin`; `lean-link`'s writer
+and, since #1109, `link-check` evaluate it):
 * the link-map addresses through a hash map of the link map (`assocMap_get`);
 * `noBlrB`, only where an address is not the load address, through the table grouped by the
   names the functions declare (`groupMulti`, `noBlrFastB_eq`) and a hash map of the CLIF image's
