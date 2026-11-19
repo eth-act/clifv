@@ -8,6 +8,10 @@ import FV.E2E.TypedRulesW
 import FV.Backend.Proof.LowerSimTCS
 import FV.Backend.Proof.LowerContractTFS
 import FV.E2E.PoolRefinesFP
+import FV.Backend.Proof.LowerContractTFSO
+import FV.Backend.Proof.FmaNegYFreeCtx
+import FV.Backend.Proof.IselFloatCopysign
+import FV.Backend.Proof.IselFloatFma
 
 /-!
 # The typed final theorem with the proven float operations (S11f, #35) and float calls (S11g)
@@ -41,6 +45,14 @@ the statements come from `instCallsTFS_of_rules` (`LowerContractTFS.lean`: the f
 with a literal-pool `f64const` (a semantics undefined on `ldr d, <entry>` satisfies every other
 premise, and the VCode run stops there). `backend_correct_m4_exTCF` and the final theorems are
 unchanged: at `csem` the premise holds (`poolRefinesFP_csem`).
+
+#35: `lowerCheckTCF` and `Compile.functionETCF` admit `fcopysign` and `fma` at `f32`/`f64`
+(`Compile.instETFLO`; `Compile.fmaNegYFree`: no `fma`'s second operand an `fneg`'s result). The
+validated shape is `LowerShapeTCS InstScope.tflo`, and the statements come from
+`instCallsTFSO_of_rules` (`LowerContractTFSO.lean`: the families over `CtxTS InstScope.tflo`, the
+`fcopysign` roots `lowerRulesCorrectCS_program`, the `fma` roots `lowerRulesCorrectFM_program`
+over the contexts of `FmaNegYFree`, `fmaNegYFree_of_buildCtx`). Every statement here is
+unchanged.
 
 * `InSubsetTCF`, `InSubsetTC.toTCF`, `CompiledTCF`, `CompiledATCF`, `CompiledTC.toTCF`,
   `CompiledTCF.toA`;
@@ -78,7 +90,7 @@ theorem noTail_of_subsetTCF {p : Clif.Program} {f : Clif.Function} (h : InSubset
   intro B hB fn args ht
   have := h.subsetETCF
   simp only [Compile.functionETCF, Bool.and_eq_true, List.all_eq_true] at this
-  have := (this.1.1.2 B hB).2
+  have := (this.1.1.1.2 B hB).2
   rw [ht] at this
   simp [Compile.termE] at this
 
@@ -148,8 +160,10 @@ typed families with the conversion and `fcmp` roots and `NonEUnmatchableTF`
 (`instCallsTF_of_rules`), the terminator calls from the typed families, the direct `try_call`s
 from the proven `tryRulesCorrectTFP_program` (`tryCallsTC_of_rules`), the `try_call_indirect`s
 from the integer typed families. #1002 part 2: `hpool` (the literal-pool load of `sem`), since
-`lowerCheckTCF` admits an `f64const` from the literal pool; the statement calls from
-`instCallsTFS_of_rules` over `CtxTS InstScope.tfl`, the simulation `iselSim_of_driverTCS`. -/
+`lowerCheckTCF` admits an `f64const` from the literal pool. #35: the statement calls from
+`instCallsTFSO_of_rules` over `CtxTS InstScope.tflo` (`fcopysign`: `lowerRulesCorrectCS_program`;
+`fma`: `lowerRulesCorrectFM_program`, its contexts' `FmaNegYFree` from `Compile.fmaNegYFree`), the
+simulation `iselSim_of_driverTCS`. -/
 theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (hsub : InSubsetTCF p f) (hlow : lowerCheckTCF f vc = true)
     (hcfg : ∃ ss ps, vc.cfg = .ok (ss, ps))
@@ -182,26 +196,29 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (houtB : vc.outgoing ≤ out) :
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hlow
-  have hS : ∀ ctx, InstScope.tfl.P ctx → InstScopeTFL ctx := fun _ h => h
-  have hctxT : CtxTS InstScope.tfl f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
+  have hS : ∀ ctx, InstScope.tflo.P ctx → InstScopeTFLO ctx := fun _ h => h
+  have hctxT : CtxTS InstScope.tflo f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
   have hstT : StoresTyped ctx :=
     storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
-  have hTS := typedRulesS_program InstScope.tfl
+  have hfn : FmaNegYFree ctx := fmaNegYFree_of_buildCtx (Compile.fmaNegYFree_of_functionETCF
+    hsub.subsetETCF) hshape.hctx.choose_spec hshape.ctxInvT
+  have hTS := typedRulesS_program InstScope.tflo
   intro s'
-  refine iselSim_of_driverTCS InstScope.tfl (ctx := ctx) (st0 := st0) (R := R) (gn := gn)
+  refine iselSim_of_driverTCS InstScope.tflo (ctx := ctx) (st0 := st0) (R := R) (gn := gn)
     (bl := bl) (A := A) ?_ (hds s') (hmem s') (hFP s')
   exact {
     shape := hshape
     cert := hcert
     dsem := (hds s').toDriverSemG
-    insts := instCallsTFS_of_rules hS (lowerRulesCorrectTIS_program _) hrulesF hrulesA hrulesC
-      hrulesFC (nonEUnmatchableTFS_program hS) callRulesCorrectTFP_program hTS.ind
+    insts := instCallsTFSO_of_rules hS (lowerRulesCorrectTIS_program _) hrulesF hrulesA hrulesC
+      hrulesFC lowerRulesCorrectCS_program lowerRulesCorrectFM_program
+      (nonEUnmatchableTFSO_program hS) callRulesCorrectTFP_program hTS.ind
       (memRulesCorrectRTIS_program _) hmemF
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (hpool s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)
       (indStack_mono (indStackTCF_of_check hlow) houtB)
-      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
+      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hfn hstT
     terms := termCallsTS_of_rules _ hTS.term hTS.termUn hTS.branch hTS.branchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he

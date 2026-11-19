@@ -46,6 +46,7 @@ import FV.Arm.Insts.DPR.Insts
 import FV.Arm.Insts.DPR.Logical_shifted_reg
 import FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes
 import FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate
+import FV.Arm.Insts.DPSFP.Advanced_simd_shift_by_immediate
 import FV.Arm.Insts.DPSFP.Advanced_simd_copy
 import FV.Arm.Insts.DPSFP.Advanced_simd_three_same
 import FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc

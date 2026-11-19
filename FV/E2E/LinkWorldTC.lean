@@ -27,6 +27,13 @@ is `LowerShapeTCS InstScope.tfl`. `driverHypTCFS_relW_of`, `driverHypTCFS_relW`:
 hypothesis over the abstract scope (`DriverHypTCS S`, `S` inside `InstScopeTFL`), the statement
 calls from `instCallsTFS_of_rules` under `PoolRefinesFP` (at `csem`: `poolRefinesFP_csem`);
 `iselSim_relWTCF` goes through them (`driver_correctTCS`), its statement unchanged.
+
+#35: the validator admits `fcopysign` and `fma` (`LowerShapeTCS InstScope.tflo`).
+`driverHypTCFSO_relW_of`, `driverHypTCFSO_relW`: the driver hypothesis over a scope `S` inside
+`InstScopeTFLO`, the statement calls from `instCallsTFSO_of_rules` with the `fcopysign` and `fma`
+roots (`lowerRulesCorrectCS_program`, `lowerRulesCorrectFM_program`; `FmaNegYFree` of the context
+from `Compile.fmaNegYFree`, `fmaNegYFree_of_buildCtx`); `iselSim_relWTCF` goes through them, its
+statement unchanged. `driverHypTCFS_relW_of` and `driverHypTCFS_relW` are unchanged.
 -/
 
 namespace E2E
@@ -212,6 +219,81 @@ theorem driverHypTCFS_relW {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeT
     (memRefines_csem _ _ X hslot hsym) (memRefinesFP_csem (fun _ => True) F _ X hslot)
     (poolRefinesFP_csem F _ X) hshape hcert hbr
 
+/-- **The driver hypothesis with the memory relation `RelW` over a scope inside `InstScopeTFLO`**
+(#35: `driverHypTCFS_relW_of` with `fcopysign` and `fma` among the instructions; their roots
+`lowerRulesCorrectCS_program`, `lowerRulesCorrectFM_program`), for any VCode semantics with the
+driver-level facts. -/
+theorem driverHypTCFSO_relW_of {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeTFLO ctx)
+    {sem : Sem} (hsub : InSubsetTCF p f)
+    (hlow : lowerCheckTCF f vc = true) (hcfg : ∃ ss ps, vc.cfg = .ok (ss, ps)) {out : Nat}
+    (houtB : vc.outgoing ≤ out) (hRef : Refines F sem) (hds : DriverSem sem)
+    (hcalls : CallsRefine F env (f.externs.map (·.2)) (RelW ⟨F, syms, slotOff, out⟩ f c) sem)
+    (hicalls : IndCallsRefine env (indSigs f) (RelW ⟨F, syms, slotOff, out⟩ f c) sem)
+    (hmem : MemRefines F slotOff syms sem) (hFP : MemRefinesFP (fun _ => True) F slotOff sem)
+    (hpool : PoolRefinesFP F sem)
+    {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
+    (hshape : LowerShapeTCS S f vc ctx st0 R gn bl) (hcert : Cert f ctx st0 gn bl A)
+    (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) :
+    DriverHypTCS S f vc ctx st0 R gn bl A sem (RelW ⟨F, syms, slotOff, out⟩ f c) env p := by
+  let Γ : Rel := ⟨F, syms, slotOff, out⟩
+  have hctxT : CtxTS S f ctx := ⟨hshape.ctxInvT, hshape.scope⟩
+  have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
+  have hfn : FmaNegYFree ctx := fmaNegYFree_of_buildCtx (Compile.fmaNegYFree_of_functionETCF
+    hsub.subsetETCF) hshape.hctx.choose_spec hshape.ctxInvT
+  have hTS := typedRulesS_program S
+  exact {
+    shape := hshape
+    cert := hcert
+    dsem := hds.toDriverSemG
+    insts := instCallsTFSO_of_rules hS (lowerRulesCorrectTIS_program S) lowerRulesCorrectT_program
+      lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program lowerRulesCorrectFC_program
+      lowerRulesCorrectCS_program lowerRulesCorrectFM_program
+      (nonEUnmatchableTFSO_program hS) callRulesCorrectTFP_program hTS.ind
+      (memRulesCorrectRTIS_program S) memRulesCorrectRT_program hRef (mrStable_relW Γ f c) hcalls
+      hicalls hmem hFP hpool (outArgsOk_relW Γ f c)
+      (callsStack_mono (callsStackTCF_of_check hlow) houtB)
+      (indStack_mono (indStackTCF_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hfn hstT
+    terms := termCallsTS_of_rules S hTS.term hTS.termUn hTS.branch hTS.branchEx hRef
+      (mrStable_relW Γ f c) hctxT
+    ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
+    indSig := indSig_of_subsetTCF hsub
+    subETC := hsub.subsetETCF
+    entryLocs := entryOkTCF_of_check hlow
+    brIdx := hbr
+    noTail := noTail_of_subsetTCF hsub
+    tries := ⟨_, tryCallsTC_of_rules hRef (mrStable_relW Γ f c) hmem hFP
+      (outArgsOk_relW Γ f c) hcalls hshape.ctxInvT,
+      tryStack_mono (tryStackTCF_of_check hlow) houtB⟩
+    tryExt := hsub.tryExterns
+    tryInd := tryIndCallsTS_of_rules S (TypedRulesS.tryIndT S hTS) hTS.tryIndUn hRef
+      (mrStable_relW Γ f c) hmem
+      (outArgsOk_relW Γ f c) (indStack_mono (indStackTCF_of_check hlow) houtB) hicalls hctxT
+    tryIndSig := tryIndSig_of_subsetTCF hsub
+    cfg := hcfg }
+
+/-- **The driver hypothesis at `csem` with the memory relation `RelW` over a scope inside
+`InstScopeTFLO`** (#35: `driverHypTCFS_relW` with `fcopysign` and `fma`;
+`driverHypTCFSO_relW_of`). -/
+theorem driverHypTCFSO_relW {S : InstScope} (hS : ∀ ctx, S.P ctx → InstScopeTFLO ctx)
+    (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf af fa fb)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff) {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
+    (hshape : LowerShapeTCS S f vc ctx st0 R gn bl) (hcert : Cert f ctx st0 gn bl A)
+    (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) :
+    DriverHypTCS S f vc ctx st0 R gn bl A (csem F ⟨fa.k, af.slotBase⟩ X)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) env p :=
+  driverHypTCFSO_relW_of hS hsub hc.lowerOk (cfg_of_prepare hc.prepare)
+    (outgoing_le_intBaseATCF hc.toA) (refines_csem _ _ X) (driverSem_csem F ⟨fa.k, af.slotBase⟩ X)
+    (callsRefine_csem hX) (indCallsRefine_csem hXI hsym (fun _ _ _ h => h.1.1.symbols))
+    (memRefines_csem _ _ X hslot hsym) (memRefinesFP_csem (fun _ => True) F _ X hslot)
+    (poolRefinesFP_csem F _ X) hshape hcert hbr
+
 /-- **CLIF → VCode with the proven float operations, for `csem`** with a fixed set `F` of
 addresses outside the world and the memory relation `RelW` (`iselSim_relWTC` for the scope with
 the proven float operations; the returned values in their classes' return registers,
@@ -236,8 +318,8 @@ theorem iselSim_relWTCF (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hc.lowerOk
-  have H := driverHypTCFS_relW (S := InstScope.tfl) (fun _ h => h) (c := c) hsub hc hX hXI hsym
-    hslot hshape hcert hbr
+  have H := driverHypTCFSO_relW (S := InstScope.tflo) (fun _ h => h) (c := c) hsub hc hX hXI
+    hsym hslot hshape hcert hbr
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent

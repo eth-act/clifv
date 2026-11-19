@@ -390,6 +390,53 @@ inductive IntToFpuOp where
   | u32ToF32 | i32ToF32 | u32ToF64 | i32ToF64 | u64ToF32 | i64ToF32 | u64ToF64 | i64ToF64
   deriving DecidableEq, Repr, Inhabited, BEq
 
+/-- Unsigned right shifts by an immediate of `Insn.fpuRRI` (Cranelift `FPUOpRI`, `inst/mod.rs`;
+an extern ISLE enum): `ushr vd.2s, vn.2s, #amount` (`uShr32`: the two 32-bit lanes of the low
+64 bits, the upper 64 bits zeroed) and `ushr dd, dn, #amount` (`uShr64`). `amount` is
+`FPURightShiftImm.amount`; the lane size (`lane_size_in_bits`) is the constructor's. -/
+inductive FPUOpRI where
+  | uShr32 (amount : Nat)
+  | uShr64 (amount : Nat)
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Shifts left and inserts by an immediate of `Insn.fpuRRIMod` (Cranelift `FPUOpRIMod`; an
+extern ISLE enum): `sli vd.2s, vn.2s, #amount` (`sli32`) and `sli dd, dn, #amount` (`sli64`).
+`amount` is `FPULeftShiftImm.amount`; the lane size is the constructor's. -/
+inductive FPUOpRIMod where
+  | sli32 (amount : Nat)
+  | sli64 (amount : Nat)
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- The shift amount of a `FPUOpRI` (`FPURightShiftImm.amount`). -/
+def FPUOpRI.amount : FPUOpRI → Nat
+  | .uShr32 a | .uShr64 a => a
+
+/-- The lane size in bits of a `FPUOpRI` (`FPURightShiftImm.lane_size_in_bits`). -/
+def FPUOpRI.lane : FPUOpRI → Nat
+  | .uShr32 _ => 32 | .uShr64 _ => 64
+
+/-- The shift amount of a `FPUOpRIMod` (`FPULeftShiftImm.amount`). -/
+def FPUOpRIMod.amount : FPUOpRIMod → Nat
+  | .sli32 a | .sli64 a => a
+
+/-- The lane size in bits of a `FPUOpRIMod` (`FPULeftShiftImm.lane_size_in_bits`). -/
+def FPUOpRIMod.lane : FPUOpRIMod → Nat
+  | .sli32 _ => 32 | .sli64 _ => 64
+
+/-- `FPURightShiftImm::maybe_from_u8(amount, lane).is_some()` (`inst/imms.rs`) at the lane sizes
+its `debug_assert` and `fpu_op_ri_ushr` allow (32, 64): `0 < amount ≤ lane`. -/
+def ushrImmOk (amount lane : Int) : Bool :=
+  (lane == 32 || lane == 64) && decide (0 < amount) && decide (amount ≤ lane)
+
+/-- `FPULeftShiftImm::maybe_from_u8(amount, lane).is_some()` (`inst/imms.rs`) at the lane sizes
+32 and 64: `amount < lane` (`amount` a `u8`). -/
+def sliImmOk (amount lane : Int) : Bool :=
+  (lane == 32 || lane == 64) && decide (0 ≤ amount) && decide (amount < lane)
+
+/-- The variant index of a `FPUOpRI`/`FPUOpRIMod` of lane size `lane` in Rust's declaration order
+(`UShr32`/`Sli32` 0, `UShr64`/`Sli64` 1); the ISLE enums are extern, without variants. -/
+def laneVariant (lane : Int) : Nat := if lane = 32 then 0 else 1
+
 /-- The aarch64 `MInst` subset. Field order follows `inst.isle`. `args`/`rets` are Cranelift's
 `Args`/`Rets` pseudo-instructions: `(vreg, real register)` pairs defined at entry / used at
 return. -/
@@ -487,6 +534,12 @@ inductive MInst where
   | fpuCmp (size : ScalarSize) (rn rm : Reg)
   /-- S11f: `frintm/frintp/frintz/frintn sd, sn` / `… dd, dn` (Cranelift `FpuRound`). -/
   | fpuRound (op : FpuRoundMode) (rd rn : Reg)
+  /-- `ushr vd.2s, vn.2s, #amount` / `ushr dd, dn, #amount` (Cranelift `FpuRRI`). -/
+  | fpuRRI (op : FPUOpRI) (rd rn : Reg)
+  /-- `sli vd.2s, vn.2s, #amount` / `sli dd, dn, #amount` (Cranelift `FpuRRIMod`): `rd` is `ri`
+  with `rn` shifted left by `amount` inserted (the low `amount` bits of each lane are `ri`'s).
+  `rd` and `ri` are tied (`reg_reuse_def(rd, 1)`). -/
+  | fpuRRIMod (op : FPUOpRIMod) (rd ri rn : Reg)
   /-- S11f: `fcvtzs/fcvtzu wd/xd, sn/dn` (Cranelift `FpuToInt`). -/
   | fpuToInt (op : FpuToIntOp) (rd rn : Reg)
   /-- S11f: `scvtf/ucvtf sd/dd, wn/xn` (Cranelift `IntToFpu`). -/
@@ -576,6 +629,8 @@ def MInst.uses : MInst → List Reg
   | .fpuRRR _ _ _ rn rm => [rn, rm]
   | .fpuRRRR _ _ _ rn rm ra => [rn, rm, ra]
   | .fpuCmp _ rn rm => [rn, rm]
+  | .fpuRRI _ _ rn => [rn]
+  | .fpuRRIMod _ _ ri rn => [ri, rn]
   | .loadP64 _ _ rn _ _ => [rn]
   | .storeP64 rt rt2 rn _ _ => [rt, rt2, rn]
   | .movToVec _ ri rn _ _ => [ri, rn]
@@ -600,6 +655,7 @@ def MInst.defs : MInst → List Reg
   | .fpuToInt _ rd _ | .intToFpu _ rd _ => [rd]
   | .loadP64 rt rt2 _ _ _ => [rt, rt2]
   | .movToVec rd _ _ _ _ => [rd]
+  | .fpuRRI _ rd _ | .fpuRRIMod _ rd _ _ => [rd]
   | _ => []
 
 /-- Apply `f` to every register occurrence (uses and defs, not the real registers of the
@@ -674,6 +730,8 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
   | .fpuRRRR op s rd rn rm ra => .fpuRRRR op s (f rd) (f rn) (f rm) (f ra)
   | .fpuCmp s rn rm => .fpuCmp s (f rn) (f rm)
   | .fpuRound op rd rn => .fpuRound op (f rd) (f rn)
+  | .fpuRRI op rd rn => .fpuRRI op (f rd) (f rn)
+  | .fpuRRIMod op rd ri rn => .fpuRRIMod op (f rd) (f ri) (f rn)
   | .fpuToInt op rd rn => .fpuToInt op (f rd) (f rn)
   | .intToFpu op rd rn => .intToFpu op (f rd) (f rn)
   | .loadP64 rt rt2 rn off fl => .loadP64 (f rt) (f rt2) (f rn) off fl
@@ -929,6 +987,8 @@ abbrev tyFPUOp3 : TypeId := TyId.FPUOp3
 abbrev tyFpuToIntOp : TypeId := TyId.FpuToIntOp
 abbrev tyIntToFpuOp : TypeId := TyId.IntToFpuOp
 abbrev tyFpuRoundMode : TypeId := TyId.FpuRoundMode
+abbrev tyFPUOpRI : TypeId := TyId.FPUOpRI
+abbrev tyFPUOpRIMod : TypeId := TyId.FPUOpRIMod
 
 /-- The variant name of an enum value (messages only). -/
 def V.variant? : V → Option (TypeId × String × List V)
@@ -1077,6 +1137,31 @@ def V.intToFpuOp? := V.enum? tyIntToFpuOp fun
   | VIdx.IntToFpuOp.I32ToF64 => some .i32ToF64 | VIdx.IntToFpuOp.U64ToF32 => some .u64ToF32
   | VIdx.IntToFpuOp.I64ToF32 => some .i64ToF32 | VIdx.IntToFpuOp.U64ToF64 => some .u64ToF64
   | VIdx.IntToFpuOp.I64ToF64 => some .i64ToF64 | _ => none
+/-- The ISLE value of a `FPUOpRI` (an extern ISLE enum, no ISLE variants): Rust's variant
+(`laneVariant`: `UShr32` 0, `UShr64` 1) with the `FPURightShiftImm` fields
+`[amount, lane_size_in_bits]`, as `fpu_op_ri_ushr` builds it (`externCtor`). -/
+def FPUOpRI.toV (o : FPUOpRI) : V :=
+  .data tyFPUOpRI (laneVariant o.lane) [.int o.amount, .int o.lane]
+/-- The ISLE value of a `FPUOpRIMod` (`Sli32` 0, `Sli64` 1; `FPULeftShiftImm` fields), as
+`fpu_op_ri_sli` builds it. -/
+def FPUOpRIMod.toV (o : FPUOpRIMod) : V :=
+  .data tyFPUOpRIMod (laneVariant o.lane) [.int o.amount, .int o.lane]
+/-- A `FPUOpRI` from its ISLE value (`FPUOpRI.toV`): the variant must be the lane size's and the
+amount in `FPURightShiftImm::maybe_from_u8`'s range. -/
+def V.fpuOpRI? : V → Option FPUOpRI
+  | .data t k [.int a, .int l] =>
+    if t = tyFPUOpRI ∧ k = laneVariant l ∧ ushrImmOk a l = true then
+      some (if l = 32 then .uShr32 a.toNat else .uShr64 a.toNat)
+    else none
+  | _ => none
+/-- A `FPUOpRIMod` from its ISLE value (`FPUOpRIMod.toV`), the amount in
+`FPULeftShiftImm::maybe_from_u8`'s range. -/
+def V.fpuOpRIMod? : V → Option FPUOpRIMod
+  | .data t k [.int a, .int l] =>
+    if t = tyFPUOpRIMod ∧ k = laneVariant l ∧ sliImmOk a l = true then
+      some (if l = 32 then .sli32 a.toNat else .sli64 a.toNat)
+    else none
+  | _ => none
 
 def V.reg? : V → Option Reg
   | .reg r => some r
@@ -1297,6 +1382,9 @@ def MInst.ofV (v : V) : Option MInst := do
   | VIdx.MInst.FpuCmp, [s, rn, rm] => return .fpuCmp (← s.scalarSize?) (← rn.reg?) (← rm.reg?)
   | VIdx.MInst.FpuRound, [op, rd, rn] =>
     return .fpuRound (← op.fpuRoundMode?) (← rd.reg?) (← rn.reg?)
+  | VIdx.MInst.FpuRRI, [op, rd, rn] => return .fpuRRI (← op.fpuOpRI?) (← rd.reg?) (← rn.reg?)
+  | VIdx.MInst.FpuRRIMod, [op, rd, ri, rn] =>
+    return .fpuRRIMod (← op.fpuOpRIMod?) (← rd.reg?) (← ri.reg?) (← rn.reg?)
   | VIdx.MInst.FpuToInt, [op, rd, rn] => return .fpuToInt (← op.fpuToIntOp?) (← rd.reg?) (← rn.reg?)
   | VIdx.MInst.IntToFpu, [op, rd, rn] => return .intToFpu (← op.intToFpuOp?) (← rd.reg?) (← rn.reg?)
   | k, [rd, m, fl] =>

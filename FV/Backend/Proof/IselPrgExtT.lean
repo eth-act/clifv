@@ -12,7 +12,8 @@ the typed scope (`Compile.functionET`; context invariant `PInvT`, `IselPrgInvT`)
   extractors of the float constants (`u32_from_ieee32`, `u64_from_ieee64`, `u16_from_u32`,
   `u32_from_u64`, `u64_low32_bits_unset`);
 * `actorT`: `actor` with the float constants' immediates (`asimd_mov_mod_imm_zero`,
-  `asimd_fp_mod_imm_from_u64`) and `emit` of the float instructions `MInst.ofV` decodes
+  `asimd_fp_mod_imm_from_u64`), the `ushr`/`sli` operations of `fcopysign` (`fpu_op_ri_ushr`,
+  `fpu_op_ri_sli`, `shiftCtor`) and `emit` of the float instructions `MInst.ofV` decodes
   (`ofvOkT`: `minstOk` or `minstOkF`).
 
 `aidata` (the `InstructionData` of an E instruction) is V7's.
@@ -187,6 +188,13 @@ def intToFpuIdx? : Nat → Option IntToFpuOp
 /-- A scalar size. -/
 def sSize (s : PA) : Bool := enumOk tyScalarSize ScalarSize.ofIdx? s
 
+/-- A `FPUOpRI`/`FPUOpRIMod` value of type `ty` (`V.fpuOpRI?`/`V.fpuOpRIMod?`): an exact amount
+and lane size that `ok` accepts (`ushrImmOk`/`sliImmOk`), in the lane size's variant. -/
+def shiftOpOk (ty : TypeId) (ok : Int → Int → Bool) : PA → Bool
+  | .data t k [x, y] =>
+    t == ty && (x.intOf.bind fun a => y.intOf.map fun l => k == laneVariant l && ok a l) == some true
+  | _ => false
+
 /-- **The float instructions `MInst.ofV` decodes**, abstractly (S11e4 movement, S11f arithmetic,
 comparison, rounding, conversions). -/
 def minstOkF (k : Nat) (fs : List PA) : Bool :=
@@ -212,6 +220,9 @@ def minstOkF (k : Nat) (fs : List PA) : Bool :=
   | VIdx.MInst.FpuRound, [o, rd, rn] => enumOk tyFpuRoundMode fpuRoundIdx? o && isReg rd && isReg rn
   | VIdx.MInst.FpuToInt, [o, rd, rn] => enumOk tyFpuToIntOp fpuToIntIdx? o && isReg rd && isReg rn
   | VIdx.MInst.IntToFpu, [o, rd, rn] => enumOk tyIntToFpuOp intToFpuIdx? o && isReg rd && isReg rn
+  | VIdx.MInst.FpuRRI, [o, rd, rn] => shiftOpOk tyFPUOpRI ushrImmOk o && isReg rd && isReg rn
+  | VIdx.MInst.FpuRRIMod, [o, rd, ri, rn] =>
+    shiftOpOk tyFPUOpRIMod sliImmOk o && isReg rd && isReg ri && isReg rn
   | _, _ => false
 
 mutual
@@ -229,6 +240,12 @@ end
 
 /-! ## Constructors -/
 
+/-- `fpu_op_ri_ushr`/`fpu_op_ri_sli` on exact arguments `[ty_bits, shift]`: the value
+`externCtor` builds (of type `ty`) when `ok shift ty_bits`; otherwise no claim (it panics). -/
+def shiftCtor (ty : TypeId) (ok : Int → Int → Bool) (b s : PA) : Option (PA × Bool) :=
+  b.intOf.bind fun b => s.intOf.bind fun s =>
+    if ok s b then cOk (.data ty (laneVariant b) [exact s, exact b]) else none
+
 /-- **Abstract extern constructors over the typed scope** (`externCtor`): `actor`, with `emit` of
 the float instructions and the float constants' immediates. -/
 def actorT (id : TermId) (as : List PA) : Option (PA × Bool) :=
@@ -240,6 +257,8 @@ def actorT (id : TermId) (as : List PA) : Option (PA × Bool) :=
   | TId.asimd_mov_mod_imm_zero, [s] => if sSize s then cOk (.op .movModImm none) else none
   | TId.asimd_fp_mod_imm_from_u64, [x, s] =>
     if isInt x && sSize s then cMay (.op .fpModImm none) else none
+  | TId.fpu_op_ri_ushr, [b, s] => shiftCtor tyFPUOpRI ushrImmOk b s
+  | TId.fpu_op_ri_sli, [b, s] => shiftCtor tyFPUOpRIMod sliImmOk b s
   | _, _ => actor id as
 
 end Backend.Proof.Prg

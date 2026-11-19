@@ -291,6 +291,13 @@ def MInst.visitOperands : MInst → m MInst
     let rn ← f .use rn; let rm ← f .use rm; pure (.fpuCmp s rn rm)
   | .fpuRound op rd rn => do
     let rd ← f .def_ rd; let rn ← f .use rn; pure (.fpuRound op rd rn)
+  -- `mod.rs:574`: `FpuRRI`: `reg_def(rd); reg_use(rn)`
+  | .fpuRRI op rd rn => do
+    let rd ← f .def_ rd; let rn ← f .use rn; pure (.fpuRRI op rd rn)
+  -- `mod.rs:578`: `FpuRRIMod`: `reg_reuse_def(rd, 1); reg_use(ri); reg_use(rn)` (`rd` == `ri`)
+  | .fpuRRIMod op rd ri rn => do
+    let rd ← f (.reuseDef 1) rd; let ri ← f .use ri; let rn ← f .use rn
+    pure (.fpuRRIMod op rd ri rn)
   | .fpuToInt op rd rn => do
     let rd ← f .def_ rd; let rn ← f .use rn; pure (.fpuToInt op rd rn)
   | .intToFpu op rd rn => do

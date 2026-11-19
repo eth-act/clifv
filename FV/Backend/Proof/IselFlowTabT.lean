@@ -235,8 +235,31 @@ def tlsTab15 : Tab :=
    (630, [⟨2, true⟩], ⟨2, true⟩),
    (631, [⟨2, true⟩], ⟨2, true⟩)]
 
+/-- Chunk of `tlsTab` for the #35 `fcopysign` root (`IselFloatCopysign`): `fcopy_sign` 624,
+`max_shift` 623, `fpu_rri` 367, and the vector rule's `ushr_vec_imm` 511 / `vec_shift_imm` 372
+(every rule of a table term is checked). -/
+def tlsTabCS : Tab :=
+  [(624, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (623, [⟨2, true⟩], ⟨0, true⟩),
+   (367, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (511, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (372, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
+
+/-- Chunk of `tlsTab` for the #35 `fma` roots (`IselFloatFma`): `fmadd` 693, `fnmadd` 694,
+`fmsub` 695, `fnmsub` 696, `fpu_rrrr` 369, and the vector rules' `lower_fmla` 697 /
+`vec_rrr_mod` 365 / `vec_fmla_elem` 366 (every rule of a table term is checked). -/
+def tlsTabFM : Tab :=
+  [(693, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (694, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (695, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (696, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (369, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (697, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (365, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (366, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
+
 /-- The summary table. -/
-def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15
+def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15 ++ tlsTabCS ++ tlsTabFM
 
 set_option maxRecDepth 100000 in
 theorem tlsTab0_ok :
@@ -334,11 +357,23 @@ theorem tlsTab15_ok :
       true := by
   decide +kernel
 
+set_option maxRecDepth 100000 in
+theorem tlsTabCS_ok :
+    tlsTabCS.all (fun e => (program.rulesOf e.1).all (aRule program tlsTab true e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+theorem tlsTabFM_ok :
+    tlsTabFM.all (fun e => (program.rulesOf e.1).all (aRule program tlsTab true e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
 /-- Every rule of every term of `tlsTab` checks. -/
 theorem tlsTab_ok : chkTab program tlsTab true = true := by
   unfold chkTab
-  show (tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15).all
+  show (tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15 ++ tlsTabCS ++ tlsTabFM).all
     (fun e => (program.rulesOf e.1).all (aRule program tlsTab true e.2.1 e.2.2)) = true
-  simp only [List.all_append, tlsTab0_ok, tlsTab1_ok, tlsTab2_ok, tlsTab3_ok, tlsTab4_ok, tlsTab5_ok, tlsTab6_ok, tlsTab7_ok, tlsTab8_ok, tlsTab9_ok, tlsTab10_ok, tlsTab11_ok, tlsTab12_ok, tlsTab13_ok, tlsTab14_ok, tlsTab15_ok, Bool.and_self]
+  simp only [List.all_append, tlsTab0_ok, tlsTab1_ok, tlsTab2_ok, tlsTab3_ok, tlsTab4_ok, tlsTab5_ok, tlsTab6_ok, tlsTab7_ok, tlsTab8_ok, tlsTab9_ok, tlsTab10_ok, tlsTab11_ok, tlsTab12_ok, tlsTab13_ok, tlsTab14_ok, tlsTab15_ok, tlsTabCS_ok, tlsTabFM_ok, Bool.and_self]
 
 end Backend.Proof.Flow
