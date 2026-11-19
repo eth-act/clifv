@@ -33,7 +33,12 @@ Paths (`lean-backend`'s driver, `FVTest/Backend/Main.lean`):
   emission with the function's allocation and checks that they reproduce the emitted code; the
   theorem is the typed scope's (`backend_correct_final_cleanupT`, `backend_correct_world_cleanupTC`,
   `backend_correct_world_cleanupTCF`; without dead cleanup `finalT`/`finalTC`/`finalTCF`), about
-  the compiled function.
+  the compiled function. A function with `fcopysign` or `fma` at `f32`/`f64` (#35:
+  `Compile.functionETCF`'s `instETFLO`, no `fma` with an `fneg`-defined second operand,
+  `fmaNegYFree`) is in the scope `typedTCF`: `backend_correct_world_cleanupTCF` (without dead
+  cleanup `backend_correct_finalTCF`), whose statement covers it through `functionETCF` and
+  `lowerCheckTCF` (the `fcopysign`/`fma` roots `lowerRulesCorrectCS_program`,
+  `lowerRulesCorrectFM_program` inside the proof).
 
 On every path `lean-backend` decides `formsCoveredB` of the prepared code (the premise `FormsCovered`
 of every theorem here) and `checkAlloc` of the allocation it lowered (the spill fallback's too).
@@ -122,7 +127,8 @@ def legacyThm (x : Facts) : String :=
   else if x.legal then s!"E2E.backend_correct_legal_wide{c}"
   else s!"E2E.backend_correct_final{c}"
 
-/-- The typed scope's theorem. -/
+/-- The typed scope's theorem (`typedTCF`: the float operations, float calls, the literal pool,
+and since #35 `fcopysign` and `fma`). -/
 def typedThm (x : Facts) : String :=
   match x.scope, x.cleanup with
   | .typedT, true => "E2E.backend_correct_final_cleanupT"

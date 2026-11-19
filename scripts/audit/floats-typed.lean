@@ -51,6 +51,10 @@ import FV.E2E.LinkScopeTotalTF
 import FV.Backend.Proof.IselFloatConstPool
 import FV.E2E.GuardedFPWitness
 import FVTest.E2E.PoolConstFinalTCF
+import FV.Backend.Proof.IselScopeTFLO
+import FV.Backend.Proof.LowerContractTFSO
+import FVTest.Backend.FloatScopeFLOWitness
+import FVTest.E2E.FloatOpsFinalTCF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -493,3 +497,48 @@ import FVTest.E2E.PoolConstFinalTCF
 #print axioms PoolConstFinalTCF.shapeOkTF_eq_S_old_false -- witness: native_decide
 #print axioms PoolConstFinalTCF.loweringTCF_of_check_old_false -- witness: native_decide
 #print axioms PoolConstFinalTCF.lowerShapeTC_of_okF_old_false -- witness: native_decide
+-- #35: `fcopysign` and `fma` in the typed scope (`Compile.instETFLO`, `Compile.fmaNegYFree`)
+#print axioms Compile.instETFL_fma
+#print axioms Compile.fmaNegYFree_of_instETFL
+#print axioms Compile.fmaNegYFree_of_functionETCF
+#print axioms Compile.functionETCF_of_functionETC
+#print axioms E2E.LinkCheck.functionETCF_of_functionETF
+#print axioms Backend.Proof.InstScopeTFL.toTFLO
+#print axioms Backend.Proof.Driver.instScopeOkFLO_sound
+#print axioms Backend.Proof.Driver.instScopeOkFLO_complete
+#print axioms Backend.Proof.InstScope.tflo_P
+#print axioms Backend.Proof.exclOkTFCO_program
+#print axioms Backend.Proof.copysignFmaNames_idx
+#print axioms Backend.Proof.copysignFma_of_instETFLO
+#print axioms Backend.Proof.instData_copysignFma
+#print axioms Backend.Proof.copysignFma_resTy
+#print axioms Backend.Proof.inst_splitFCLO1
+#print axioms Backend.Proof.inst_splitFCLO
+#print axioms Backend.Proof.lower_nonroot_nomatchTFCLO
+#print axioms Backend.Proof.nonE_splitFLO
+#print axioms Backend.Proof.nonEOkFCO_program
+#print axioms Backend.Proof.rootNEFCLO_sound
+#print axioms Backend.Proof.intStore_nonESO
+#print axioms Backend.Proof.nonEUnmatchableTFSO_program
+#print axioms Backend.Proof.lowerInstOkP_of_rulesTFSO
+#print axioms Backend.Proof.lowerInstOkP_runTermTFSO
+#print axioms Backend.Proof.lowerInstOk_runTermTFSO
+#print axioms Backend.Proof.instCallsTFSO_of_rules
+#print axioms E2E.driverHypTCFSO_relW_of
+#print axioms E2E.driverHypTCFSO_relW
+#print axioms E2E.driverHypTCFSO_relW_value
+#print axioms E2E.instCalls_pairTCFSO
+#print axioms E2E.instCalls_pair_valueTCFSO
+#print axioms Backend.Proof.Driver.shapeOkTF_of_shapeOkT
+#print axioms Backend.Proof.Driver.lowerCheckTCF_of_lowerCheckTC
+#print axioms FloatScopeFLOWitness.shapeOkTF_eq_S_old_false -- witness: native_decide
+#print axioms FloatScopeFLOWitness.lowerCheckTCF_cs -- witness: native_decide
+#print axioms FloatScopeFLOWitness.loweringTCF_of_check_old_false -- witness: native_decide
+#print axioms FloatScopeFLOWitness.lowerShapeTC_of_okF_old_false -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_cs -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_cs32 -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_fma -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_fmaNegZ -- witness: native_decide
+#print axioms FloatOpsFinalTCF.premises_fmaNegX -- witness: native_decide
+#print axioms FloatOpsFinalTCF.backend_correct_finalTCF_cs -- witness: native_decide
+#print axioms FloatOpsFinalTCF.backend_correct_finalTCF_fmaNegZ -- witness: native_decide

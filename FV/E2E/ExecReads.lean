@@ -31,7 +31,8 @@ def _root_.Backend.Insn.loads : Insn → Bool
 
 /-- `ArmInst.norm` changes no field `MemReads` reads. -/
 theorem memReads_norm (a : Arm.ArmInst) (s : Arm.ArmState) : MemReads a.norm s = MemReads a s := by
-  cases a <;> rename_i x <;> cases x <;> rfl
+  cases a <;> rename_i x <;> cases x <;>
+    first | rfl | (simp only [Arm.ArmInst.norm]; split <;> rfl)
 
 theorem ldstFields_store_reads {size : BitVec 2} {V : BitVec 1} {opc : BitVec 2} {bytes : Nat}
     {Rt : BitVec 5} {m : AMode} {a : Arm.ArmInst} (h : ldstFields size V opc bytes Rt m = .ok a)

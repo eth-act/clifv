@@ -199,7 +199,8 @@ def _root_.Backend.Insn.stores : Insn → Bool
 /-- `ArmInst.norm` changes no field `MemWrites` reads. -/
 theorem memWrites_norm (a : Arm.ArmInst) (s : Arm.ArmState) :
     MemWrites a.norm s = MemWrites a s := by
-  cases a <;> rename_i x <;> cases x <;> rfl
+  cases a <;> rename_i x <;> cases x <;>
+    first | rfl | (simp only [Arm.ArmInst.norm]; split <;> rfl)
 
 theorem shiftLeft8_div_pos (k : Nat) : 0 < (8 <<< k) / 8 := by
   rw [Nat.shiftLeft_eq, Nat.mul_comm, Nat.mul_div_assoc _ (by decide : 8 ∣ 8)]

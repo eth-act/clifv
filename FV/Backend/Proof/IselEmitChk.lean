@@ -418,6 +418,41 @@ theorem ec_atomicCas {ty : CTy} {fl : Clif.MemFlags} {r1 r2 r3 r4 r5 : Reg}
   simp only [MInst.emitOk, immOkB, MInst.noAlways, Bool.and_true]
   exact atom_ok hc g1 t1
 
+/-- `ushr`: a decoded `FPUOpRI` has its amount in the lane's range (`V.fpuOpRI?` checks it), so
+it needs no abstract emission check. -/
+theorem ec_fpuRRI {w : V} {op : FPUOpRI} {rd rn : Reg} (h : w.fpuOpRI? = some op) :
+    (MInst.fpuRRI op rd rn).emitOk = true := by
+  simp only [MInst.emitOk, immOkB, MInst.noAlways, Bool.and_true]
+  unfold V.fpuOpRI? at h
+  split at h
+  · split at h
+    · rename_i hc
+      obtain ⟨-, -, hok⟩ := hc
+      cases h
+      simp only [ushrImmOk, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq,
+        decide_eq_true_eq] at hok ⊢
+      obtain ⟨⟨hl | hl, h0⟩, h1⟩ := hok <;> subst hl <;>
+        simp [FPUOpRI.amount, FPUOpRI.lane] <;> omega
+    · cases h
+  · cases h
+
+/-- `sli`: a decoded `FPUOpRIMod` has its amount in the lane's range (`V.fpuOpRIMod?`). -/
+theorem ec_fpuRRIMod {w : V} {op : FPUOpRIMod} {rd ri rn : Reg} (h : w.fpuOpRIMod? = some op) :
+    (MInst.fpuRRIMod op rd ri rn).emitOk = true := by
+  simp only [MInst.emitOk, immOkB, MInst.noAlways, Bool.and_true]
+  unfold V.fpuOpRIMod? at h
+  split at h
+  · split at h
+    · rename_i hc
+      obtain ⟨-, -, hok⟩ := hc
+      cases h
+      simp only [sliImmOk, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq,
+        decide_eq_true_eq] at hok ⊢
+      obtain ⟨⟨hl | hl, h0⟩, h1⟩ := hok <;> subst hl <;>
+        simp [FPUOpRIMod.amount, FPUOpRIMod.lane] <;> omega
+    · cases h
+  · cases h
+
 end variants
 
 /-! ## The check of a variant -/
@@ -458,6 +493,8 @@ theorem em1_sound {nb : Bool} {t k : Nat} {as : List AW} {vs : List V} (hc : em1
   all_goals try (simp only [pure, Option.some.injEq] at hm; subst hm)
   all_goals first
     | exact ⟨rfl, fun _ => rfl⟩
+    | exact ⟨ec_fpuRRI (by assumption), fun _ => rfl⟩
+    | exact ⟨ec_fpuRRIMod (by assumption), fun _ => rfl⟩
     | skip
   all_goals fields hl
   all_goals first

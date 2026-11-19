@@ -14,16 +14,20 @@ its soundness is `DriverCheckTCF.lean`'s.
 #1002 part 2: the supported-instruction check is `instScopeOkFL` (`Compile.instETFL`: an
 `f64const` from the literal pool also; it was `instScopeOkF`), the scope `Compile.functionETCF`
 admits.
+
+#35: the supported-instruction check is `instScopeOkFLO` (`Compile.instETFLO`: `fcopysign` and
+`fma` at `f32`/`f64` also; it was `instScopeOkFL`), the scope `Compile.functionETCF` admits.
 -/
 
 namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
 
-/-- `shapeOkT` with `instScopeOkFL` (#1002 part 2; it was `instScopeOkF`). -/
+/-- `shapeOkT` with `instScopeOkFLO` (#35; it was `instScopeOkFL`, and before #1002 part 2
+`instScopeOkF`). -/
 def shapeOkTF (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
     (bl : List BLow) : Bool :=
-  (ctxOkT f ctx && instScopeOkFL ctx) && decide (ctx.valReg.size ≤ st0.nextVreg) &&
+  (ctxOkT f ctx && instScopeOkFLO ctx) && decide (ctx.valReg.size ≤ st0.nextVreg) &&
   f.blocks.all (fun B => B.params.all fun p => decide (gn p.1 = p.1)) &&
   decide (bl.length = f.blocks.length) && decide (f.blocks.length ≤ vc.blocks.size) &&
   (List.range vc.blocks.size).all (fun l => match vc.blocks[l]? with

@@ -373,6 +373,27 @@ precision; the result zero-extended into the register (`write_sfp`). -/
   | .size64 => some ((fpu2Val op .b64 (a.setWidth 64) (b.setWidth 64)).setWidth 128)
   | _ => none
 
+/-- #35 (`fma`): the scalar fused multiply-add operations of `fpuRRRR op` on the product's
+operands `n`, `m` and the addend `a` (the Arm model's `exec_fp_data_processing_three_source`:
+`FPMulAdd(operanda, operand1, operand2)` with `FPNeg` on the addend for `o1 = 1` and on
+`operand1` for `o1 ≠ o0`, `FPCR = 0`): `fmadd` `a + n·m`, `fmsub` `a - n·m`, `fnmadd`
+`-a - n·m`, `fnmsub` `-a + n·m`, each rounded once. -/
+@[simp] def fpu3Val (op : FPUOp3) (f : IEEE.Fmt) (n m a : IEEE.Bits f) : IEEE.Bits f :=
+  match op with
+  | .mAdd => IEEE.mulAdd f .rne a n m
+  | .mSub => IEEE.mulAdd f .rne a (IEEE.neg f n) m
+  | .nMAdd => IEEE.mulAdd f .rne (IEEE.neg f a) (IEEE.neg f n) m
+  | .nMSub => IEEE.mulAdd f .rne (IEEE.neg f a) n m
+
+/-- #35 (`fma`): `fpuRRRR op` on 128-bit register values (`n`, `m`, `a` in `MInst.uses` order:
+`rn`, `rm`, `ra`) at single (`size32`) or double (`size64`) precision; the result zero-extended
+into the register (`write_sfp`). -/
+@[simp] def fpu3Out (op : FPUOp3) (sz : ScalarSize) (n m a : CV) : Option CV :=
+  match sz with
+  | .size32 => some ((fpu3Val op .b32 (n.setWidth 32) (m.setWidth 32) (a.setWidth 32)).setWidth 128)
+  | .size64 => some ((fpu3Val op .b64 (n.setWidth 64) (m.setWidth 64) (a.setWidth 64)).setWidth 128)
+  | _ => none
+
 /-- S11f: the unary scalar FP operations of `fpuRR` on a 128-bit register value (the Arm
 model's `exec_fp_data_processing_one_source`): `fabs`/`fneg`/`fsqrt` at single or double
 precision, `fcvt` single → double (`size` 32) and double → single (`size` 64); the result
@@ -446,6 +467,39 @@ or 64 bits rounded to an integral value in the same format, zero-extended into t
   | .nearest32 => some ((IEEE.roundInt .b32 .rne (a.setWidth 32)).setWidth 128)
   | .nearest64 => some ((IEEE.roundInt .b64 .rne (a.setWidth 64)).setWidth 128)
 
+/-- #35: `fpuRRI op` (`ushr vd.2s, vn.2s, #n` / `ushr dd, dn, #n`) on a 128-bit register value
+(the Arm model's USHR, `exec_ushr_2s`/`exec_ushr_scalar_64`): the low 64 bits shifted right
+logically per 32-bit lane (`uShr32`, both lanes) or as one 64-bit element (`uShr64`), the result
+zero-extended into the register (`write_sfp 64`); Cranelift's amounts (`FPURightShiftImm`:
+`1 ≤ n ≤ lane`) only. -/
+@[simp] def fpuRRIOut (op : FPUOpRI) (a : CV) : Option CV :=
+  match op with
+  | .uShr32 n =>
+    if 0 < n ∧ n ≤ 32 then
+      some ((((a.setWidth 64).extractLsb' 32 32 >>> n) ++
+        ((a.setWidth 64).extractLsb' 0 32 >>> n)).setWidth 128)
+    else none
+  | .uShr64 n => if 0 < n ∧ n ≤ 64 then some (((a.setWidth 64) >>> n).setWidth 128) else none
+
+/-- #35: `fpuRRIMod op` (`sli vd.2s, vn.2s, #n` / `sli dd, dn, #n`) on the old destination value
+`d` and the source value `a` (the Arm model's SLI, `exec_sli_2s`/`exec_sli_scalar_64`): per
+32-bit lane of the low 64 bits (`sli32`) or as one 64-bit element (`sli64`), the destination's
+bits below `n` kept and the source shifted left by `n` inserted above them; the result
+zero-extended into the register; Cranelift's amounts (`FPULeftShiftImm`: `n < lane`) only. -/
+@[simp] def fpuRRIModOut (op : FPUOpRIMod) (d a : CV) : Option CV :=
+  match op with
+  | .sli32 n =>
+    if n < 32 then
+      some (((((d.setWidth 64).extractLsb' 32 32 &&& ~~~(BitVec.allOnes 32 <<< n)) |||
+          ((a.setWidth 64).extractLsb' 32 32 <<< n)) ++
+        (((d.setWidth 64).extractLsb' 0 32 &&& ~~~(BitVec.allOnes 32 <<< n)) |||
+          ((a.setWidth 64).extractLsb' 0 32 <<< n))).setWidth 128)
+    else none
+  | .sli64 n =>
+    if n < 64 then
+      some (((d.setWidth 64 &&& ~~~(BitVec.allOnes 64 <<< n)) ||| (a.setWidth 64 <<< n)).setWidth 128)
+    else none
+
 /-- S11f: scalar FP arithmetic and comparison (the shared IEEE core, `FPCR = 0`); a scalar FP
 result zeroes the register above it (`write_sfp`). `ispec`'s fallback: a separate match, so that
 `ispec`'s own match (whose equation lemmas every `simp [ispec]` realizes, within the default
@@ -453,8 +507,12 @@ heartbeats) keeps its size. -/
 @[simp] def ispecFP : Sem := fun i uses w =>
   match i, uses with
   | .fpuRRR op sz rd _ _, [a, b] => (fpu2Out op sz a b).map fun r => (defOut rd r, w, .next)
+  | .fpuRRRR op sz rd _ _ _, [n, m, a] =>
+    (fpu3Out op sz n m a).map fun r => (defOut rd r, w, .next)
   | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
   | .fpuRound op rd _, [a] => (fpuRoundOut op a).map fun r => (defOut rd r, w, .next)
+  | .fpuRRI op rd _, [a] => (fpuRRIOut op a).map fun r => (defOut rd r, w, .next)
+  | .fpuRRIMod op rd _ _, [d, a] => (fpuRRIModOut op d a).map fun r => (defOut rd r, w, .next)
   | .fpuCmp sz _ _, [a, b] =>
     (fcmpOut sz a b).map fun c => ([], Arm.write_pstate (fcmpFlags c) w, .next)
   | .fpuToInt op rd _, [a] => some (defOut rd (fpuToIntVal op a), w, .next)

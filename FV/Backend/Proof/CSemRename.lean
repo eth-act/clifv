@@ -96,6 +96,11 @@ theorem ispec_mapRegs (i : MInst) : ispec (i.mapRegs g) us w = ispec i us w := b
     simp only [MInst.mapRegs]; rg rd <;> us_cases <;> first | rfl | (cases op <;> rfl)
   | fpuRound op rd rn =>
     simp only [MInst.mapRegs]; rg rd <;> us_cases <;> (try rfl) <;> cases op <;> rfl
+  | fpuRRRR op sz rd rn rm ra => simp only [MInst.mapRegs]; rg rd <;> ren_fin
+  | fpuRRI op rd rn =>
+    simp only [MInst.mapRegs]; rg rd <;> us_cases <;> first | rfl | (cases op <;> rfl)
+  | fpuRRIMod op rd ri rn =>
+    simp only [MInst.mapRegs]; rg rd <;> us_cases <;> first | rfl | (cases op <;> rfl)
   | _ => (try simp only [MInst.mapRegs]) <;> us_cases <;> rfl
 
 end Backend.Proof
@@ -172,6 +177,10 @@ theorem formOk_mapRegs (hg : VRenaming g gn) (ctx : FnCtx) (i : MInst) :
   | fpuToInt op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
   | intToFpu op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
   | fpuRound op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
+  | fpuRRI op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
+  | fpuRRIMod op rd ri rn => simp only [MInst.mapRegs]; rgc rd <;> rgc ri <;> rgc rn <;> rfl
+  | fpuRRRR op sz rd rn rm ra =>
+    simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rgc rm <;> rgc ra <;> rfl
   | _ => (try simp only [MInst.mapRegs]) <;> rfl
 
 /-- Renaming keeps the literal-pool load (#565). -/

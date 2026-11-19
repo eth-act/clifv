@@ -6,8 +6,8 @@ import FV.Backend.Proof.ShapeS
 # The typed lowering validator with the proven float operations (S11f, #35)
 
 Soundness of `lowerCheckTCF` (`DriverCheckCF.lean`: `lowerCheckTC` whose supported-instruction
-check is `instScopeOkFL`, `Compile.instETFL`): `lowerShapeTC_of_okF`, `loweringTCF_of_check` (the
-shape `LowerShapeTCS InstScope.tfl`) and the tail facts
+check is `instScopeOkFLO`, `Compile.instETFLO`): `lowerShapeTC_of_okF`, `loweringTCF_of_check` (the
+shape `LowerShapeTCS InstScope.tflo`) and the tail facts
 (`noTryCallTCF_of_check`, `noTlsTCF_of_check`, `callsStackTCF_of_check`, `tryStackTCF_of_check`,
 `entryOkTCF_of_check`, `entryRegsTCF_of_check`). It accepts what `lowerCheckTC` accepts
 (`lowerCheckTCF_of_lowerCheckTC`). `lowerCheckTC` and its theorems are unchanged.
@@ -18,6 +18,13 @@ validator now admits an `f64const` from the literal pool, on which those stateme
 (`FVTest/E2E/PoolConstFinalTCF.lean`: `loweringTCF_of_check_old_false`,
 `lowerShapeTC_of_okF_old_false`); they give the shape over the validator's scope,
 `LowerShapeTCS InstScope.tfl` (`ShapeS.lean`). `LowerShapeTC` is unchanged.
+
+#35: the supported-instruction check was `instScopeOkFL` (`Compile.instETFL`), and
+`lowerShapeTC_of_okF`/`loweringTCF_of_check` gave `LowerShapeTCS InstScope.tfl`. The validator
+now admits `fcopysign` and `fma` at `f32`/`f64`, on which those statements are false
+(`FVTest/Backend/FloatScopeFLOWitness.lean`: `loweringTCF_of_check_old_false`,
+`lowerShapeTC_of_okF_old_false`); they give the shape over the validator's scope,
+`LowerShapeTCS InstScope.tflo`.
 -/
 
 namespace Backend.Proof.Driver
@@ -32,7 +39,7 @@ theorem shapeOkTF_of_shapeOkT {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 
   unfold shapeOkTF
   cases hI : instScopeOk ctx
   · simp [hI] at h
-  · have hF := instScopeOkFL_complete (instScopeOk_sound hI).toTF.toTFL
+  · have hF := instScopeOkFLO_complete (instScopeOk_sound hI).toTF.toTFL.toTFLO
     simp only [hI] at h
     simp only [hF]
     exact h
@@ -53,15 +60,16 @@ theorem lowerCheckTCF_of_lowerCheckTC {f : Clif.Function} {vc : VCode}
       simp only [Bool.and_eq_true] at h ⊢
       exact ⟨⟨⟨⟨shapeOkTF_of_shapeOkT h.1.1.1.1, h.1.1.1.2⟩, h.1.1.2⟩, h.1.2⟩, h.2⟩
 
-/-- **Soundness of the typed shape check with the float operations** (#1002 part 2: the shape
-over the validator's scope `InstScope.tfl`; it was `LowerShapeTC`). -/
+/-- **Soundness of the typed shape check with the float operations** (#35: the shape over the
+validator's scope `InstScope.tflo`; it was `InstScope.tfl`, and before #1002 part 2
+`LowerShapeTC`). -/
 theorem lowerShapeTC_of_okF {f : Clif.Function} {vc : VCode} {ctx : Ctx}
     {ranges : Array (Nat × Nat)} {st0 : LState} {bl : List BLow} {gn : Nat → Nat}
     (hb : buildCtx f = .ok (ctx, ranges, st0))
     (hl : lowBlocksC f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
       f.blocks.length = some bl)
     (hgn : ∀ n, st0.nextVreg ≤ n → gn n = n) (hs : shapeOkTF f vc ctx st0 gn bl = true) :
-    LowerShapeTCS InstScope.tfl f vc ctx st0 (renOf gn) gn bl := by
+    LowerShapeTCS InstScope.tflo f vc ctx st0 (renOf gn) gn bl := by
   obtain ⟨-, hlb⟩ := lowBlocksC_spec hl
   simp only [shapeOkTF, Bool.and_eq_true, decide_eq_true_eq] at hs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hctx, hsc⟩, hvb⟩, hpar⟩, hlen⟩, hsize⟩, hlab⟩, hblk⟩, hfresh⟩ := hs
@@ -70,7 +78,7 @@ theorem lowerShapeTC_of_okF {f : Clif.Function} {vc : VCode} {ctx : Ctx}
     intro bi B L hB hL
     have := all_range hblk (lt_of_getElem? hB)
     simpa [hB, hL] using this
-  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, instScopeOkFL_sound hsc, renOf_vrenaming gn, hgn, ?_,
+  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, instScopeOkFLO_sound hsc, renOf_vrenaming gn, hgn, ?_,
     hlen, hsize, ?_, ?_, hfresh, ?_, ?_⟩
   · intro B hB p hp
     have := List.all_eq_true.mp (List.all_eq_true.mp hpar B hB) p hp
@@ -120,11 +128,11 @@ theorem lowerShapeTC_of_okF {f : Clif.Function} {vc : VCode} {ctx : Ctx}
       exact ⟨h1, h2, h3, hsj j sl hslj, h4⟩
 
 /-- **Soundness of the validator with the float operations**: `lowerCheckTCF f vc = true` gives
-the typed structure of the VCode (`LowerShapeTCS InstScope.tfl`: an `f64const` from the literal
-pool among the instructions; #1002 part 2, it was `LowerShapeTC`), an SSA availability
-certificate and the `br_table` index typing. -/
+the typed structure of the VCode (`LowerShapeTCS InstScope.tflo`: an `f64const` from the literal
+pool, an `fcopysign` or an `fma` among the instructions; #35, it was `InstScope.tfl`, and before
+#1002 part 2 `LowerShapeTC`), an SSA availability certificate and the `br_table` index typing. -/
 theorem loweringTCF_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheckTCF f vc = true) :
-    ∃ ctx st0 R gn bl A, LowerShapeTCS InstScope.tfl f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
+    ∃ ctx st0 R gn bl A, LowerShapeTCS InstScope.tflo f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
       ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
   unfold lowerCheckTCF at h
   split at h

@@ -2,6 +2,8 @@ import FV.Backend.Proof.IselFloatConst
 import FV.Backend.Proof.IselFloatArith
 import FV.Backend.Proof.IselFloatCvt
 import FV.Backend.Proof.IselFloatRound
+import FV.Backend.Proof.IselFloatCopysign
+import FV.Backend.Proof.IselFloatFma
 import FV.Backend.Proof.IselFloatSelect
 import FV.Backend.Proof.IselFloatCmp
 import FV.Backend.Proof.IselFamAluBIconst
@@ -125,7 +127,7 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_ok <;> assumption
   · rw [lower_rule_eq hr (k := 174) (r0 := rule_lower_63) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -196,6 +198,12 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     exact (nearest32_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 214) (r0 := rule_lower_603) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     exact (nearest64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 107) (r0 := rule_lower_608) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fma_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 49) (r0 := rule_lower_609) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fma_fneg_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 215) (r0 := rule_lower_685) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (copysign_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 220) (r0 := rule_lower_724) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     exact (fcvt_from_uint_f32_le32_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 221) (r0 := rule_lower_727) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]

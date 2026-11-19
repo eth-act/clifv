@@ -222,5 +222,17 @@ theorem os_fpuRound (op : FpuRoundMode) (d n : Nat) :
     OperandsSound F (execMInst ctx env) (csem F ctx X)
       (.fpuRound op (.vreg d .float) (.vreg n .float)) :=
   os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuRound F ctx env op d n)
+theorem os_fpuRRI (op : FPUOpRI) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.fpuRRI op (.vreg d .float) (.vreg n .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuRRI F ctx env op d n)
+theorem os_fpuRRIMod (op : FPUOpRIMod) (d i n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.fpuRRIMod op (.vreg d .float) (.vreg i .float) (.vreg n .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuRRIMod F ctx env op d i n)
+theorem os_fpuRRRR (op : FPUOp3) (sz : ScalarSize) (d n m a : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.fpuRRRR op sz (.vreg d .float) (.vreg n .float) (.vreg m .float) (.vreg a .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuRRRR F ctx env op sz d n m a)
 
 end Backend.Proof

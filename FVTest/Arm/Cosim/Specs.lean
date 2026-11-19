@@ -552,6 +552,36 @@ def cvtToFp (opcode : Nat) (name : String) (ftype : Nat) : Spec :=
     randomFpCase name (ftype == 1) (enc [(← bits 1, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2),
       (1, 1), (0, 2), (opcode, 3), (0, 6), (← reg, 5), (← vreg, 5)])⟩
 
+/-! ## Advanced SIMD shift by immediate (FV additions: USHR, SLI; Cranelift's `fcopysign`) -/
+
+/-- USHR (`opcode` 00000) / SLI (`opcode` 01010), vector, `U = 1`, element size `esize`
+(8/16/32/64) and `Q` (`immh<3>:Q = 10` is reserved, so 64 only with `Q = 1`); random shift
+(`immh:immb` in `esize ..< 2·esize`), a quarter of the cases with `Rd = Rn`. -/
+def shiftImmVector (opcode : Nat) (name : String) (esize Q : Nat) : Spec :=
+  let t := if esize == 8 then "b" else if esize == 16 then "h" else if esize == 32 then "s" else "d"
+  let name := s!"{name} ({64 * (Q + 1) / esize}{t})"
+  ⟨name, "simd-shift", fun _ => do
+    let rn ← vreg
+    let rd ← if (← below 4) == 0 then pure rn else vreg
+    randomCase name (enc [(0, 1), (Q, 1), (1, 1), (0b011110, 6), (esize + (← below esize), 7),
+      (opcode, 5), (1, 1), (rn, 5), (rd, 5)])⟩
+
+/-- USHR / SLI, scalar (`d`, `immh<3> = 1`): test `i` uses `immh:immb = 64 + i % 64` (every
+shift), a quarter of the cases with `Rd = Rn`. -/
+def shiftImmScalar (opcode : Nat) (name : String) : Spec :=
+  let name := s!"{name} (d)"
+  ⟨name, "simd-shift", fun i => do
+    let rn ← vreg
+    let rd ← if (← below 4) == 0 then pure rn else vreg
+    randomCase name (enc [(0b01, 2), (1, 1), (0b111110, 6), (64 + i % 64, 7), (opcode, 5), (1, 1),
+      (rn, 5), (rd, 5)])⟩
+
+def shiftImmSpecs : List Spec :=
+  [(0b00000, "ushr"), (0b01010, "sli")].flatMap fun (opcode, name) =>
+    [shiftImmScalar opcode name] ++
+    ([(8, 0), (8, 1), (16, 0), (16, 1), (32, 0), (32, 1), (64, 1)].map fun (esize, Q) =>
+      shiftImmVector opcode name esize Q)
+
 /-! ## All specs -/
 
 def allSpecs : List Spec :=
@@ -630,6 +660,7 @@ def allSpecs : List Spec :=
      fcvtToInt 0b10 0b000 "fcvtms" ft, fcvtToInt 0b10 0b001 "fcvtmu" ft,
      fcvtToInt 0b11 0b000 "fcvtzs" ft, fcvtToInt 0b11 0b001 "fcvtzu" ft,
      fcvtToInt 0b00 0b100 "fcvtas" ft, fcvtToInt 0b00 0b101 "fcvtau" ft,
-     cvtToFp 0b010 "scvtf" ft, cvtToFp 0b011 "ucvtf" ft])
+     cvtToFp 0b010 "scvtf" ft, cvtToFp 0b011 "ucvtf" ft]) ++
+  shiftImmSpecs
 
 end Arm.Cosim

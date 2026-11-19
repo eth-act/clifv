@@ -524,6 +524,10 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   -- S11f-cvt: float ↔ integer conversions (`fcvtzs`/`fcvtzu`, `scvtf`/`ucvtf`)
   | .fpuToInt _ (.vreg _ .int) (.vreg _ .float) => true
   | .intToFpu _ (.vreg _ .float) (.vreg _ .int) => true
+  -- #35: `ushr`/`sli` (`fcopysign`) and `fmadd`/`fmsub`/`fnmadd`/`fnmsub` (`fma`)
+  | .fpuRRI _ (.vreg _ .float) (.vreg _ .float) => true
+  | .fpuRRIMod _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) => true
+  | .fpuRRRR _ _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) => true
   | _ => false
 
 /-- **The literal-pool load** (#565): `ldr s/d, <entry>` of a constant-pool entry
