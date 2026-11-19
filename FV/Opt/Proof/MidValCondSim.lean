@@ -571,5 +571,447 @@ theorem CR.stepB {X Y : Frame} {m : Mem} (h : CR g hints X Y) (hy : Y.body = [])
     | trap c' => exact evalInst_chain_trap hci c' he
     | stuck msg => rw [he] at h; cases h
 
+theorem ofRes_enter_next {X : Frame} {bc : BlockCall} {m : Mem} {X1 : Frame} {m1 : Mem}
+    (h : LRes.ofRes (enterBlock X bc) (fun fr => LRes.next fr m) = .next X1 m1) :
+    enterBlock X bc = .ok X1 ∧ m1 = m := by
+  cases he : enterBlock X bc with
+  | ok Z => rw [he] at h; simp only [LRes.ofRes, LRes.next.injEq] at h; exact ⟨by rw [h.1], h.2.symm⟩
+  | trap c => rw [he] at h; cases h
+  | stuck msg => rw [he] at h; cases h
+
+theorem ofRes_enter_ne {X : Frame} {bc : BlockCall} {m : Mem} {r : LRes}
+    (hn : ∀ X1 m1, r ≠ .next X1 m1) (hs : ∀ msg, r ≠ .stuck msg) :
+    LRes.ofRes (enterBlock X bc) (fun fr => LRes.next fr m) ≠ r := by
+  intro h
+  cases he : enterBlock X bc with
+  | ok Z => rw [he] at h; exact hn Z m h.symm
+  | trap c => exact enterBlock_not_trap _ _ _ he
+  | stuck msg => rw [he] at h; exact hs msg h.symm
+
+theorem ofRes_get_ne {X : Frame} {c : ValueId} {k : Val → LRes} {r : LRes}
+    (hk : ∀ cv, k cv ≠ r) (hs : ∀ msg, r ≠ .stuck msg) : LRes.ofRes (X.get c) k ≠ r := by
+  intro h
+  cases hc : X.regs c with
+  | none => simp [Frame.get, hc, Res.ofOption, LRes.ofRes] at h; exact hs _ h.symm
+  | some cv => simp only [Frame.get, hc, Res.ofOption, LRes.ofRes] at h; exact hk cv h
+
+/-- Both frames at their terminators. -/
+theorem CR.stepC (hR : refsOk g = true) {X Y : Frame} {m : Mem} (h : CR g hints X Y)
+    (hy : Y.body = []) (hx : X.body = []) :
+    (∀ X1 m1, lstep X m = .next X1 m1 → ∃ Y1, lstep Y m = .next Y1 m1 ∧ CR g hints X1 Y1) ∧
+    (∀ r, (∀ X1 m1, r ≠ .next X1 m1) → (∀ msg, r ≠ .stuck msg) → lstep X m = r →
+      lstep Y m = r) := by
+  obtain ⟨hfx, hfy, hsl, hag, b, hb, hsuf, hterm, ss, hxb, hss, hrel⟩ := h
+  have hops : ∀ v ∈ termOperands Y.term, v < g.freshValue := by
+    rw [hterm]; exact (refsOk_spec hR hb).2
+  have hss0 : ss = [] := by rw [hx, hy] at hxb; exact hxb.symm
+  subst hss0
+  have henter : ∀ bc : BlockCall, (∀ v ∈ bc.args, v < g.freshValue) → ∀ X1 m1,
+      LRes.ofRes (enterBlock X bc) (fun fr => LRes.next fr m) = .next X1 m1 →
+      ∃ Y1, LRes.ofRes (enterBlock Y bc) (fun fr => LRes.next fr m) = .next Y1 m1 ∧
+        CR g hints X1 Y1 := by
+    intro bc hbc X1 m1 he
+    obtain ⟨he1, hm⟩ := ofRes_enter_next he
+    subst hm
+    obtain ⟨Y1, he', hr⟩ := CR.enter_same hfx hfy hsl hag hbc he1
+    exact ⟨Y1, by rw [he']; rfl, hr⟩
+  have hget : ∀ v ∈ termOperands Y.term, Y.get v = X.get v := fun v hv => by
+    simp only [Frame.get, hag v (hops v hv)]
+  rw [lstep_term hx, lstep_term hy]
+  rcases hrel with ⟨-, htx⟩ | ⟨c, t, e, x, hty, htx, hc, -, hinv⟩
+  · rw [htx]
+    cases hT : Y.term with
+    | jump d =>
+      rw [hT] at hops
+      refine ⟨fun X1 m1 h => henter d hops X1 m1 h, fun r hn hs h => ?_⟩
+      exact absurd h (ofRes_enter_ne hn hs)
+    | brif c t e =>
+      rw [hT] at hops hget
+      simp only
+      rw [hget c (by simp [termOperands])]
+      have hargs : ∀ cv : Val, ∀ v ∈ (if Sem.truthy cv.bits then t else e).args,
+          v < g.freshValue := fun cv v hv => hops v (by
+        simp only [termOperands, List.mem_cons, List.mem_append]
+        split at hv <;> simp [hv])
+      refine ⟨fun X1 m1 h => ?_, fun r hn hs h => ?_⟩
+      · cases hcv : X.get c with
+        | ok cv => rw [hcv] at h; exact henter _ (hargs cv) X1 m1 h
+        | trap _ => rw [hcv] at h; cases h
+        | stuck _ => rw [hcv] at h; cases h
+      · exact absurd h (ofRes_get_ne (fun cv => ofRes_enter_ne hn hs) hs)
+    | brTable xi d tbl =>
+      rw [hT] at hops hget
+      simp only
+      rw [hget xi (by simp [termOperands])]
+      have hargs : ∀ xv : Val, ∀ v ∈ (tbl[xv.toNat]?.getD d).args, v < g.freshValue :=
+        fun xv v hv => hops v (by
+          simp only [termOperands, List.mem_cons, List.mem_append, List.mem_flatMap]
+          cases hq : tbl[xv.toNat]? with
+          | none => rw [hq] at hv; exact .inl (.inr hv)
+          | some q => rw [hq] at hv; exact .inr ⟨q, List.mem_of_getElem? hq, hv⟩)
+      refine ⟨fun X1 m1 h => ?_, fun r hn hs h => ?_⟩
+      · cases hxv : X.get xi with
+        | ok xv => rw [hxv] at h; exact henter _ (hargs xv) X1 m1 h
+        | trap _ => rw [hxv] at h; cases h
+        | stuck _ => rw [hxv] at h; cases h
+      · exact absurd h (ofRes_get_ne (fun cv => ofRes_enter_ne hn hs) hs)
+    | ret xs =>
+      rw [hT] at hops
+      have hgm : Y.getMany xs = X.getMany xs :=
+        getMany_congr (fun v hv => hag v (hops v hv))
+      simp only [hgm]
+      refine ⟨fun X1 m1 h => ?_, fun r _ _ h => h⟩
+      cases hg : X.getMany xs <;> rw [hg] at h <;> cases h
+    | returnCall fn args =>
+      rw [hT] at hops
+      have hta : tailArgs Y fn args = tailArgs X fn args := by
+        simp only [tailArgs, Function.extern?, hfx, hfy, condPrep_externs, condPrep_sig]
+        rw [getMany_congr (fr := X) (fr' := Y) (xs := args) (fun v hv => hag v (hops v hv))]
+      simp only [hta]
+      refine ⟨fun X1 m1 h => ?_, fun r _ _ h => h⟩
+      cases hg : tailArgs X fn args <;> rw [hg] at h <;> cases h
+    | trap tc =>
+      dsimp only
+      exact ⟨fun X1 m1 h => (by cases h), fun r _ _ h => h⟩
+    | tryCall fn args et =>
+      dsimp only
+      exact ⟨fun X1 m1 h => (by cases h), fun r _ hs h => absurd h.symm (hs _)⟩
+    | tryCallIndirect c args et =>
+      dsimp only
+      exact ⟨fun X1 m1 h => (by cases h), fun r _ hs h => absurd h.symm (hs _)⟩
+  · rw [htx, hty]
+    rw [hty] at hops
+    simp only
+    have hargs : ∀ b : Bool, ∀ v ∈ (if b then t else e).args, v < g.freshValue :=
+      fun b v hv => hops v (by
+        simp only [termOperands, List.mem_cons, List.mem_append]
+        split at hv <;> simp [hv])
+    refine ⟨fun X1 m1 h => ?_, fun r hn hs h => ?_⟩
+    · cases hxv : X.get x with
+      | ok xv =>
+        rw [hxv] at h
+        simp only [LRes.ofRes] at h
+        have hxr : X.regs x = some xv := by
+          cases hr : X.regs x with
+          | none => simp [Frame.get, hr, Res.ofOption] at hxv
+          | some v => simp only [Frame.get, hr, Res.ofOption, Res.ok.injEq] at hxv; rw [hxv]
+        obtain ⟨cv, hcv, htr⟩ := hinv hy X.regs xv (.nil _) hxr
+        have hyc : Y.get c = .ok cv := by
+          simp only [Frame.get, hag c hc, hcv, Res.ofOption]
+        rw [hyc]
+        simp only [LRes.ofRes]
+        rw [← htr]
+        exact henter _ (hargs _) X1 m1 h
+      | trap _ => rw [hxv] at h; cases h
+      | stuck _ => rw [hxv] at h; cases h
+    · exact absurd h (ofRes_get_ne (fun cv => ofRes_enter_ne hn hs) hs)
+
+/-! ## Fresh values -/
+
+theorem freshValue_le_of_bound {f : Function} {N : Nat}
+    (h : ∀ b ∈ f.blocks, (∀ p ∈ b.params, p.1 < N) ∧ ∀ st ∈ b.body, ∀ r ∈ st.results, r < N) :
+    f.freshValue ≤ N := by
+  unfold Function.freshValue
+  generalize f.blocks = bs at h
+  have hp : ∀ (ps : List (ValueId × Ty)) m, (∀ p ∈ ps, p.1 < N) → m ≤ N →
+      ps.foldl (fun m p => max m (p.1 + 1)) m ≤ N := by
+    intro ps
+    induction ps with
+    | nil => intro m _ hm; exact hm
+    | cons p ps ihp =>
+      intro m hps hm
+      exact ihp _ (fun q hq => hps q (by simp [hq])) (Nat.max_le.2 ⟨hm, hps p (by simp)⟩)
+  have hr : ∀ (rs : List ValueId) m, (∀ r ∈ rs, r < N) → m ≤ N →
+      rs.foldl (fun m r => max m (r + 1)) m ≤ N := by
+    intro rs
+    induction rs with
+    | nil => intro m _ hm; exact hm
+    | cons r rs ihr =>
+      intro m hrs hm
+      exact ihr _ (fun q hq => hrs q (by simp [hq])) (Nat.max_le.2 ⟨hm, hrs r (by simp)⟩)
+  have hs : ∀ (sts : List Stmt) m, (∀ st ∈ sts, ∀ r ∈ st.results, r < N) → m ≤ N →
+      sts.foldl (fun m st => st.results.foldl (fun m r => max m (r + 1)) m) m ≤ N := by
+    intro sts
+    induction sts with
+    | nil => intro m _ hm; exact hm
+    | cons st sts ihs =>
+      intro m hsts hm
+      exact ihs _ (fun q hq => hsts q (by simp [hq])) (hr _ _ (hsts st (by simp)) hm)
+  have key : ∀ (l : List Block), (∀ b ∈ l, (∀ p ∈ b.params, p.1 < N) ∧
+      ∀ st ∈ b.body, ∀ r ∈ st.results, r < N) → ∀ m, m ≤ N →
+      l.foldl (fun m (b : Block) =>
+        let m := b.params.foldl (fun m p => max m (p.1 + 1)) m
+        b.body.foldl (fun m st => st.results.foldl (fun m r => max m (r + 1)) m) m) m ≤ N := by
+    intro l hl
+    induction l with
+    | nil => intro m hm; exact hm
+    | cons b l ih =>
+      intro m hm
+      simp only [List.foldl_cons]
+      apply ih (fun b' hb' => hl b' (by simp [hb']))
+      exact hs _ _ (hl b (by simp)).2 (hp _ _ (hl b (by simp)).1 hm)
+  exact key bs h 0 (Nat.zero_le _)
+
+theorem prepBlocks_mem (hints : List (BlockId × List Wrap)) (base : Nat) :
+    ∀ (bs : List Block) (n : Nat), ∀ b ∈ bs, ∃ b' ∈ prepBlocks hints base bs n,
+      b'.params = b.params ∧ ∃ ss, b'.body = b.body ++ ss
+  | [], _, b, hb => by cases hb
+  | b0 :: bs, n, b, hb => by
+    have e : prepBlocks hints base (b0 :: bs) n =
+        (prepBlock hints base n b0).1 :: prepBlocks hints base bs (prepBlock hints base n b0).2 := by
+      simp [prepBlocks]
+    rw [e]
+    rcases List.mem_cons.1 hb with rfl | h
+    · have hshape : (prepBlock hints base n b).1.params = b.params ∧
+          ∃ ss, (prepBlock hints base n b).1.body = b.body ++ ss := by
+        unfold prepBlock
+        split
+        · split
+          · generalize prepChain _ n _ = p
+            obtain ⟨ss, x, n'⟩ := p
+            exact ⟨rfl, ss, rfl⟩
+          · exact ⟨rfl, [], by simp⟩
+        · exact ⟨rfl, [], by simp⟩
+      exact ⟨_, List.mem_cons_self .., hshape⟩
+    · obtain ⟨b', hb', h'⟩ := prepBlocks_mem hints base bs _ b h
+      exact ⟨b', List.mem_cons_of_mem _ hb', h'⟩
+
+theorem condPrep_freshValue (g : Function) (hints : List (BlockId × List Wrap)) :
+    g.freshValue ≤ (condPrep g hints).freshValue := by
+  apply freshValue_le_of_bound
+  intro b hb
+  obtain ⟨b', hb', hpar, ss, hbody⟩ := prepBlocks_mem hints g.freshValue g.blocks g.freshValue b hb
+  have := lt_freshValue (f := condPrep g hints) hb'
+  rw [hpar, hbody] at this
+  exact ⟨this.1, fun st hst r hr => this.2 st (List.mem_append_left _ hst) r hr⟩
+
+/-! ## The simulation -/
+
+/-- The window values of `X` and `Y` are above `g.freshValue`: binding them keeps the
+registers below it. -/
+theorem agree_tryRets {X Y : Frame} (hfx : X.func = condPrep g hints) (hfy : Y.func = g)
+    (hag : Agree (· < g.freshValue) X.regs Y.regs) {n : Nat} {vs : List Val} {regs regs' : Regs}
+    (hs : X.regs.setMany (tryRets n X.func.freshValue) vs = some regs)
+    (hs' : Y.regs.setMany (tryRets n Y.func.freshValue) vs = some regs') :
+    Agree (· < g.freshValue) regs regs' := by
+  have hle := condPrep_freshValue g hints
+  intro v hv
+  have h1 : v ∉ tryRets n X.func.freshValue := by
+    intro hm; obtain ⟨j, -, he⟩ := List.mem_map.1 hm
+    have he' : X.func.freshValue + j = v := he
+    rw [hfx] at he'; exact no_window he' hv hle
+  have h2 : v ∉ tryRets n Y.func.freshValue := by
+    intro hm; obtain ⟨j, -, he⟩ := List.mem_map.1 hm
+    have he' : Y.func.freshValue + j = v := he
+    rw [hfy] at he'; exact no_window he' hv (Nat.le_refl _)
+  rw [((setMany_spec hs').2 v).1 h2, ((setMany_spec hs).2 v).1 h1]
+  exact hag v hv
+
+/-- **The frame relation is a pass simulation with windows and handler edges.** -/
+theorem CR.isSimWU (hR : refsOk g = true) (syms : String → Option Nat) :
+    IsSimWU syms (CR g hints) := by
+  -- the position of a related pair
+  have hpos : ∀ X Y, CR g hints X Y → (∃ st restY, Y.body = st :: restY) ∨
+      (Y.body = [] ∧ ∃ st ss, X.body = st :: ss) ∨ (Y.body = [] ∧ X.body = []) := by
+    intro X Y _
+    cases hY : Y.body with
+    | cons st restY => exact .inl ⟨st, restY, rfl⟩
+    | nil =>
+      cases hX : X.body with
+      | cons st ss => exact .inr (.inl ⟨rfl, st, ss, rfl⟩)
+      | nil => exact .inr (.inr ⟨rfl, rfl⟩)
+  have hxne : ∀ X Y, CR g hints X Y → ∀ st restY, Y.body = st :: restY → X.body ≠ [] := by
+    rintro X Y ⟨-, -, -, -, -, -, -, -, ss, hxb, -⟩ st restY hy hx
+    rw [hx, hy] at hxb; cases hxb
+  -- `try_call` successors
+  have hpost : ∀ (X Y : Frame) (n : Nat) (bc bc' : BlockCall) (et : ExnTable),
+      (∀ v ∈ et.normal.vals, v < g.freshValue) → CR g hints X Y → Win X Y →
+      tryNormal et X.func.freshValue = .ok bc → tryNormal et Y.func.freshValue = .ok bc' →
+      ∀ rtys, TCont (CR g hints) X (tryRets n X.func.freshValue) bc Y
+        (tryRets n Y.func.freshValue) bc' rtys := by
+    rintro X Y n bc bc' et hops' ⟨hfx, hfy, hsl, hag, -⟩ hw hbc hbc' rtys vs regs _ hset
+    obtain ⟨regs', hset'⟩ := setMany_len (r := Y.regs) (xs := tryRets n Y.func.freshValue)
+      (vs := vs) (by have := (setMany_spec hset).1; simp only [tryRets, List.length_map,
+        List.length_range] at this ⊢; exact this)
+    have hW := setMany_tryRets hset
+    have hW' := setMany_tryRets hset'
+    have hagr := agree_tryRets hfx hfy hag hset hset'
+    refine ⟨regs', hset', fun X1 he => ?_⟩
+    obtain ⟨bc2, hbc2, hblk, hpw⟩ := tryNormal_pair id (et := et) (et' := et)
+      (by rw [TryDest.mapVals_id]) (b2 := Y.func.freshValue) hbc
+    rw [hbc'] at hbc2; cases hbc2
+    refine CR.enter (X := { X with regs }) (Y := { Y with regs := regs' }) hfx hfy hsl hagr hblk
+      (fun args hga => getMany_pw2 (A := { X with regs }) (hpw.imp fun x y h => ?_) hga) he
+    simp only
+    rcases h with ⟨v, hv, hx, hy⟩ | ⟨i, hx, hy⟩
+    · rw [hx, hy]; exact hagr v (hops' v hv)
+    · rw [hx, hy, hW i, hW' i]
+      split
+      · rfl
+      · exact (hw i).symm
+  -- handler successors
+  have hhand : ∀ (X Y : Frame) (et : ExnTable),
+      (∀ d ∈ et.handlers, ∀ v ∈ d.vals, v < g.freshValue) → CR g hints X Y → Win X Y →
+      HCont (CR g hints) X et Y et := by
+    rintro X Y et hops' ⟨hfx, hfy, hsl, hag, -⟩ hw e
+    refine ⟨fun hn => catchIn_eq_none.2 (catchIn_eq_none.1 hn), fun X1 hc => ?_⟩
+    obtain ⟨d, bc, regs, hd, hbc, hset, rfl⟩ := catchIn_ok hc
+    obtain ⟨bc', hbc', hblk, hpw⟩ := tryHandler_pair id (b2 := Y.func.freshValue) hbc
+    rw [TryDest.mapVals_id] at hbc'
+    obtain ⟨regs', hset'⟩ := setMany_len (r := Y.regs)
+      (xs := (List.range e.payload.length).map (Y.func.freshValue + ·)) (vs := e.payload)
+      (by simp)
+    have hW := setMany_tryRets (n := e.payload.length) (W := X.func.freshValue) hset
+    have hW' := setMany_tryRets (n := e.payload.length) (W := Y.func.freshValue) hset'
+    have hagr := agree_tryRets (n := e.payload.length) hfx hfy hag hset hset'
+    have hd' : d ∈ et.handlers := catch?_mem hd
+    refine ⟨_, catchIn_of hd hbc' hset', rfl, rfl, bc, bc', rfl, rfl, fun X2 he => ?_⟩
+    have he0 : enterBlock { X with regs } bc = .ok X2 := by
+      rw [← enterBlock_bt { X with regs } [] (.jump bc)]; exact he
+    obtain ⟨Y2, he', hr⟩ := CR.enter (X := { X with regs }) (Y := { Y with regs := regs' }) hfx hfy
+      hsl hagr hblk (fun args hga => getMany_pw2 (A := { X with regs })
+        (hpw.imp fun x y h => by
+          simp only
+          rcases h with ⟨v, hv, hx, hy⟩ | ⟨i, hx, hy⟩
+          · rw [hx, hy]; exact hagr v (hops' d hd' v hv)
+          · rw [hx, hy, hW i, hW' i]
+            split
+            · rfl
+            · exact (hw i).symm) hga) he0
+    exact ⟨Y2, (enterBlock_bt { Y with regs := regs' } [] (.jump bc') bc').trans he', hr⟩
+  -- a `try_call` frame: both at the same terminator
+  have htry : ∀ X Y, CR g hints X Y → X.body = [] → (∀ c t e, X.term ≠ .brif c t e) →
+      Y.body = [] ∧ Y.term = X.term ∧ ∀ v ∈ termOperands X.term, v < g.freshValue := by
+    rintro X Y ⟨-, -, -, -, b, hb, -, hterm, ss, hxb, -, hrel⟩ hx hnb
+    have hy : Y.body = [] := by
+      rw [hx] at hxb; exact (List.append_eq_nil_iff.1 hxb.symm).1
+    rcases hrel with ⟨-, htx⟩ | ⟨c, t, e, x, -, htx, -⟩
+    · refine ⟨hy, htx.symm, ?_⟩
+      rw [htx, hterm]; exact (refsOk_spec hR hb).2
+    · exact absurd htx (hnb x t e)
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  · rintro X Y ⟨hfx, hfy, hsl, -⟩; exact ⟨hsl, by rw [hfy, hfx]; rfl⟩
+  · rintro X Y m X1 m1 hr hm hl
+    rcases hpos X Y hr with ⟨st, restY, hy⟩ | ⟨hy, st, ss, hx⟩ | ⟨hy, hx⟩
+    · obtain ⟨Y1, h1, h2⟩ := (CR.stepA hR hr hy (m := m)).1 X1 m1 hl
+      exact ⟨Y1, .single h1, h2⟩
+    · obtain ⟨rfl, h2⟩ := (CR.stepB hr hy hx (m := m)).1 X1 m1 hl
+      exact ⟨Y, .refl _ _, h2⟩
+    · obtain ⟨Y1, h1, h2⟩ := (CR.stepC hR hr hy hx (m := m)).1 X1 m1 hl
+      exact ⟨Y1, .single h1, h2⟩
+  · rintro X Y m ext vals rs rest hr hm hl
+    rcases hpos X Y hr with ⟨st, restY, hy⟩ | ⟨hy, st, ss, hx⟩ | ⟨hy, hx⟩
+    · obtain ⟨rest', h1, h2⟩ := (CR.stepA hR hr hy (m := m)).2.1 ext vals rs rest hl
+      exact ⟨Y, rs, rest', .refl _ _, h1, h2⟩
+    · exact absurd hl ((CR.stepB hr hy hx (m := m)).2.1 ext vals rs rest)
+    · obtain ⟨st, fn, args, hbd, -⟩ := lstep_call_inv hl
+      rw [hx] at hbd; cases hbd
+  · rintro X Y m vals hr hm hl
+    rcases hpos X Y hr with ⟨st, restY, hy⟩ | ⟨hy, st, ss, hx⟩ | ⟨hy, hx⟩
+    · exact absurd (lstep_ret_inv hl) (hxne X Y hr st restY hy)
+    · rw [lstep_ret_inv hl] at hx; cases hx
+    · exact ⟨Y, .refl _ _, (CR.stepC hR hr hy hx (m := m)).2 _ (fun _ _ h => by cases h)
+        (fun _ h => by cases h) hl⟩
+  · rintro X Y m ext vals hr hm hl
+    rcases hpos X Y hr with ⟨st, restY, hy⟩ | ⟨hy, st, ss, hx⟩ | ⟨hy, hx⟩
+    · exact absurd (lstep_tail_inv hl) (hxne X Y hr st restY hy)
+    · rw [lstep_tail_inv hl] at hx; cases hx
+    · exact ⟨Y, .refl _ _, (CR.stepC hR hr hy hx (m := m)).2 _ (fun _ _ h => by cases h)
+        (fun _ h => by cases h) hl⟩
+  · rintro X Y m c hr hm hl
+    rcases hpos X Y hr with ⟨st, restY, hy⟩ | ⟨hy, st, ss, hx⟩ | ⟨hy, hx⟩
+    · exact ⟨Y, m, .refl _ _, (CR.stepA hR hr hy (m := m)).2.2 c hl⟩
+    · exact absurd hl ((CR.stepB hr hy hx (m := m)).2.2 c)
+    · exact ⟨Y, m, .refl _ _, (CR.stepC hR hr hy hx (m := m)).2 _ (fun _ _ h => by cases h)
+        (fun _ h => by cases h) hl⟩
+  · -- `call_indirect`
+    rintro X Y m st rest sig callee args d a vals hr - - - hm hbd hi hca
+    have hr0 := hr
+    obtain ⟨hfx, hfy, hsl, hag, b, hb, hsuf, -, ss, hxb, hss, -⟩ := hr
+    cases hY : Y.body with
+    | nil =>
+      rw [hY, List.nil_append, hbd] at hxb
+      have := (hss st (by rw [← hxb]; simp)).1
+      rw [hi] at this; simp [chainInst] at this
+    | cons st' restY =>
+      rw [hY, hbd] at hxb
+      simp only [List.cons_append, List.cons.injEq] at hxb
+      obtain ⟨rfl, rfl⟩ := hxb
+      have hopsS := (refsOk_spec hR hb).1 st (hsuf.subset (by rw [hY]; simp))
+      rw [hi] at hopsS
+      refine ⟨Y, st, restY, sig, callee, args, .refl _ _, hY, hi, ?_, ?_⟩
+      · rw [← hca]
+        unfold ciArgs
+        rw [getMany_congr (fr := X) (fr' := Y) (xs := args)
+          (fun v hv => hag v (hopsS v (by simp [operands, hv])))]
+        simp only [Frame.get, hag callee (hopsS callee (by simp [operands])), hfx, hfy,
+          condPrep_sigDecls]
+      · intro vs regs _ hset
+        obtain ⟨regs', hset', hag'⟩ := setMany_agree hag hset
+        obtain ⟨ss', hxb', hR'⟩ := CR.after hr0 hY hag'
+        rw [hbd] at hxb'
+        simp only [List.cons.injEq, true_and] at hxb'
+        rw [hxb']
+        exact ⟨regs', hset', hR'⟩
+  · -- `try_call`, `try_call_indirect`
+    refine ⟨?_, ?_⟩
+    · rintro X Y m fn args et n base bc ext vals hr - - hw hm hbd ht htc hca
+      obtain ⟨hy, hty, hopsT⟩ := htry X Y hr hbd (fun c t e h => by rw [ht] at h; cases h)
+      have hr0 := hr
+      obtain ⟨hfx, hfy, hsl, hag, -⟩ := hr
+      rw [ht] at hopsT hty
+      obtain ⟨rfl, hbc⟩ := tcArgs_base htc
+      obtain ⟨bc', hbc', -⟩ := tryNormal_pair id (et := et) (et' := et)
+        (by rw [TryDest.mapVals_id]) (b2 := Y.func.freshValue) hbc
+      have htc' : tcArgs Y fn et = .ok (n, Y.func.freshValue, bc') := by
+        obtain ⟨e0, s0, he0, hs0, hc0, -, -, hn0⟩ := tcArgs_ok.1 htc
+        refine tcArgs_ok.2 ⟨e0, s0, ?_, ?_, hc0, rfl, hbc', hn0⟩
+        · rw [← he0]; simp only [Function.extern?, hfy, hfx, condPrep_externs]
+        · rw [← hs0, hfy, hfx, condPrep_sigDecls]
+      have hca' : callArgs Y fn args = .ok (ext, vals) := by
+        rw [← hca]
+        unfold callArgs
+        rw [getMany_congr (fr := X) (fr' := Y) (xs := args)
+          (fun v hv => hag v (hopsT v (by simp [termOperands, hv])))]
+        simp only [Function.extern?, hfy, hfx, condPrep_externs]
+      refine ⟨Y, fn, args, et, _, bc', .refl _ _, hy, hty, htc', hca', ?_, ?_⟩
+      · exact hpost X Y n bc bc' et (fun v hv => hopsT v (normal_vals_sub v hv)) hr0 hw hbc hbc' _
+      · exact hhand X Y et (fun d hd v hv => hopsT v (by simp [termOperands, handler_vals hd hv]))
+          hr0 hw
+    · rintro X Y m callee args et n base bc d a vals hr - - hw hm hbd ht htc hca
+      obtain ⟨hy, hty, hopsT⟩ := htry X Y hr hbd (fun c t e h => by rw [ht] at h; cases h)
+      have hr0 := hr
+      obtain ⟨hfx, hfy, hsl, hag, -⟩ := hr
+      rw [ht] at hopsT hty
+      obtain ⟨rfl, hbc⟩ := ticArgs_base htc
+      obtain ⟨bc', hbc', -⟩ := tryNormal_pair id (et := et) (et' := et)
+        (by rw [TryDest.mapVals_id]) (b2 := Y.func.freshValue) hbc
+      have htc' : ticArgs Y et = .ok (n, Y.func.freshValue, bc') := by
+        obtain ⟨s0, hs0, -, -, hn0⟩ := ticArgs_ok.1 htc
+        exact ticArgs_ok.2 ⟨s0, by rw [← hs0, hfy, hfx, condPrep_sigDecls], rfl, hbc', hn0⟩
+      have hca' : ciArgs Y et.sig callee args = .ok (d, a, vals) := by
+        rw [← hca]
+        unfold ciArgs
+        rw [getMany_congr (fr := X) (fr' := Y) (xs := args)
+          (fun v hv => hag v (hopsT v (by simp [termOperands, hv])))]
+        simp only [Frame.get, hag callee (hopsT callee (by simp [termOperands])), hfy, hfx,
+          condPrep_sigDecls]
+      refine ⟨Y, callee, args, et, _, bc', .refl _ _, hy, hty, htc', hca', ?_, ?_⟩
+      · exact hpost X Y n bc bc' et (fun v hv => hopsT v (normal_vals_sub' v hv)) hr0 hw hbc hbc' _
+      · exact hhand X Y et (fun d hd v hv => hopsT v (by simp [termOperands, handler_vals hd hv]))
+          hr0 hw
+
+/-- **`g` simulates the copy with the rebuilt branch conditions** (module doc), whenever `g`
+reads only values below its fresh value. -/
+theorem condPrep_simU (hR : refsOk g = true) : FunSimU (condPrep g hints) g := by
+  refine FunSimU.ofWU rfl rfl rfl rfl fun syms => ⟨CR g hints, CR.isSimWU hR syms, fun b hb => ?_⟩
+  obtain ⟨b0, hb0, hid, hpar, ss, hbody, hss, hterm⟩ := (condPrep_rel g hints).2.2 b hb
+  refine ⟨b0, hb0, hpar.symm, fun args regs slots _ _ _ => ?_⟩
+  refine ⟨rfl, rfl, rfl, fun _ _ => rfl, b0, List.mem_of_mem_head? hb0, List.suffix_refl _, rfl,
+    ss, hbody, hss, ?_⟩
+  rcases hterm with ⟨rfl, ht⟩ | ⟨c, t, e, x, hbt, hbt', hc, hok⟩
+  · exact .inl ⟨rfl, ht⟩
+  · exact .inr ⟨c, t, e, x, hbt, hbt', hc, fun _ => hok, fun _ => hok _ _⟩
+
 end
 end Opt.MidVal
