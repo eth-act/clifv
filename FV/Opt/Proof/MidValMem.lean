@@ -73,7 +73,8 @@ theorem readFold_spec {m : Mem} {big : Bool} {addr n w : Nat} :
     · by_cases hik : i < k
       · exact h1 i hik
       · rw [show i = k by omega, hb]; rfl
-    · rw [BitVec.getLsbD_or, hs, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_zeroExtend]
+    · rw [BitVec.getLsbD_or, hs, BitVec.getLsbD_shiftLeft, BitVec.zeroExtend_eq_setWidth,
+        BitVec.getLsbD_setWidth]
       by_cases hj : j < 8 * k
       · have hj2 : j < 8 * (k + 1) := by omega
         simp only [hj, hj2, decide_true, Bool.and_true, Bool.not_true, Bool.and_false,
@@ -113,7 +114,7 @@ theorem writeBits_bytes {m : Mem} {big : Bool} {addr n i w : Nat} {x : BitVec w}
     (m.writeBits big addr n x).bytes (addr + byteIndex big n i) = some (x.extractLsb' (8 * i) 8) := by
   have hb := byteIndex_lt (big := big) hi
   simp only [writeBits, show addr ≤ addr + byteIndex big n i by omega,
-    show addr + byteIndex big n i < addr + n by omega, and_self, if_true,
+    show addr + byteIndex big n i < addr + n by omega, and_self, ite_true,
     Nat.add_sub_cancel_left, byteIndex_byteIndex hi]
 
 /-- **Reading back a write**: the `n` bytes just written at `addr`, read in the same byte order
@@ -152,7 +153,7 @@ theorem checkAccess_ok_valid {m : Mem} {fl : MemFlags} {a n : Nat}
 theorem checkAccess_of_valid {m : Mem} (fl : MemFlags) {a n : Nat} (h : m.valid a n = true) :
     m.checkAccess fl a n = .ok () ∨ ∃ msg, m.checkAccess fl a n = .stuck msg := by
   unfold checkAccess
-  simp only [h, if_true]
+  simp only [h, ite_true]
   split
   · exact Or.inr ⟨_, rfl⟩
   · exact Or.inl rfl
@@ -185,7 +186,7 @@ theorem load_of_store {m m' : Mem} {fl fl' : MemFlags} {a n w : Nat} {x : BitVec
         with h | ⟨msg, h⟩
       · rw [h, he]
         simp only [Res.ok_bind, readBits_writeBits, Res.ofOption_some]
-        exact Or.inl rfl
+        exact Or.inl (by simp)
       · rw [h]; exact Or.inr ⟨msg, rfl⟩
 
 /-- **Redundant-load elimination.** After a load of `n` bytes at `a` read `v`, a load of the same
