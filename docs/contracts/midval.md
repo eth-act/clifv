@@ -1,11 +1,13 @@
 # Contract: the mid-end validator `Opt.MidVal` (#1119, option (c))
 
-Status: **stage 1: checker measured, soundness proved.** The checker is an executable definition
+Status: **stage 1: checker measured, soundness proved; per-function plumbing (layer 1) in
+`lean-backend --midval-opt` / `cargo fv --midval`.** The checker is an executable definition
 (`FV/Opt/MidVal.lean`, `lake exe midval-check`) measured on real dump pairs; on acceptance it
 emits a certificate that `Opt.MidVal.checkCert` re-checks (`FV/Opt/MidValCert.lean`), and
 **`Opt.MidVal.check_sound : checkCert f g cert = true → Opt.FunSimMU f g`** is proved with the
-standard axioms (`FV/Opt/Proof/MidValSim.lean`; audit `scripts/audit/midval.lean`). No tool uses
-the checker yet (no verdict, report or link input mentions it): that is the plumbing PR.
+standard axioms (`FV/Opt/Proof/MidValSim.lean`; audit `scripts/audit/midval.lean`). Per function,
+`lean-backend` decides `checkCert` itself and names a theorem about the source function
+(module 6 below); the executable level (`lean-link`, `link-check`) is layer 2, not done.
 
 ## What it is for
 
@@ -107,10 +109,19 @@ moved `can_move` loads, the two checker gaps below.
    steps of `f` alone (`rel_nop`, `rel_pure`, `rel_remove`), matched statements (`rel_matched`),
    terminators and `try_call` edges (`rel_term`, `rel_try`, `rel_enter`), `isSimMU`,
    **`check_sound`**, `validated_refines`; witnesses above.
-6. Plumbing (separate PR): per-function theorem about `f` through the validator, `lean-backend`
-   naming it only when `checkCert` is decided, `cargo fv` passing the `.opt.clif` when the dump's
-   `opt_level` is not `none`, `lean-link`/`link-check` re-deciding the check per pair
-   (`Link.cpSource` pattern), a gate line. crypto-bigint's executables first need #1122.
+6. Plumbing, layer 1 — **done** (per function; #1119 design issuecomment-7016017477):
+   `FV/E2E/MidValPass.lean` (`midval_entry`, `midval_entryX`, the Stock path's
+   `backend_correct_midval_*_semantic_return_pins`), `FV/E2E/MidValPassLegacy.lean` (legacy,
+   unwinding and typed `backend_correct_midval_*`; docs/contracts/e2e.md "Through the mid-end
+   validator"); `lean-backend --midval-opt <g.opt.clif>` runs `emit` and decides `checkCert`, then
+   compiles `g` and names the composed theorem (`FVTest.Backend.FnVerdict.midvalVerdict`), or
+   compiles `f` exactly as without the option; `cargo fv --midval` (plain mode, no `--lean-link`,
+   no binary check) passes the `.opt.clif` of every function whose dump header's `opt_level` is
+   not `none`. Witness `FVTest/Backend/MidValPassWitness.lean`, audit
+   `scripts/audit/midval-e2e.lean`.
+   Layer 2 (not done): bundle entries with both dumps, `link-check` re-deciding `checkCert` per
+   pair, a `Link.midSource` like `Link.cpSource`, a gate line; crypto-bigint's executables first
+   need the unreferenced-data-object fix (#1122).
 
 ## Measured (2026-11-19, 9 release crates, 121,879 dump pairs)
 
