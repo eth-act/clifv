@@ -13,6 +13,9 @@ unwinding left, which has the symbols (`TabRelM`).
 * **`runLoopX_refinesMU`**: the same conclusion as `runLoopX_refinesU`, from `SRU`-related states
   (`SRU.toMU`) and pointwise `FunSimMU` (which every pointwise `FunSimU` gives:
   `FunsSimU.toMU`).
+
+Each is the instance of an `…At` statement from pointwise `FunSimMUAt syms`, the simulations at
+the run's symbol table only (`runLoopX_refinesMUAt`; `FunsSimMU.at`).
 -/
 
 namespace Opt
@@ -21,7 +24,8 @@ open Clif
 
 /-! ## Raising steps -/
 
-theorem extRaise_congrMU {p q : Program} (hP : FunsSimMU p.funcs q.funcs) (env : XEnv)
+theorem extRaise_congrMUAt {syms : String → Option Nat} {p q : Program}
+    (hP : FunsSimMUAt syms p.funcs q.funcs) (env : XEnv)
     (mem : Mem) (ext : ExtFunc) (vals : List Val) :
     extRaise env q mem ext vals = extRaise env p mem ext vals := by
   obtain ⟨hs, hn⟩ := hP.findP (· == ext.name)
@@ -36,11 +40,12 @@ theorem extRaise_congrMU {p q : Program} (hP : FunsSimMU p.funcs q.funcs) (env :
     have hq' : q.funcs.find? (·.name == ext.name) = none := hn hpf
     rw [hq']
 
-theorem indRaise_congrMU {p q : Program} (hP : FunsSimMU p.funcs q.funcs) (env : XEnv)
+theorem indRaise_congrMUAt {syms : String → Option Nat} {p q : Program}
+    (hP : FunsSimMUAt syms p.funcs q.funcs) (env : XEnv)
     (mem : Mem) (d : Signature) (a : Nat) (vals : List Val) :
     indRaise env q mem d a vals = indRaise env p mem d a vals := by
   obtain ⟨hs, hn⟩ := hP.findP (fun n => mem.symbols n == some a)
-  have hx : q.externNames = p.externNames := FunsSimMU.externNames hP
+  have hx : q.externNames = p.externNames := hP.externNames
   have hea : externAtRaise env q mem d a vals = externAtRaise env p mem d a vals := by
     unfold externAtRaise; rw [hx]
   unfold indRaise
@@ -137,8 +142,8 @@ theorem raiseIn_relMU {syms : String → Option Nat} {s : State} {ts : List (Opt
 
 /-- **A source step whose callee unwinds**: the target catches up (from the same memory) to the
 corresponding call, which raises the same exception with the same memory. -/
-theorem sim_raiseMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSymbolsX env)
-    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
+theorem sim_raiseMUAt {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSymbolsX env)
+    {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
     (hR : IsSimMU syms R) {s : State} {ts : List (Option ExnTable)} {fr' : Frame}
     {cs' : List (Frame × List ValueId)} {ts' : List (Option ExnTable)}
     (hr : R s.frame fr' s.mem) (hsym : s.mem.symbols = syms)
@@ -174,7 +179,7 @@ theorem sim_raiseMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSy
       obtain ⟨st', fn', args', hb2, hi2, -, hca2⟩ := lstep_call_inv hl2
       refine key fr2 hst ?_ ?_
       · simp only [raiseAt?, hb2, hi2, callRaise_eq, hca2]
-        exact (extRaise_congrMU hP env s.mem ext vals).trans hx
+        exact (extRaise_congrMUAt hP env s.mem ext vals).trans hx
       · rw [pendingOf_cons (s := s) hb, pendingOf_cons (s := ⟨fr2, cs', s.mem⟩) hb2]
         exact TabRelM.none' _ _ _
     · rename_i sig callee args hi
@@ -183,7 +188,7 @@ theorem sim_raiseMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSy
         hR.ci hr hsym hb hi hca
       refine key fr2 hst ?_ ?_
       · simp only [raiseAt?, hb2, hi2, callIndRaise_eq, hca2]
-        exact (indRaise_congrMU hP env s.mem d a vals).trans hx
+        exact (indRaise_congrMUAt hP env s.mem d a vals).trans hx
       · rw [pendingOf_cons (s := s) hb, pendingOf_cons (s := ⟨fr2, cs', s.mem⟩) hb2]
         exact TabRelM.none' _ _ _
     · cases hra'
@@ -199,7 +204,7 @@ theorem sim_raiseMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSy
       obtain ⟨hb2, fn', args', ht2, hta2⟩ := lstep_tail_inv' hl2
       refine key fr2 hst ?_ ?_
       · simp only [raiseAt?, hb2, ht2, returnCallRaise_eq, hta2]
-        exact (extRaise_congrMU hP env s.mem ext vals).trans hx
+        exact (extRaise_congrMUAt hP env s.mem ext vals).trans hx
       · rw [pendingOf_notTry (s := s) hb (by rw [ht]; rfl),
           pendingOf_notTry (s := ⟨fr2, cs', s.mem⟩) hb2 (by rw [ht2]; rfl)]
         exact TabRelM.none' _ _ _
@@ -213,7 +218,7 @@ theorem sim_raiseMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSy
           hR.tc.call hr hsym hb ht htc hca
         refine key fr2 hst ?_ ?_
         · simp only [raiseAt?, hb2, ht2, tryCallRaise_eq, htc2, callRaise_eq, hca2]
-          exact (extRaise_congrMU hP env s.mem ext vals).trans hx
+          exact (extRaise_congrMUAt hP env s.mem ext vals).trans hx
         · rw [pendingOf_try (s := s) hb ht, pendingOf_try (s := ⟨fr2, cs', s.mem⟩) hb2 ht2]
           exact TabRelM.ofH hR hh
       · cases hra'
@@ -227,7 +232,7 @@ theorem sim_raiseMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSy
           hR.tc.ind hr hsym hb ht htc hca
         refine key fr2 hst ?_ ?_
         · simp only [raiseAt?, hb2, ht2, tryCallIndRaise_eq, htc2, callIndRaise_eq, hca2]
-          exact (indRaise_congrMU hP env s.mem d a vals).trans hx
+          exact (indRaise_congrMUAt hP env s.mem d a vals).trans hx
         · rw [pendingOf_tryInd (s := s) hb ht,
             pendingOf_tryInd (s := ⟨fr2, cs', s.mem⟩) hb2 ht2]
           exact TabRelM.ofH hR hh
@@ -260,8 +265,9 @@ theorem XStepRelMU.toStepX {syms : String → Option Nat} {env : XEnv} {q : Prog
 
 /-- **One source step with unwinding** (`sim_stepU` with the memory): matched by target
 stuttering steps, or by target stuttering steps followed by one related step. -/
-theorem sim_stepMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSymbolsX env)
-    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {xs xs' : XState} (h : SRMU syms xs xs') :
+theorem sim_stepMUAt {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSymbolsX env)
+    {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) {xs xs' : XState}
+    (h : SRMU syms xs xs') :
     (∃ xs1 s1', stepX env p xs = .next xs1 ∧ Stut env.toEnv q xs'.s s1' ∧
       SRMU syms xs1 ⟨s1', xs'.tries⟩) ∨
     (∃ s2, Stut env.toEnv q xs'.s s2 ∧
@@ -276,11 +282,11 @@ theorem sim_stepMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSym
     obtain ⟨e, m1⟩ := em
     right
     rcases hfr with hr | ⟨hb, -, bc, -, ht, -, -⟩
-    · exact sim_raiseMU hE hP hR hr hsym hc hra
+    · exact sim_raiseMUAt hE hP hR hr hsym hc hra
     · rw [raiseAt_jump hb ht] at hra; cases hra
   | none =>
     have hstep := stepX_none (xs := ⟨s, ts⟩) hra
-    rcases sim_stepMU_core hE.toEnv hP hR hfr hsym hc with
+    rcases sim_stepMU_coreAt hE.toEnv hP hR hfr hsym hc with
       ⟨s1, s1', hs1, hstut, hcl, hrel⟩ | ⟨s2, hstut, hrel⟩
     · left
       refine ⟨⟨s1, ts⟩, s1', ?_, hstut, hrel⟩
@@ -292,13 +298,14 @@ theorem sim_stepMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSym
       rw [hstep, liftStep_eq]
       exact hrel.toStepX (by rw [hstut.callers]; exact hc.length)
 
-/-- **Program refinement with unwinding, memory-aware simulations.** If every function of `p` is
-simulated with its handler edges by a memory-aware simulation (`FunSimMU`) by the corresponding
-function of `q`, `SRMU`-related states have related runs with unwinding: a source run that
-returns, traps or ends `unwound e m` within `n` steps is matched by a target run of some length
-with the same outcome. -/
-theorem runLoopX_refinesSRMU {syms : String → Option Nat} {env : XEnv}
-    (hE : EnvKeepsSymbolsX env) {p q : Program} (hP : FunsSimMU p.funcs q.funcs) :
+/-- **Program refinement with unwinding, memory-aware simulations at the run's symbol table.**
+If every function of `p` is simulated with its handler edges, at the symbol table `syms`, by a
+memory-aware simulation (`FunSimMUAt syms`) by the corresponding function of `q`,
+`SRMU syms`-related states have related runs with unwinding: a source run that returns, traps or
+ends `unwound e m` within `n` steps is matched by a target run of some length with the same
+outcome. -/
+theorem runLoopX_refinesSRMUAt {syms : String → Option Nat} {env : XEnv}
+    (hE : EnvKeepsSymbolsX env) {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) :
     ∀ n (xs xs' : XState), SRMU syms xs xs' →
       ∃ n', XOutcomeRefines (Clif.runLoopX env p n xs) (Clif.runLoopX env q n' xs') := by
   intro n
@@ -309,7 +316,7 @@ theorem runLoopX_refinesSRMU {syms : String → Option Nat} {env : XEnv}
   | succ n ih =>
     intro xs xs' h
     obtain ⟨s', ts'⟩ := xs'
-    rcases sim_stepMU hE hP h with ⟨xs1, s1', hst, hstut, hr⟩ | ⟨s2, hstut, hr⟩
+    rcases sim_stepMUAt hE hP h with ⟨xs1, s1', hst, hstut, hr⟩ | ⟨s2, hstut, hr⟩
     · obtain ⟨n1, hn1⟩ := ih xs1 _ hr
       obtain ⟨k, hk⟩ := hstut.runLoopX ts'
       refine ⟨n1 + k, ?_⟩
@@ -339,6 +346,60 @@ theorem runLoopX_refinesSRMU {syms : String → Option Nat} {env : XEnv}
         exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h), fun _ _ h => h⟩
       | stuck m =>
         exact ⟨0, fun _ _ h => (by cases h), fun _ h => (by cases h), fun _ _ h => (by cases h)⟩
+
+/-- **Program refinement with unwinding at one symbol table**: the conclusion of
+`runLoopX_refinesU` for runs at `syms`, from pointwise `FunSimMUAt syms`. -/
+theorem runLoopX_refinesMUAt {syms : String → Option Nat} {env : XEnv}
+    (hE : EnvKeepsSymbolsX env) {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) :
+    ∀ n (xs xs' : XState), SRU syms xs xs' →
+      ∃ n', XOutcomeRefines (Clif.runLoopX env p n xs) (Clif.runLoopX env q n' xs') :=
+  fun n xs xs' h => runLoopX_refinesSRMUAt hE hP n xs xs' h.toMU
+
+/-! ## The statements for pointwise `FunSimMU` (every symbol table) -/
+
+theorem extRaise_congrMU {p q : Program} (hP : FunsSimMU p.funcs q.funcs) (env : XEnv)
+    (mem : Mem) (ext : ExtFunc) (vals : List Val) :
+    extRaise env q mem ext vals = extRaise env p mem ext vals :=
+  extRaise_congrMUAt (hP.at mem.symbols) env mem ext vals
+
+theorem indRaise_congrMU {p q : Program} (hP : FunsSimMU p.funcs q.funcs) (env : XEnv)
+    (mem : Mem) (d : Signature) (a : Nat) (vals : List Val) :
+    indRaise env q mem d a vals = indRaise env p mem d a vals :=
+  indRaise_congrMUAt (hP.at mem.symbols) env mem d a vals
+
+/-- **A source step whose callee unwinds**: the target catches up (from the same memory) to the
+corresponding call, which raises the same exception with the same memory. -/
+theorem sim_raiseMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSymbolsX env)
+    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {R : Frame → Frame → Mem → Prop}
+    (hR : IsSimMU syms R) {s : State} {ts : List (Option ExnTable)} {fr' : Frame}
+    {cs' : List (Frame × List ValueId)} {ts' : List (Option ExnTable)}
+    (hr : R s.frame fr' s.mem) (hsym : s.mem.symbols = syms)
+    (hc : CallersRelMU syms (AbiParam.tys s.frame.func.sig.returns) s.callers ts cs' ts')
+    {e : Exn} {m1 : Mem} (hra : raiseAt? env p s = some (e, m1)) :
+    ∃ s2, Stut env.toEnv q ⟨fr', cs', s.mem⟩ s2 ∧
+      XStepRelMU syms (stepX env p ⟨s, ts⟩) (stepX env q ⟨s2, ts'⟩) :=
+  sim_raiseMUAt hE (hP.at syms) hR hr hsym hc hra
+
+/-- **One source step with unwinding** (`sim_stepU` with the memory): matched by target
+stuttering steps, or by target stuttering steps followed by one related step. -/
+theorem sim_stepMU {syms : String → Option Nat} {env : XEnv} (hE : EnvKeepsSymbolsX env)
+    {p q : Program} (hP : FunsSimMU p.funcs q.funcs) {xs xs' : XState} (h : SRMU syms xs xs') :
+    (∃ xs1 s1', stepX env p xs = .next xs1 ∧ Stut env.toEnv q xs'.s s1' ∧
+      SRMU syms xs1 ⟨s1', xs'.tries⟩) ∨
+    (∃ s2, Stut env.toEnv q xs'.s s2 ∧
+      XStepRelMU syms (stepX env p xs) (stepX env q ⟨s2, xs'.tries⟩)) :=
+  sim_stepMUAt hE (hP.at syms) h
+
+/-- **Program refinement with unwinding, memory-aware simulations.** If every function of `p` is
+simulated with its handler edges by a memory-aware simulation (`FunSimMU`) by the corresponding
+function of `q`, `SRMU`-related states have related runs with unwinding: a source run that
+returns, traps or ends `unwound e m` within `n` steps is matched by a target run of some length
+with the same outcome. -/
+theorem runLoopX_refinesSRMU {syms : String → Option Nat} {env : XEnv}
+    (hE : EnvKeepsSymbolsX env) {p q : Program} (hP : FunsSimMU p.funcs q.funcs) :
+    ∀ n (xs xs' : XState), SRMU syms xs xs' →
+      ∃ n', XOutcomeRefines (Clif.runLoopX env p n xs) (Clif.runLoopX env q n' xs') :=
+  runLoopX_refinesSRMUAt hE (hP.at syms)
 
 /-- **Program refinement with unwinding from memory-aware function simulations**: exactly the
 conclusion of `runLoopX_refinesU`, from pointwise `FunSimMU`. -/

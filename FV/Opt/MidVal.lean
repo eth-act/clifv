@@ -308,6 +308,35 @@ def wfCheck (f : Function) : Except String Info := do
   ensure (wfCertM f info.cfg info.types) "certificate rejected (Opt.MidVal.wfCertM)"
   return info
 
+/-! ## The hoisting mode's premise: the function's global values resolve
+
+`Clif.run` is `stuck` on a `symbol_value`, `tls_value` or `func_addr` whose symbol the link-time
+image lacks, so `g` may evaluate one where `f` has not yet only if it resolves.
+`globalsResolve f syms` decides that for every such instruction of `f`, from `f` and the image's
+symbol table `syms` (`Mem.symbols`), so that a tool holding the image (link-check) can decide it
+per function. -/
+
+/-- The instruction `i` of `f` resolves in `syms` (`true` for every other instruction). -/
+def symResolves (f : Function) (syms : String → Option Nat) : Inst → Bool
+  | .symbolValue _ gv => match f.globals.lookup gv with
+    | some (.symbol name _ _) => (syms name).isSome
+    | _ => false
+  | .tlsValue _ gv => match f.globals.lookup gv with
+    | some (.tlsSymbol name _ _) => (syms name).isSome
+    | _ => false
+  | .funcAddr _ fn => match f.extern? fn with
+    | some e => (syms e.name).isSome
+    | none => false
+  | _ => true
+
+/-- **The function's global values resolve** in the symbol table `syms` (section doc). -/
+def globalsResolve (f : Function) (syms : String → Option Nat) : Bool :=
+  f.blocks.all fun b => b.body.all fun st => symResolves f syms st.inst
+
+/-- `f` contains the instruction `i`. -/
+def hasInst (f : Function) (i : Inst) : Bool :=
+  f.blocks.any fun b => b.body.any fun st => st.inst == i
+
 /-! ## Memory versions (on `g`) -/
 
 def meetV (b : Nat) : Option Ver → Ver → Ver
@@ -411,10 +440,12 @@ structure St where
   /-- The normaliser of pure nodes (`Norm`): the identity in stage 1. -/
   norm : Norm := Norm.id
   /-- The facts a removal used (certificate emission, `FV/Opt/MidValCert.lean`): memory
-  locations with their value, merged trapping nodes, partial terms. -/
+  locations with their value, merged trapping nodes, partial terms, and the partial terms `g`
+  evaluates before `f` does (hoisting mode). -/
   usedMem : Std.HashSet (Key × Nat) := {}
   usedMerge : Std.HashSet Nat := {}
   usedPart : Std.HashSet Nat := {}
+  usedHoist : Std.HashSet Nat := {}
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -469,9 +500,12 @@ structure Ctx where
   pre : Array Nat
   post : Array Nat
   ver : Array Ver
-  /-- Value types of `f` and `g` (`Opt.check`). -/
+  /-- Value types of `f` and `g` (`wfCheck`). -/
   fty : ValueId → Option Ty
   gty : ValueId → Option Ty
+  /-- The partial pure nodes `g` may evaluate anywhere (the hoisting mode: the instructions
+  `f` contains, `hasInst f`; otherwise none). -/
+  hoistable : Inst → Bool := fun _ => false
 
 def Ctx.dom (c : Ctx) (a b : Nat) : Bool :=
   c.pre[a]! ≤ c.pre[b]! && c.post[b]! ≤ c.post[a]!
@@ -583,6 +617,21 @@ def removeF (c : Ctx) (fid : BlockId) (bi k : Nat) (ver : Ver) (s : Stmt) (s' : 
     | some v => bindF s v
     | none => if s.results.isEmpty then pure () else throw "wf:merge arity"
 
+/-- `g` evaluates the partial term `pt` in block `bi` before `f`'s skeleton segment `seg`
+(layout index `bi`, block id `fid`): accepted when `f` evaluated it no later (same block and no
+later segment, or a dominating block), or, in the hoisting mode, when `f` contains its
+instruction (`Ctx.hoistable`; the soundness theorem of that mode assumes the function's global
+values resolve, `globalsResolve`). -/
+def place (c : Ctx) (bi seg : Nat) (fid : BlockId) (pt : Nat) : M Unit := do
+  let s ← get
+  let ok := (s.partials.getD pt #[]).any fun (d, sf) =>
+    (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
+  if ok then
+    modify fun st => { st with usedPart := st.usedPart.insert pt }
+  else if c.hoistable (s.tms[pt]!.inst) then
+    modify fun st => { st with usedHoist := st.usedHoist.insert pt }
+  else throw s!"placement:{opName (s.tms[pt]!.inst)} block{fid}"
+
 /-- Check one block (layout index `bi`). -/
 def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
   if fb.params.map (·.2) != gb.params.map (·.2) then throw s!"shape:params block{fb.id}"
@@ -634,11 +683,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
       if matched then
         let some t := gt? | throw "wf:internal"
         -- pending partial terms of `g` are evaluated before this statement
-        for pt in pend do
-          let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
-            (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
-          if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
-          modify fun st => { st with usedPart := st.usedPart.insert pt }
+        for pt in pend do place c bi seg fb.id pt
         pend := #[]
         let ts ← bindRes true s.results bi k
         discard (bindRes false t.results bi k)
@@ -660,11 +705,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
         seg := seg + 1
     | none, some t =>
       throw (missReason fb.id t none "rewrite:skeleton-added")
-  for pt in pend do
-    let ok := ((← get).partials.getD pt #[]).any fun (d, sf) =>
-      (d == bi && sf ≤ seg) || (d != bi && c.dom d bi)
-    if !ok then throw s!"placement:{opName ((← get).tms[pt]!.inst)} block{fb.id}"
-    modify fun st => { st with usedPart := st.usedPart.insert pt }
+  for pt in pend do place c bi seg fb.id pt
   let ft ← liftE (mapTermM (← get).envF "f" fb.term)
   let gt ← liftE (mapTermM (← get).envG "g" gb.term)
   if ft != gt then
@@ -673,8 +714,9 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
     else throw s!"rewrite:term {termName fb.term}/{termName gb.term} block{fb.id}"
 
 /-- The check, returning its final state, context and `f`'s `wfCheck` info on acceptance
-(certificate emission, `Opt.MidVal.emit`). -/
-def checkRun (f g : Function) (norm : Norm := Norm.id) : Except Reject (St × Ctx × Info) := do
+(certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). -/
+def checkRun (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) :
+    Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (wfCheck f).mapError (s!"wf:f {·}")
   let gi ← (wfCheck g).mapError (s!"wf:g {·}")
@@ -683,7 +725,8 @@ def checkRun (f g : Function) (norm : Norm := Norm.id) : Except Reject (St × Ct
   if g.blocks.head?.map (·.params) != f.blocks.head?.map (·.params) then throw "shape:entry params"
   if gi.cfg.idom != fi.cfg.idom then throw "rewrite:domtree"
   let (pre, post, order) := domIntervals fi.cfg.idom
-  let c : Ctx := { pre, post, ver := versions g gi.cfg, fty := fi.types.get?, gty := gi.types.get? }
+  let c : Ctx := { pre, post, ver := versions g gi.cfg, fty := fi.types.get?, gty := gi.types.get?,
+                   hoistable := fun i => hoist && partialK i && hasInst f i }
   let fbs := f.blocks.toArray
   let gbs := g.blocks.toArray
   let go : M Unit := do
@@ -696,8 +739,9 @@ def checkRun (f g : Function) (norm : Norm := Norm.id) : Except Reject (St × Ct
   | .error e, none => throw e
 
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
-`g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. -/
-def check (f g : Function) (norm : Norm := Norm.id) : Except Reject Unit :=
-  (checkRun f g norm).map fun _ => ()
+`g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. `hoist`: also accept `g` evaluating
+a `symbol_value`/`func_addr`/`tls_value` of `f` earlier than `f` does (`place`). -/
+def check (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) : Except Reject Unit :=
+  (checkRun f g norm hoist).map fun _ => ()
 
 end Opt.MidVal

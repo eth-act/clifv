@@ -99,10 +99,27 @@ def tmOk (t : Nat) : Tm → Bool
 def tmsOk : Bool :=
   c.cert.site.size == c.cert.tms.size && (c.cert.tms.toList.zipIdx.all fun (x, t) => c.tmOk t x)
 
+/-- A node without operands: its value does not depend on the frame's registers. -/
+def closed (t : Nat) : Bool :=
+  match c.tm t with
+  | some (.node i) => (operands i).isEmpty
+  | _ => false
+
 /-- The facts at the entry of block `b` mention only terms of strict dominators of `b` (so
-entering `b`, which rebinds `b`'s parameters, keeps their values). -/
+entering `b`, which rebinds `b`'s parameters, keeps their values), or, at the entry block,
+nodes without operands sited at its start (the hoisting mode's facts, `hoistFact`). -/
 def entryOk (b : Nat) : Bool :=
-  (c.factsAt b).all fun F => F.terms.all fun t => (c.siteOf t).1 != b && c.anc (c.siteOf t).1 b
+  (c.factsAt b).all fun F => F.terms.all fun t =>
+    ((c.siteOf t).1 != b && c.anc (c.siteOf t).1 b) ||
+      (b == 0 && c.siteOf t == (0, 0) && c.closed t)
+
+/-- A fact the hoisting mode allows at the entry of the function: a `symbol_value`, `tls_value`
+or `func_addr` that `f` contains has evaluated (it holds under `globalsResolve f`). -/
+def hoistFact (f : Function) : Fact → Bool
+  | .defd t => c.siteOf t == (0, 0) && match c.tm t with
+    | some (.node i) => partialK i && hasInst f i
+    | _ => false
+  | _ => false
 
 /-- A pure statement of one side (`env`, `ty`) is the node of its operands' terms (or what the
 normaliser makes of it), typed, at a site no later than `bound`. Its result's term. -/
@@ -233,8 +250,9 @@ def sitesOk (f g : Function) : Bool :=
 
 end CC
 
-/-- **The re-check of the certificate** (module doc): what the soundness theorem is about. -/
-def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
+/-- The re-check of the certificate, with or without the hoisting mode (`hoist`: the entry
+block's facts may be `hoistFact`s; otherwise it has none). -/
+def checkCertWith (hoist : Bool) (f g : Function) (cert : Cert) (norm : Norm) : Bool :=
   sameHeader f g && g.sigDecls == f.sigDecls &&
   match wfCheck f, wfCheck g with
   | .ok fi, .ok gi =>
@@ -242,14 +260,26 @@ def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
     g.blocks.head?.map (·.params) == f.blocks.head?.map (·.params) && gi.cfg.idom == fi.cfg.idom &&
     let c : CC := { idom := fi.cfg.idom, index := fi.cfg.index.get?, fty := fi.types.get?,
                     gty := gi.types.get?, cert, norm }
-    c.tmsOk && (c.factsAt 0).isEmpty && c.sitesOk f g && c.blocksOk 0 f.blocks g.blocks
+    c.tmsOk && (c.factsAt 0).all (fun F => hoist && c.hoistFact f F) && c.sitesOk f g &&
+      c.blocksOk 0 f.blocks g.blocks
   | _, _ => false
+
+/-- **The re-check of the certificate** (module doc): what the soundness theorem is about. -/
+def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
+  checkCertWith false f g cert norm
+
+/-- **The re-check in the hoisting mode**: `g` may evaluate a `symbol_value`, `tls_value` or
+`func_addr` that `f` contains earlier than `f` does. Its soundness theorem assumes the function's
+global values resolve (`globalsResolve`). -/
+def checkCertSyms (f g : Function) (cert : Cert) (norm : Norm := Norm.id) : Bool :=
+  checkCertWith true f g cert norm
 
 /-! ## Emission (untrusted) -/
 
-/-- The certificate of an accepted pair, from the final state of `check` (`checkRun`). -/
-def emit (f g : Function) (norm : Norm := Norm.id) : Except Reject Cert := do
-  let (st, c, fi) ← checkRun f g norm
+/-- The certificate of an accepted pair, from the final state of `check` (`checkRun`; `hoist`:
+the hoisting mode, whose partial terms evaluated by `g` first are facts of every block). -/
+def emit (f g : Function) (norm : Norm := Norm.id) (hoist : Bool := false) : Except Reject Cert := do
+  let (st, c, fi) ← checkRun f g norm hoist
   let idom := fi.cfg.idom
   let anc := fun a b => ancB idom idom.size a b
   let le : Nat × Nat → Nat × Nat → Bool := fun (d, t) (b, k) => if d == b then t ≤ k else anc d b
@@ -267,10 +297,11 @@ def emit (f g : Function) (norm : Norm := Norm.id) : Except Reject Cert := do
   let nb := f.blocks.length
   -- facts recorded in a strict dominator `d` of `b`, at `b`'s entry version (memory), used
   let sdom := fun d b => d != b && c.dom d b
-  let mut facts : Array (List Fact) := Array.replicate nb []
+  let hoisted : List Fact := st.usedHoist.toList.map .defd
+  let mut facts : Array (List Fact) := Array.replicate nb hoisted
   for b in [1:nb] do
     let vb := c.ver[b]!
-    let mut S : List Fact := []
+    let mut S : List Fact := hoisted
     for (key, xs) in st.facts.toList do
       if key.ver == vb then
         for (v, d) in xs do

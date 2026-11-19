@@ -611,6 +611,19 @@ theorem TV_enter (H : Hyp f g fi gi cert norm) {fr fr1 : Frame} {si : Nat} {b2 :
   · exact hne h1.symm
   · exact hne (Anc.antisymm H.rankF ha h2)
 
+/-- A node without operands has the same value in frames of the same function and slots. -/
+theorem TV_closed {fr fr1 : Frame} (hg : fr1.func = fr.func) (hs : fr1.slots = fr.slots) {t : Nat}
+    (hcl : (ccOf fi gi cert norm).closed t = true) : TV f cert syms fr1 t = TV f cert syms fr t := by
+  simp only [CC.closed, CC.tm, ccOf] at hcl
+  split at hcl
+  · rename_i i hi
+    have hops : operands i = [] := by simpa using hcl
+    show tmVal f cert.tms fr1 (symMem syms) t = tmVal f cert.tms fr (symMem syms) t
+    rw [tmVal_node hi (by simp [hops]), tmVal_node hi (by simp [hops])]
+    exact evalNode_congr (by simp [tmFrame, hg]) (by simp [tmFrame, hg]) (by simp [tmFrame, hs])
+      (fun o ho => by simp [hops] at ho)
+  · cases hcl
+
 theorem tv_param {fr : Frame} {t si i : Nat} {b : Block} {p : ValueId × Ty}
     (ht : cert.tms[t]? = some (.param si i)) (hb : f.blocks[si]? = some b)
     (hp : b.params[i]? = some p) : TV f cert syms fr t = fr.regs p.1 := by
@@ -872,11 +885,14 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
       · exact hFS
     refine factHolds_of_TV (fr1 := fr) (fr2 := fr1) (by rw [hfr1f]) (by rw [hfr1f]) hfr1s
       (fun t ht => ?_) (fun hmem => hm' F hFS hmem) (hE.facts F hFS')
-    obtain ⟨hne, ha⟩ := entryOk_spec hentry F hF t ht
-    exact TV_enter H hfr1f hfr1s hj hr1 hne (ancB_sound ha)
+    rcases entryOk_spec hentry F hF t ht with ⟨hne, ha⟩ | ⟨-, -, hcl⟩
+    · exact TV_enter H hfr1f hfr1s hj hr1 hne (ancB_sound ha)
+    · exact TV_closed hfr1f hfr1s hcl
   · intro F hF t ht
-    obtain ⟨hne, ha⟩ := entryOk_spec hentry F hF t ht
-    exact LeP.of_anc hne (ancB_sound ha) 0
+    rcases entryOk_spec hentry F hF t ht with ⟨hne, ha⟩ | ⟨hsi, hs, -⟩
+    · exact LeP.of_anc hne (ancB_sound ha) 0
+    · rw [hs, hsi]
+      exact LeP.refl _ _
 
 /-! ## Terminators -/
 

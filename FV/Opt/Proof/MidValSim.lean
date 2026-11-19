@@ -13,6 +13,10 @@ certificate accepts, `g` simulates `f` with the memory-aware simulation of
 `FV/Opt/Proof/SemSimM.lean`, so `Opt.runLoopX_refinesMU` gives the refinement of programs whose
 functions are related this way (`XOutcomeRefines`: same return values and final memory, same
 trap code, same exception). With a normaliser: `check_sound_norm` under `NormSound norm`.
+The hoisting mode (`checkCertSyms`, `g` evaluating a `symbol_value`/`tls_value`/`func_addr` of
+`f` earlier): **`check_soundSyms : checkCertSyms f g cert = true → globalsResolve f syms = true →
+FunSimMUAt syms f g`**, the simulation at every symbol table where the function's global values
+resolve.
 
 The frame relation is `MRW`: `MR` (`FV/Opt/Proof/MidValRel.lean`) with equal register windows
 from the fresh values on (`Win`, where `try_call` results and exception payloads are bound). Each local step of `f` is matched
@@ -198,26 +202,30 @@ theorem isSimMU (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cer
       cases hrm
   tc := rel_try H hrun
 
-end
-
-/-- **Soundness of the mid-end validator, with a normaliser.** -/
-theorem check_sound_norm {f g : Function} {cert : Cert} {norm : Norm}
-    (h : checkCert f g cert norm = true) (hN : NormSound norm) : FunSimMU f g := by
-  obtain ⟨fi, gi, hf, hg, hok⟩ := checkCert_spec h
-  have H : Hyp f g fi gi cert norm := ⟨hf, hg, hok, hN⟩
-  refine ⟨hok.name, hok.sig, hok.slots, hok.externs, fun syms =>
-    ⟨MRW f g fi gi cert norm syms, isSimMU H (gPre_run H) syms, fun b hb => ?_⟩⟩
+/-- The entry frames are related (`MRW`) at every memory with the symbols `syms` where the entry
+block's facts hold in `f`'s entry frame. -/
+theorem entry_rel (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
+    (h0 : ∀ (fr : Frame) (m : Mem), fr.func = f →
+      ∀ F ∈ (ccOf fi gi cert norm).factsAt 0, FactHolds f cert syms fr m F)
+    {b : Block} (hb : f.entry? = some b) :
+    ∃ b', g.entry? = some b' ∧ b'.params = b.params ∧
+      ∀ args regs (slots : List (SlotId × Nat)) (m : Mem),
+        args.map (·.ty) = b.params.map (·.2) →
+        Regs.empty.setMany (b.params.map (·.1)) args = some regs →
+        slots.map (·.1) = f.slots.map (·.1) → m.symbols = syms →
+        MRW f g fi gi cert norm syms ⟨f, regs, slots, b.body, b.term⟩
+          ⟨g, regs, slots, b'.body, b'.term⟩ m := by
   have hb0 : f.blocks[0]? = some b := by simpa [Function.entry?, List.head?_eq_getElem?] using hb
   have hlen : 0 < g.blocks.length := by
-    rw [hok.len]; exact (List.getElem?_eq_some_iff.1 hb0).1
+    rw [H.ok.len]; exact (List.getElem?_eq_some_iff.1 hb0).1
   obtain ⟨b', hb0'⟩ : ∃ b', g.blocks[0]? = some b' := ⟨_, List.getElem?_eq_getElem hlen⟩
   have hb' : g.entry? = some b' := by simpa [Function.entry?, List.head?_eq_getElem?] using hb0'
   have hp : b'.params = b.params := by
-    have := hok.entryParams
+    have := H.ok.entryParams
     rw [List.head?_eq_getElem?, List.head?_eq_getElem?, hb0, hb0'] at this
     simpa using this
   refine ⟨b', hb', hp, fun args regs slots m hty hr hsl _ =>
-    ⟨⟨0, 0, 0, _, rel_entry H hb hb' hp m hty hr hsl⟩, fun i => ?_⟩⟩
+    ⟨⟨0, 0, 0, _, rel_entry H hb hb' hp m hty hr hsl (h0 _ m rfl)⟩, fun i => ?_⟩⟩
   -- both windows are empty at entry: the parameters are below each function's fresh value
   have hbm : b ∈ f.blocks := List.mem_of_getElem? hb0
   have hbm' : b' ∈ g.blocks := List.mem_of_getElem? hb0'
@@ -231,10 +239,39 @@ theorem check_sound_norm {f g : Function} {cert : Cert} {norm : Norm}
       exact (lt_freshValue hbm').1 p hp') i]
   rfl
 
+end
+
+/-- **Soundness of the mid-end validator, with a normaliser.** -/
+theorem check_sound_norm {f g : Function} {cert : Cert} {norm : Norm}
+    (h : checkCert f g cert norm = true) (hN : NormSound norm) : FunSimMU f g := by
+  obtain ⟨fi, gi, hf, hg, hok, h0⟩ := checkCert_spec h
+  have H : Hyp f g fi gi cert norm := ⟨hf, hg, hok, hN⟩
+  exact ⟨hok.name, hok.sig, hok.slots, hok.externs, fun syms =>
+    ⟨MRW f g fi gi cert norm syms, isSimMU H (gPre_run H) syms, fun b hb =>
+      entry_rel H (fun _ _ _ F hF => by rw [h0] at hF; cases hF) hb⟩⟩
+
+/-- **Soundness of the hoisting mode, with a normaliser**: at every symbol table where the
+function's global values resolve. -/
+theorem check_soundSyms_norm {f g : Function} {cert : Cert} {norm : Norm}
+    (h : checkCertSyms f g cert norm = true) (hN : NormSound norm) {syms : String → Option Nat}
+    (hres : globalsResolve f syms = true) : FunSimMUAt syms f g := by
+  obtain ⟨fi, gi, hf, hg, hok, -⟩ := checkCertWith_spec h
+  have H : Hyp f g fi gi cert norm := ⟨hf, hg, hok, hN⟩
+  exact ⟨hok.name, hok.sig, hok.slots, hok.externs,
+    ⟨MRW f g fi gi cert norm syms, isSimMU H (gPre_run H) syms, fun b hb =>
+      entry_rel H (fun fr m hfr => entry_facts_hold H hres hfr m) hb⟩⟩
+
 /-- **Soundness of the mid-end validator** (stage 1, no normaliser): if `checkCert` accepts the
 certificate, `g` simulates `f` (`FunSimMU`). -/
 theorem check_sound {f g : Function} {cert : Cert} (h : checkCert f g cert = true) :
     FunSimMU f g :=
   check_sound_norm h normSound_id
+
+/-- **Soundness of the hoisting mode** (no normaliser): if `checkCertSyms` accepts the
+certificate, `g` simulates `f` at every symbol table where `f`'s global values resolve
+(`FunSimMUAt`). -/
+theorem check_soundSyms {f g : Function} {cert : Cert} (h : checkCertSyms f g cert = true)
+    {syms : String → Option Nat} (hres : globalsResolve f syms = true) : FunSimMUAt syms f g :=
+  check_soundSyms_norm h normSound_id hres
 
 end Opt.MidVal
