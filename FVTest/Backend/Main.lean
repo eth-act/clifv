@@ -17,6 +17,8 @@ import FV.E2E.RegLevelLeafKeep
 import FV.E2E.DeadCleanupPipeline
 import FVTest.Backend.FnVerdict
 import FV.Opt.MidValCert
+import FV.Link.ConstPhiCompile
+import FV.Link.MidPair
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -110,7 +112,9 @@ would get compiled.
 With `--midval-opt <g.opt.clif>` (#1119; `cargo fv` passes Cranelift's optimised dump of a function
 whose dump header says `opt_level` is not `none`): for the input's one function `f` and the
 same-named function `g` of that file, `lean-backend` runs `Opt.MidVal.emit (Opt.ConstPhi.run f) g`
-and decides `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert` itself. When it holds, `g` is
+and decides `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert` itself, and `Link.midPairB` on the
+two functions after constant-phi removal and the `i128` legalisation (`FnInput.cp`: the pair
+`link-check` re-decides for its binary theorem `…_mid`). When both hold, `g` is
 compiled in place of `f`, and when `g`'s verdict is a theorem that composes with the validator
 (`FVTest.Backend.FnVerdict.midvalVerdict`; with a `try_call`, also its unwinding theorem) the
 function is reported verified by the theorem through the validator
@@ -803,7 +807,10 @@ def runCore (input output : String) (o : Opts) (src : String)
 
 /-- The decision of `--midval-opt` for the source text `src` and the optimised text `srcOpt`:
 the function's name and `g` when `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert` holds for the
-certificate `Opt.MidVal.emit` gives, else why not (the function's name when there is one). -/
+certificate `Opt.MidVal.emit` gives, and `Link.midPairB` holds on the pair as `link-check`
+re-decides it on the bundle (each function's input after constant-phi removal and the `i128`
+legalisation, `FnInput.cp`/`FnInput.func`: the program its binary theorem is about), else why not
+(the function's name when there is one). -/
 def midvalDecide (src srcOpt : String) : Except (Option String × String) (String × Clif.Function) := do
   let fs := (Clif.parseFile src).funcs
   let some p := fs.head? | throw (none, "the input has no function")
@@ -811,17 +818,23 @@ def midvalDecide (src srcOpt : String) : Except (Option String × String) (Strin
   let f ← match p.func with
     | .ok f => pure f
     | .error _ => throw (some p.name, "the source function does not parse")
-  let some q := (Clif.parseFile srcOpt).funcs.find? (·.name == p.name)
+  let gs := (Clif.parseFile srcOpt).funcs
+  let some k := gs.findIdx? (·.name == p.name)
     | throw (some p.name, "the optimised dump has no function of that name")
-  let g ← match q.func with
-    | .ok g => pure g
-    | .error _ => throw (some p.name, "the optimised function does not parse")
+  let g ← match gs[k]?.map (·.func) with
+    | some (.ok g) => pure g
+    | _ => throw (some p.name, "the optimised function does not parse")
   let f' := Opt.ConstPhi.run f
   let cert ← match Opt.MidVal.emit f' g with
     | .ok c => pure c
     | .error e => throw (some p.name, s!"Opt.MidVal.check rejects: {e}")
   if !Opt.MidVal.checkCert f' g cert then
     throw (some p.name, "Opt.MidVal.checkCert rejects the emitted certificate")
+  -- #1119 layer 2: the pair `link-check` decides for the binary theorem (`…_mid`)
+  let fi0 : E2E.LinkCheck.FnInput := { clif := src, ra := "" }
+  let fi1 : E2E.LinkCheck.FnInput := { clif := srcOpt, ra := "", k }
+  if !Link.midPairB fi0.cp.func fi1.cp.func then
+    throw (some p.name, "Link.midPairB rejects the pair after constant-phi removal and the i128 legalisation (link-check's pair)")
   pure (p.name, g)
 
 /-- `lean-backend`: one compilation (`runCore`), its effects replayed. With `--midval-opt` (#1119)
