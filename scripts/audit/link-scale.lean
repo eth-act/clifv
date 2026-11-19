@@ -1,4 +1,5 @@
 import FV.E2E.ActualCompilerModes
+import FV.E2E.PreparedReturnPinCalls
 import FV.E2E.ActualPipelineCheck
 import FV.E2E.DeadCleanupLinkCheck
 import FV.E2E.DeadCleanupLinkCheckT
@@ -144,3 +145,14 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.LinkCheck.progScopeInB_isSome
 #print axioms Link.inScopePar_withSizes
 #print axioms Link.inScopeInPar_withSizes
+
+-- #1108: the integer and return-pin routes' checks (the per-function checks in parallel, the
+-- `blr`/indirect-call candidates by signature, the return-pin sites' entries by GOT name and
+-- signature); `okRSemanticNI_eq_fast`, `okRSemanticFor_eq_fast` above, re-proved
+#print axioms E2E.LinkCheck.blrFastI_eq
+#print axioms E2E.LinkCheck.siteFastI_eq
+#print axioms E2E.LinkCheck.linkChksWithIX_of
+#print axioms E2E.LinkCheck.returnPinCands_of
+#print axioms E2E.LinkCheck.returnPinSiteIdx_eq
+#print axioms E2E.LinkCheck.returnPinsIdx_eq
+#print axioms E2E.LinkCheck.okRReturnPinCalls_eq_fast
