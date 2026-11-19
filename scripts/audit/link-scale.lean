@@ -25,6 +25,7 @@ import FV.E2E.SrcScopeFastT
 import FV.Front.BundleFast
 import FV.Link.ScopePlacement
 import FV.Link.Ld.DataFast
+import FV.E2E.BinCheckFast
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -170,3 +171,7 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms Link.Ld.dataPlanB_eq_fast
 #print axioms Link.Ld.Plan.specOkF_eq
 #print axioms Link.Ld.specOkB_eq_fast
+-- #1108: link-check's call graph (the stack bound) with each function's candidate edges indexed
+-- by name and parameter types, one task per function
+#print axioms E2E.StackBound.budCands_of
+#print axioms E2E.StackBound.budSuccFast_eq_idx
