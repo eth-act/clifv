@@ -3,6 +3,7 @@ import FV.Backend.ReturnPinProduction
 import FV.Opt.Legalize128Pass
 import FV.Opt.LegalExn
 import FV.Opt.ConstPhiSelect
+import FV.Opt.NotrapDrop
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.I128Native
@@ -421,7 +422,14 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let lg := Opt.Legalize128.parsedFile128 source
   -- constant-phi removal after the legalisation, before the mid-end (#990)
   let header := Link.clifHeader src
-  let lgc := Opt.ConstPhi.selectFile header lg.file
+  let lgc0 := Opt.ConstPhi.selectFile header lg.file
+  -- option D prototype (#1017, scratch): Cranelift 0.136.1's drop of unused `notrap` loads,
+  -- before lowering; not proved yet, so the functions it changes are reported unverified
+  let lgc := Opt.NotrapDrop.selectFile header lgc0
+  let notrapChanged : List String := (lgc0.funcs.zip lgc.funcs).filterMap fun (a, b) =>
+    match a.func, b.func with
+    | .ok fa, .ok fb => if decide (fa = fb) then none else some a.name
+    | _, _ => none
   let pf := match o.opt with | some c => Opt.optimizeParsedFile c lgc | none => lgc
   -- the compile budget (#1074): functions over it are not compiled (unsupported)
   let overCompile : List (String × String) := pf.funcs.filterMap fun p =>
@@ -435,7 +443,8 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
       else lg.unverified ++ lg.accepted.map
         (·, "i128 legalized and optimised with unproven rules (outside backend_correct_legal_opt: --opt)")
     | none => lg.unverified
-  let unvTry : List (String × String) := []
+  let unvTry : List (String × String) := notrapChanged.map
+    (·, "scratch: unused notrap loads dropped (option D prototype, not proved)")
   -- `--skip-unverified` (#1074): a function unverified before it is compiled is not compiled
   let skipped : List (String × String × String) :=
     if o.skipUnverified && o.opt.isNone && stock.isNone && proved.isNone && !pipelineT then
