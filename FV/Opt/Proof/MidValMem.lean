@@ -61,11 +61,14 @@ theorem readFold_spec {m : Mem} {big : Bool} {addr n w : Nat} :
     intro x h
     rw [List.range_succ, List.foldlM_append] at h
     obtain ⟨acc, hacc, h2⟩ := Option.bind_eq_some_iff.1 h
-    simp only [List.foldlM_cons, List.foldlM_nil, readStep] at h2
-    obtain ⟨b, hb, h3⟩ := Option.bind_eq_some_iff.1 h2
-    simp only [Option.bind_some, pure] at h3
-    cases h3
     obtain ⟨h1, hs⟩ := ih acc hacc
+    obtain ⟨b, hb⟩ : ∃ b, m.bytes (addr + byteIndex big n k) = some b := by
+      cases hb : m.bytes (addr + byteIndex big n k) with
+      | none => simp [readStep, hb] at h2
+      | some b => exact ⟨b, rfl⟩
+    have hx : acc ||| (b.zeroExtend w <<< (8 * k)) = x := by
+      simpa [readStep, hb] using h2
+    subst hx
     refine ⟨fun i hi => ?_, fun j => ?_⟩
     · by_cases hik : i < k
       · exact h1 i hik
@@ -171,13 +174,14 @@ theorem load_of_store {m m' : Mem} {fl fl' : MemFlags} {a n w : Nat} {x : BitVec
     have hv := checkAccess_ok_valid hc
     simp only [Res.ok_bind] at hs
     cases hro : (!m.readonlyAt a n) with
-    | false => rw [hro] at hs; simp [Res.check] at hs; cases hs
+    | false => rw [hro] at hs; simp [Res.check] at hs
     | true =>
       rw [hro] at hs
       simp only [Res.check_true, Res.ok_bind, Res.pure_eq] at hs
       cases hs
       simp only [load]
-      rcases checkAccess_of_valid fl' (m := m.writeBits _ a n x) (by rw [writeBits_valid]; exact hv)
+      rcases checkAccess_of_valid fl' (m := m.writeBits (fl.endianness == some .big) a n x)
+        (by rw [writeBits_valid]; exact hv)
         with h | ⟨msg, h⟩
       · rw [h, he]
         simp only [Res.ok_bind, readBits_writeBits, Res.ofOption_some]
