@@ -44,9 +44,11 @@ fi
 GEN=$EXTRACT/lean/Generated
 rm -rf "$GEN"; mkdir -p "$GEN"
 if [ -f "$LLBC" ]; then
+  # -filter-trait-impl-methods: trait impls only provide the methods of the library's model of
+  # the trait (e.g. Iterator: next, size_hint, ...), not its ~75 default methods.
   (cd "$EXTRACT" && heavy "$WORK/tools/aeneas/bin/aeneas" -backend lean -split-files -emit-json \
     -sequential -no-progress-bar -print-error-emitters -print-error-diagnostics -all-computable \
-    -dest "$GEN" -subdir ClifvGen "$LLBC") > "$RUN/aeneas.log" 2>&1
+    -filter-trait-impl-methods -dest "$GEN" -subdir ClifvGen "$LLBC") > "$RUN/aeneas.log" 2>&1
   echo $? > "$RUN/aeneas.exit"
   # TypesExternal/FunsExternal: the templates minus the items with a handwritten model.
   python3 "$EXTRACT/scripts/externals.py" "$GEN" > "$RUN/externals.json"
