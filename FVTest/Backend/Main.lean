@@ -427,7 +427,9 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- option D prototype (#1017, scratch): Cranelift 0.136.1's drop of unused `notrap` loads, the
   -- last pass before lowering (Cranelift drops them while lowering, after its mid-end); not
   -- proved yet, so the functions it changes are reported unverified
-  let pf := Opt.NotrapDrop.selectFile header pf0
+  -- `FV_SCRATCH_NOTRAP_OFF=1`: main's pipeline (for same-path comparisons)
+  let pf := if (← IO.getEnv "FV_SCRATCH_NOTRAP_OFF").isSome then pf0
+    else Opt.NotrapDrop.selectFile header pf0
   let notrapChanged : List String := (pf0.funcs.zip pf.funcs).filterMap fun (a, b) =>
     match a.func, b.func with
     | .ok fa, .ok fb => if decide (fa = fb) then none else some a.name
