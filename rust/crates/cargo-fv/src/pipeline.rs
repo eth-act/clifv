@@ -57,6 +57,10 @@ pub struct Dump {
     /// File name without `.unopt.clif`.
     pub stem: String,
     pub instance: String,
+    /// Cranelift's `opt_level` in the dump's header (`set opt_level=…`): cg_clif's setting for
+    /// the function, `none` for rustc's `-Copt-level=0` and `speed_and_size` for every other
+    /// level (`--release`, or a profile raising `opt-level`); empty when the header has none.
+    pub opt_level: String,
 }
 
 /// `; symbol` → dump, over one crate's `<unit>.clif/` directory.
@@ -75,8 +79,11 @@ impl DumpIndex {
             let text = fs::read_to_string(e.path()).map_err(|e| format!("{name}: {e}"))?;
             let mut symbol = None;
             let mut instance = String::new();
+            let mut opt_level = String::new();
             for l in text.lines() {
-                if let Some(s) = l.strip_prefix("; symbol ") {
+                if let Some(s) = l.strip_prefix("set opt_level=") {
+                    opt_level = s.trim().to_string();
+                } else if let Some(s) = l.strip_prefix("; symbol ") {
                     symbol.get_or_insert_with(|| s.trim().to_string());
                 } else if let Some(s) = l.strip_prefix("; instance ") {
                     instance = pretty_instance(s);
@@ -87,7 +94,7 @@ impl DumpIndex {
                 if instance.is_empty() {
                     instance = s.clone();
                 }
-                by_symbol.insert(s, Dump { stem: stem.to_string(), instance });
+                by_symbol.insert(s, Dump { stem: stem.to_string(), instance, opt_level });
             }
         }
         Ok(DumpIndex { dir: dir.to_path_buf(), by_symbol })
@@ -276,6 +283,7 @@ fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
             normal_returns: false,
             theorem: None,
             about: None,
+            unopt_input_opt_level: None,
         })
         .collect()
 }
@@ -316,6 +324,7 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
             normal_returns: false,
             theorem: None,
             about: None,
+            unopt_input_opt_level: None,
         });
         false
     });
@@ -986,11 +995,15 @@ fn process_in(
     // mid-end (`--opt-proven-only`) removed the code referencing it
     let mut declared: BTreeSet<String> = BTreeSet::new();
     for ((sym, d), c) in funcs.iter().zip(results) {
-        let mut report = |status, reason: Option<String>, normal_returns: bool, theorem: Option<Verdict>| {
+        // #1119 (`from_unopt`): a Lean-compiled function compiled from its `.unopt.clif` (not the
+        // `.opt.clif` retry); with the dump's header saying cg_clif optimised it, stock compiles
+        // Cranelift's optimised function while the theorem is about the unoptimised one
+        let mut report = |status: Status, reason: Option<String>, normal_returns: bool, theorem: Option<Verdict>, from_unopt: bool| {
             let (theorem, about) = match theorem {
                 Some(v) => (Some(v.theorem), Some(v.about)),
                 None => (None, None),
             };
+            let optimised = from_unopt && !d.opt_level.is_empty() && d.opt_level != "none";
             reports.push(FnReport {
                 symbol: sym.clone(),
                 instance: d.instance.clone(),
@@ -999,12 +1012,14 @@ fn process_in(
                 normal_returns,
                 theorem,
                 about,
+                unopt_input_opt_level: optimised.then(|| d.opt_level.clone()),
             })
         };
         match c {
-            Compiled::Fallback(why) => report(Status::Fallback, Some(why), false, None),
+            Compiled::Fallback(why) => report(Status::Fallback, Some(why), false, None, false),
             Compiled::TimedOut => return Err(CguFail::Fatal(time_limit_error(cfg.fn_time_limit, sym, &d.instance))),
             Compiled::Ok { obj: o, unverified, normal_returns, theorem, clif } => {
+                let from_unopt = clif.ends_with(format!("{}.unopt.clif", d.stem));
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
                 let extra: Vec<&String> = f.text.iter().filter(|(n, g)| **g && *n != sym).map(|(n, _)| n).collect();
@@ -1022,7 +1037,7 @@ fn process_in(
                     }
                 }
                 match bad {
-                    Some(b) => report(Status::Fallback, Some(b), false, None),
+                    Some(b) => report(Status::Fallback, Some(b), false, None, false),
                     None => {
                         referenced_locals.extend(locals);
                         if cfg.lean_link {
@@ -1047,8 +1062,8 @@ fn process_in(
                         }));
                         ours.push((sym.clone(), o));
                         match unverified {
-                            Some(u) => report(Status::Unverified, Some(u), false, None),
-                            None => report(Status::Verified, None, normal_returns, theorem),
+                            Some(u) => report(Status::Unverified, Some(u), false, None, from_unopt),
+                            None => report(Status::Verified, None, normal_returns, theorem, from_unopt),
                         }
                     }
                 }
@@ -1248,7 +1263,7 @@ mod tests {
             undefined: BTreeSet::new(),
             at: HashMap::new(),
         };
-        let d = Dump { stem: "f".into(), instance: "f".into() };
+        let d = Dump { stem: "f".into(), instance: "f".into(), opt_level: "none".into() };
         let t = Instant::now();
         let c = compile_one(&test_config(&root, 1), &syms, &split, &outdir, 0, &d, "f");
         assert!(t.elapsed().as_secs() < 10, "killed after {:?}", t.elapsed());
@@ -1302,5 +1317,29 @@ mod tests {
         // not verdict lines
         assert!(verdict_of("lean-backend: x.clif: %f: compiled, unverified (outside backend_correct): formsCoveredB fails").is_none());
         assert!(verdict_of("lean-backend: x.clif: %f: frameless leaf, backend_correct_final_cleanup_leaf").is_none());
+    }
+
+    /// #1119: the dump's header gives cg_clif's `opt_level` per function (a release build and a
+    /// profile raising `opt-level` alike); a dump without one has an empty level.
+    #[test]
+    fn dump_index_reads_the_opt_level() {
+        let dir = std::env::temp_dir().join(format!("cargo-fv-optlevel-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let dump = |level: Option<&str>, sym: &str| {
+            let set = level.map(|l| format!("set opt_level={l}\n")).unwrap_or_default();
+            format!(
+                "test compile\nset regalloc_algorithm=backtracking\n{set}set tls_model=elf_gd\ntarget aarch64\n\n\
+                 ; symbol {sym}\nfunction u0:0() system_v {{\n; symbol {sym}\n\
+                 ; instance Instance {{ def: Item(DefId(0:5 ~ c[fe56]::{sym})), args: [] }}\nblock0:\n    return\n}}\n"
+            )
+        };
+        for (level, sym) in [(Some("speed_and_size"), "fast"), (Some("none"), "plain"), (None, "bare")] {
+            fs::write(dir.join(format!("{sym}.unopt.clif")), dump(level, sym)).unwrap();
+        }
+        let index = DumpIndex::load(&dir).unwrap();
+        let level = |s: &str| index.by_symbol[s].opt_level.clone();
+        assert_eq!((level("fast"), level("plain"), level("bare")), ("speed_and_size".into(), "none".into(), String::new()));
+        assert_eq!(index.by_symbol["fast"].instance, "c::fast");
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

@@ -591,6 +591,11 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         let per: Vec<String> = report.totals.by_theorem.iter().map(|(t, n)| format!("{n} {t}")).collect();
         eprintln!("cargo fv: verified functions by theorem: {}", per.join("; "));
     }
+    // #1119: keyed on the dumps' header (`opt_level`), not on `--release`, so a profile raising
+    // `opt-level` (memchr's and base64's `[profile.test]`, crypto-bigint's `[profile.dev]`) counts
+    if let Some(note) = report.unopt_input_note() {
+        eprintln!("cargo fv: {note}");
+    }
     if !exes.is_empty() {
         eprintln!(
             "cargo fv: checked {} linked executable(s): {} function symbols in total resolve to Lean-compiled code (\"Lean in exe\", members and dependencies)",
