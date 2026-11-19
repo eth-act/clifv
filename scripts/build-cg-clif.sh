@@ -66,6 +66,12 @@ if [[ -n "$CL" ]]; then
   grep -E '^(cranelift-|object)' "$cg/Cargo.toml"
   (cd "$cg" && cargo +"$TC" update -p cranelift-codegen -p cranelift-frontend -p cranelift-module \
     -p cranelift-native -p cranelift-jit -p cranelift-object)
+  # cranelift-codegen's own dependencies on -meta/-shared/-control/-srcgen are caret
+  # requirements: pin every cranelift-* crate to exactly $CL, as rust/Cargo.lock does
+  for p in $(awk '/^name = "cranelift-/{n=$3; getline; if ($3 != "\"'"$CL"'\"") print n}' "$cg/Cargo.lock" | tr -d '"'); do
+    (cd "$cg" && cargo +"$TC" update -p "$p" --precise "$CL")
+  done
+  grep -A1 '^name = "cranelift-' "$cg/Cargo.lock" | grep -c "version = \"$CL\"" || true
   if [[ -f "$CLPATCH" ]]; then git -C "$SRC" apply "$CLPATCH"; fi
 fi
 sysroot=$(rustc +"$TC" --print sysroot)
