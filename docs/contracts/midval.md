@@ -175,7 +175,8 @@ proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h 
 |---|---|---|---|---|---|
 | stage 1 + gaps (`--norm-id`) | none | `normSound_id` | 74,462 (61.1 %) | 73,597 / 74,437 (98.9 %) | 60.5 % |
 | 1: constant evaluation | `evalConst` | `normSound_evalConst` | 77,905 (63.9 %) | 76,767 / 77,880 (98.6 %) | 63.1 % |
-| 2: single-node algebraic rules | `Norm.alg` after `evalConst` | `normSound_alg`, `normSound_std` | 87,451 (71.8 %) | 80,622 / 87,406 (92.2 %) | 66.2 % |
+| 2: single-node algebraic rules, first set | `Norm.alg` after `evalConst` | `normSound_alg` | 87,451 (71.8 %) | 80,622 / 87,406 (92.2 %) | 66.2 % |
+| 2: second set | `Norm.alg2` before `Norm.alg` | `normSound_alg2`, `normSound_std` | 88,966 (73.0 %) | 81,681 / 88,921 (91.9 %) | 67.1 % |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -202,8 +203,9 @@ counterfactual.)
   `sshr_rejected`).
 * **Family 2, single-node algebraic rules** (`Opt.MidVal.Norm.alg` = `Norm.guard algStep`,
   `FV/Opt/Proof/MidValNormAlg.lean`), tried where `evalConst` leaves the node alone
-  (`Norm.std = Norm.orElse evalConst Norm.alg`). Each rule maps a node to a node over existing
-  terms with the same value under `Clif.evalInst` in every frame, ill-typed operands included (no
+  (`Norm.std = Norm.orElse evalConst (Norm.orElse Norm.alg2 Norm.alg)`, second set below).
+  Each rule maps a node to a node over existing terms with the same value under
+  `Clif.evalInst` in every frame, ill-typed operands included (no
   typing premise): it reads an operand's structure only through `nodeAt` (a node whose operands
   are earlier) and `constAt` (a constant of the given type), and `Norm.guard` keeps a result only
   if every occurrence of it in the table has its operands earlier.
@@ -237,3 +239,29 @@ counterfactual.)
   pairs (`imul v1, 4` → `ishl v1, 2`; `iadd (stack_addr ss0), (imul 0, 8)` → `stack_addr ss0`;
   `select (icmp eq x, -1), 0, 1` and its `ireduce.i32` → `uextend` of `icmp ne x, -1`), each
   rejected by family 1 alone, `checkCert` decided, simulation and program refinement.
+* **Family 2, second set** (`Opt.MidVal.Norm.alg2` = `Norm.guard algStep2`,
+  `FV/Opt/Proof/MidValNormAlg2.lean`), tried before the first set; the same discipline (every
+  frame, no typing premise). Cranelift's canonical forms:
+  - `icmpSwap`: `icmp cc ty a b` with `a` a constant and `b` not is `icmp (swap cc) ty b a`;
+  - `icmpBool`: with `u` an `icmp` (at `i8`) or its `uextend` to a type wider than `i8`,
+    `icmp eq u 1` / `icmp ne u 0` is that `icmp`, `icmp eq u 0` / `icmp ne u 1` its inversion;
+  - `icmpUnit`: `icmp ult x 1` is `icmp eq x 0`, `icmp uge x 1` is `icmp ne x 0` (the `0`
+    interned first), `icmp ugt x 0` is `icmp ne x 0`, `icmp ule x 0` is `icmp eq x 0`;
+  - `subNeg`: `isub 0 x` is `ineg x`; `mulTwo`: `imul x 2` (either order) is `iadd x x`, and
+    `shlOne`: `ishl x c` with a constant amount `c ≡ 1` modulo the width is `iadd x x` too (so that
+    `g`'s shift by one still meets the first set's former normal form);
+  - `bmaskBool`: `bmask.i8 c` with `c` an `icmp` is `ineg.i8 c`; `xorNot`: `bxor x -1` (either
+    order) is `bnot x`.
+
+  Proof: `ns_icmpSwap`, `ns_icmpBool` (`boolAt_val`), `ns_icmpUnit`, `ns_subNeg`, `ns_mulTwo`,
+  `ns_shlOne`, `ns_xorNot`, `ns_bmaskBool`, `ruleSound_algStep2`, `normSound_alg2`,
+  `normSound_std`. Measured (2026-11-19, the same pairs; the first set's binary against this one):
+  87,451 → 88,966 (+1,515), 0 lost, every accepted pair re-checks `ok`; all 1,515 newly accepted
+  functions are Lean-compiled and verified from `g`, 1,059 byte-identical to stock. Hoisting
+  mode: 87,518 → 89,065. (Without `shlOne`, 17 pairs the first set accepted were lost: `imul x 2`
+  became `iadd x x` while `g`'s `ishl x 1` stayed.) Witnesses
+  (`FVTest/Opt/MidValAlg2Witness.lean`): per rule a hand-made pair accepted and rejected without
+  the second set, and a look-alike rejected (an `icmp` compared with `2`, `icmp ult x 2` against
+  `icmp eq x 0`, and `bmask` of a non-`icmp` shown to be no simulation); five real pairs (`isub 0,
+  x`; `imul x, 2`; `icmp ule 48, x`; `icmp ult x, 1`; `icmp eq (select (icmp eq x, -1), 0, 1), 1`),
+  each rejected without the second set, `checkCert` decided, simulation and program refinement.

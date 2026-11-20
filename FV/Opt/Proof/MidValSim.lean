@@ -4,7 +4,7 @@ import FV.Opt.Proof.MidValFStep
 import FV.Opt.Proof.MidValMatch
 import FV.Opt.Proof.MidValTermin
 import FV.Opt.Proof.SimWin
-import FV.Opt.Proof.MidValNormAlg
+import FV.Opt.Proof.MidValNormAlg2
 
 /-!
 # Soundness of the mid-end validator (#1119, module (5))

@@ -44,9 +44,10 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
 
 * **Normalisation** (stage 2, the default normaliser `Norm.std`), on both sides: constant
   evaluation (`evalConst`: a pure node whose operands are all constants is the constant
-  `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg`: `select` of an `icmp`
-  with constant arms 1/0, `imul` by a power of two, `iadd` of a `stack_addr` and a constant,
-  `ireduce` of an extension of a typed node).
+  `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg2`: `icmp` canonical
+  forms, `isub 0 x`, `imul x 2`/`ishl x 1`, `bmask` of an `icmp`, `bxor x -1`; `Norm.alg`:
+  `select` of an `icmp` with constant arms 1/0, `imul` by a power of two, `iadd` of a
+  `stack_addr` and a constant, `ireduce` of an extension of a typed node).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -614,7 +615,107 @@ def algStep (tms : Array Tm) : Inst → Option Tm
   | .ireduce ty u => redExt tms ty u
   | _ => none
 
-/-- The terms `algStep` looks up besides the node's operands (the checker interns them first). -/
+/-! ### Family 2, second set: comparisons, negation, doubling, masks
+
+Cranelift's canonical forms of `icmp` (constant on the right; `ult x 1` is `eq x 0`; an `icmp`
+compared with `0`/`1` is itself or its inversion), `isub 0 x = ineg x`, `imul x 2 = iadd x x`
+(and `ishl x 1`, so that `g`'s shift by one meets it),
+`bmask` of an `icmp` is its negation, `bxor x -1 = bnot x`. Like the first set, each result has
+the node's value under `Clif.evalInst` in every frame. -/
+
+/-- The comparison with its operands swapped. -/
+def IntCC.swap : IntCC → IntCC
+  | .eq => .eq | .ne => .ne | .slt => .sgt | .sgt => .slt | .sle => .sge | .sge => .sle
+  | .ult => .ugt | .ugt => .ult | .ule => .uge | .uge => .ule
+
+/-- `icmp cc ty a b` with `a` a constant and `b` not: `icmp (swap cc) ty b a`. -/
+def icmpSwap (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) : Option Tm :=
+  match constOf tms a, constOf tms b with
+  | some _, none => some (.node (.icmp (IntCC.swap cc) ty b a))
+  | _, _ => none
+
+/-- The `icmp` a term `u` of type `ty` is a 0/1 copy of: `u` itself (an `icmp`, `ty = i8`), or
+the operand of `uextend ty c` with `c` an `icmp` and `ty` wider than `i8`. -/
+def boolAt (tms : Array Tm) (ty : Ty) (u : Nat) : Option Inst :=
+  match nodeAt tms u with
+  | some (.icmp cc cty a b) => if ty == .i8 then some (.icmp cc cty a b) else none
+  | some (.extend .uextend ty' c) =>
+    if ty' == ty && 8 < ty.width then
+      match nodeAt tms c with
+      | some (.icmp cc cty a b) => some (.icmp cc cty a b)
+      | _ => none
+    else none
+  | _ => none
+
+/-- `icmp eq/ne ty u k` with `u` a 0/1 copy of an `icmp` (`boolAt`) and `k` the constant `0` or
+`1` of type `ty`: that `icmp` (`eq 1`, `ne 0`) or its inversion (`eq 0`, `ne 1`). -/
+def icmpBool (tms : Array Tm) (cc : IntCC) (ty : Ty) (u k : Nat) : Option Tm :=
+  match boolAt tms ty u, constAt tms ty k with
+  | some (.icmp cc' cty a b), some kv =>
+    if (cc == .eq && kv == 1) || (cc == .ne && kv == 0) then some (.node (.icmp cc' cty a b))
+    else if (cc == .eq && kv == 0) || (cc == .ne && kv == 1) then
+      some (.node (.icmp (IntCC.inv cc') cty a b))
+    else none
+  | _, _ => none
+
+/-- `icmp ult ty x 1` is `icmp eq ty x 0`, `icmp uge ty x 1` is `icmp ne ty x 0` (the constant
+`0` interned first); `icmp ugt ty x 0` is `icmp ne ty x 0`, `icmp ule ty x 0` is `icmp eq ty x 0`. -/
+def icmpUnit (tms : Array Tm) (cc : IntCC) (ty : Ty) (x k : Nat) : Option Tm :=
+  match constAt tms ty k with
+  | some kv =>
+    if kv == 1 && (cc == .ult || cc == .uge) then
+      (findTm tms (.node (.iconst ty 0))).map fun z =>
+        .node (.icmp (if cc == .ult then .eq else .ne) ty x z)
+    else if kv == 0 && (cc == .ugt || cc == .ule) then
+      some (.node (.icmp (if cc == .ugt then .ne else .eq) ty x k))
+    else none
+  | none => none
+
+/-- `isub ty z x` with `z` the constant `0`: `ineg ty x`. -/
+def subNeg (tms : Array Tm) (ty : Ty) (z x : Nat) : Option Tm :=
+  match constAt tms ty z with
+  | some zv => if zv == 0 then some (.node (.unary .ineg ty x)) else none
+  | none => none
+
+/-- `imul ty x c` with `c` the constant `2`: `iadd ty x x`. -/
+def mulTwo (tms : Array Tm) (ty : Ty) (x c : Nat) : Option Tm :=
+  match constAt tms ty c with
+  | some cv => if cv == 2 then some (.node (.binary .iadd ty x x)) else none
+  | none => none
+
+/-- `ishl ty x c` with `c` a constant whose amount (modulo the width) is `1`: `iadd ty x x`
+(the normal form `mulTwo` gives `imul x 2`). -/
+def shlOne (tms : Array Tm) (ty : Ty) (x c : Nat) : Option Tm :=
+  match constOf tms c with
+  | some K => if K.bits.toNat % ty.width == 1 then some (.node (.binary .iadd ty x x)) else none
+  | none => none
+
+/-- `bmask i8 c` with `c` an `icmp`: `ineg i8 c`. -/
+def bmaskBool (tms : Array Tm) (ty : Ty) (c : Nat) : Option Tm :=
+  match nodeAt tms c with
+  | some (.icmp ..) => if ty == .i8 then some (.node (.unary .ineg .i8 c)) else none
+  | _ => none
+
+/-- `bxor ty x m` with `m` the all-ones constant of type `ty`: `bnot ty x`. -/
+def xorNot (tms : Array Tm) (ty : Ty) (x m : Nat) : Option Tm :=
+  match constAt tms ty m with
+  | some mv => if mv == BitVec.allOnes ty.width then some (.node (.unary .bnot ty x)) else none
+  | none => none
+
+/-- The second set of single-node rules (unguarded; `Norm.alg2` guards them). -/
+def algStep2 (tms : Array Tm) : Inst → Option Tm
+  | .icmp cc ty a b =>
+    (icmpSwap tms cc ty a b).orElse fun _ => (icmpBool tms cc ty a b).orElse fun _ =>
+      icmpUnit tms cc ty a b
+  | .binary .isub ty z x => subNeg tms ty z x
+  | .binary .imul ty x y => (mulTwo tms ty x y).orElse fun _ => mulTwo tms ty y x
+  | .binary .ishl ty x c => shlOne tms ty x c
+  | .binary .bxor ty x y => (xorNot tms ty x y).orElse fun _ => xorNot tms ty y x
+  | .bmask ty c => bmaskBool tms ty c
+  | _ => none
+
+/-- The terms `algStep`/`algStep2` look up besides the node's operands (the checker interns them
+first). -/
 def auxTms (tms : Array Tm) : Inst → List Tm
   | .select _ c _ _ => match nodeAt tms c with
     | some (.icmp cc cty a b) => [.node (.icmp (IntCC.inv cc) cty a b)]
@@ -622,18 +723,23 @@ def auxTms (tms : Array Tm) : Inst → List Tm
   | .binary .imul ty x y =>
     [x, y].filterMap fun o => (constAt tms ty o).bind fun b =>
       (pow2Log b.toNat).map fun k => .node (.iconst ty (BitVec.ofNat ty.width k))
+  | .icmp cc ty _ k =>
+    if (cc == .ult || cc == .uge) && constAt tms ty k == some 1 then [.node (.iconst ty 0)] else []
   | _ => []
 
 /-- The algebraic rules, guarded. -/
 def Norm.alg : Norm := Norm.guard algStep
+
+/-- The second set, guarded. -/
+def Norm.alg2 : Norm := Norm.guard algStep2
 
 /-- One normaliser, then another where the first leaves the node alone. -/
 def Norm.orElse (a b : Norm) : Norm := fun tms i => (a tms i).orElse fun _ => b tms i
 
 /-- **The validator's default normaliser** (the default `norm` of `check`, `emit`, `checkCert`,
 `checkCertSyms`): constant evaluation (`evalConst`, family 1), then the single-node algebraic
-rules (`Norm.alg`, family 2); proved sound (`normSound_std`). -/
-def Norm.std : Norm := Norm.orElse evalConst Norm.alg
+rules (family 2: `Norm.alg2`, then `Norm.alg`); proved sound (`normSound_std`). -/
+def Norm.std : Norm := Norm.orElse evalConst (Norm.orElse Norm.alg2 Norm.alg)
 
 /-- Intern a term (normalised, if a node), without auxiliary terms. -/
 def intern1 (t : Tm) : M Nat := do

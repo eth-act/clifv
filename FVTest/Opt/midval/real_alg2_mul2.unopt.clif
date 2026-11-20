@@ -1,0 +1,87 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC9criterion12H41dCMSBazd6
+function u0:1629(i64, i64) -> i8 uext system_v {
+; symbol _RNxC9criterion12H41dCMSBazd6
+; instance Instance { def: Item(DefId(37:238 ~ plotters[6598]::chart::context::cartesian2d::draw_impl::{impl#0}::draw_axis_and_labels::{closure#1})), args: ['{erased}, plotters::prelude::SVGBackend<'{erased}>, plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64, i16, Binder { value: extern "RustCall" fn((&'^0 &'{erased} i32,)) -> bool, bound_vars: [Region(BrAnon)] }, (&'{erased} i32,)] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut {closure@plotters::chart::context::cartesian2d::draw_impl::<impl plotters::chart::ChartContext<'_, plotters::prelude::SVGBackend<'_>, plotters::prelude::Cartesian2d<plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64>>>::draw_axis_and_labels::{closure#1}}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &&i32, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    bool                              1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) bool
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut Closure(DefId(37:238 ~ plotters[6598]::chart::context::cartesian2d::draw_impl::{impl#0}::draw_axis_and_labels::{closure#1}), ['{erased}, plotters::prelude::SVGBackend<'{erased}>, plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64, i16, Binder { value: extern "RustCall" fn((&'^0 &'{erased} i32,)) -> bool, bound_vars: [Region(BrAnon)] }, (&'{erased} i32,)])
+; arg   _2      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} &'{erased} i32
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut Closure(DefId(37:238 ~ plotters[6598]::chart::context::cartesian2d::draw_impl::{impl#0}::draw_axis_and_labels::{closure#1}), ['{erased}, plotters::prelude::SVGBackend<'{erased}>, plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64, i16, Binder { value: extern "RustCall" fn((&'^0 &'{erased} i32,)) -> bool, bound_vars: [Region(BrAnon)] }, (&'{erased} i32,)])    8b 8                var=2
+; ssa   _2    &'{erased} &'{erased} i32         8b 8                var=3
+; ssa   _3    i32                               4b 4                var=4
+; ssa   _4    i32                               4b 4                var=5
+; ssa   _5    i32                               4b 4                var=6
+; ssa   _6    &'{erased} i32                    8b 8                var=7
+; ssa   _7    &'{erased} i32                    8b 8                var=8
+
+block0(v0: i64, v1: i64):
+    v5 -> v0
+    v2 -> v1
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} mut Closure(DefId(37:238 ~ plotters[6598]::chart::context::cartesian2d::draw_impl::{impl#0}::draw_axis_and_labels::{closure#1}), ['{erased}, plotters::prelude::SVGBackend<'{erased}>, plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64, i16, Binder { value: extern "RustCall" fn((&'^0 &'{erased} i32,)) -> bool, bound_vars: [Region(BrAnon)] }, (&'{erased} i32,)]) <- ByVal(v0): &'{erased} mut Closure(DefId(37:238 ~ plotters[6598]::chart::context::cartesian2d::draw_impl::{impl#0}::draw_axis_and_labels::{closure#1}), ['{erased}, plotters::prelude::SVGBackend<'{erased}>, plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64, i16, Binder { value: extern "RustCall" fn((&'^0 &'{erased} i32,)) -> bool, bound_vars: [Region(BrAnon)] }, (&'{erased} i32,)])
+; write_cvalue: Var(_2, var3): &'{erased} &'{erased} i32 <- ByVal(v1): &'{erased} &'{erased} i32
+    jump block1
+
+block1:
+    nop 
+; _6 = no_retag copy (*_2)
+; write_cvalue: Var(_6, var7): &'{erased} i32 <- ByRef(Pointer { base: Addr(v2), offset: Offset32(0) }, None): &'{erased} i32
+    v3 = load.i64 notrap v2
+; _3 = copy (*_6)
+; write_cvalue: Var(_3, var4): i32 <- ByRef(Pointer { base: Addr(v3), offset: Offset32(0) }, None): i32
+    v4 = load.i32 notrap v3
+; _7 = no_retag copy ((*_1).0: &i32)
+; write_cvalue: Var(_7, var8): &'{erased} i32 <- ByRef(Pointer { base: Addr(v5), offset: Offset32(0) }, None): &'{erased} i32
+    v6 = load.i64 notrap v5
+; _5 = copy (*_7)
+; write_cvalue: Var(_5, var6): i32 <- ByRef(Pointer { base: Addr(v6), offset: Offset32(0) }, None): i32
+    v7 = load.i32 notrap v6
+; _4 = Mul(move _5, const 2_i32)
+    v8 = iconst.i32 2
+    v9 = imul v7, v8  ; v8 = 2
+; write_cvalue: Var(_4, var5): i32 <- ByVal(v9): i32
+; _0 = Lt(copy _3, move _4)
+    v10 = icmp slt v4, v9
+; write_cvalue: Var(_0, var1): bool <- ByVal(v10): bool
+; 
+; return
+    return v10
+}
+
+; clifv-extnames 1
+; decl u0:1629 func local "_RNxC9criterion12H41dCMSBazd6"
+; end clifv-extnames
