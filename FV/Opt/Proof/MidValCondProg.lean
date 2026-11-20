@@ -9,7 +9,8 @@ and otherwise `refsOk g` and `checkCert f (condPrep g hints) cert`. Its soundnes
 re-check's (`check_sound_norm`: `FunSimMU f (condPrep g hints)`) with `condPrep_simU`
 (`FunSimU (condPrep g hints) g`) by `FunSimMU.trans`; the compiled function is `g` itself.
 
-* **`check_soundC_norm`**, **`check_soundC`** (default normaliser), **`check_soundSymsC`**
+* **`check_soundC_norm`**, **`check_soundC_normT`** (a normaliser sound under typing),
+  **`check_soundC`** (default normaliser `Norm.stdT f`), **`check_soundSymsC`**
   (hoisting mode, at a symbol table where `f`'s global values resolve);
 * **`checkedC_simMU`**: through constant-phi removal, as `checked_simMU`;
 * `ValidatedC`, `ValidatedSymsC`: `Validated`/`ValidatedSyms` with `checkCertC`/`checkCertSymsC`
@@ -33,10 +34,19 @@ theorem check_soundC_norm {f g : Function} {cert : Cert} {hints : List (BlockId 
   · simp only [Bool.and_eq_true] at h
     exact (check_sound_norm h.2 hN).trans (condPrep_simU h.1).toMU
 
+theorem check_soundC_normT {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
+    {norm : Norm} (h : checkCertC f g cert hints norm = true) (hN : NormSoundT f norm) :
+    FunSimMU f g := by
+  unfold checkCertC at h
+  split at h
+  · exact check_sound_normT h hN
+  · simp only [Bool.and_eq_true] at h
+    exact (check_sound_normT h.2 hN).trans (condPrep_simU h.1).toMU
+
 /-- **Soundness of the re-check with branch-condition hints** (default normaliser). -/
 theorem check_soundC {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
     (h : checkCertC f g cert hints = true) : FunSimMU f g :=
-  check_soundC_norm h normSound_std
+  check_soundC_normT h normSoundT_stdT
 
 /-- **Soundness of the hoisting mode with branch-condition hints.** -/
 theorem check_soundSymsC {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}

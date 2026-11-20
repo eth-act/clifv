@@ -64,7 +64,7 @@ structure Cert where
   deriving Repr, Inhabited
 
 /-- What `checkCert` reads besides the certificate: `f`'s dominator tree and block index,
-the value types of both functions (`wfCheck`), the normaliser. -/
+the value types of both functions (`wfCheck`), the normaliser (by default `Norm.stdT f`). -/
 structure CC where
   idom : Array (Option Nat)
   index : BlockId → Option Nat
@@ -265,20 +265,20 @@ def checkCertWith (hoist : Bool) (f g : Function) (cert : Cert) (norm : Norm) : 
   | _, _ => false
 
 /-- **The re-check of the certificate** (module doc): what the soundness theorem is about. -/
-def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.std) : Bool :=
+def checkCert (f g : Function) (cert : Cert) (norm : Norm := Norm.stdT f) : Bool :=
   checkCertWith false f g cert norm
 
 /-- **The re-check in the hoisting mode**: `g` may evaluate a `symbol_value`, `tls_value` or
 `func_addr` that `f` contains earlier than `f` does. Its soundness theorem assumes the function's
 global values resolve (`globalsResolve`). -/
-def checkCertSyms (f g : Function) (cert : Cert) (norm : Norm := Norm.std) : Bool :=
+def checkCertSyms (f g : Function) (cert : Cert) (norm : Norm := Norm.stdT f) : Bool :=
   checkCertWith true f g cert norm
 
 /-! ## Emission (untrusted) -/
 
 /-- The certificate of an accepted pair, from the final state of `check` (`checkRun`; `hoist`:
 the hoisting mode, whose partial terms evaluated by `g` first are facts of every block). -/
-def emit (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) : Except Reject Cert := do
+def emit (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) : Except Reject Cert := do
   let (st, c, fi) ← checkRun f g norm hoist
   let idom := fi.cfg.idom
   let anc := fun a b => ancB idom idom.size a b

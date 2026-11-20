@@ -76,13 +76,13 @@ def refsOk (g : Function) : Bool :=
 
 /-- **The re-check with branch-condition hints** (module doc). -/
 def checkCertC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap))
-    (norm : Norm := Norm.std) : Bool :=
+    (norm : Norm := Norm.stdT f) : Bool :=
   if hints.isEmpty then checkCert f g cert norm
   else refsOk g && checkCert f (condPrep g hints) cert norm
 
 /-- The hoisting mode of `checkCertC`. -/
 def checkCertSymsC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap))
-    (norm : Norm := Norm.std) : Bool :=
+    (norm : Norm := Norm.stdT f) : Bool :=
   if hints.isEmpty then checkCertSyms f g cert norm
   else refsOk g && checkCertSyms f (condPrep g hints) cert norm
 
@@ -91,7 +91,7 @@ def checkCertSymsC (f g : Function) (cert : Cert) (hints : List (BlockId × List
 /-- The hints of the relaxed check: `.ok []` if `check` accepts; otherwise the wrapper chains
 the relaxed check records, if `check` accepts `f` against `condPrep g` of them (else `check`'s
 own rejection). -/
-def checkC (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) :
+def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
     Except Reject (List (BlockId × List Wrap)) :=
   match check f g norm hoist with
   | .ok () => .ok []
@@ -106,7 +106,7 @@ def checkC (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) :
     | .error _ => .error e
 
 /-- The certificate and hints of an accepted pair (`checkC`, then `emit` against the copy). -/
-def emitC (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) :
+def emitC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
     Except Reject (Cert × List (BlockId × List Wrap)) := do
   let h ← checkC f g norm hoist
   let cert ← emit f (if h.isEmpty then g else condPrep g h) norm hoist

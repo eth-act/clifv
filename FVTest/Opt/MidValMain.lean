@@ -15,8 +15,9 @@ the optimised one (`Opt.MidVal.check`). One tab-separated line per pair on stdou
 With `--cert`, two more columns: the re-check of the emitted certificate
 (`Opt.MidVal.checkCert f g (emit f g)`: `ok` when it gives `check`'s verdict, `MISMATCH`
 otherwise, `-` for a rejected pair) and its microseconds (`checkCert` alone, not the emission).
-The normaliser is the validator's default (`Opt.MidVal.Norm.std`: constant evaluation, then the
-single-node algebraic rules); with `--norm-id`, stage 1's identity; with `--norm-const`, constant
+The normaliser is the validator's default (`Opt.MidVal.Norm.stdT f`: constant evaluation, the
+single-node algebraic rules, then the typed rules with `f`'s atom types); with `--norm-std`, the
+untyped `Norm.std`; with `--norm-id`, stage 1's identity; with `--norm-const`, constant
 evaluation alone. With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by
 `checkCertSyms`, whose theorem assumes the function's global values resolve). With `--cond`,
 family 3 (branch conditions): `Opt.MidVal.checkC`, re-checked by `checkCertC` with the hints
@@ -36,40 +37,44 @@ def decodeOne (p : System.FilePath) : IO (Except String Clif.Function) := do
 
 def firstWord (s : String) : String := (s.splitOn " ").headD s
 
-/-- The normaliser: the validator's default `Norm.std`, or (before/after measurements) with
-`--norm-id` stage 1's identity (`Norm.id`), with `--norm-const` constant evaluation alone. -/
-def normOf (normId normConst : Bool) : Opt.MidVal.Norm :=
+/-- The normaliser for `f`: the validator's default `Norm.stdT f`, or (before/after
+measurements) with `--norm-std` the untyped `Norm.std`, with `--norm-id` stage 1's identity
+(`Norm.id`), with `--norm-const` constant evaluation alone. -/
+def normOf (normId normConst normStd : Bool) (f : Clif.Function) : Opt.MidVal.Norm :=
   if normId then Opt.MidVal.Norm.id
-  else if normConst then Opt.MidVal.evalConst else Opt.MidVal.Norm.std
+  else if normConst then Opt.MidVal.evalConst
+  else if normStd then Opt.MidVal.Norm.std else Opt.MidVal.Norm.stdT f
 
 /-- Constant-phi removal and the check (`checkC` with `cond`), evaluated inside the call
 (timing). -/
-@[noinline] def runCheck (nm : Opt.MidVal.Norm) (hoist cond : Bool) (f0 g : Clif.Function) :
-    IO (Clif.Function × Except String Unit) := do
+@[noinline] def runCheck (nm : Clif.Function → Opt.MidVal.Norm) (hoist cond : Bool)
+    (f0 g : Clif.Function) : IO (Clif.Function × Except String Unit) := do
   let f := Opt.ConstPhi.run f0
-  let r := if cond then (Opt.MidVal.checkC f g nm hoist).map fun _ => ()
-    else Opt.MidVal.check f g nm hoist
+  let r := if cond then (Opt.MidVal.checkC f g (nm f) hoist).map fun _ => ()
+    else Opt.MidVal.check f g (nm f) hoist
   match r with
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
 
 /-- The certificate and hints of an accepted pair (`Opt.MidVal.emit`, `emitC` with `cond`). -/
-@[noinline] def runEmit (nm : Opt.MidVal.Norm) (hoist cond : Bool) (f g : Clif.Function) :
+@[noinline] def runEmit (nm : Clif.Function → Opt.MidVal.Norm) (hoist cond : Bool)
+    (f g : Clif.Function) :
     IO (Except String (Opt.MidVal.Cert × List (Clif.BlockId × List Opt.MidVal.Wrap))) :=
-  pure (if cond then Opt.MidVal.emitC f g nm hoist
-    else (Opt.MidVal.emit f g nm hoist).map fun c => (c, []))
+  pure (if cond then Opt.MidVal.emitC f g (nm f) hoist
+    else (Opt.MidVal.emit f g (nm f) hoist).map fun c => (c, []))
 
 /-- The re-check (`Opt.MidVal.checkCert`, or `checkCertSyms` in the hoisting mode; with hints
 `checkCertC`/`checkCertSymsC`), evaluated inside the call (timing). -/
-@[noinline] def runRecheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert)
+@[noinline] def runRecheck (nm : Clif.Function → Opt.MidVal.Norm) (hoist : Bool)
+    (f g : Clif.Function) (cert : Opt.MidVal.Cert)
     (h : List (Clif.BlockId × List Opt.MidVal.Wrap)) : IO Bool :=
-  pure (if hoist then Opt.MidVal.checkCertSymsC f g cert h nm
-    else Opt.MidVal.checkCertC f g cert h nm)
+  pure (if hoist then Opt.MidVal.checkCertSymsC f g cert h (nm f)
+    else Opt.MidVal.checkCertC f g cert h (nm f))
 
 /-- `ok`/`MISMATCH`/`-`, the microseconds of the re-check (`f` after constant-phi removal) and,
 with `cond`, the number of hinted blocks. -/
-def recheck (nm : Opt.MidVal.Norm) (hoist cond : Bool) (f g : Clif.Function) (accepted : Bool) :
-    IO String := do
+def recheck (nm : Clif.Function → Opt.MidVal.Norm) (hoist cond : Bool) (f g : Clif.Function)
+    (accepted : Bool) : IO String := do
   let sfx := if cond then "\t0" else ""
   if !accepted then return s!"-\t0{sfx}"
   match ← runEmit nm hoist cond f g with
@@ -89,17 +94,18 @@ def pairMode (fp gp : String) : IO UInt32 := do
       | .error e => throw (IO.userError s!"{p}: {e}")
     | none => throw (IO.userError s!"{p}: no function")
   let g ← one gp
-  let (f, r) ← runCheck Opt.MidVal.Norm.std false true (← one fp) g
+  let (f, r) ← runCheck Opt.MidVal.Norm.stdT false true (← one fp) g
   match r with
-  | .ok () => IO.println s!"accept\trecheck {← recheck Opt.MidVal.Norm.std false true f g true}"; return 0
+  | .ok () => IO.println s!"accept\trecheck {← recheck Opt.MidVal.Norm.stdT false true f g true}"; return 0
   | .error e => IO.println s!"reject\t{e}"; return 1
 
 def main (args : List String) : IO UInt32 := do
   if let ["--pair", fp, gp] := args then return ← pairMode fp gp
-  -- `--norm-id`: stage 1's identity normaliser instead of the default `Opt.MidVal.Norm.std`
+  -- `--norm-id`: stage 1's identity normaliser instead of the default `Opt.MidVal.Norm.stdT f`
   let normId := args.contains "--norm-id"
-  -- `--norm-const`: constant evaluation alone (`Opt.MidVal.evalConst`, family 1)
-  let nm := normOf normId (args.contains "--norm-const")
+  -- `--norm-const`: constant evaluation alone (`Opt.MidVal.evalConst`, family 1); `--norm-std`:
+  -- the untyped `Opt.MidVal.Norm.std` (families 1–2, without the typed rules)
+  let nm := normOf normId (args.contains "--norm-const") (args.contains "--norm-std")
   -- `--cert`: re-check the emitted certificate of every accepted pair (`Opt.MidVal.checkCert`)
   let cert := args.contains "--cert"
   -- `--hoist`: the hoisting mode (`Opt.MidVal.checkCertSyms`)

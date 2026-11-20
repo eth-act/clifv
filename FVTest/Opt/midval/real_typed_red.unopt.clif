@@ -1,0 +1,92 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC12clap_builder12HkDy5L79c8E7
+function u0:2824(i64) system_v {
+; symbol _RNxC12clap_builder12HkDy5L79c8E7
+; instance Instance { def: Shim(DropGlue(DefId(2:3580 ~ core[7b1c]::ptr::drop_glue), Some(core::io::error::ErrorData<core::io::error::CustomOwner>))), args: [core::io::error::ErrorData<core::io::error::CustomOwner>] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut core::io::error::ErrorData<core::io::error::CustomOwner>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut core::io::error::ErrorData<core::io::error::CustomOwner>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut core::io::error::ErrorData<core::io::error::CustomOwner>    8b 8                var=1
+; ssa   _2    isize                             8b 8                var=2
+; ssa   _3    isize                             8b 8                var=3
+
+    sig0 = (i64) system_v
+    fn0 = colocated u0:2484 sig0 ; Instance { def: Shim(DropGlue(DefId(2:3580 ~ core[7b1c]::ptr::drop_glue), Some(core::io::error::CustomOwner))), args: [core::io::error::CustomOwner] }
+
+block0(v0: i64):
+    v1 -> v0
+    v7 -> v0
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} mut core::io::error::ErrorData<core::io::error::CustomOwner> <- ByVal(v0): &'{erased} mut core::io::error::ErrorData<core::io::error::CustomOwner>
+    jump block1
+
+block1:
+    nop 
+; _2 = discriminant((*_1))
+    v2 = load.i8 notrap v1
+    v3 = uextend.i64 v2
+; write_cvalue: Var(_2, var2): isize <- ByVal(v3): isize
+; 
+; switchInt(move _2)
+    v4 = iconst.i64 0xffff_ffff
+    v5 = icmp ugt v3, v4  ; v4 = 0xffff_ffff
+    brif v5, block3, block4
+
+block4:
+    v6 = ireduce.i32 v3
+    br_table v6, block3, [block2, block2, block2]
+
+block2:
+    nop 
+; 
+; return
+    return
+
+block3:
+    nop 
+; 
+; drop((((*_1) as Custom).0: core::io::error::CustomOwner))
+    v8 = iconst.i64 8
+    v9 = iadd.i64 v7, v8  ; v8 = 8
+    call fn0(v9)
+    jump block2
+}
+
+; clifv-extnames 1
+; userextname0 = u0:2484
+; decl u0:2484 func local "_RNxC12clap_builder12HhJrQfXzpgLY"
+; decl u0:2824 func local "_RNxC12clap_builder12HkDy5L79c8E7"
+; end clifv-extnames
