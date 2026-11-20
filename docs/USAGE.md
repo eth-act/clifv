@@ -682,6 +682,17 @@ objects and messages on every input (the 9 crates' 121,862 and the debug builds 
 survey and deps: 1,378, 3,251, 21,028), and `--midval` changed no byte and no verdict in those
 debug builds (`opt_level` `none`).
 
+With the binary check (#1119 layer 2, 2026-11-20, layer-2 tools on main a8845ea89's validator):
+`cargo fv test --release --lean-link --verified` with `--midval` and without, on the same 9
+crates: binary check 48 of 48 executables both ways (per crate equal), verified functions
+121,767 both ways, functions left out of a region 2 → 1, test outcomes the same as stock's on all
+9 both ways; 102,433 functions validated (84.1 %; layer 2's `lean-backend` also requires
+`Link.midPairB` after the `i128` legalisation and the parse-back of `g`); byte-identical to stock
+28,084 → 86,490 of 121,767 (23.1 % → 71.0 %). Plain `--midval` with the binary check: 28 of 28
+executables of 7 crates; on serde_json and crypto-bigint the plain-mode binary check did not end
+within 4 hours with `--midval`, and without it `link-check` stalls at the same step (#1145:
+its GOT check on large release executables; `--lean-link --verified` is not affected).
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
