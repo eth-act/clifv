@@ -71,7 +71,7 @@ Executables run under qemu-aarch64-static. After a build the report is in target
   --midval            the mid-end validator (#1119), plain mode without --lean-link: a function
                       cg_clif optimised (opt_level not none in its dump's header, e.g. --release)
                       is compiled from Cranelift's optimised dump when lean-backend decides
-                      Opt.MidVal.checkCert on the pair and the theorem composes (an
+                      Opt.MidVal.checkCertC on the pair and the theorem composes (an
                       E2E.backend_correct_midval_* theorem, about the unoptimised .unopt.clif),
                       else from the .unopt.clif exactly as without it. Implies --no-binary-check:
                       link-check does not re-decide the pair yet, so no executable theorem covers
@@ -357,7 +357,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     // #1119: link-check does not re-decide the validator's pairs yet, so no executable theorem
     // covers a validated function: no binary check rather than one about another program
     if midval && bin_check {
-        eprintln!("cargo fv: --midval: no binary check (link-check does not re-decide Opt.MidVal.checkCert yet, #1119)");
+        eprintln!("cargo fv: --midval: no binary check (link-check does not re-decide Opt.MidVal.checkCertC yet, #1119)");
         bin_check = false;
     }
     if value_of(&cargo_args, "--target").is_some() {

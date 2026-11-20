@@ -55,7 +55,7 @@ pub struct FnReport {
 /// What `lean-backend --midval-opt` did for one function (#1119).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MidvalReport {
-    /// `validated`: Cranelift's optimised function was compiled, `Opt.MidVal.checkCert`
+    /// `validated`: Cranelift's optimised function was compiled, `Opt.MidVal.checkCertC`
     /// decided, and a verified one's theorem (`E2E.backend_correct_midval_*`) is about the
     /// `.unopt.clif` ([`MIDVAL_ABOUT`]); `rejected` (the check failed), `not composed` (no theorem
     /// through the validator for the optimised function) or `not attempted`: compiled from the
@@ -374,7 +374,7 @@ impl Report {
         }
         Some(format!(
             "of the {} Lean-compiled functions cg_clif optimised (opt_level={} in their dumps' header), {} were validated by \
-             the mid-end validator (lean-backend decided Opt.MidVal.checkCert) and compiled from Cranelift's optimised \
+             the mid-end validator (lean-backend decided Opt.MidVal.checkCertC) and compiled from Cranelift's optimised \
              function: a verified one's theorem (E2E.backend_correct_midval_*) is about the unoptimised function \
              (.unopt.clif) and Cranelift's mid-end is not trusted; {} were compiled from cg_clif's unoptimised CLIF \
              (.unopt.clif), with a theorem about it and code in general not byte-equal to stock's (docs/USAGE.md \

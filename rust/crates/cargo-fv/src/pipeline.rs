@@ -1378,14 +1378,14 @@ mod tests {
     /// line of a validated function.
     #[test]
     fn midval_lines() {
-        let v = midval_of("lean-backend: x.unopt.clif: %f: midval: validated (Opt.MidVal.checkCert decided), compiled from the optimised dump x.opt.clif");
+        let v = midval_of("lean-backend: x.unopt.clif: %f: midval: validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump x.opt.clif");
         assert_eq!(v, Some(("validated".into(), None)));
         let r = midval_of("lean-backend: x.unopt.clif: %f: midval: rejected (Opt.MidVal.check rejects: rewrite:operand (iadd)); compiled from the .unopt.clif as without --midval-opt");
         assert_eq!(r, Some(("rejected".into(), Some("Opt.MidVal.check rejects: rewrite:operand (iadd)".into()))));
         let n = midval_of("lean-backend: x.unopt.clif: %f: midval: validated, not composed (the compiled g is unverified (x: unsupported: y)); compiled from the .unopt.clif as without --midval-opt");
         assert_eq!(n, Some(("not composed".into(), Some("the compiled g is unverified (x: unsupported: y)".into()))));
         assert!(midval_of("lean-backend: x.clif: %f: unsupported: y").is_none());
-        let l = "lean-backend: x.unopt.clif: %f: compiled, verified by E2E.backend_correct_midval_semantic_return_pins (about the source function (.unopt.clif), compiled from cg_clif's optimised dump validated by Opt.MidVal; decided: prepCheck, Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert (cert: Opt.MidVal.emit))";
+        let l = "lean-backend: x.unopt.clif: %f: compiled, verified by E2E.backend_correct_midval_semantic_return_pins (about the source function (.unopt.clif), compiled from cg_clif's optimised dump validated by Opt.MidVal; decided: prepCheck, Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints (cert, hints: Opt.MidVal.emitC))";
         let (v, _) = verdict_of(l).expect("a verdict line");
         assert_eq!(v.theorem, "E2E.backend_correct_midval_semantic_return_pins");
         assert_eq!(v.about, crate::report::MIDVAL_ABOUT);

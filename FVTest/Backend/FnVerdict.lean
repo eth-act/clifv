@@ -226,8 +226,9 @@ def unwindThm (cleanup opt legal cp : Bool) (cpT : String) : String :=
 
 /-! ## Through the mid-end validator (#1119, `lean-backend --midval-opt`)
 
-`lean-backend <f.unopt.clif> --midval-opt <g.opt.clif>` decides `Opt.MidVal.checkCert
-(Opt.ConstPhi.run f) g cert` (the certificate from `Opt.MidVal.emit`) and, when it holds, compiles
+`lean-backend <f.unopt.clif> --midval-opt <g.opt.clif>` decides `Opt.MidVal.checkCertC
+(Opt.ConstPhi.run f) g cert hints` (the certificate and branch-condition hints from
+`Opt.MidVal.emitC`) and, when it holds, compiles
 Cranelift's optimised function `g` in place of cg_clif's source function `f`. The facts below are
 then those of the compiled `g`; the theorem named is the one of `FV/E2E/MidValPass.lean` /
 `MidValPassLegacy.lean` composed with what ran on `g`, about the source function `f`. When `g`'s
@@ -242,7 +243,7 @@ def midAbout : String :=
 
 /-- The premise `lean-backend --midval-opt` decides for every theorem through the validator. -/
 def midCheck : String :=
-  "Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert (cert: Opt.MidVal.emit)"
+  "Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints (cert, hints: Opt.MidVal.emitC)"
 
 /-- The Stock path's theorem through the validator for the facts of the compiled `g`. -/
 def stockMidThm (x : Facts) : Except String String :=

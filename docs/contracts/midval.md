@@ -6,8 +6,9 @@ Status: **stage 1: checker measured, soundness proved; per-function plumbing (la
 emits a certificate that `Opt.MidVal.checkCert` re-checks (`FV/Opt/MidValCert.lean`), and
 **`Opt.MidVal.check_sound : checkCert f g cert = true → Opt.FunSimMU f g`** is proved with the
 standard axioms (`FV/Opt/Proof/MidValSim.lean`; audit `scripts/audit/midval.lean`). Per function,
-`lean-backend` decides `checkCert` itself and names a theorem about the source function
-(module 6 below); the executable level (`lean-link`, `link-check`) is layer 2, not done.
+`lean-backend` decides `checkCertC` (the re-check with branch-condition hints, family 3) itself
+and names a theorem about the source function (module 6 below); the executable level
+(`lean-link`, `link-check`) is layer 2, not done.
 
 ## What it is for
 
@@ -114,13 +115,13 @@ moved `can_move` loads, the two checker gaps below.
    `FV/E2E/MidValPass.lean` (`midval_entry`, `midval_entryX`, the Stock path's
    `backend_correct_midval_*_semantic_return_pins`), `FV/E2E/MidValPassLegacy.lean` (legacy,
    unwinding and typed `backend_correct_midval_*`; docs/contracts/e2e.md "Through the mid-end
-   validator"); `lean-backend --midval-opt <g.opt.clif>` runs `emit` and decides `checkCert`, then
+   validator"); `lean-backend --midval-opt <g.opt.clif>` runs `emitC` and decides `checkCertC`, then
    compiles `g` and names the composed theorem (`FVTest.Backend.FnVerdict.midvalVerdict`), or
    compiles `f` exactly as without the option; `cargo fv --midval` (plain mode, no `--lean-link`,
    no binary check) passes the `.opt.clif` of every function whose dump header's `opt_level` is
    not `none`. Witness `FVTest/Backend/MidValPassWitness.lean`, audit
    `scripts/audit/midval-e2e.lean`.
-   Layer 2 (not done): bundle entries with both dumps, `link-check` re-deciding `checkCert` per
+   Layer 2 (not done): bundle entries with both dumps, `link-check` re-deciding `checkCertC` per
    pair, a `Link.midSource` like `Link.cpSource`, a gate line; crypto-bigint's executables first
    need the unreferenced-data-object fix (#1122).
 

@@ -8,15 +8,15 @@ dependency keccak 0.2.x, `_RNxC6keccak12HbPukoXULhhU`): the split CLIF `cargo fv
 `lean-backend` (`<stem>.unopt.clif`, cg_clif's source function `f`) and the optimised dump
 (`<stem>.opt.clif`, Cranelift's function `g`). Cranelift forwarded the value stored to `ss0` in
 `block0` to the load of `ss0` in `block1` (the call's third argument becomes `v1`) and removed the
-`nop`s and the second `stack_addr`. `lean-backend --midval-opt` decided `Opt.MidVal.checkCert` on
+`nop`s and the second `stack_addr`. `lean-backend --midval-opt` decided `Opt.MidVal.checkCertC` on
 the pair and compiled `g` on the Stock path, naming
 `E2E.backend_correct_midval_semantic_return_pins`.
 
 `midval_applies` instantiates that theorem with **no assumed checkable premise**: the re-check of
-the certificate `Opt.MidVal.emit` gives (`midOk`), the Stock artifact of the compiled `g`
+the certificate and hints `Opt.MidVal.emitC` gives (`midOk`), the Stock artifact of the compiled `g`
 (`StockCheckCallsWitness.witness`, its `SemanticABI.checkCalls` from the driver's route), `InSubset`
 (`InSubset.of_verifiable`, a function-free program) and `FormsCovered` (`formsCoveredB_iff`); the
-program of validated functions is the empty one (`Opt.MidVal.Validated.nil`). Left open, as in every
+program of validated functions is the empty one (`Opt.MidVal.ValidatedC.nil`). Left open, as in every
 per-function theorem: the run and environment hypotheses. The facts are decided by `native_decide`
 (a witness, not a compiler theorem); they include that the compiled function is `g` itself (no
 legalisation or constant-phi change) and that `g` is not `f` after constant-phi removal. -/
@@ -38,11 +38,11 @@ def fSrc : Clif.Function := ((first (Clif.parseFile srcF).funcs).func.toOption).
 /-- Cranelift's optimised function, as `lean-backend --midval-opt` parses it. -/
 def gOpt : Clif.Function := ((first (Clif.parseFile srcG).funcs).func.toOption).getD default
 
-/-- What `lean-backend --midval-opt` decides (`midvalDecide`): the re-check of the certificate
-`Opt.MidVal.emit` gives. -/
+/-- What `lean-backend --midval-opt` decides (`midvalDecide`): the re-check of the certificate and
+branch-condition hints `Opt.MidVal.emitC` gives. -/
 def midOk (f g : Clif.Function) : Bool :=
-  match Opt.MidVal.emit (Opt.ConstPhi.run f) g with
-  | .ok cert => Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert
+  match Opt.MidVal.emitC (Opt.ConstPhi.run f) g with
+  | .ok (cert, hints) => Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints
   | .error _ => false
 
 /-- What `native_decide` evaluates: the driver's run on the optimised file compiled it on the
@@ -58,7 +58,7 @@ theorem factsMid0 : factsMid = true := by native_decide
 
 /-- The checkable premises of `backend_correct_midval_semantic_return_pins` hold for the pair. -/
 theorem premises (h : factsMid = true) :
-    (∃ cert, Opt.MidVal.checkCert (Opt.ConstPhi.run fSrc) (f srcG) cert = true) ∧
+    (∃ cert hints, Opt.MidVal.checkCertC (Opt.ConstPhi.run fSrc) (f srcG) cert hints = true) ∧
     ∃ vc, CompiledSemanticReturnPins (f srcG) 0 vc (vcp srcG) (rf srcG) (af srcG) (fa srcG)
         (fb srcG) (ReturnPinMode.checked (f srcG) vc) ∧
       InSubset { funcs := [] } (f srcG) ∧
@@ -69,7 +69,7 @@ theorem premises (h : factsMid = true) :
   refine ⟨?_, vc, hc, InSubset.of_verifiable hv (fun _ => rfl), (formsCoveredB_iff _ _).mp hcov⟩
   unfold midOk at hmid
   split at hmid
-  · exact ⟨_, hmid⟩
+  · exact ⟨_, _, hmid⟩
   · cases hmid
 
 /-- **`backend_correct_midval_semantic_return_pins` applies to the compiled pair**: every return of
@@ -117,9 +117,9 @@ theorem midval_applies {X : ExtSem} {syms : String → Option Nat} {slotOff : Na
               PostTrace (fa srcG) (af srcG) base (ArmStepX X H (fa srcG)) s n ∧
               ∀ i < n, actGoodX (vcp srcG) (rf srcG) (af srcG) (fa srcG) (fb srcG) base s X H K G
                 (GotV (vcp srcG)) (runX (ArmStepX X H (fa srcG)) i s)) := by
-  obtain ⟨⟨cert, hchk⟩, vc, hc, hsub, hcov⟩ := premises factsMid0
+  obtain ⟨⟨cert, hints, hchk⟩, vc, hc, hsub, hcov⟩ := premises factsMid0
   exact ⟨vc, _, backend_correct_midval_semantic_return_pins (K := K) hchk
-    (p := { funcs := [] }) (q := { funcs := [] }) Opt.MidVal.Validated.nil hsub hc hcov hX hXI hsym
+    (p := { funcs := [] }) (q := { funcs := [] }) Opt.MidVal.ValidatedC.nil hsub hc hcov hX hXI hsym
     hslot hE hcs hrel hargs htr fuel⟩
 
 end FVTest.Backend.MidValPassWitness

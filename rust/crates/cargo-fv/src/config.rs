@@ -98,7 +98,7 @@ pub struct Config {
     /// `--midval` (#1119), plain mode without `--lean-link`: a function whose dump header says
     /// cg_clif optimised it (`opt_level` not `none`) is compiled with `lean-backend --midval-opt
     /// <stem>.opt.clif`: Cranelift's optimised function when lean-backend decides the mid-end
-    /// validator's re-check (`Opt.MidVal.checkCert`) and its theorem composes with the validator
+    /// validator's re-check (`Opt.MidVal.checkCertC`) and its theorem composes with the validator
     /// (a theorem about the `.unopt.clif`), else the `.unopt.clif` exactly as without it.
     pub midval: bool,
 }
