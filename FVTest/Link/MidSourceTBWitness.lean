@@ -10,7 +10,7 @@ import FVTest.Link.I128TryIndT
 `Q`. `P0` is `Q` with the Stock function `g` replaced by `f`, the same function with a `nop` in
 its entry block (the unoptimised form; Cranelift's mid-end removes `nop`s, as in the keccak pair of
 `FVTest/Backend/MidValPassWitness.lean`). `Link.midValidatedB P0.funcs Q.funcs` holds, so
-`Opt.MidVal.Validated` by `Link.midValidatedB_sound`, `f ≠ g`, and every premise `lean-link
+`Opt.MidVal.ValidatedC` by `Link.midValidatedB_sound`, `f ≠ g`, and every premise `lean-link
 --verified` decides for `attemptT_correct_sourceTBMid` is discharged: its conclusion is about a
 run of `P0` from `f`'s entry while the executable holds `g`'s code. Decided by `native_decide`
 (witness only).
@@ -50,7 +50,7 @@ def checks : Bool :=
 theorem checks_true : checks = true := by native_decide -- witness: native_decide
 
 /-- **The pair is validated**, the functions differ, and the programs look them up by `name`. -/
-theorem parts : Opt.MidVal.Validated P0.funcs input.toLinkInput.srcProg.funcs ∧
+theorem parts : Opt.MidVal.ValidatedC P0.funcs input.toLinkInput.srcProg.funcs ∧
     P0.func? name = some fNop ∧ input.toLinkInput.srcProg.func? name = some gS ∧ fNop ≠ gS := by
   have h := checks_true
   simp only [checks, Bool.and_eq_true, Bool.not_eq_true', decide_eq_true_eq,
@@ -59,7 +59,7 @@ theorem parts : Opt.MidVal.Validated P0.funcs input.toLinkInput.srcProg.funcs �
   exact ⟨Link.midValidatedB_sound hv, hf, hg, hne⟩
 
 /-- **`attemptT_correct_sourceTBMid` is not vacuous**: its compiler premises (`attemptT`
-succeeds, `SrcScopeTB` of the route's input, `Validated` of `P0` against it) hold on the witness,
+succeeds, `SrcScopeTB` of the route's input, `ValidatedC` of `P0` against it) hold on the witness,
 and its conclusion is the typed refinement of the executable, which holds `g`'s code, for a
 return of `P0`'s run from `f`'s entry. -/
 theorem correct_sourceTBMid_applies : ∃ file, SemanticCompilerWith.attemptT lower spec file0 = .ok file ∧

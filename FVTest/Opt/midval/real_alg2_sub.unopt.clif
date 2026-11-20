@@ -1,0 +1,67 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10num_traits12H46cyi9wwwPC
+function u0:232(i64) -> i8 system_v {
+; symbol _RNxC10num_traits12H46cyi9wwwPC
+; instance Instance { def: Item(DefId(0:3618 ~ num_traits[bedc]::ops::wrapping::{impl#42}::wrapping_neg)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: u8, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 71776127651151873 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    u8                                1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u8
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) &'{erased} u8
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} u8                     8b 8                var=2
+; ssa   _2    u8                                1b 1                var=3
+
+block0(v0: i64):
+    v1 -> v0
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} u8 <- ByVal(v0): &'{erased} u8
+    jump block1
+
+block1:
+    nop 
+; _2 = copy (*_1)
+; write_cvalue: Var(_2, var3): u8 <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): u8
+    v2 = load.i8 notrap v1
+; _0 = Sub(const 0_u8, copy _2)
+    v3 = iconst.i8 0
+    v4 = isub v3, v2  ; v3 = 0
+; write_cvalue: Var(_0, var1): u8 <- ByVal(v4): u8
+; 
+; return
+    return v4
+}
+
+; clifv-extnames 1
+; decl u0:232 func local "_RNxC10num_traits12H46cyi9wwwPC"
+; end clifv-extnames

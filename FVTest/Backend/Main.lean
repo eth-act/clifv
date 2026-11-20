@@ -112,10 +112,10 @@ would get compiled.
 
 With `--midval-opt <g.opt.clif>` (#1119; `cargo fv` passes Cranelift's optimised dump of a function
 whose dump header says `opt_level` is not `none`): for the input's one function `f` and the
-same-named function `g` of that file, `lean-backend` runs `Opt.MidVal.emit (Opt.ConstPhi.run f) g`
-and decides `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert` itself, and `Link.midPairB` on the
-two functions after constant-phi removal and the `i128` legalisation (`FnInput.cp`: the pair
-`link-check` re-decides for its binary theorem `…_mid`). When both hold, `g` is
+same-named function `g` of that file, `lean-backend` runs `Opt.MidVal.emitC (Opt.ConstPhi.run f) g`
+and decides `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` itself, and `Link.midPairB`
+on the two functions after constant-phi removal and the `i128` legalisation (`FnInput.cp`: the
+pair `link-check` re-decides for its binary theorem `…_mid`). When both hold, `g` is
 compiled in place of `f`, and when `g`'s verdict is a theorem that composes with the validator
 (`FVTest.Backend.FnVerdict.midvalVerdict`; with a `try_call`, also its unwinding theorem) the
 function is reported verified by the theorem through the validator
@@ -171,8 +171,8 @@ structure Opts where
   skipUnverified : Bool := false
   /-- `--midval-opt <g.opt.clif>` (#1119): Cranelift's optimised dump of the function of the
   input (cg_clif's `.unopt.clif`, one function). `lean-backend` decides
-  `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert` itself (the certificate from
-  `Opt.MidVal.emit`) and, when it holds and the theorem of the compiled `g` composes with the
+  `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` itself (the certificate and hints from
+  `Opt.MidVal.emitC`) and, when it holds and the theorem of the compiled `g` composes with the
   validator (`FVTest.Backend.FnVerdict.midvalVerdict`), compiles `g` and names the theorem through
   the validator, about the source function `f`; otherwise it compiles `f` exactly as without the
   option. Only in the default mode (dead cleanup; no `--opt`, `--stock-config`, `--settings` or
@@ -416,7 +416,7 @@ def typedRecheck (f : Clif.Function) (cleanup : Bool) (rec : AllocRecord) (fa : 
               else some "lowerFunction's pipeline does not reproduce the emitted code (a Stock route lowered it)"
 
 /-- One compilation of the input `src` (`run`), its effects deferred to `acts`. `mid = some (n, g)`
-(`--midval-opt`, `n` the file's one function, `checkCert` decided): `g` is compiled in place of the
+(`--midval-opt`, `n` the file's one function, `checkCertC` decided): `g` is compiled in place of the
 source function `n`; the second component is `none` when `g`'s verdict is a theorem through the
 validator (`FVTest.Backend.FnVerdict.midvalVerdict`, and the unwinding theorem through it for a
 `try_call` function), else why not (`run` then drops this compilation and compiles `f`). Without
@@ -807,11 +807,11 @@ def runCore (input output : String) (o : Opts) (src : String)
   return (0, midFail)
 
 /-- The decision of `--midval-opt` for the source text `src` and the optimised text `srcOpt`:
-the function's name and `g` when `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert` holds for the
-certificate `Opt.MidVal.emit` gives, and `Link.midPairB` holds on the pair as `link-check`
-re-decides it on the bundle (each function's input after constant-phi removal and the `i128`
-legalisation, `FnInput.cp`/`FnInput.func`: the program its binary theorem is about), else why not
-(the function's name when there is one). -/
+the function's name and `g` when `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` holds
+for the certificate and branch-condition hints `Opt.MidVal.emitC` gives, and `Link.midPairB` holds
+on the pair as `link-check` re-decides it on the bundle (each function's input after constant-phi
+removal and the `i128` legalisation, `FnInput.cp`/`FnInput.func`: the program its binary theorem
+is about), else why not (the function's name when there is one). -/
 def midvalDecide (src srcOpt : String) : Except (Option String × String) (String × Clif.Function) := do
   let fs := (Clif.parseFile src).funcs
   let some p := fs.head? | throw (none, "the input has no function")
@@ -827,11 +827,11 @@ def midvalDecide (src srcOpt : String) : Except (Option String × String) (Strin
     | .ok g => pure g
     | .error _ => throw (some p.name, "the optimised function does not parse")
   let f' := Opt.ConstPhi.run f
-  let cert ← match Opt.MidVal.emit f' g with
+  let (cert, hints) ← match Opt.MidVal.emitC f' g with
     | .ok c => pure c
     | .error e => throw (some p.name, s!"Opt.MidVal.check rejects: {e}")
-  if !Opt.MidVal.checkCert f' g cert then
-    throw (some p.name, "Opt.MidVal.checkCert rejects the emitted certificate")
+  if !Opt.MidVal.checkCertC f' g cert hints then
+    throw (some p.name, "Opt.MidVal.checkCertC rejects the emitted certificate")
   -- #1119 layer 2: the pair `link-check` decides for the binary theorem (`…_mid`), and `g`'s
   -- printed CLIF parsing back to it (`Front.mkInput`: else `link-check` cannot assemble the bundle)
   let fi0 : E2E.LinkCheck.FnInput := { clif := src, ra := "" }
@@ -844,7 +844,7 @@ def midvalDecide (src srcOpt : String) : Except (Option String × String) (Strin
   pure (p.name, g)
 
 /-- `lean-backend`: one compilation (`runCore`), its effects replayed. With `--midval-opt` (#1119)
-in the default mode: the optimised function `g` when `checkCert` holds and its theorem composes
+in the default mode: the optimised function `g` when `checkCertC` holds and its theorem composes
 with the validator, else the source function `f`, compiled exactly as without the option; an
 info line `midval: …` says which and why. -/
 def run (input output : String) (o : Opts) : IO UInt32 := do
@@ -875,7 +875,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     match rc, why with
     | 0, none =>
       replay acts
-      note (some n) s!"validated (Opt.MidVal.checkCert decided), compiled from the optimised dump {optPath}"
+      note (some n) s!"validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump {optPath}"
       return 0
     | _, some why => plain (some n) s!"validated, not composed ({why})"
     | rc, none => plain (some n) s!"validated, not composed (lean-backend exits with {rc} on the optimised function)"

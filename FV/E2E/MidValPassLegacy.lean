@@ -8,8 +8,8 @@ import FV.E2E.DeadCleanupPairTC
 `try_call`: the legacy path with dead cleanup; the unwinding theorems; the typed scope). Each
 theorem has the artifact hypothesis of the theorem `lean-backend` names for the compiled `g` (or its
 `i128` legalisation `g'`, or `T g`/`T g'` for constant-phi removal at `T := Opt.ConstPhi.run`), the
-decided premise `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true`, the program `q` of
-validated functions (`Opt.MidVal.Validated p.funcs q.funcs`), and that theorem's conclusion about
+decided premise `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true`, the program `q` of
+validated functions (`Opt.MidVal.ValidatedC p.funcs q.funcs`), and that theorem's conclusion about
 the run of the program `p` with cg_clif's source function `f` from `f`'s entry state:
 
 * legacy, dead cleanup: `backend_correct_midval_final_cleanup`, `backend_correct_midval_pass_cleanup`,
@@ -45,8 +45,9 @@ theorem armRefinesLegalU_of_outcome {rg : List (List Opt.Legalize128.SlotEl)} {f
 (`CompiledCleanup`); the Arm run of the compiled `g` refines the CLIF run of the *source* program
 `p` from `f`'s entry. -/
 theorem backend_correct_midval_final_cleanup {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset q g)
     (hc : CompiledCleanup g k vc vcp rf af fa fb)
@@ -74,7 +75,7 @@ theorem backend_correct_midval_final_cleanup {f g : Clif.Function} {cert : Opt.M
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env q (midEntry g cs)) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entry hchk hv hE hcs fuel
   exact armRefines_of_outcome hn (backend_correct_final_cleanup hsub hc hcov hC hCT hTls
     (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
@@ -87,8 +88,9 @@ theorem backend_correct_midval_final_cleanup {f g : Clif.Function} {cert : Opt.M
 theorem backend_correct_midval_pass_cleanup {T : Clif.Function → Clif.Function}
     (hT : ∀ f, Opt.FunSimX f (T f)) (hS : ∀ f, ShapeFacts f (T f))
     {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset q g)
     (hc : CompiledCleanup (T g) k vc vcp rf af fa fb)
@@ -116,7 +118,7 @@ theorem backend_correct_midval_pass_cleanup {T : Clif.Function → Clif.Function
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env (passProg T q) (passEntry T g (midEntry g cs))) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entry hchk hv hE hcs fuel
   exact armRefines_of_outcome hn (backend_correct_pass_cleanup hT hS hsub hc hcov hC hCT hTls
     (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
@@ -128,8 +130,9 @@ theorem backend_correct_midval_pass_cleanup {T : Clif.Function → Clif.Function
 `Clif.Rust.env`): `g` legalised to `g'` (`Opt.Legal.checkW g g' certL`), `g'` compiled. -/
 theorem backend_correct_midval_legal_wide_cleanup {f g g' : Clif.Function}
     {cert : Opt.MidVal.Cert} {certL : Opt.Legalize128.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q p' : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q p' : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     (hchkL : Opt.Legal.checkW g g' certL = true)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g')
@@ -166,7 +169,7 @@ theorem backend_correct_midval_legal_wide_cleanup {f g g' : Clif.Function}
     (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs1, hsl1, hmem1, n', hn⟩ := midval_entry hchk hv RustSyms.envKeepsSymbols_env hcs fuel
   have key := backend_correct_legal_wide_cleanup hchkL hsub hc hext hext' hind hcov hC hCT hTls hX
     hXI hsym hslot hent hres hbe (by rw [hF.sig]; exact hexp) hargs hcs1 hcs'
@@ -180,8 +183,9 @@ theorem backend_correct_midval_legal_wide_cleanup {f g g' : Clif.Function}
 theorem backend_correct_midval_legal_pass_wide_cleanup {T : Clif.Function → Clif.Function}
     (hT : ∀ f, Opt.FunSimX f (T f)) (hS : ∀ f, ShapeFacts f (T f))
     {f g g' : Clif.Function} {cert : Opt.MidVal.Cert} {certL : Opt.Legalize128.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q p' : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q p' : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     (hchkL : Opt.Legal.checkW g g' certL = true)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g')
@@ -219,7 +223,7 @@ theorem backend_correct_midval_legal_pass_wide_cleanup {T : Clif.Function → Cl
     (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs1, hsl1, hmem1, n', hn⟩ := midval_entry hchk hv RustSyms.envKeepsSymbols_env hcs fuel
   have key := backend_correct_legal_pass_wide_cleanup hchkL hT hS hsub hc hext hext' hind hcov hC
     hCT hTls hX hXI hsym hslot hent hres hbe (by rw [hF.sig]; exact hexp) hargs hcs1 hcs'
@@ -234,8 +238,9 @@ compiled from `g` through the dead cleanup, run on the machine with unwinding, r
 unwinding of the *source* program `p` from `f`'s entry (`ArmRefinesU`). -/
 theorem backend_correct_midval_final_cleanup_unwind_any {f g : Clif.Function}
     {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset q g)
     (hc : CompiledCleanup g k vc vcp rf af fa fb)
@@ -280,7 +285,7 @@ theorem backend_correct_midval_final_cleanup_unwind_any {f g : Clif.Function}
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicitX env q (midEntry g cs)) (fuel : Nat) :
     ArmRefinesU fb base ra (Unw.ArmStepU X H U Tb fa) s (Clif.runLoopX env p fuel cs.toX) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entryX hchk hv hE hcs fuel
   exact armRefinesU_of_outcome hn (backend_correct_final_cleanup_unwind_any
     hsub hc hlU hcov hC hCT hTls hUw
@@ -297,8 +302,9 @@ names it at `T := Opt.ConstPhi.run`): `T g` compiled. -/
 theorem backend_correct_midval_pass_cleanup_unwind_any {T : Clif.Function → Clif.Function}
     (hU : ∀ f, Opt.FunSimU f (T f)) (hS : ∀ f, ShapeFacts f (T f))
     {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset q g)
     (hc : CompiledCleanup (T g) k vc vcp rf af fa fb)
@@ -343,7 +349,7 @@ theorem backend_correct_midval_pass_cleanup_unwind_any {T : Clif.Function → Cl
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicitX env (passProg T q) (passEntry T g (midEntry g cs))) (fuel : Nat) :
     ArmRefinesU fb base ra (Unw.ArmStepU X H U Tb fa) s (Clif.runLoopX env p fuel cs.toX) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entryX hchk hv hE hcs fuel
   exact armRefinesU_of_outcome hn (backend_correct_pass_cleanup_unwind_any hU hS hsub hc hlU hcov
     hC hCT hTls hUw
@@ -360,8 +366,9 @@ environment with unwinding `Clif.Rust.xenvWith raises obj`): `g` legalised to `g
 and `Opt.Legal.exnOk` accept), `g'` compiled. -/
 theorem backend_correct_midval_legal_unwind_any {f g g' : Clif.Function}
     {cert : Opt.MidVal.Cert} {certL : Opt.Legalize128.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q p' : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q p' : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     (hchkL : Opt.Legal.check g g' certL = true) (hexn : Opt.Legal.exnOk g g' certL = true)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g') (hc : CompiledCleanup g' k vc vcp rf af fa fb)
@@ -414,7 +421,7 @@ theorem backend_correct_midval_legal_unwind_any {f g g' : Clif.Function}
     (htr : TrapsExplicitX (Clif.Rust.xenvWith raises obj) p' cs') (fuel : Nat) :
     ArmRefinesLegalU ((Opt.Legal.groups f.sig.returns).getD []) fb base ra
       (Unw.ArmStepU X H U T fa) s (Clif.runLoopX (Clif.Rust.xenvWith raises obj) p fuel cs.toX) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs1, hsl1, hmem1, n', hn⟩ :=
     midval_entryX hchk hv (xenvWith_keepsSymbolsX raises obj) hcs fuel
   have key := backend_correct_legal_unwind_any hchkL hexn hsub hc hlU raises obj hext hext' hind
@@ -429,8 +436,9 @@ it at `T := Opt.ConstPhi.run`): `g` legalised to `g'`, `T g'` compiled. -/
 theorem backend_correct_midval_legal_pass_unwind_any {T : Clif.Function → Clif.Function}
     (hUs : ∀ f, Opt.FunSimU f (T f)) (hS : ∀ f, ShapeFacts f (T f))
     {f g g' : Clif.Function} {cert : Opt.MidVal.Cert} {certL : Opt.Legalize128.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q p' : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q p' : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     (hchkL : Opt.Legal.check g g' certL = true) (hexn : Opt.Legal.exnOk g g' certL = true)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g') (hc : CompiledCleanup (T g') k vc vcp rf af fa fb)
@@ -487,7 +495,7 @@ theorem backend_correct_midval_legal_pass_unwind_any {T : Clif.Function → Clif
     (fuel : Nat) :
     ArmRefinesLegalU ((Opt.Legal.groups f.sig.returns).getD []) fb base ra
       (Unw.ArmStepU X H U Tb fa) s (Clif.runLoopX (Clif.Rust.xenvWith raises obj) p fuel cs.toX) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs1, hsl1, hmem1, n', hn⟩ :=
     midval_entryX hchk hv (xenvWith_keepsSymbolsX raises obj) hcs fuel
   have key := backend_correct_legal_pass_unwind_any hchkL hexn hUs hS hsub hc hlU raises obj hext
@@ -502,8 +510,9 @@ theorem backend_correct_midval_legal_pass_unwind_any {T : Clif.Function → Clif
 /-- **`backend_correct_final_cleanupT` through the mid-end validator**: `g` in the typed scope
 compiled (`CompiledCleanupT`); returned values by class (`ArmRefinesT`). -/
 theorem backend_correct_midval_final_cleanupT {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubsetT q g) (hc : CompiledCleanupT g k vc vcp rf af fa fb) (hT : TypedRules)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
@@ -531,7 +540,7 @@ theorem backend_correct_midval_final_cleanupT {f g : Clif.Function} {cert : Opt.
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env q (midEntry g cs)) (fuel : Nat) :
     ArmRefinesT fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entry hchk hv hE hcs fuel
   exact armRefinesT_of_outcome hn (backend_correct_final_cleanupT hsub hc hT hcov hC hCT hTls
     (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
@@ -542,8 +551,9 @@ theorem backend_correct_midval_final_cleanupT {f g : Clif.Function} {cert : Opt.
 /-- **`backend_correct_world_cleanupTCF` through the mid-end validator**: `g` in the typed scope
 with the proven float operations compiled (`CompiledCleanupTCF`). -/
 theorem backend_correct_midval_world_cleanupTCF {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     {F : BitVec 64 → Prop} {c : BitVec 64}
@@ -575,7 +585,7 @@ theorem backend_correct_midval_world_cleanupTCF {f g : Clif.Function} {cert : Op
       ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
         ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
         ∃ n, TrapAt fb base c' (runX (ArmStepX X H fa) n s)) := by
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entry hchk hv hE hcs fuel
   have hW : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g c =
       RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c := relW_slots hF.slots c
@@ -588,8 +598,9 @@ theorem backend_correct_midval_world_cleanupTCF {f g : Clif.Function} {cert : Op
 /-- **`backend_correct_world_cleanupTC` through the mid-end validator**: `g` in the typed scope
 with typed `try_call`s compiled (`CompiledCleanupTC`). -/
 theorem backend_correct_midval_world_cleanupTC {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     {F : BitVec 64 → Prop} {c : BitVec 64}

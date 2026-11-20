@@ -12,7 +12,7 @@ With `--midval`, `link-check` checks an executable whose code was compiled from 
 dumps (`prog I`: Cranelift's function `g` where the mid-end validator accepted the pair, else
 cg_clif's `f`), and re-decides the pairs against the unoptimised dumps (`P0`, the program it
 checks without `--midval`) with `Link.midValidatedB`, whence
-`hv : Opt.MidVal.Validated P0.funcs (prog I).funcs` (`Link.midValidatedB_sound`).
+`hv : Opt.MidVal.ValidatedC P0.funcs (prog I).funcs` (`Link.midValidatedB_sound`).
 For each of the binary check's theorems (`FVTest/E2E/BinVerdict.lean`, `theorems`) the theorem with
 the suffix `_mid` concludes about `P0`'s run from the entry `cs0` of its function `f0`: a return is
 the executable's return of the same values and memory, a trap the same trap.
@@ -38,7 +38,7 @@ trap (the compiled program's run from `midEntry f cs0` with its traps explicit) 
 theorem binary_correct_exec_proven_mid {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : ReturnPinStackBound.okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
     (hbin : BinCheck.BinOkWithResults I I.results D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
-    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.Validated P0.funcs (prog I).funcs)
+    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.ValidatedC P0.funcs (prog I).funcs)
     (hkeep : Opt.EnvKeepsSymbols B.env) {n : String} {f0 f : Clif.Function}
     (hf0 : P0.func? n = some f0) (hf : (prog I).func? n = some f)
     (hc : ¬ SemanticStackBound.CycleFrom (SemanticStackBound.Calls I I.results) f) (M : Nat) {r : Arm.ArmState}
@@ -87,7 +87,7 @@ entry `cs0` is the executable's return of the same values and memory, a trap the
 theorem binary_correct_exec_peak_proven_mid {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : ReturnPinStackBound.okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
     (hbin : BinCheck.BinOkWithResults I I.results D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
-    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.Validated P0.funcs (prog I).funcs)
+    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.ValidatedC P0.funcs (prog I).funcs)
     (hkeep : Opt.EnvKeepsSymbols B.env) {n : String} {f0 f : Clif.Function}
     (hf0 : P0.func? n = some f0) (hf : (prog I).func? n = some f)
     (d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs0 : Clif.State}
@@ -143,7 +143,7 @@ trap (the compiled program's run from `midEntry f cs0` with its traps explicit) 
 theorem binary_correct_exec_provenTS_mid {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : SemanticStackBound.okBTS I = true) (hcm : codeMapB I (tabOf I.results) = true)
     (hbin : BinCheck.BinOkWithResults I I.results D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
-    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.Validated P0.funcs (prog I).funcs)
+    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.ValidatedC P0.funcs (prog I).funcs)
     (hkeep : Opt.EnvKeepsSymbols B.env) {n : String} {f0 f : Clif.Function}
     (hf0 : P0.func? n = some f0) (hf : (prog I).func? n = some f)
     (hc : ¬ SemanticStackBound.CycleFrom (SemanticStackBound.Calls I I.results) f) (M : Nat) {r : Arm.ArmState}
@@ -192,7 +192,7 @@ entry `cs0` is the executable's return of the same values and memory, a trap the
 theorem binary_correct_exec_peak_provenTS_mid {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : SemanticStackBound.okBTS I = true) (hcm : codeMapB I (tabOf I.results) = true)
     (hbin : BinCheck.BinOkWithResults I I.results D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
-    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.Validated P0.funcs (prog I).funcs)
+    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.ValidatedC P0.funcs (prog I).funcs)
     (hkeep : Opt.EnvKeepsSymbols B.env) {n : String} {f0 f : Clif.Function}
     (hf0 : P0.func? n = some f0) (hf : (prog I).func? n = some f)
     (d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs0 : Clif.State}
@@ -248,7 +248,7 @@ trap (the compiled program's run from `midEntry f cs0` with its traps explicit) 
 theorem binary_correct_exec_provenT_mid {I : LinkInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : okBCleanupT I = true) (hcm : codeMapB I (tabOf I.resultsCleanup) = true)
     (hbin : DeadCleanupBinCheck.BinOk I D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
-    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.Validated P0.funcs (prog I).funcs)
+    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.ValidatedC P0.funcs (prog I).funcs)
     (hkeep : Opt.EnvKeepsSymbols B.env) {n : String} {f0 f : Clif.Function}
     (hf0 : P0.func? n = some f0) (hf : (prog I).func? n = some f)
     (hc : ¬ DeadCleanupStackBound.CycleFrom (DeadCleanupStackBound.Calls I I.resultsCleanup) f) (M : Nat) {r : Arm.ArmState}
@@ -297,7 +297,7 @@ entry `cs0` is the executable's return of the same values and memory, a trap the
 theorem binary_correct_exec_peak_provenT_mid {I : LinkInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : okBCleanupT I = true) (hcm : codeMapB I (tabOf I.resultsCleanup) = true)
     (hbin : DeadCleanupBinCheck.BinOk I D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
-    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.Validated P0.funcs (prog I).funcs)
+    (hH : HooksSim I B) {P0 : Clif.Program} (hv : Opt.MidVal.ValidatedC P0.funcs (prog I).funcs)
     (hkeep : Opt.EnvKeepsSymbols B.env) {n : String} {f0 f : Clif.Function}
     (hf0 : P0.func? n = some f0) (hf : (prog I).func? n = some f)
     (d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs0 : Clif.State}

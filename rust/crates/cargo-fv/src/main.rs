@@ -71,7 +71,7 @@ Executables run under qemu-aarch64-static. After a build the report is in target
   --midval            the mid-end validator (#1119), plain mode (with --lean-link only with --verified): a function
                       cg_clif optimised (opt_level not none in its dump's header, e.g. --release)
                       is compiled from Cranelift's optimised dump when lean-backend decides
-                      Opt.MidVal.checkCert on the pair and the theorem composes (an
+                      Opt.MidVal.checkCertC on the pair and the theorem composes (an
                       E2E.backend_correct_midval_* theorem, about the unoptimised .unopt.clif),
                       else from the .unopt.clif exactly as without it. The binary check stays:
                       link-check re-decides every pair (Link.midPairB) and names the theorem

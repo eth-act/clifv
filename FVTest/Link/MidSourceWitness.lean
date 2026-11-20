@@ -15,7 +15,7 @@ the source input (`I0`), `S1` the compiled one (`I1`), the callee at an outside 
 On the ABI-aware route `lean-link` names (`Stock.VoidCall.NI.lowerValidated`, the placement of
 `S1.cp`), `ReturnPinCompilerWith.attempt` writes the executable (`file0`: its placeholder by
 `Link.Ld.assemble`), `hcp` holds by `rfl`, `SrcScopeB S1.input0` holds, and `Link.midValidatedB`
-holds on the pair (what `lean-link --verified` decides), so `Opt.MidVal.Validated` by
+holds on the pair (what `lean-link --verified` decides), so `Opt.MidVal.ValidatedC` by
 `Link.midValidatedB_sound`: every premise `lean-link` decides for
 `ReturnPinCompilerWith.attempt_correct_sourceMid` is discharged, and its conclusion is about a run
 of the **unoptimised** program `S0.input0.srcProg` while the executable holds the optimised
@@ -69,7 +69,7 @@ theorem hcp : spec.funcs = S1.input0.funcs.map FnInput.cp := rfl
 the source and compiled functions differ. -/
 theorem parts : (∃ file, ReturnPinCompilerWith.attempt lower spec file0 true = .ok file) ∧
     SrcScopeB S1.input0 = true ∧
-    Opt.MidVal.Validated S0.input0.srcProg.funcs S1.input0.srcProg.funcs ∧
+    Opt.MidVal.ValidatedC S0.input0.srcProg.funcs S1.input0.srcProg.funcs ∧
     S0.input0.srcProg.func? name = some fSrc ∧ S1.input0.srcProg.func? name = some gOpt ∧
     fSrc ≠ gOpt := by
   have h := checks_true
@@ -82,7 +82,7 @@ theorem parts : (∃ file, ReturnPinCompilerWith.attempt lower spec file0 true =
   | ok file => exact ⟨file, rfl⟩
 
 /-- **`ReturnPinCompilerWith.attempt_correct_sourceMid` is not vacuous**: its compiler premises
-(the attempt succeeds, `SrcScopeB` of the compiled bundle's input, `hcp`, `Validated` of the
+(the attempt succeeds, `SrcScopeB` of the compiled bundle's input, `hcp`, `ValidatedC` of the
 pair) hold on the witness, where the executable holds the optimised function's code and the
 conclusion is the refinement of the executable for a return of the unoptimised function's run. -/
 theorem correct_sourceMid_applies : ∃ file, ReturnPinCompilerWith.attempt lower spec file0 true = .ok file ∧

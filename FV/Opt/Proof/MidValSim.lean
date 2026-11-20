@@ -4,7 +4,8 @@ import FV.Opt.Proof.MidValFStep
 import FV.Opt.Proof.MidValMatch
 import FV.Opt.Proof.MidValTermin
 import FV.Opt.Proof.SimWin
-import FV.Opt.Proof.MidValNormConst
+import FV.Opt.Proof.MidValNormAlg2
+import FV.Opt.Proof.MidValNormTyped
 
 /-!
 # Soundness of the mid-end validator (#1119, module (5))
@@ -13,7 +14,9 @@ import FV.Opt.Proof.MidValNormConst
 certificate accepts, `g` simulates `f` with the memory-aware simulation of
 `FV/Opt/Proof/SemSimM.lean`, so `Opt.runLoopX_refinesMU` gives the refinement of programs whose
 functions are related this way (`XOutcomeRefines`: same return values and final memory, same
-trap code, same exception). With a normaliser: `check_sound_norm` under `NormSound norm`.
+trap code, same exception). With a normaliser: `check_sound_norm` under `NormSound norm`, and
+`check_sound_normT` under the typed obligation `NormSoundT f norm` (the default normaliser
+`Norm.stdT f` meets it, `normSoundT_stdT`).
 The hoisting mode (`checkCertSyms`, `g` evaluating a `symbol_value`/`tls_value`/`func_addr` of
 `f` earlier): **`check_soundSyms : checkCertSyms f g cert = true → globalsResolve f syms = true →
 FunSimMUAt syms f g`**, the simulation at every symbol table where the function's global values
@@ -63,9 +66,9 @@ theorem removeOk_callIndirect {c : CC} {bi k : Nat} {st : Stmt} {S : List Fact} 
 variable (H : Hyp f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
   {syms : String → Option Nat}
 
-include H hrun in
 /-- A step of `f` at a statement (module doc). -/
-theorem step_cons {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem} {st : Stmt}
+theorem step_consT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
+    {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem} {st : Stmt}
     {rest : List Stmt} (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hm : m.symbols = syms) (hb : fr.body = st :: rest) :
     (∀ fr1 m1, lstep fr m = .next fr1 m1 →
@@ -97,19 +100,33 @@ theorem step_cons {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem} {st
     · refine ⟨fun fr2 m2 h2 => ?_, fun c' h2 => ?_, fun ext vals rs rest' h2 => ?_⟩ <;>
         (rw [hs] at h2; cases h2)
   by_cases hn : st.inst = .nop
-  · obtain ⟨hs, hR1⟩ := rel_nop H hR hb hn
+  · obtain ⟨hs, hR1⟩ := rel_nopT H hR hb hn
     exact fonly S (k + 1) (.inl ⟨_, hs, hR1⟩)
   by_cases hp : pureK st.inst = true
-  · rcases rel_pure H hR hm hb hn hp with ⟨fr1, S', hs, hR1⟩ | hst
+  · rcases rel_pureT H hR hm hb hn hp with ⟨fr1, S', hs, hR1⟩ | hst
     · exact fonly S' (k + 1) (.inl ⟨fr1, hs, hR1⟩)
     · exact fonly S (k + 1) (.inr hst)
   have hp' : pureK st.inst = false := by simpa using hp
   obtain ⟨fb, gb, Send, hfb, hgb, hw, he⟩ := hR.bodies
   rw [hb] at hw
   rcases walk_skel_spec hn hp' hw with ⟨t, ts, k'', hM, hw'⟩ | ⟨-, hrm, hw'⟩
-  · obtain ⟨h1, h2, h3, -⟩ := rel_matched H hrun hR hm hb hn hp' hM ⟨fb, gb, Send, hfb, hgb, hw', he⟩
+  · obtain ⟨h1, h2, h3, -⟩ := rel_matchedT H hrun hR hm hb hn hp' hM ⟨fb, gb, Send, hfb, hgb, hw', he⟩
     exact ⟨h1, h2, h3⟩
-  · exact fonly S (k + 1) (rel_remove H hR hm hb hn hp' hrm ⟨fb, gb, Send, hfb, hgb, hw', he⟩)
+  · exact fonly S (k + 1) (rel_removeT H hR hm hb hn hp' hrm ⟨fb, gb, Send, hfb, hgb, hw', he⟩)
+
+include H hrun in
+/-- A step of `f` at a statement (module doc). -/
+theorem step_cons {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem} {st : Stmt}
+    {rest : List Stmt} (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hm : m.symbols = syms) (hb : fr.body = st :: rest) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 →
+      ∃ fr1', LStar fr' m fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1) ∧
+    (∀ c', lstep fr m = .trap c' → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c') ∧
+    (∀ ext vals rs rest', lstep fr m = .call ext vals rs rest' →
+      ∃ fr2 rs' rest'', LStar fr' m fr2 m ∧ lstep fr2 m = .call ext vals rs' rest'' ∧
+        ContM syms (MR f g fi gi cert norm syms) { fr with body := rest' } rs
+          { fr2 with body := rest'' } rs' (AbiParam.tys ext.sig.returns)) := by
+  exact step_consT H.toT hrun hR hm hb
 
 /-- Related frames are at program points of their functions. -/
 theorem Rel.inB {syms : String → Option Nat} {bi k k' : Nat} {S : List Fact} {fr fr' : Frame}
@@ -147,9 +164,9 @@ theorem ContM.win {syms : String → Option Nat} {fr fr2 : Frame} {st st' : Stmt
   rw [setMany_above hs (stmt_results_lt hI hb), setMany_above hs' (stmt_results_lt hI2 hb2)]
   exact hw i
 
-include H hrun in
-/-- **The relation is a memory-aware simulation.** -/
-theorem isSimMU (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cert norm syms) where
+/-- **The relation is a memory-aware simulation** (`HypT`). -/
+theorem isSimMUT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
+    (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cert norm syms) where
   toIsSimM :=
     { frame := by
         rintro fr fr' m ⟨⟨bi, k, k', S, hR⟩, -⟩
@@ -160,14 +177,14 @@ theorem isSimMU (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cer
         obtain ⟨hI, hI'⟩ := hR.inB
         obtain ⟨fr1', hst, hr1⟩ : ∃ fr1', LStar fr' m fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1 := by
           cases hb : fr.body with
-          | nil => exact (rel_term H hrun hR hm hb).1 fr1 m1 hs
-          | cons st rest => exact (step_cons H hrun hR hm hb).1 fr1 m1 hs
+          | nil => exact (rel_termT H hrun hR hm hb).1 fr1 m1 hs
+          | cons st rest => exact (step_consT H hrun hR hm hb).1 fr1 m1 hs
         exact ⟨fr1', hst, hr1, Win.next hI hI' hw hs hst⟩
       call := by
         rintro fr fr' m ext vals rs rest ⟨⟨bi, k, k', S, hR⟩, hw⟩ hm hs
         obtain ⟨hI, hI'⟩ := hR.inB
         obtain ⟨st, fn, args, hb, -, hrs, -⟩ := lstep_call_inv hs
-        obtain ⟨fr2, rs', rest', hst, hs2, hk⟩ := (step_cons H hrun hR hm hb).2.2 ext vals rs rest hs
+        obtain ⟨fr2, rs', rest', hst, hs2, hk⟩ := (step_consT H hrun hR hm hb).2.2 ext vals rs rest hs
         obtain ⟨st', fn', args', hb2, -, hrs', -⟩ := lstep_call_inv hs2
         obtain ⟨hI2, hf2, hw2⟩ := LStar.win hI' hst
         have hw' : Win fr fr2 := fun i => by rw [hf2, hw2 i]; exact hw i
@@ -175,15 +192,15 @@ theorem isSimMU (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cer
         exact ⟨fr2, st'.results, rest', hst, hs2, ContM.win hI hI2 hw' hb hb2 hk⟩
       ret := by
         rintro fr fr' m vals ⟨⟨bi, k, k', S, hR⟩, -⟩ hm hs
-        exact (rel_term H hrun hR hm (lstep_ret_inv hs)).2.1 vals hs
+        exact (rel_termT H hrun hR hm (lstep_ret_inv hs)).2.1 vals hs
       tail := by
         rintro fr fr' m ext vals ⟨⟨bi, k, k', S, hR⟩, -⟩ hm hs
-        exact (rel_term H hrun hR hm (lstep_tail_inv hs)).2.2.1 ext vals hs
+        exact (rel_termT H hrun hR hm (lstep_tail_inv hs)).2.2.1 ext vals hs
       trap := by
         rintro fr fr' m c' ⟨⟨bi, k, k', S, hR⟩, -⟩ hm hs
         cases hb : fr.body with
-        | nil => exact (rel_term H hrun hR hm hb).2.2.2 c' hs
-        | cons st rest => exact (step_cons H hrun hR hm hb).2.1 c' hs }
+        | nil => exact (rel_termT H hrun hR hm hb).2.2.2 c' hs
+        | cons st rest => exact (step_consT H hrun hR hm hb).2.1 c' hs }
   ci := by
     rintro fr fr' m st rest sig callee args d a vals ⟨⟨bi, k, k', S, hR⟩, hw⟩ hm hb hst hca
     obtain ⟨hI, hI'⟩ := hR.inB
@@ -193,7 +210,7 @@ theorem isSimMU (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cer
     rw [hb] at hw0
     rcases walk_skel_spec hn hp hw0 with ⟨t, ts, k'', hM, hw'⟩ | ⟨-, hrm, -⟩
     · obtain ⟨fr2, st', rest', sig', callee', args', hst2, hb2, hi2, hca2, hk⟩ :=
-        (rel_matched H hrun hR hm hb hn hp hM ⟨fb, gb, Send, hfb, hgb, hw', he⟩).2.2.2
+        (rel_matchedT H hrun hR hm hb hn hp hM ⟨fb, gb, Send, hfb, hgb, hw', he⟩).2.2.2
           sig callee args d a vals hst hca
       obtain ⟨hI2, hf2, hw2⟩ := LStar.win hI' hst2
       have hw' : Win fr fr2 := fun i => by rw [hf2, hw2 i]; exact hw i
@@ -201,11 +218,18 @@ theorem isSimMU (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cer
         ContM.win hI hI2 hw' hb hb2 hk⟩
     · rw [removeOk_callIndirect hst] at hrm
       cases hrm
-  tc := rel_try H hrun
+  tc := rel_tryT H hrun
+
+include H hrun in
+/-- **The relation is a memory-aware simulation.** -/
+theorem isSimMU (syms : String → Option Nat) : IsSimMU syms (MRW f g fi gi cert norm syms) where
+  toIsSimM := (isSimMUT H.toT hrun syms).toIsSimM
+  ci := (isSimMUT H.toT hrun syms).ci
+  tc := (isSimMUT H.toT hrun syms).tc
 
 /-- The entry frames are related (`MRW`) at every memory with the symbols `syms` where the entry
 block's facts hold in `f`'s entry frame. -/
-theorem entry_rel (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
+theorem entry_relT (H : HypT f g fi gi cert norm) {syms : String → Option Nat}
     (h0 : ∀ (fr : Frame) (m : Mem), fr.func = f →
       ∀ F ∈ (ccOf fi gi cert norm).factsAt 0, FactHolds f cert syms fr m F)
     {b : Block} (hb : f.entry? = some b) :
@@ -226,7 +250,7 @@ theorem entry_rel (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
     rw [List.head?_eq_getElem?, List.head?_eq_getElem?, hb0, hb0'] at this
     simpa using this
   refine ⟨b', hb', hp, fun args regs slots m hty hr hsl _ =>
-    ⟨⟨0, 0, 0, _, rel_entry H hb hb' hp m hty hr hsl (h0 _ m rfl)⟩, fun i => ?_⟩⟩
+    ⟨⟨0, 0, 0, _, rel_entryT H hb hb' hp m hty hr hsl (h0 _ m rfl)⟩, fun i => ?_⟩⟩
   -- both windows are empty at entry: the parameters are below each function's fresh value
   have hbm : b ∈ f.blocks := List.mem_of_getElem? hb0
   have hbm' : b' ∈ g.blocks := List.mem_of_getElem? hb0'
@@ -240,40 +264,67 @@ theorem entry_rel (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
       exact (lt_freshValue hbm').1 p hp') i]
   rfl
 
+/-- The entry frames are related (`MRW`) at every memory with the symbols `syms` where the entry
+block's facts hold in `f`'s entry frame. -/
+theorem entry_rel (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
+    (h0 : ∀ (fr : Frame) (m : Mem), fr.func = f →
+      ∀ F ∈ (ccOf fi gi cert norm).factsAt 0, FactHolds f cert syms fr m F)
+    {b : Block} (hb : f.entry? = some b) :
+    ∃ b', g.entry? = some b' ∧ b'.params = b.params ∧
+      ∀ args regs (slots : List (SlotId × Nat)) (m : Mem),
+        args.map (·.ty) = b.params.map (·.2) →
+        Regs.empty.setMany (b.params.map (·.1)) args = some regs →
+        slots.map (·.1) = f.slots.map (·.1) → m.symbols = syms →
+        MRW f g fi gi cert norm syms ⟨f, regs, slots, b.body, b.term⟩
+          ⟨g, regs, slots, b'.body, b'.term⟩ m := by
+  exact entry_relT H.toT h0 hb
+
 end
+
+/-- **Soundness of the mid-end validator, with a normaliser sound under typing.** -/
+theorem check_sound_normT {f g : Function} {cert : Cert} {norm : Norm}
+    (h : checkCert f g cert norm = true) (hN : NormSoundT f norm) : FunSimMU f g := by
+  obtain ⟨fi, gi, hf, hg, hok, h0⟩ := checkCert_spec h
+  have H : HypT f g fi gi cert norm := ⟨hf, hg, hok, hN⟩
+  exact ⟨hok.name, hok.sig, hok.slots, hok.externs, fun syms =>
+    ⟨MRW f g fi gi cert norm syms, isSimMUT H (gPre_runT H) syms, fun b hb =>
+      entry_relT H (fun _ _ _ F hF => by rw [h0] at hF; cases hF) hb⟩⟩
+
+/-- **Soundness of the hoisting mode, with a normaliser sound under typing**: at every symbol
+table where the function's global values resolve. -/
+theorem check_soundSyms_normT {f g : Function} {cert : Cert} {norm : Norm}
+    (h : checkCertSyms f g cert norm = true) (hN : NormSoundT f norm) {syms : String → Option Nat}
+    (hres : globalsResolve f syms = true) : FunSimMUAt syms f g := by
+  obtain ⟨fi, gi, hf, hg, hok, -⟩ := checkCertWith_spec h
+  have H : HypT f g fi gi cert norm := ⟨hf, hg, hok, hN⟩
+  exact ⟨hok.name, hok.sig, hok.slots, hok.externs,
+    ⟨MRW f g fi gi cert norm syms, isSimMUT H (gPre_runT H) syms, fun b hb =>
+      entry_relT H (fun fr m hfr => entry_facts_holdT H hres hfr m) hb⟩⟩
 
 /-- **Soundness of the mid-end validator, with a normaliser.** -/
 theorem check_sound_norm {f g : Function} {cert : Cert} {norm : Norm}
     (h : checkCert f g cert norm = true) (hN : NormSound norm) : FunSimMU f g := by
-  obtain ⟨fi, gi, hf, hg, hok, h0⟩ := checkCert_spec h
-  have H : Hyp f g fi gi cert norm := ⟨hf, hg, hok, hN⟩
-  exact ⟨hok.name, hok.sig, hok.slots, hok.externs, fun syms =>
-    ⟨MRW f g fi gi cert norm syms, isSimMU H (gPre_run H) syms, fun b hb =>
-      entry_rel H (fun _ _ _ F hF => by rw [h0] at hF; cases hF) hb⟩⟩
+  exact check_sound_normT h hN.toT
 
 /-- **Soundness of the hoisting mode, with a normaliser**: at every symbol table where the
 function's global values resolve. -/
 theorem check_soundSyms_norm {f g : Function} {cert : Cert} {norm : Norm}
     (h : checkCertSyms f g cert norm = true) (hN : NormSound norm) {syms : String → Option Nat}
     (hres : globalsResolve f syms = true) : FunSimMUAt syms f g := by
-  obtain ⟨fi, gi, hf, hg, hok, -⟩ := checkCertWith_spec h
-  have H : Hyp f g fi gi cert norm := ⟨hf, hg, hok, hN⟩
-  exact ⟨hok.name, hok.sig, hok.slots, hok.externs,
-    ⟨MRW f g fi gi cert norm syms, isSimMU H (gPre_run H) syms, fun b hb =>
-      entry_rel H (fun fr m hfr => entry_facts_hold H hres hfr m) hb⟩⟩
+  exact check_soundSyms_normT h hN.toT hres
 
-/-- **Soundness of the mid-end validator** (with its default normaliser `Norm.std`, constant
-evaluation, `normSound_std`): if `checkCert` accepts the certificate, `g` simulates `f`
-(`FunSimMU`). -/
+/-- **Soundness of the mid-end validator** (with its default normaliser `Norm.stdT f`: constant
+evaluation, the single-node algebraic rules and the typed rules, `normSoundT_stdT`): if
+`checkCert` accepts the certificate, `g` simulates `f` (`FunSimMU`). -/
 theorem check_sound {f g : Function} {cert : Cert} (h : checkCert f g cert = true) :
     FunSimMU f g :=
-  check_sound_norm h normSound_std
+  check_sound_normT h normSoundT_stdT
 
-/-- **Soundness of the hoisting mode** (default normaliser `Norm.std`): if `checkCertSyms`
+/-- **Soundness of the hoisting mode** (default normaliser `Norm.stdT f`): if `checkCertSyms`
 accepts the certificate, `g` simulates `f` at every symbol table where `f`'s global values
 resolve (`FunSimMUAt`). -/
 theorem check_soundSyms {f g : Function} {cert : Cert} (h : checkCertSyms f g cert = true)
     {syms : String → Option Nat} (hres : globalsResolve f syms = true) : FunSimMUAt syms f g :=
-  check_soundSyms_norm h normSound_std hres
+  check_soundSyms_normT h normSoundT_stdT hres
 
 end Opt.MidVal

@@ -1,0 +1,95 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC6semver12H5cWTS75JJES
+function u0:50(i64, i8) -> i8 uext system_v {
+; symbol _RNxC6semver12H5cWTS75JJES
+; instance Instance { def: Item(DefId(0:198 ~ semver[7360]::impls::{impl#8}::cmp::{closure#0})), args: [i8, Binder { value: extern "RustCall" fn((u8,)) -> bool, bound_vars: [] }, ()] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &{closure@src/impls.rs:121:34: 121:41}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: u8, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 71776127651151873 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    bool                              1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) bool
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} Closure(DefId(0:198 ~ semver[7360]::impls::{impl#8}::cmp::{closure#0}), [i8, Binder { value: extern "RustCall" fn((u8,)) -> bool, bound_vars: [] }, ()])
+; arg   _2      = v1       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u8
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} Closure(DefId(0:198 ~ semver[7360]::impls::{impl#8}::cmp::{closure#0}), [i8, Binder { value: extern "RustCall" fn((u8,)) -> bool, bound_vars: [] }, ()])    8b 8                var=2
+; ssa   _2    u8                                1b 1                var=3
+; ssa   _3    bool                              1b 1                var=4
+
+block0(v0: i64, v1: i8):
+    v3 -> v1
+    v7 -> v1
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} Closure(DefId(0:198 ~ semver[7360]::impls::{impl#8}::cmp::{closure#0}), [i8, Binder { value: extern "RustCall" fn((u8,)) -> bool, bound_vars: [] }, ()]) <- ByVal(v0): &'{erased} Closure(DefId(0:198 ~ semver[7360]::impls::{impl#8}::cmp::{closure#0}), [i8, Binder { value: extern "RustCall" fn((u8,)) -> bool, bound_vars: [] }, ()])
+; write_cvalue: Var(_2, var3): u8 <- ByVal(v1): u8
+    jump block1
+
+block1:
+    nop 
+; _3 = Le(const 48_u8, copy _2)
+    v2 = iconst.i8 48
+    v4 = icmp ule v2, v3  ; v2 = 48
+; write_cvalue: Var(_3, var4): bool <- ByVal(v4): bool
+; 
+; switchInt(move _3)
+    brif v4, block4, block3
+
+block2:
+    v10 = iconst.i8 0
+    v5 -> v10
+    nop 
+; 
+; return
+    return v5  ; v5 = 0
+
+block3:
+    nop 
+; _0 = const false
+    v6 = iconst.i8 0
+; write_cvalue: Var(_0, var1): bool <- ByVal(v6): bool
+; 
+; goto
+    return v6  ; v6 = 0
+
+block4:
+    nop 
+; _0 = Le(copy _2, const 57_u8)
+    v8 = iconst.i8 57
+    v9 = icmp.i8 ule v7, v8  ; v8 = 57
+; write_cvalue: Var(_0, var1): bool <- ByVal(v9): bool
+; 
+; goto
+    return v9
+}
+
+; clifv-extnames 1
+; decl u0:50 func local "_RNxC6semver12H5cWTS75JJES"
+; end clifv-extnames

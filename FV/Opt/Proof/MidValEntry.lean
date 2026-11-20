@@ -42,8 +42,8 @@ theorem entry_paramM {f : Function} {W : WfData} (hW : WfM f W) {v : ValueId} (h
 
 /-- **Function entry**, given that the entry block's facts hold in the entry frame (none for
 `checkCert`; the hoisting mode's under `globalsResolve`, `entry_facts_hold`). -/
-theorem rel_entry {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
-    (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {b b' : Block}
+theorem rel_entryT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : HypT f g fi gi cert norm) {syms : String → Option Nat} {b b' : Block}
     (hb : f.entry? = some b) (hb' : g.entry? = some b') (hp : b'.params = b.params)
     {args : List Val} {regs : Regs} {slots : List (SlotId × Nat)} (m : Mem)
     (hty : args.map (·.ty) = b.params.map (·.2))
@@ -90,6 +90,21 @@ theorem rel_entry {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
     | mem => simp [CC.hoistFact] at he
     | eqn => simp [CC.hoistFact] at he
 
+/-- **Function entry**, given that the entry block's facts hold in the entry frame (none for
+`checkCert`; the hoisting mode's under `globalsResolve`, `entry_facts_hold`). -/
+theorem rel_entry {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : Hyp f g fi gi cert norm) {syms : String → Option Nat} {b b' : Block}
+    (hb : f.entry? = some b) (hb' : g.entry? = some b') (hp : b'.params = b.params)
+    {args : List Val} {regs : Regs} {slots : List (SlotId × Nat)} (m : Mem)
+    (hty : args.map (·.ty) = b.params.map (·.2))
+    (hr : Regs.empty.setMany (b.params.map (·.1)) args = some regs)
+    (hsl : slots.map (·.1) = f.slots.map (·.1))
+    (h0 : ∀ F ∈ (ccOf fi gi cert norm).factsAt 0,
+      FactHolds f cert syms ⟨f, regs, slots, b.body, b.term⟩ m F) :
+    Rel f g fi gi cert norm syms 0 0 0 ((ccOf fi gi cert norm).factsAt 0)
+      ⟨f, regs, slots, b.body, b.term⟩ ⟨g, regs, slots, b'.body, b'.term⟩ m := by
+  exact rel_entryT H.toT hb hb' hp m hty hr hsl h0
+
 /-- A `symbol_value`, `tls_value` or `func_addr` that resolves evaluates (to one value, keeping
 memory). -/
 theorem evalInst_partial_resolves {f : Function} {syms : String → Option Nat} {fr : Frame}
@@ -121,8 +136,8 @@ theorem evalInst_partial_resolves {f : Function} {syms : String → Option Nat} 
 /-- **The hoisting mode's entry facts hold** when the function's global values resolve: each is
 a `symbol_value`, `tls_value` or `func_addr` of `f` (`hoistFact`), a node without operands, which
 evaluates in every frame of `f`. -/
-theorem entry_facts_hold {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
-    (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
+theorem entry_facts_holdT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : HypT f g fi gi cert norm) {syms : String → Option Nat}
     (hres : globalsResolve f syms = true) {fr : Frame} (hf : fr.func = f) (m : Mem) :
     ∀ F ∈ (ccOf fi gi cert norm).factsAt 0, FactHolds f cert syms fr m F := by
   intro F hF
@@ -149,5 +164,14 @@ theorem entry_facts_hold {f g : Function} {fi gi : Info} {cert : Cert} {norm : N
       rw [tmVal_node hi (by simp [hops])]
       simp only [evalNode, hv, Option.isSome_some]
     · cases he
+
+/-- **The hoisting mode's entry facts hold** when the function's global values resolve: each is
+a `symbol_value`, `tls_value` or `func_addr` of `f` (`hoistFact`), a node without operands, which
+evaluates in every frame of `f`. -/
+theorem entry_facts_hold {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : Hyp f g fi gi cert norm) {syms : String → Option Nat}
+    (hres : globalsResolve f syms = true) {fr : Frame} (hf : fr.func = f) (m : Mem) :
+    ∀ F ∈ (ccOf fi gi cert norm).factsAt 0, FactHolds f cert syms fr m F := by
+  exact entry_facts_holdT H.toT hres hf m
 
 end Opt.MidVal

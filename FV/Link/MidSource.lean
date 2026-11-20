@@ -9,8 +9,8 @@ With `--midval-opt`, `lean-link` compiles Cranelift's optimised function `g` (cg
 validator accepts it, and every other function unchanged. The routes' executable theorems are
 stated about the source program of the **compiled** inputs `I1.srcProg`; this file carries them to
 the bundle's source program `I0.srcProg` when the two programs' functions are related by
-`Opt.MidVal.Validated` (the same function, or a `g` with `checkCert (ConstPhi.run f) g cert`
-decided).
+`Opt.MidVal.ValidatedC` (the same function, or a `g` with `checkCertC (ConstPhi.run f) g cert
+hints` decided).
 
 * `midEntry_srMU`: `E2E.midval_sr` from a memory-aware function simulation `Opt.FunSimMU f g`;
 * `validated_find`: the function of the validated program with the source function's name, and
@@ -54,17 +54,17 @@ theorem midEntry_srMU {f g : Clif.Function} (hsim : Opt.FunSimMU f g)
     rw [hcs.callers]; exact .nil _
 
 /-- The function of a validated list with a source function's name, simulating it. -/
-theorem validated_find {fs gs : List Clif.Function} (hv : Opt.MidVal.Validated fs gs) {n : String}
+theorem validated_find {fs gs : List Clif.Function} (hv : Opt.MidVal.ValidatedC fs gs) {n : String}
     {f : Clif.Function} (hf : fs.find? (·.name == n) = some f) :
     ∃ g, gs.find? (·.name == n) = some g ∧ Opt.FunSimMU f g :=
   (hv.funsSimMU.findP (· == n)).1 f hf
 
 /-- **The bundle's program refines through the mid-end validator**: for inputs `I0` (the
-bundle's) and `I1` whose source programs' functions are validated (`Opt.MidVal.Validated`), a run
+bundle's) and `I1` whose source programs' functions are validated (`Opt.MidVal.ValidatedC`), a run
 of `I0`'s source program from `f`'s entry `cs` that returns is a return of `I1`'s source program
 from the entry `midEntry g cs` of its function `g` named `f`'s name, on the same arguments, with
 the same slots, memory, results and final memory; a trap is the same trap. -/
-theorem midSource {I0 I1 : LinkInput} (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+theorem midSource {I0 I1 : LinkInput} (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     {B : Clif.Env} (hkeep : Opt.EnvKeepsSymbols B) {n : String} {f g : Clif.Function}
     (hf : I0.srcProg.func? n = some f) (hg : I1.srcProg.func? n = some g)
     {args : List Clif.Val} {cs : Clif.State} (hcs : ClifEntry f args cs) (M : Nat) :
@@ -88,7 +88,7 @@ theorem midSource {I0 I1 : LinkInput} (hv : Opt.MidVal.Validated I0.srcProg.func
 depth at most `d` (`Clif.DepthLe`) and returns (traps), so has the run of `I1`'s source program
 from `midEntry g cs`. -/
 theorem midSource_depth {I0 I1 : LinkInput}
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     {B : Clif.Env} (hkeep : Opt.EnvKeepsSymbols B) {n : String} {f g : Clif.Function}
     (hf : I0.srcProg.func? n = some f) (hg : I1.srcProg.func? n = some g)
     {args : List Clif.Val} {cs : Clif.State} (hcs : ClifEntry f args cs)

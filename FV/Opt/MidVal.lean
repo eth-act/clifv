@@ -42,8 +42,14 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   different versions a new version (`merge b`) starts. Explicit traps keep the version. Removed
   stores of `f` are idempotent (memory unchanged), so `g`'s versions are `f`'s memory states.
 
-* **Constant evaluation** (stage 2, the default normaliser `Norm.std` = `evalConst`): a pure
-  node whose operands are all constants is the constant `Clif.evalInst` gives it, on both sides.
+* **Normalisation** (stage 2, the default normaliser `Norm.stdT f`), on both sides: constant
+  evaluation (`evalConst`: a pure node whose operands are all constants is the constant
+  `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg2`: `icmp` canonical
+  forms, `isub 0 x`, `imul x 2`/`ishl x 1`, `bmask` of an `icmp`, `bxor x -1`; `Norm.alg`:
+  `select` of an `icmp` with constant arms 1/0, `imul` by a power of two, `iadd` of a
+  `stack_addr` and a constant, `ireduce` of an extension of a typed node), then the typed rules
+  (`typedStep`: `select` of an integer term with constant arms 1/0, `ireduce` of an extension of
+  an atom), which read an atom's static type in `f` (`atomTy`).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -426,6 +432,20 @@ abbrev Norm := Array Tm → Inst → Option Tm
 /-- The identity normaliser (stage 1: no rewrite). -/
 def Norm.id : Norm := fun _ _ => none
 
+/-- One wrapper of a branch condition (family 3, #1119): `icmp cc ty y 0` (`zl = false`) or
+`icmp cc ty 0 y` (`zl = true`) with `0` the constant of type `ty`, or `extend op ty y`. Around
+`g`'s condition `y`, a chain of them rebuilds `f`'s (`condPrep`, `FV/Opt/MidValCond.lean`). -/
+inductive Wrap where
+  | icmp (cc : IntCC) (ty : Ty) (zl : Bool)
+  | ext (op : ExtendOp) (ty : Ty)
+  deriving DecidableEq, Repr, Inhabited
+
+/-- The wrappers that keep a condition's truth (`Sem.truthy`) whenever they evaluate:
+`y != 0`, `0 != y`, `y >u 0`, `0 <u y`, and the extensions. -/
+def Wrap.ok : Wrap → Bool
+  | .icmp .ne _ _ | .icmp .ugt _ false | .icmp .ult _ true | .ext .. => true
+  | _ => false
+
 structure St where
   tms : Array Tm := #[]
   ids : Std.HashMap Tm Nat := {}
@@ -449,6 +469,14 @@ structure St where
   usedMerge : Std.HashSet Nat := {}
   usedPart : Std.HashSet Nat := {}
   usedHoist : Std.HashSet Nat := {}
+  /-- Family 3 (`checkRun … (cond := true)`): a `brif` of `f` whose condition is `g`'s under
+  truth-keeping wrappers (`condChain`) is not a rejection; the block's wrapper chain (innermost
+  first) is recorded in `conds` (the hints of `condPrep`). -/
+  cond : Bool := false
+  conds : Array (BlockId × List Wrap) := #[]
+  /-- The static type of an atom (`atomTy f`): the checker interns the terms `selTyped` looks
+  up (`internSelAux`). -/
+  aty : Tm → Option Ty := fun _ => none
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -482,11 +510,352 @@ def evalConst : Norm := fun tms i =>
       | .ok ([v], _) => some (.node (.iconst v.ty v.bits))
       | _ => none
 
-/-- **The validator's default normaliser** (the default `norm` of `check`, `emit`, `checkCert`,
-`checkCertSyms`): constant evaluation (`evalConst`), proved sound (`normSound_std`). -/
-def Norm.std : Norm := evalConst
+/-! ## Stage 2, family 2: single-node algebraic rules
 
-def intern (t : Tm) : M Nat := do
+A rule maps a node (term operands) to a node over existing terms that has the same value under
+`Clif.evalInst` in every frame (`algStep`). A rule may name a term other than the node's
+operands (`findTm`: the first id of that term, whose operands are earlier); the checker interns
+such terms first (`auxTms`). It reads the structure of an operand only through `nodeAt` (a node
+whose operands are earlier) and `constAt` (a constant of a given type). `Norm.guard` keeps a
+result only when every occurrence of it in the table has its operands earlier (what the term
+values need); the checker's table is hash-consed and grows by appending, so this holds for every
+result it interns. -/
+
+/-- The operand ids of a term (a node's operands; none for an atom). -/
+def Tm.ops : Tm → List Nat
+  | .node i => operands i
+  | _ => []
+
+/-- The first id of term `x` in the table, if `x`'s operands are earlier. -/
+def findTm (tms : Array Tm) (x : Tm) : Option Nat :=
+  ((List.range tms.size).find? fun a => tms[a]? == some x).bind fun a =>
+    if x.ops.all (· < a) then some a else none
+
+/-- Every occurrence of `x` in the table has its operands earlier. -/
+def ordered (tms : Array Tm) (x : Tm) : Bool :=
+  (List.range tms.size).all fun t => tms[t]? != some x || x.ops.all (· < t)
+
+/-- A normaliser's result, kept only if `ordered`. -/
+def Norm.guard (n : Norm) : Norm := fun tms i =>
+  match n tms i with
+  | some x => if ordered tms x then some x else none
+  | none => none
+
+/-- The instruction of term `c`, if it is a node whose operands are earlier. -/
+def nodeAt (tms : Array Tm) (c : Nat) : Option Inst :=
+  match tms[c]? with
+  | some (.node j) => if (operands j).all (· < c) then some j else none
+  | _ => none
+
+/-- The bits of term `o`, if it is a constant of type `ty`. -/
+def constAt (tms : Array Tm) (ty : Ty) (o : Nat) : Option (BitVec ty.width) :=
+  (constOf tms o).bind (·.as? ty)
+
+/-- Family 3: the wrappers (outermost first) that make `f`'s condition term `a` out of `g`'s
+`b`, each `Wrap.ok` with its constant `0`; `fuel` bounds the descent (operands are earlier). -/
+def condChain (tms : Array Tm) : Nat → Nat → Nat → Option (List Wrap)
+  | 0, a, b => if a == b then some [] else none
+  | fuel + 1, a, b =>
+    if a == b then some [] else
+    match nodeAt tms a with
+    | some (.icmp cc ty x y) =>
+      if (Wrap.icmp cc ty false).ok && constAt tms ty y == some 0 then
+        (condChain tms fuel x b).map (.icmp cc ty false :: ·)
+      else if (Wrap.icmp cc ty true).ok && constAt tms ty x == some 0 then
+        (condChain tms fuel y b).map (.icmp cc ty true :: ·)
+      else none
+    | some (.extend op ty c) => (condChain tms fuel c b).map (.ext op ty :: ·)
+    | _ => none
+
+/-- The comparison with the opposite outcome. -/
+def IntCC.inv : IntCC → IntCC
+  | .eq => .ne | .ne => .eq | .slt => .sge | .sge => .slt | .sgt => .sle | .sle => .sgt
+  | .ult => .uge | .uge => .ult | .ugt => .ule | .ule => .ugt
+
+/-- `k` with `2 ^ k = v`, `0 < k`. -/
+def pow2Log (v : Nat) : Option Nat :=
+  if 0 < Nat.log2 v && 2 ^ Nat.log2 v == v then some (Nat.log2 v) else none
+
+/-- The comparison term a `select ty c vx vy` of an `icmp` `c` stands for: `c` itself when
+`(vx, vy) = (1, 0)`, the inverted comparison (if interned) when `(0, 1)`. -/
+def selPick (tms : Array Tm) (c : Nat) (cc : IntCC) (cty : Ty) (a b : Nat) {w : Nat}
+    (vx vy : BitVec w) : Option Nat :=
+  if vx == 1 && vy == 0 then some c
+  else if vx == 0 && vy == 1 then findTm tms (.node (.icmp (IntCC.inv cc) cty a b)) else none
+
+/-- An `i8` comparison term `n` at type `ty`: itself at `i8`, `uextend ty n` at a wider type. -/
+def selWrap (tms : Array Tm) (ty : Ty) (n : Nat) : Option Tm :=
+  if ty == .i8 then tms[n]? else if 8 < ty.width then some (.node (.extend .uextend ty n)) else none
+
+/-- `select ty c 1 0` with `c` an `icmp` (an `i8` 0/1): `c` itself at `i8`, `uextend ty c` at a
+wider type; `select ty c 0 1`: the same of the inverted `icmp` (Cranelift 0.135.0's
+`select`-of-`icmp` rules, `opts/selects.isle`/`icmp.isle`). -/
+def selIcmp (tms : Array Tm) (ty : Ty) (c x y : Nat) : Option Tm :=
+  match nodeAt tms c with
+  | some (.icmp cc cty a b) =>
+    match constAt tms ty x, constAt tms ty y with
+    | some vx, some vy => (selPick tms c cc cty a b vx vy).bind (selWrap tms ty)
+    | _, _ => none
+  | _ => none
+
+/-- `imul ty x c` with `c` the constant `2^k` of type `ty`, `0 < k < width`: `ishl ty x k`, the
+amount a constant of type `ty` (Cranelift's `imul`-by-power-of-two rule, `opts/arithmetic.isle`). -/
+def mulPow2 (tms : Array Tm) (ty : Ty) (x c : Nat) : Option Tm :=
+  match constAt tms ty c with
+  | some b => match pow2Log b.toNat with
+    | some k =>
+      if k < ty.width then
+        (findTm tms (.node (.iconst ty (BitVec.ofNat ty.width k)))).map fun kc =>
+          .node (.binary .ishl ty x kc)
+      else none
+    | none => none
+  | none => none
+
+/-- `iadd ty s c` with `s` a `stack_addr ty slot off` and `c` a constant of type `ty`:
+`stack_addr ty slot (off + c)`, `c` read as signed (Cranelift's `stack_addr` offset folding). -/
+def addStack (tms : Array Tm) (ty : Ty) (s c : Nat) : Option Tm :=
+  match nodeAt tms s, constAt tms ty c with
+  | some (.stackAddr ty' slot off), some b =>
+    if ty' == ty then some (.node (.stackAddr ty slot (off + b.toInt))) else none
+  | _, _ => none
+
+/-- The result type of a node, whenever it evaluates (`Inst.resultTypes` of a pure node). -/
+def nodeTy : Inst → Option Ty
+  | .iconst ty _ | .unary _ ty _ | .binary _ ty _ _ | .select ty .. | .bmask ty _
+  | .extend _ ty _ | .ireduce ty _ | .bitcast ty .. => some ty
+  | .icmp .. => some .i8
+  | _ => none
+
+/-- `ireduce ty (extend op uty x)` with `x` a node of type `xt`, `xt` and `ty` narrower than
+`uty`: `x` when `xt = ty`, `extend op ty x` when `xt` is narrower than `ty`, `ireduce ty x` when
+wider (Cranelift's `ireduce`-of-extend rules, `opts/extends.isle`). `x` must be a node: the type
+of an atom is not in the table, and the rewrite is false for an operand of another width. -/
+def redExt (tms : Array Tm) (ty : Ty) (u : Nat) : Option Tm :=
+  match nodeAt tms u with
+  | some (.extend op uty x) =>
+    match nodeAt tms x with
+    | some j =>
+      match nodeTy j with
+      | some xt =>
+        if xt.width < uty.width && ty.width < uty.width then
+          if xt == ty then some (.node j)
+          else if xt.width < ty.width then some (.node (.extend op ty x))
+          else if ty.width < xt.width then some (.node (.ireduce ty x))
+          else none
+        else none
+      | none => none
+    | none => none
+  | _ => none
+
+/-- The single-node rules (unguarded; `Norm.alg` guards them). -/
+def algStep (tms : Array Tm) : Inst → Option Tm
+  | .select ty c x y => selIcmp tms ty c x y
+  | .binary .imul ty x y => (mulPow2 tms ty x y).orElse fun _ => mulPow2 tms ty y x
+  | .binary .iadd ty x y => (addStack tms ty x y).orElse fun _ => addStack tms ty y x
+  | .ireduce ty u => redExt tms ty u
+  | _ => none
+
+/-! ### Family 2, second set: comparisons, negation, doubling, masks
+
+Cranelift's canonical forms of `icmp` (constant on the right; `ult x 1` is `eq x 0`; an `icmp`
+compared with `0`/`1` is itself or its inversion), `isub 0 x = ineg x`, `imul x 2 = iadd x x`
+(and `ishl x 1`, so that `g`'s shift by one meets it),
+`bmask` of an `icmp` is its negation, `bxor x -1 = bnot x`. Like the first set, each result has
+the node's value under `Clif.evalInst` in every frame. -/
+
+/-- The comparison with its operands swapped. -/
+def IntCC.swap : IntCC → IntCC
+  | .eq => .eq | .ne => .ne | .slt => .sgt | .sgt => .slt | .sle => .sge | .sge => .sle
+  | .ult => .ugt | .ugt => .ult | .ule => .uge | .uge => .ule
+
+/-- `icmp cc ty a b` with `a` a constant and `b` not: `icmp (swap cc) ty b a`. -/
+def icmpSwap (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) : Option Tm :=
+  match constOf tms a, constOf tms b with
+  | some _, none => some (.node (.icmp (IntCC.swap cc) ty b a))
+  | _, _ => none
+
+/-- The `icmp` a term `u` of type `ty` is a 0/1 copy of: `u` itself (an `icmp`, `ty = i8`), or
+the operand of `uextend ty c` with `c` an `icmp` and `ty` wider than `i8`. -/
+def boolAt (tms : Array Tm) (ty : Ty) (u : Nat) : Option Inst :=
+  match nodeAt tms u with
+  | some (.icmp cc cty a b) => if ty == .i8 then some (.icmp cc cty a b) else none
+  | some (.extend .uextend ty' c) =>
+    if ty' == ty && 8 < ty.width then
+      match nodeAt tms c with
+      | some (.icmp cc cty a b) => some (.icmp cc cty a b)
+      | _ => none
+    else none
+  | _ => none
+
+/-- `icmp eq/ne ty u k` with `u` a 0/1 copy of an `icmp` (`boolAt`) and `k` the constant `0` or
+`1` of type `ty`: that `icmp` (`eq 1`, `ne 0`) or its inversion (`eq 0`, `ne 1`). -/
+def icmpBool (tms : Array Tm) (cc : IntCC) (ty : Ty) (u k : Nat) : Option Tm :=
+  match boolAt tms ty u, constAt tms ty k with
+  | some (.icmp cc' cty a b), some kv =>
+    if (cc == .eq && kv == 1) || (cc == .ne && kv == 0) then some (.node (.icmp cc' cty a b))
+    else if (cc == .eq && kv == 0) || (cc == .ne && kv == 1) then
+      some (.node (.icmp (IntCC.inv cc') cty a b))
+    else none
+  | _, _ => none
+
+/-- `icmp ult ty x 1` is `icmp eq ty x 0`, `icmp uge ty x 1` is `icmp ne ty x 0` (the constant
+`0` interned first); `icmp ugt ty x 0` is `icmp ne ty x 0`, `icmp ule ty x 0` is `icmp eq ty x 0`. -/
+def icmpUnit (tms : Array Tm) (cc : IntCC) (ty : Ty) (x k : Nat) : Option Tm :=
+  match constAt tms ty k with
+  | some kv =>
+    if kv == 1 && (cc == .ult || cc == .uge) then
+      (findTm tms (.node (.iconst ty 0))).map fun z =>
+        .node (.icmp (if cc == .ult then .eq else .ne) ty x z)
+    else if kv == 0 && (cc == .ugt || cc == .ule) then
+      some (.node (.icmp (if cc == .ugt then .ne else .eq) ty x k))
+    else none
+  | none => none
+
+/-- `isub ty z x` with `z` the constant `0`: `ineg ty x`. -/
+def subNeg (tms : Array Tm) (ty : Ty) (z x : Nat) : Option Tm :=
+  match constAt tms ty z with
+  | some zv => if zv == 0 then some (.node (.unary .ineg ty x)) else none
+  | none => none
+
+/-- `imul ty x c` with `c` the constant `2`: `iadd ty x x`. -/
+def mulTwo (tms : Array Tm) (ty : Ty) (x c : Nat) : Option Tm :=
+  match constAt tms ty c with
+  | some cv => if cv == 2 then some (.node (.binary .iadd ty x x)) else none
+  | none => none
+
+/-- `ishl ty x c` with `c` a constant whose amount (modulo the width) is `1`: `iadd ty x x`
+(the normal form `mulTwo` gives `imul x 2`). -/
+def shlOne (tms : Array Tm) (ty : Ty) (x c : Nat) : Option Tm :=
+  match constOf tms c with
+  | some K => if K.bits.toNat % ty.width == 1 then some (.node (.binary .iadd ty x x)) else none
+  | none => none
+
+/-- `bmask i8 c` with `c` an `icmp`: `ineg i8 c`. -/
+def bmaskBool (tms : Array Tm) (ty : Ty) (c : Nat) : Option Tm :=
+  match nodeAt tms c with
+  | some (.icmp ..) => if ty == .i8 then some (.node (.unary .ineg .i8 c)) else none
+  | _ => none
+
+/-- `bxor ty x m` with `m` the all-ones constant of type `ty`: `bnot ty x`. -/
+def xorNot (tms : Array Tm) (ty : Ty) (x m : Nat) : Option Tm :=
+  match constAt tms ty m with
+  | some mv => if mv == BitVec.allOnes ty.width then some (.node (.unary .bnot ty x)) else none
+  | none => none
+
+/-- The second set of single-node rules (unguarded; `Norm.alg2` guards them). -/
+def algStep2 (tms : Array Tm) : Inst → Option Tm
+  | .icmp cc ty a b =>
+    (icmpSwap tms cc ty a b).orElse fun _ => (icmpBool tms cc ty a b).orElse fun _ =>
+      icmpUnit tms cc ty a b
+  | .binary .isub ty z x => subNeg tms ty z x
+  | .binary .imul ty x y => (mulTwo tms ty x y).orElse fun _ => mulTwo tms ty y x
+  | .binary .ishl ty x c => shlOne tms ty x c
+  | .binary .bxor ty x y => (xorNot tms ty x y).orElse fun _ => xorNot tms ty y x
+  | .bmask ty c => bmaskBool tms ty c
+  | _ => none
+
+/-- The terms `algStep`/`algStep2` look up besides the node's operands (the checker interns them
+first). -/
+def auxTms (tms : Array Tm) : Inst → List Tm
+  | .select _ c _ _ => match nodeAt tms c with
+    | some (.icmp cc cty a b) => [.node (.icmp (IntCC.inv cc) cty a b)]
+    | _ => []
+  | .binary .imul ty x y =>
+    [x, y].filterMap fun o => (constAt tms ty o).bind fun b =>
+      (pow2Log b.toNat).map fun k => .node (.iconst ty (BitVec.ofNat ty.width k))
+  | .icmp cc ty _ k =>
+    if (cc == .ult || cc == .uge) && constAt tms ty k == some 1 then [.node (.iconst ty 0)] else []
+  | _ => []
+
+/-- The algebraic rules, guarded. -/
+def Norm.alg : Norm := Norm.guard algStep
+
+/-- The second set, guarded. -/
+def Norm.alg2 : Norm := Norm.guard algStep2
+
+/-- One normaliser, then another where the first leaves the node alone. -/
+def Norm.orElse (a b : Norm) : Norm := fun tms i => (a tms i).orElse fun _ => b tms i
+
+/-- The constant evaluation and the single-node algebraic rules (`evalConst`, then family 2:
+`Norm.alg2`, then `Norm.alg`); proved sound (`normSound_std`). -/
+def Norm.std : Norm := Norm.orElse evalConst (Norm.orElse Norm.alg2 Norm.alg)
+
+/-! ### The typed rules
+
+An atom's value in a frame of `f` may have any type, so a rule whose truth depends on the width
+of an atom holds only in the frames where the atom holds a value of its static type (`atomTy`):
+its soundness obligation is `NormSoundT f` (`FV/Opt/Proof/MidValTerm.lean`), which the simulation
+discharges from `wfCheck`'s typing. -/
+
+/-- The static type of an atom of `f`: a block parameter's declared type, a statement result's
+`Inst.resultTypes` (calls through the extern signatures, `call_indirect` through `sigDeclOf`);
+`none` for nodes and `poison`. -/
+def atomTy (f : Function) : Tm → Option Ty
+  | .param b i => (f.blocks[b]?).bind fun blk => (blk.params[i]?).map (·.2)
+  | .res b k j => (f.blocks[b]?).bind fun blk => (blk.body[k]?).bind fun st =>
+      (st.inst.resultTypes (fun r => (f.externs.lookup r).map (·.sig)) (sigDeclOf f)).bind
+        (·[j]?)
+  | _ => none
+
+/-- The static type of term `u`: a node's `nodeTy` (operands earlier), an atom's `aty`. -/
+def tyAt (aty : Tm → Option Ty) (tms : Array Tm) (u : Nat) : Option Ty :=
+  match tms[u]? with
+  | some (.node j) => if (operands j).all (· < u) then nodeTy j else none
+  | some a => aty a
+  | none => none
+
+/-- The comparison a `select` with constant arms `vx`, `vy` stands for: `ne` for `1, 0`, `eq`
+for `0, 1`. -/
+def selCC {w : Nat} (vx vy : BitVec w) : Option IntCC :=
+  if vx == 1 && vy == 0 then some .ne else if vx == 0 && vy == 1 then some .eq else none
+
+/-- `select ty c 1 0` (`select ty c 0 1`) with `c` a term of integer type `tc` that is not an
+`icmp`: `icmp ne tc c 0` (`icmp eq tc c 0`) at `i8`, its `uextend ty` at a wider type
+(Cranelift 0.135.0's `select`-to-`icmp` rules, `opts/selects.isle`). The comparison and the
+constant `0` are looked up (`findTm`); the checker interns them (`internSelAux`). -/
+def selTyped (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (c x y : Nat) : Option Tm :=
+  match nodeAt tms c with
+  | some (.icmp ..) => none
+  | _ =>
+    match tyAt aty tms c, constAt tms ty x, constAt tms ty y with
+    | some tc, some vx, some vy =>
+      if tc.isInt then
+        (selCC vx vy).bind fun cc =>
+          (findTm tms (.node (.iconst tc 0))).bind fun z =>
+            (findTm tms (.node (.icmp cc tc c z))).bind fun n => selWrap tms ty n
+      else none
+    | _, _, _ => none
+
+/-- `ireduce ty (extend op uty x)` with `x` a term of static type `xt` by `aty` (an atom: `atomTy`
+gives nodes no type; a node `x` is `redExt`'s), `xt` and `ty` narrower than `uty`: as `redExt`
+(`x` when `xt = ty`, `extend op ty x` when narrower, `ireduce ty x` when wider). -/
+def redTyped (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (u : Nat) : Option Tm :=
+  match nodeAt tms u with
+  | some (.extend op uty x) =>
+    match tms[x]?, (tms[x]?).bind aty with
+    | some a, some xt =>
+      if xt.width < uty.width && ty.width < uty.width then
+        if xt == ty then some a
+        else if xt.width < ty.width then some (.node (.extend op ty x))
+        else if ty.width < xt.width then some (.node (.ireduce ty x))
+        else none
+      else none
+    | _, _ => none
+  | _ => none
+
+/-- The typed rules (unguarded; `Norm.stdT` guards them). -/
+def typedStep (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .select ty c x y => selTyped aty tms ty c x y
+  | .ireduce ty u => redTyped aty tms ty u
+  | _ => none
+
+/-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
+`checkCert`, `checkCertSyms`): `Norm.std`, then the typed rules with `f`'s atom types; proved
+sound under typing (`normSoundT_stdT`). -/
+def Norm.stdT (f : Function) : Norm := Norm.orElse Norm.std (Norm.guard (typedStep (atomTy f)))
+
+/-- Intern a term (normalised, if a node), without auxiliary terms. -/
+def intern1 (t : Tm) : M Nat := do
   let s ← get
   let t := match t with
     | .node i => (s.norm s.tms i).getD t
@@ -497,6 +866,28 @@ def intern (t : Tm) : M Nat := do
     let i := s.tms.size
     set { s with tms := s.tms.push t, ids := s.ids.insert t i }
     pure i
+
+/-- The terms `selTyped` looks up for `select ty c x y` (`iconst tc 0`, then the comparison of
+`c` with it), interned first when its arms are the constants `1, 0` or `0, 1`. -/
+def internSelAux (ty : Ty) (c x y : Nat) : M Unit := do
+  let s ← get
+  match nodeAt s.tms c with
+  | some (.icmp ..) => pure ()
+  | _ =>
+    match tyAt s.aty s.tms c, constAt s.tms ty x, constAt s.tms ty y with
+    | some tc, some vx, some vy =>
+      if tc.isInt then
+        if let some cc := selCC vx vy then
+          let z ← intern1 (.node (.iconst tc 0))
+          discard (intern1 (.node (.icmp cc tc c z)))
+    | _, _, _ => pure ()
+
+/-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`). -/
+def intern (t : Tm) : M Nat := do
+  if let .node i := t then
+    for a in auxTms (← get).tms i do discard (intern1 a)
+    if let .select ty c x y := i then internSelAux ty c x y
+  intern1 t
 
 /-- The term of `v` on one side. -/
 def termOf (env : Std.HashMap ValueId Nat) (side : String) (v : ValueId) : Except Reject Nat :=
@@ -727,14 +1118,24 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
   let ft ← liftE (mapTermM (← get).envF "f" fb.term)
   let gt ← liftE (mapTermM (← get).envG "g" gb.term)
   if ft != gt then
-    if termName fb.term == termName gb.term && termSuccs fb.term == termSuccs gb.term then
-      throw s!"rewrite:operand {termName fb.term} {diffOps (← get).tms (termOperands ft) (termOperands gt)} block{fb.id}"
+    let s ← get
+    let chain := if s.cond then match ft, gt with
+      | .brif c t e, .brif c' t' e' =>
+        if t == t' && e == e' then condChain s.tms s.tms.size c c' else none
+      | _, _ => none
+      else none
+    if let some ws := chain then
+      modify fun st => { st with conds := st.conds.push (gb.id, ws.reverse) }
+    else if termName fb.term == termName gb.term && termSuccs fb.term == termSuccs gb.term then
+      throw s!"rewrite:operand {termName fb.term} {diffOps s.tms (termOperands ft) (termOperands gt)} block{fb.id}"
     else throw s!"rewrite:term {termName fb.term}/{termName gb.term} block{fb.id}"
 
 /-- The check, returning its final state, context and `f`'s `wfCheck` info on acceptance
-(certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). -/
-def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) :
-    Except Reject (St × Ctx × Info) := do
+(certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). `cond`: a
+`brif` condition of `f` that is `g`'s under wrappers is recorded instead of rejected (family 3:
+`St.conds`, the hints of `condPrep`; such a state is not a certificate's). -/
+def checkRun (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false)
+    (cond : Bool := false) : Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (wfCheck f).mapError (s!"wf:f {·}")
   let gi ← (wfCheck g).mapError (s!"wf:g {·}")
@@ -750,7 +1151,7 @@ def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) 
   let go : M Unit := do
     for bi in order do
       checkBlock c bi fbs[bi]! gbs[bi]!
-  let (r, st) := (go.run).run { norm }
+  let (r, st) := (go.run).run { norm, cond, aty := atomTy f }
   match r, st.hint with
   | .ok (), _ => pure (st, c, fi)
   | .error e, some h => throw (if e.startsWith "wf:" || e.startsWith "placement" then e else h)
@@ -759,7 +1160,7 @@ def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) 
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
 `g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. `hoist`: also accept `g` evaluating
 a `symbol_value`/`func_addr`/`tls_value` of `f` earlier than `f` does (`place`). -/
-def check (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) : Except Reject Unit :=
+def check (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) : Except Reject Unit :=
   (checkRun f g norm hoist).map fun _ => ()
 
 end Opt.MidVal

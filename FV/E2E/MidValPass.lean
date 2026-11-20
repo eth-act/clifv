@@ -1,23 +1,24 @@
 import FV.E2E.SemanticReturnPinsPass
-import FV.Opt.Proof.MidValProg
+import FV.Opt.Proof.MidValCondProg
 
 /-! # The per-function theorems through the mid-end validator (#1119, plumbing layer 1)
 
 In a build whose Cranelift `opt_level` is not `none`, `lean-backend --midval-opt` compiles
 Cranelift's optimised function `g` (cg_clif's `.opt.clif`) in place of cg_clif's **source**
 function `f` (the `.unopt.clif`) when it decides the re-check of the mid-end validator's
-certificate, `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true` (#1128). The theorems here
+certificate with its branch-condition hints, `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints =
+true` (#1128, #1139; `checkCertC … [] = checkCert …`). The theorems here
 take that decided premise and the artifact of the **compiled** function (`g` through the usual
 `i128` legalisation, constant-phi removal and backend) and conclude, with the conclusion text of the
 theorem `lean-backend` names for `g` today, about the run of the program with the source function
 `f`:
 
 * `p` is a program with the source functions, `q` one whose functions are `p`'s or validated
-  replacements (`Opt.MidVal.Validated p.funcs q.funcs`: the same function, or a `g` with
-  `checkCert (ConstPhi.run f) g cert = true`); `midEntry g cs` is the entry state of `g` with the
+  replacements (`Opt.MidVal.ValidatedC p.funcs q.funcs`: the same function, or a `g` with
+  `checkCertC (ConstPhi.run f) g cert hints = true`); `midEntry g cs` is the entry state of `g` with the
   registers, slots and memory of `f`'s entry state `cs`.
 * `midval_entry` (`Clif.runLoop`) and `midval_entryX` (`Clif.runLoopX`, with unwinding): the
-  source run from `f`'s entry is refined by `q`'s run from `g`'s entry (`Opt.MidVal.checked_simMU`,
+  source run from `f`'s entry is refined by `q`'s run from `g`'s entry (`Opt.MidVal.checkedC_simMU`,
   `Opt.runLoopX_refinesSRMU`; the plain run through `Clif.runLoopX_toX`).
 * The Stock path (`backend_correct_world_niX_semantic_return_pins` and its compositions with the
   `i128` legalisation and constant-phi removal, `FV/E2E/SemanticReturnPinsPass.lean`):
@@ -71,12 +72,13 @@ theorem outcomeRefines_of_toX {o o' : Clif.Outcome} (h : Opt.XOutcomeRefines o.t
 
 /-- The entry of `g` matching the entry of the source function `f`, and the related states. -/
 theorem midval_sr {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
     {args : List Clif.Val} {cs : Clif.State} (hcs : ClifEntry f args cs) :
     ClifEntry g args (midEntry g cs) ∧
       (midEntry g cs).frame.slots = cs.frame.slots ∧ (midEntry g cs).mem = cs.mem ∧
       Opt.SRMU cs.mem.symbols cs.toX (midEntry g cs).toX := by
-  have hsim := Opt.MidVal.checked_simMU hchk
+  have hsim := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨b, hb, hbody, hterm, hty, hregs⟩ := hcs.entry
   obtain ⟨R, hR, hent⟩ := hsim.sim cs.mem.symbols
   obtain ⟨b', hb', hpar, hrel⟩ := hent b hb
@@ -97,8 +99,9 @@ theorem midval_sr {f g : Clif.Function} {cert : Opt.MidVal.Cert}
 /-- **The source run from `f`'s entry, refined by the run of the program with validated
 functions from `g`'s entry** (`Clif.runLoop`). -/
 theorem midval_entry {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {env : Clif.Env} (hE : Opt.EnvKeepsSymbols env) {args : List Clif.Val} {cs : Clif.State}
     (hcs : ClifEntry f args cs) (fuel : Nat) :
     ClifEntry g args (midEntry g cs) ∧
@@ -113,8 +116,9 @@ theorem midval_entry {f g : Clif.Function} {cert : Opt.MidVal.Cert}
 /-- **`midval_entry` with unwinding** (`Clif.runLoopX`; returns, traps and exceptions leaving the
 run are matched). -/
 theorem midval_entryX {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {env : Clif.XEnv} (hE : Opt.EnvKeepsSymbolsX env) {args : List Clif.Val} {cs : Clif.State}
     (hcs : ClifEntry f args cs) (fuel : Nat) :
     ClifEntry g args (midEntry g cs) ∧
@@ -128,15 +132,16 @@ theorem midval_entryX {f g : Clif.Function} {cert : Opt.MidVal.Cert}
 
 /-- **The Stock path's theorem through the mid-end validator**
 (`backend_correct_world_niX_semantic_return_pins` for the compiled `g`): for cg_clif's source
-function `f` and Cranelift's optimised function `g` with `checkCert (ConstPhi.run f) g cert`
+function `f` and Cranelift's optimised function `g` with `checkCertC (ConstPhi.run f) g cert hints`
 decided, `g` compiled with the Stock artifact, every return of the CLIF run of the *source*
 program `p` from `f`'s entry state is matched by the Arm run of the compiled `g`, as in the Stock
 theorem. Premises: the Stock theorem's about the compiled `g` in the program `q` of validated
-functions (`Validated p.funcs q.funcs`), externs keep the link-time symbols (`hE`), `q`'s run from
+functions (`ValidatedC p.funcs q.funcs`), externs keep the link-time symbols (`hE`), `q`'s run from
 `g`'s entry traps only explicitly (`htr`). -/
 theorem backend_correct_midval_semantic_return_pins {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     {mode : ReturnPinMode}
     (hsub : InSubset q g) (hc : CompiledSemanticReturnPins g k vc vcp rf af fa fb mode)
@@ -181,7 +186,7 @@ theorem backend_correct_midval_semantic_return_pins {f g : Clif.Function} {cert 
               ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
                 (runX (ArmStepX X H fa) i s)) := by
   intro vals cm hrun
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entry hchk hv hE hcs fuel
   have hW : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g c =
       RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c := relW_slots hF.slots c
@@ -198,8 +203,9 @@ theorem backend_correct_midval_semantic_return_pins {f g : Clif.Function} {cert 
 theorem backend_correct_midval_pass_semantic_return_pins {T : Clif.Function → Clif.Function}
     (hT : ∀ f, Opt.FunSimX f (T f)) (hS : ∀ f, ShapeFacts f (T f))
     {f g : Clif.Function} {cert : Opt.MidVal.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     {mode : ReturnPinMode}
     (hsub : InSubset q g) (hc : CompiledSemanticReturnPins (T g) k vc vcp rf af fa fb mode)
@@ -244,7 +250,7 @@ theorem backend_correct_midval_pass_semantic_return_pins {T : Clif.Function → 
               ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
                 (runX (ArmStepX X H fa) i s)) := by
   intro vals cm hrun
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs', hsl, hmem, n', hn⟩ := midval_entry hchk hv hE hcs fuel
   have hW : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g c =
       RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c := relW_slots hF.slots c
@@ -262,8 +268,9 @@ of the *source* program `p` from `f`'s entry is a return of `g'`'s run in `p'` w
 expanded by the ABI groups of `f`'s returns, matched by the Arm run of the compiled `g'`. -/
 theorem backend_correct_midval_legal_wide_semantic_return_pins {f g g' : Clif.Function}
     {cert : Opt.MidVal.Cert} {certL : Opt.Legalize128.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q p' : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q p' : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     (hchkL : Opt.Legal.checkW g g' certL = true)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     {mode : ReturnPinMode}
@@ -316,7 +323,7 @@ theorem backend_correct_midval_legal_wide_semantic_return_pins {f g g' : Clif.Fu
               ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
                 (runX (ArmStepX X H fa) i s)) := by
   intro vals cm hrun
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs1, hsl1, hmem1, n', hn⟩ := midval_entry hchk hv RustSyms.envKeepsSymbols_env hcs fuel
   have key := backend_correct_legal_wide_semantic_return_pins (K := K) hchkL hsub hc hext hext' hind hcov hX
     hXI hsym hslot (by rw [hF.sig]; exact hexp) hcs1 hcs' (hsl.trans hsl1.symm)
@@ -332,8 +339,9 @@ theorem backend_correct_midval_legal_pass_wide_semantic_return_pins
     {T : Clif.Function → Clif.Function}
     (hT : ∀ f, Opt.FunSimX f (T f)) (hS : ∀ f, ShapeFacts f (T f))
     {f g g' : Clif.Function} {cert : Opt.MidVal.Cert} {certL : Opt.Legalize128.Cert}
-    (hchk : Opt.MidVal.checkCert (Opt.ConstPhi.run f) g cert = true)
-    {p q p' : Clif.Program} (hv : Opt.MidVal.Validated p.funcs q.funcs)
+    {hints : List (Clif.BlockId × List Opt.MidVal.Wrap)}
+    (hchk : Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints = true)
+    {p q p' : Clif.Program} (hv : Opt.MidVal.ValidatedC p.funcs q.funcs)
     (hchkL : Opt.Legal.checkW g g' certL = true)
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     {mode : ReturnPinMode}
@@ -386,7 +394,7 @@ theorem backend_correct_midval_legal_pass_wide_semantic_return_pins
               ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
                 (runX (ArmStepX X H fa) i s)) := by
   intro vals cm hrun
-  have hF := Opt.MidVal.checked_simMU hchk
+  have hF := Opt.MidVal.checkedC_simMU hchk
   obtain ⟨hcs1, hsl1, hmem1, n', hn⟩ := midval_entry hchk hv RustSyms.envKeepsSymbols_env hcs fuel
   have key := backend_correct_legal_pass_wide_semantic_return_pins (K := K) hchkL hT hS hsub hc hext hext'
     hind hcov hX hXI hsym hslot (by rw [hF.sig]; exact hexp) hcs1 hcs' (hsl.trans hsl1.symm)

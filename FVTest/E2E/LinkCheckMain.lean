@@ -477,7 +477,7 @@ def main (args : List String) : IO UInt32 := do
   let checker : FVTest.E2E.BinVerdict.Checker :=
     if typedS then .typedStock else if typed then .typed else .integer
   -- #1119: with source dumps, the theorem through the validator (`…_mid`), about the program of
-  -- the unoptimised dumps; its premise `Opt.MidVal.Validated P0.funcs (prog I).funcs` decided
+  -- the unoptimised dumps; its premise `Opt.MidVal.ValidatedC P0.funcs (prog I).funcs` decided
   -- here on the (pruned) program (`Link.midValidatedB_sound`)
   let midOk : Bool := match src0 with
     | none => true

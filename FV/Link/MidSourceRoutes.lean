@@ -15,7 +15,7 @@ With `--midval`, the functions `lean-link` compiles are those of the input `I1` 
 optimised function `g` where the mid-end validator accepted the pair, else cg_clif's `f`); the
 bundle's program is the one of the input `I0` (cg_clif's `.unopt.clif` functions). For each route's
 `…_sourceCp` theorem (about `I1.srcProg` when applied to `I1`) the `…Mid` theorem here (same namespace) concludes
-the same about `I0.srcProg`, from `hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs`
+the same about `I0.srcProg`, from `hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs`
 (decided by `Link.midValidatedB`) through `Link.midProg` (`midProg_depth` for the peak versions,
 which carries the call-depth bound `d` of `I0`'s run to `I1`'s).
 
@@ -39,7 +39,7 @@ trap). -/
 theorem compileExe_correct_sourceMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.input B)) (hH : HooksSim S.input B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -87,7 +87,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem compileExe_correct_source_peakMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.input B)) (hH : HooksSim S.input B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -146,7 +146,7 @@ trap). -/
 theorem compileExe_correct_sourceMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -195,7 +195,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem compileExe_correct_source_peakMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -253,7 +253,7 @@ trap). -/
 theorem compileExeOpt_correct_sourceMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeOpt S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.opt.input B)) (hH : HooksSim S.opt.input B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -301,7 +301,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem compileExeOpt_correct_source_peakMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeOpt S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.opt.input B)) (hH : HooksSim S.opt.input B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -359,7 +359,7 @@ trap). -/
 theorem compileExeOpt_correct_sourceMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeOpt S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.opt.inputCleanup B)) (hH : HooksSim S.opt.inputCleanup B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -408,7 +408,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem compileExeOpt_correct_source_peakMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeOpt S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.opt.inputCleanup B)) (hH : HooksSim S.opt.inputCleanup B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -466,7 +466,7 @@ trap). -/
 theorem compileExeT_correct_sourceMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeT S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -515,7 +515,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem compileExeT_correct_source_peakMid {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeT S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -574,7 +574,7 @@ trap). -/
 theorem attempt_correct_sourceMid {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))
     (hH : HooksSim (input lower S cleanup) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -629,7 +629,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem attempt_correct_source_peakMid {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))
     (hH : HooksSim (input lower S cleanup) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -695,7 +695,7 @@ trap). -/
 theorem attempt_correct_sourceMid {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))
     (hH : HooksSim (input lower S cleanup) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -750,7 +750,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem attempt_correct_source_peakMid {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))
     (hH : HooksSim (input lower S cleanup) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -816,7 +816,7 @@ trap). -/
 theorem attemptT_correct_sourceMid {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S true) B))
     (hH : HooksSim (input lower S true) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -871,7 +871,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem attemptT_correct_source_peakMid {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S true) B))
     (hH : HooksSim (input lower S true) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -938,7 +938,7 @@ trap). -/
 theorem attempt_correct_sourceMid {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))
     (hH : HooksSim (input lower S cleanup) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →
@@ -993,7 +993,7 @@ bound `d` of `I0`'s source run from `cs` carried to `I1`'s run from `midEntry g 
 theorem attempt_correct_source_peakMid {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) {I0 I1 : LinkInput}
     (hcp : S.funcs = I1.funcs.map FnInput.cp) (hsrc : SrcScopeB I1 = true)
-    (hv : Opt.MidVal.Validated I0.srcProg.funcs I1.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC I0.srcProg.funcs I1.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))
     (hH : HooksSim (input lower S cleanup) B) (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ I1.srcProg.funcs, mentions128 f = true) →

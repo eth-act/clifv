@@ -59,7 +59,7 @@ def binVerdict (c : Checker) (recursive ok binOk codeOk gotOk : Bool) : String :
 
 When the bundle has functions compiled from Cranelift's optimised dumps (`src_dump`: their
 unoptimised dumps), the theorem is the `_mid` sibling: the same premises about the compiled
-program, plus `Opt.MidVal.Validated P0.funcs (prog I).funcs` for the program `P0` of the
+program, plus `Opt.MidVal.ValidatedC P0.funcs (prog I).funcs` for the program `P0` of the
 unoptimised dumps after constant-phi removal and the `i128` legalisation (`FnInput.cp`, as
 `prog I` is of the dumps compiled; `link-check` decides `Link.midValidatedB` on the pruned
 program, `Link.midValidatedB_sound`); its conclusion is about `P0`'s runs. -/

@@ -11,7 +11,7 @@ optimised function `gOpt` (`.opt.clif`), which differ.
 
 * `facts0`: `Link.midValidatedB [fSrc] [gOpt] = true` (what `lean-link` / `link-check` decide),
   `fSrc ≠ gOpt`, and the decidable facts of an entry state `cs0` of `fSrc`;
-* `validated`: `Opt.MidVal.Validated [fSrc] [gOpt]` by `Link.midValidatedB_sound`;
+* `validated`: `Opt.MidVal.ValidatedC [fSrc] [gOpt]` by `Link.midValidatedB_sound`;
 * `midProg_applies`: `Link.midProg` instantiated on the one-function programs `P0 = [fSrc]`,
   `Q = [gOpt]`, the empty base environment (`Opt.EnvKeepsSymbols`), and the entry `cs0` of `fSrc`
   on zero arguments: every premise discharged, so its conclusion holds at every fuel.
@@ -69,7 +69,7 @@ theorem facts_spec :
   exact ⟨hv, hne, hf, hg, ⟨rfl, rfl, hsig, ⟨blk, hb, rfl, rfl, hpar, hreg⟩, hslots⟩⟩
 
 /-- The pair is validated (`Link.midValidatedB_sound`), and the functions differ. -/
-theorem validated : Opt.MidVal.Validated P0.funcs Q.funcs ∧ fSrc ≠ gOpt :=
+theorem validated : Opt.MidVal.ValidatedC P0.funcs Q.funcs ∧ fSrc ≠ gOpt :=
   ⟨Link.midValidatedB_sound facts_spec.1, facts_spec.2.1⟩
 
 /-- The empty base environment keeps the symbols (it has no externs). -/

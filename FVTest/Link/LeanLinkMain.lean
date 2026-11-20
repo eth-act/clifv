@@ -780,7 +780,7 @@ def main (args0 : List String) : IO UInt32 := do
   -- (`dump`) carry their unoptimised dumps (`src_dump`). Each pair is re-decided here on the
   -- bundle's own texts (`Link.midPairB`; nothing cargo fv or lean-backend said is trusted): a
   -- failing one is left out of the region (`--verified: exclude:`). When all hold
-  -- (`Link.midValidatedB_sound`: `Opt.MidVal.Validated I0.srcProg.funcs S0.input0.srcProg.funcs`,
+  -- (`Link.midValidatedB_sound`: `Opt.MidVal.ValidatedC I0.srcProg.funcs S0.input0.srcProg.funcs`,
   -- `I0` the bundle with the source dumps), the source theorems named are the `…Mid` ones, about
   -- the bundle's source program (the unoptimised dumps), on `SrcScopeB S0.input0` (`srcOk`); on a
   -- bundle only in `SrcScopeTB` (`srcT`, the typed Stock route alone) the `…TBMid` ones
@@ -937,7 +937,7 @@ def main (args0 : List String) : IO UInt32 := do
         else .error SemanticCompilerWith.outOkTSMsg
       -- #1119: a bundle only in `SrcScopeTB` with functions compiled from optimised dumps: the
       -- theorems through the validator on this route (`attemptT_correct_source{,_peak}TBMid`,
-      -- `FV/Link/MidSourceTB.lean`) take `Opt.MidVal.Validated P0.funcs Q.funcs`, `Q` the route
+      -- `FV/Link/MidSourceTB.lean`) take `Opt.MidVal.ValidatedC P0.funcs Q.funcs`, `Q` the route
       -- input's source program, `P0` the source dumps' inputs taken as the route takes the dumps
       -- (`FnInput.cp`, then parsed), by name; decided here (`Link.midValidatedB_sound`) before the
       -- executable is written, a failing pair left out (`--verified: exclude:`)

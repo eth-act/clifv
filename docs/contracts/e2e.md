@@ -214,14 +214,15 @@ on a real function of the examples with every checkable premise proved.
 **Through the mid-end validator** (#1119, `lean-backend --midval-opt`, `cargo fv --midval`;
 `FV/E2E/MidValPass.lean`, `FV/E2E/MidValPassLegacy.lean`). In a build whose Cranelift
 `opt_level` is not `none`, `lean-backend <f.unopt.clif> --midval-opt <g.opt.clif>` runs
-`Opt.MidVal.emit (Opt.ConstPhi.run f) g` and decides `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g
-cert` itself (docs/contracts/midval.md); when it holds it compiles Cranelift's optimised function
+`Opt.MidVal.emitC (Opt.ConstPhi.run f) g` and decides `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g
+cert hints` itself (the re-check with branch-condition hints; docs/contracts/midval.md); when it
+holds it compiles Cranelift's optimised function
 `g` through the usual `i128` legalisation, constant-phi removal and backend, and names the theorem
 of `g`'s path composed with the validator, `about the source function (.unopt.clif), compiled from
 cg_clif's optimised dump validated by Opt.MidVal`. Each `backend_correct_midval_*` theorem has the
 artifact hypothesis of the theorem named for the compiled `g` (or its legalisation `g'`, or `T g`,
-`T g'` at `T := Opt.ConstPhi.run`), the decided premise `checkCert (ConstPhi.run f) g cert = true`,
-a program `q` of validated functions (`Opt.MidVal.Validated p.funcs q.funcs`), the run premises at
+`T g'` at `T := Opt.ConstPhi.run`), the decided premise `checkCertC (ConstPhi.run f) g cert hints =
+true`, a program `q` of validated functions (`Opt.MidVal.ValidatedC p.funcs q.funcs`), the run premises at
 `f`'s entry `cs` (`q`'s at `midEntry g cs`, the entry of `g` with `cs`'s registers, slots and
 memory), and that theorem's conclusion about the run of the program `p` with the source function:
 
@@ -233,7 +234,7 @@ memory), and that theorem's conclusion about the run of the program `p` with the
 | typed, `g` not changed by legalisation or constant-phi removal | `backend_correct_midval_final_cleanupT`, `_midval_world_cleanupTC`, `_midval_world_cleanupTCF` |
 
 They compose `midval_entry` / `midval_entryX` (the source run from `f`'s entry is refined by `q`'s
-run from `g`'s entry: `Opt.MidVal.checked_simMU`, `Opt.runLoopX_refinesSRMU`, the plain runs
+run from `g`'s entry: `Opt.MidVal.checkedC_simMU`, `Opt.runLoopX_refinesSRMU`, the plain runs
 through `Clif.runLoopX_toX`) with the theorem of the compiled `g`. Not composed, so `lean-backend`
 compiles `f` exactly as without the option (same objects, same lines, one `midval:` info line):
 `--opt`, no dead cleanup, the stock-configured and settings modes, a typed function whose compiled
@@ -251,10 +252,10 @@ pair as `link-check` takes it (both functions after constant-phi removal and the
 legalisation, `FnInput.cp`) and `g`'s printed CLIF to parse back to `g`. `cargo fv` writes, for a
 function compiled from its optimised dump, `"dump"` = the `.opt.clif` and `"src_dump"` = the
 `.unopt.clif` into the bundle (docs/contracts/frontend.md). Nothing `cargo fv` or `lean-backend`
-said about the pair is used after that: `Link.midPairB f g` (`f = g`, or `Opt.MidVal.emit` gives a
-certificate `Opt.MidVal.checkCert (Opt.ConstPhi.run f) g` accepts) is decided again by each tool
+said about the pair is used after that: `Link.midPairB f g` (`f = g`, or `Opt.MidVal.emitC` gives a
+certificate and hints `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g` accepts) is decided again by each tool
 on the bundle's two texts, and `Link.midValidatedB_sound` turns the per-pair decisions into
-`Opt.MidVal.Validated`.
+`Opt.MidVal.ValidatedC`.
 * `link-check` decides `Link.midPairB` for every function (the bundle's program and the program of
   the source dumps, each through `FnInput.cp`) as one more per-function check: a failing pair fails
   that function (`FAIL <f>: Link.midPairB …`), `--prune` drops it and its callers, and `cargo fv`
@@ -263,7 +264,7 @@ on the bundle's two texts, and `Link.midValidatedB_sound` turns the per-pair dec
   `_mid` sibling of the table's theorem (`E2E.ReturnPinExecBytes.binary_correct_exec_proven_mid`,
   `…_peak_proven_mid`, `E2E.SemanticExecBytes.binary_correct_exec_provenTS_mid`, `…_peak_provenTS_mid`,
   `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT_mid`, `…_peak_provenT_mid`): the same
-  premises plus `Opt.MidVal.Validated P0.funcs (prog I).funcs` and `Opt.EnvKeepsSymbols B.env`, the
+  premises plus `Opt.MidVal.ValidatedC P0.funcs (prog I).funcs` and `Opt.EnvKeepsSymbols B.env`, the
   conclusion about the runs of `P0`, the program of the unoptimised dumps after constant-phi removal
   and the `i128` legalisation. `scripts/midval-tamper-check.py` points one `src_dump` of a real
   bundle at another function's unoptimised dump renamed to it and checks that `link-check`

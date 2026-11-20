@@ -8,7 +8,7 @@ import FV.Link.SemanticExeSourceTB
 `SrcScopeTB`, #1076) composed with `Link.midProg` / `Link.midProg_depth`, as
 `FV/Link/MidSourceRoutes.lean` composes the `…_sourceCp` theorems. `Q` is the route input's source
 program `(input lower S true).toLinkInput.srcProg`, about which the old theorems speak; `P0` is a
-program whose functions `Q`'s are validated against (`Opt.MidVal.Validated P0.funcs Q.funcs`:
+program whose functions `Q`'s are validated against (`Opt.MidVal.ValidatedC P0.funcs Q.funcs`:
 `lean-link --verified` decides `Link.midValidatedB` on the bundle's unoptimised dumps processed as
 the route input's functions are). A return (trap) of `P0`'s run from `f`'s entry `cs` is the
 executable's return of the results split by `f`'s return groups (the same trap). The premises
@@ -27,7 +27,7 @@ program** (module doc). -/
 theorem attemptT_correct_sourceTBMid {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) (hsrc : SrcScopeTB (input lower S true) = true)
     {P0 : Clif.Program}
-    (hv : Opt.MidVal.Validated P0.funcs (input lower S true).toLinkInput.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC P0.funcs (input lower S true).toLinkInput.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S true) B)) (hH : HooksSim (input lower S true) B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ (input lower S true).toLinkInput.srcProg.funcs, mentions128 f = true) →
@@ -80,7 +80,7 @@ from `midEntry g cs` by `Link.midProg_depth`. -/
 theorem attemptT_correct_source_peakTBMid {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) (hsrc : SrcScopeTB (input lower S true) = true)
     {P0 : Clif.Program}
-    (hv : Opt.MidVal.Validated P0.funcs (input lower S true).toLinkInput.srcProg.funcs)
+    (hv : Opt.MidVal.ValidatedC P0.funcs (input lower S true).toLinkInput.srcProg.funcs)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S true) B)) (hH : HooksSim (input lower S true) B)
     (hkeep : Opt.EnvKeepsSymbols B.env)
     (hlegal : (∃ f ∈ (input lower S true).toLinkInput.srcProg.funcs, mentions128 f = true) →
