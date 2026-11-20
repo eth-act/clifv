@@ -139,12 +139,28 @@ theorem walk_frames (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) :
   exact ⟨fb, gb, Send, hfb, hgb, by rw [hbody, hbody']; exact hw, he⟩
 
 /-- Values available at `(bi, k)` are not results of statement `k`. -/
-theorem regs_after (H : Hyp f g fi gi cert norm) {vals : List Val} {regs : Regs}
+theorem regs_afterT (H : HypT f g fi gi cert norm) {vals : List Val} {regs : Regs}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hb : fr.body = st :: rest)
     (hset : fr.regs.setMany st.results vals = some regs) :
     ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := by
   obtain ⟨b, hbi, hst, -⟩ := stmt_at hR hb
   exact fun v hv => ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hbi hst hv)
+
+/-- Values available at `(bi, k)` are not results of statement `k`. -/
+theorem regs_after (H : Hyp f g fi gi cert norm) {vals : List Val} {regs : Regs}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hb : fr.body = st :: rest)
+    (hset : fr.regs.setMany st.results vals = some regs) :
+    ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := by
+  exact regs_afterT H.toT hR hb hset
+
+/-- Terms with sites no later than `(bi, k)` keep their values. -/
+theorem TV_afterT (H : HypT f g fi gi cert norm) {vals : List Val} {regs : Regs}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hb : fr.body = st :: rest)
+    (hset : fr.regs.setMany st.results vals = some regs) {t : Nat}
+    (ht : LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf t) (bi, k)) :
+    TV f cert syms { fr with regs, body := rest } t = TV f cert syms fr t :=
+  H.TV_stable (fr1 := fr) (fr2 := { fr with regs, body := rest }) rfl rfl rfl
+    (regs_afterT H hR hb hset) ht
 
 /-- Terms with sites no later than `(bi, k)` keep their values. -/
 theorem TV_after (H : Hyp f g fi gi cert norm) {vals : List Val} {regs : Regs}
@@ -152,8 +168,50 @@ theorem TV_after (H : Hyp f g fi gi cert norm) {vals : List Val} {regs : Regs}
     (hset : fr.regs.setMany st.results vals = some regs) {t : Nat}
     (ht : LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf t) (bi, k)) :
     TV f cert syms { fr with regs, body := rest } t = TV f cert syms fr t :=
-  H.TV_stable (fr1 := fr) (fr2 := { fr with regs, body := rest }) rfl rfl rfl
-    (regs_after H hR hb hset) ht
+  TV_afterT H.toT hR hb hset ht
+
+/-- **`f` alone executes statement `k`** (binding `vals` to its results, memory kept): the
+relation one statement later, with facts `S'` that are old facts or hold, with sites no later
+than `(bi, k + 1)`, in the new frame. -/
+theorem rel_afterT (H : HypT f g fi gi cert norm) {S' : List Fact} {vals : List Val} {regs : Regs}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hb : fr.body = st :: rest)
+    (hty : ∀ ts, st.inst.resultTypes (sigOf f) (sigDeclOf f) = some ts → vals.map (·.ty) = ts)
+    (hpure : isPure st.inst = true → ∃ a, vals = [a] ∧ evalNode fr (symMem syms) st.inst = some a)
+    (hset : fr.regs.setMany st.results vals = some regs)
+    (hw : ∃ fb gb Send, f.blocks[bi]? = some fb ∧ g.blocks[bi]? = some gb ∧
+      (ccOf fi gi cert norm).walk bi rest fr'.body (k + 1) k' S' = some Send ∧
+      EndOk (ccOf fi gi cert norm) bi fb gb Send)
+    (hres : ∀ r ∈ st.results,
+      TV f cert syms { fr with regs, body := rest } ((ccOf fi gi cert norm).ef r) = regs r)
+    (hS : ∀ F ∈ S', F ∈ S ∨ (FactHolds f cert syms { fr with regs, body := rest } m F ∧
+      ∀ t ∈ F.terms, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf t) (bi, k + 1))) :
+    Rel f g fi gi cert norm syms bi (k + 1) k' S' { fr with regs, body := rest } fr' m := by
+  obtain ⟨b, hbi, hst, hrest⟩ := stmt_at hR hb
+  have hregs := regs_afterT H hR hb hset
+  refine ⟨?_, H.wff.inv_results hR.invf hb hty hpure hset, hR.invg, hR.slots, fun x hx => ?_,
+    fun y hy => ?_, fun y hy => (hR.sitesG y hy).mono (Nat.le_succ k), fun F hF => ?_,
+    fun F hF => ?_⟩
+  · obtain ⟨fb, gb, Send, hfb, hgb, hwk, he⟩ := hw
+    obtain ⟨b', hb'', hbody', -⟩ := hR.invg.block
+    have e1 : fb = b := Option.some.inj (hfb.symm.trans hbi)
+    have e2 : gb = b' := Option.some.inj (hgb.symm.trans hb'')
+    subst e1 e2
+    refine ⟨fb, gb, Send, hfb, hgb, ?_, he⟩
+    rw [hrest, ← hbody']
+    exact hwk
+  · rcases H.wff.avail_succ hbi hst hx with hr | hx'
+    · exact hres x hr
+    · rw [TV_afterT H hR hb hset (H.siteF hx'), hR.agreeF x hx']
+      exact (hregs x hx').symm
+  · rw [TV_afterT H hR hb hset (hR.sitesG y hy)]
+    exact hR.agreeG y hy
+  · rcases hS F hF with h | ⟨h, -⟩
+    · exact FactHolds.stableT H (fr1 := fr) (fr2 := { fr with regs, body := rest }) rfl rfl rfl
+        hregs (hR.factSites F h) (fun _ => rfl) (hR.facts F h)
+    · exact h
+  · rcases hS F hF with h | ⟨-, h⟩
+    · exact fun t ht => (hR.factSites F h t ht).mono (Nat.le_succ k)
+    · exact h
 
 /-- **`f` alone executes statement `k`** (binding `vals` to its results, memory kept): the
 relation one statement later, with facts `S'` that are old facts or hold, with sites no later
@@ -171,32 +229,28 @@ theorem rel_after (H : Hyp f g fi gi cert norm) {S' : List Fact} {vals : List Va
     (hS : ∀ F ∈ S', F ∈ S ∨ (FactHolds f cert syms { fr with regs, body := rest } m F ∧
       ∀ t ∈ F.terms, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf t) (bi, k + 1))) :
     Rel f g fi gi cert norm syms bi (k + 1) k' S' { fr with regs, body := rest } fr' m := by
-  obtain ⟨b, hbi, hst, hrest⟩ := stmt_at hR hb
-  have hregs := regs_after H hR hb hset
-  refine ⟨?_, H.wff.inv_results hR.invf hb hty hpure hset, hR.invg, hR.slots, fun x hx => ?_,
-    fun y hy => ?_, fun y hy => (hR.sitesG y hy).mono (Nat.le_succ k), fun F hF => ?_,
-    fun F hF => ?_⟩
-  · obtain ⟨fb, gb, Send, hfb, hgb, hwk, he⟩ := hw
-    obtain ⟨b', hb'', hbody', -⟩ := hR.invg.block
-    have e1 : fb = b := Option.some.inj (hfb.symm.trans hbi)
-    have e2 : gb = b' := Option.some.inj (hgb.symm.trans hb'')
-    subst e1 e2
-    refine ⟨fb, gb, Send, hfb, hgb, ?_, he⟩
-    rw [hrest, ← hbody']
-    exact hwk
-  · rcases H.wff.avail_succ hbi hst hx with hr | hx'
-    · exact hres x hr
-    · rw [TV_after H hR hb hset (H.siteF hx'), hR.agreeF x hx']
-      exact (hregs x hx').symm
-  · rw [TV_after H hR hb hset (hR.sitesG y hy)]
-    exact hR.agreeG y hy
-  · rcases hS F hF with h | ⟨h, -⟩
-    · exact FactHolds.stable H (fr1 := fr) (fr2 := { fr with regs, body := rest }) rfl rfl rfl
-        hregs (hR.factSites F h) (fun _ => rfl) (hR.facts F h)
-    · exact h
-  · rcases hS F hF with h | ⟨-, h⟩
-    · exact fun t ht => (hR.factSites F h t ht).mono (Nat.le_succ k)
-    · exact h
+  exact rel_afterT H.toT hR hb hty hpure hset hw hres hS
+
+/-- The term of a checked pure statement of `f` has the statement's value in a frame whose
+registers hold its operands' term values and in which the atoms below its normalised node are
+typed (`AtomsTyped`). -/
+theorem TV_pureOkT (H : HypT f g fi gi cert norm) {bound : Nat × Nat} {t : Nat} {fr1 fr0 : Frame}
+    (hP : PureOk (ccOf fi gi cert norm) (ccOf fi gi cert norm).ef (ccOf fi gi cert norm).fty st
+      bound t)
+    (hg : fr1.func.globals = fr0.func.globals) (hx : fr1.func.externs = fr0.func.externs)
+    (hs : fr1.slots = fr0.slots)
+    (hr : ∀ x ∈ operands st.inst, TV f cert syms fr1 ((ccOf fi gi cert norm).ef x) = fr0.regs x)
+    (hA : AtomsTyped f cert.tms fr1 (symMem syms) (mapOperands (ccOf fi gi cert norm).ef st.inst)) :
+    TV f cert syms fr1 t = evalNode fr0 (symMem syms) st.inst := by
+  rcases hP.node with hn | ⟨hsome, heq⟩
+  · have hn' : cert.tms[t]? = some (.node (mapOperands (ccOf fi gi cert norm).ef st.inst)) := hn
+    refine tmVal_mapOperands hn' (fun x hxm => ?_) hg hx hs hr
+    have hok := CC.tmOk_node (CC.tmsOk_get H.ok.tms hn') ((ccOf fi gi cert norm).ef x)
+      (by rw [operands_mapOperands]; exact List.mem_map.2 ⟨x, hxm, rfl⟩)
+    exact hok.1
+  · obtain ⟨tx, htx⟩ := Option.isSome_iff_exists.1 hsome
+    have ht : cert.tms[t]? = some tx := heq.symm.trans htx
+    exact (H.norm _ _ tx htx fr1 (symMem syms) t ht hA).trans (evalNode_rename hg hx hs hr)
 
 /-- The term of a checked pure statement of `f` has the statement's value in a frame whose
 registers hold its operands' term values. -/
@@ -230,7 +284,7 @@ variable {syms : String → Option Nat} {bi k k' : Nat} {S : List Fact} {fr fr' 
   {st : Stmt} {rest : List Stmt}
 
 /-- **A `nop` of `f`.** -/
-theorem rel_nop (H : Hyp f g fi gi cert norm)
+theorem rel_nopT (H : HypT f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hb : fr.body = st :: rest) (hn : st.inst = .nop) :
     lstep fr m = .next { fr with body := rest } m ∧
@@ -247,15 +301,23 @@ theorem rel_nop (H : Hyp f g fi gi cert norm)
     rfl
   · obtain ⟨fb, gb, Send, hfb, hgb, hw, he⟩ := walk_frames hR
     rw [hb, walk_nop hn] at hw
-    exact rel_after H (vals := []) (regs := fr.regs) hR hb
+    exact rel_afterT H (vals := []) (regs := fr.regs) hR hb
       (fun ts hts => by rw [hn, h0] at hts; cases hts; rfl)
       (fun h => by rw [hn] at h; cases h)
       (by rw [hres]; rfl) ⟨fb, gb, Send, hfb, hgb, hw, he⟩
       (fun r hr => by rw [hres] at hr; cases hr)
       (fun F hF => .inl hF)
 
+/-- **A `nop` of `f`.** -/
+theorem rel_nop (H : Hyp f g fi gi cert norm)
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hb : fr.body = st :: rest) (hn : st.inst = .nop) :
+    lstep fr m = .next { fr with body := rest } m ∧
+      Rel f g fi gi cert norm syms bi (k + 1) k' S { fr with body := rest } fr' m := by
+  exact rel_nopT H.toT hR hb hn
+
 /-- **A pure statement of `f`.** -/
-theorem rel_pure (H : Hyp f g fi gi cert norm)
+theorem rel_pureT (H : HypT f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hm : m.symbols = syms) (hb : fr.body = st :: rest) (hn : st.inst ≠ .nop)
     (hp : pureK st.inst = true) :
@@ -285,15 +347,23 @@ theorem rel_pure (H : Hyp f g fi gi cert norm)
     have hnode : evalNode fr (symMem syms) st.inst = some v :=
       (evalNode_pureK_syms hp hm.symm).trans (evalNode_of_ok hv)
     have htv : TV f cert syms { fr with regs := fr.regs.set r v, body := rest } t = some v := by
-      rw [TV_pureOk H hP (fr1 := { fr with regs := fr.regs.set r v, body := rest }) (fr0 := fr)
+      rw [TV_pureOkT H hP (fr1 := { fr with regs := fr.regs.set r v, body := rest }) (fr0 := fr)
         rfl rfl rfl (fun x hx => by
-        rw [TV_after H hR hb hset (H.siteF (hav x hx))]
-        exact hR.agreeF x (hav x hx)), hnode]
+        rw [TV_afterT H hR hb hset (H.siteF (hav x hx))]
+        exact hR.agreeF x (hav x hx))
+        (H.atomsTyped (bi := bi) (k := k)
+          (fun w hw => by
+            obtain ⟨a, ha, hta⟩ := hR.invf.regs w hw
+            exact ⟨a, (regs_afterT H hR hb hset w hw).trans ha, hta⟩)
+          (fun o ho => by
+            rw [operands_mapOperands] at ho
+            obtain ⟨x, hx, rfl⟩ := List.mem_map.1 ho
+            exact H.siteF (hav x hx))), hnode]
     left
     refine ⟨{ fr with regs := fr.regs.set r v, body := rest },
       if partialK st.inst then .defd t :: S else S, ?_, ?_⟩
     · simp only [hlstep, hv, LRes.ofRes_ok, hset]
-    · refine rel_after H hR hb (fun ts hts => evalInst_types hv hts)
+    · refine rel_afterT H hR hb (fun ts hts => evalInst_types hv hts)
         (fun _ => ⟨v, rfl, hnode⟩) hset ⟨fb, gb, Send, hfb, hgb, hw, he⟩ (fun r' hr' => ?_)
         (fun F hF => ?_)
       · rw [hr, List.mem_singleton] at hr'
@@ -314,8 +384,17 @@ theorem rel_pure (H : Hyp f g fi gi cert norm)
   · right
     exact ⟨msg, by rw [hlstep, hmsg]; rfl⟩
 
+/-- **A pure statement of `f`.** -/
+theorem rel_pure (H : Hyp f g fi gi cert norm)
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hm : m.symbols = syms) (hb : fr.body = st :: rest) (hn : st.inst ≠ .nop)
+    (hp : pureK st.inst = true) :
+    (∃ fr1 S', lstep fr m = .next fr1 m ∧ Rel f g fi gi cert norm syms bi (k + 1) k' S' fr1 fr' m) ∨
+      ∃ msg, lstep fr m = .stuck msg := by
+  exact rel_pureT H.toT hR hm hb hn hp
+
 /-- **A skeleton statement of `f` the walk removed.** -/
-theorem rel_remove (H : Hyp f g fi gi cert norm)
+theorem rel_removeT (H : HypT f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hm : m.symbols = syms) (hb : fr.body = st :: rest) (hn : st.inst ≠ .nop)
     (hp : pureK st.inst = false)
@@ -346,7 +425,7 @@ theorem rel_remove (H : Hyp f g fi gi cert norm)
     have hl : st.results.length = vals.length := by
       rw [← hlen, ← evalInst_types hev hts, List.length_map]
     obtain ⟨regs, hset⟩ := setMany_len (r := fr.regs) hl
-    refine .inl ⟨{ fr with regs, body := rest }, ?_, rel_after H hR hb
+    refine .inl ⟨{ fr with regs, body := rest }, ?_, rel_afterT H hR hb
       (fun ts' h' => evalInst_types hev h') (fun h => by rw [hnp] at h; cases h) hset hw
       (hres regs hset) (fun F hF => .inl hF)⟩
     simp only [lstep_inst hb hnc, hev, LRes.ofRes_ok, hset]
@@ -365,7 +444,7 @@ theorem rel_remove (H : Hyp f g fi gi cert norm)
     intro r v regs hr hv hle hset r' hr'
     rw [hr, List.mem_singleton] at hr'
     subst hr'
-    rw [TV_after H hR hb hset hle, hv]
+    rw [TV_afterT H hR hb hset hle, hv]
     rw [hr] at hset
     exact (setMany_single hset).symm
   rcases removeOk_spec hrm with
@@ -444,6 +523,20 @@ theorem rel_remove (H : Hyp f g fi gi cert norm)
     have hsym := Res.norm_eq_ok hnorm.symm he
     have hm' := ((evalInst_mergeK hk').1 _ _ hsym).2 m
     exact fin [] hnc hm' (isPure_of_mergeK hk') fun regs _ r' hr' => by rw [hr] at hr'; cases hr'
+
+/-- **A skeleton statement of `f` the walk removed.** -/
+theorem rel_remove (H : Hyp f g fi gi cert norm)
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hm : m.symbols = syms) (hb : fr.body = st :: rest) (hn : st.inst ≠ .nop)
+    (hp : pureK st.inst = false)
+    (hrm : (ccOf fi gi cert norm).removeOk bi k st S
+      (mapOperands (ccOf fi gi cert norm).ef st.inst) = true)
+    (hw : ∃ fb gb Send, f.blocks[bi]? = some fb ∧ g.blocks[bi]? = some gb ∧
+      (ccOf fi gi cert norm).walk bi rest fr'.body (k + 1) k' S = some Send ∧
+      EndOk (ccOf fi gi cert norm) bi fb gb Send) :
+    (∃ fr1, lstep fr m = .next fr1 m ∧ Rel f g fi gi cert norm syms bi (k + 1) k' S fr1 fr' m) ∨
+      ∃ msg, lstep fr m = .stuck msg := by
+  exact rel_removeT H.toT hR hm hb hn hp hrm hw
 
 end
 

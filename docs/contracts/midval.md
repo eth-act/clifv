@@ -44,10 +44,11 @@ function's arguments), the same dominator tree.
 * **Memory versions**: Cranelift 0.135.0's `LastStores` with one region (cg_clif sets no alias
   region): every store, call, `call_indirect`, atomic, `fence` and `try_call` starts a version, a
   join of different versions starts one; explicit traps keep it.
-* **Normaliser seam** (`Norm`): `Norm.id` in stage 1; the default is now `Norm.std` (stage 2,
-  below). A stage-2 rewrite is one more `Norm` with a lemma that it preserves the value under
-  `Clif.evalInst` (`NormSound`). `midval-check --norm-id` measures with stage 1's `Norm.id`,
-  `--norm-const` with family 1 alone (`evalConst`).
+* **Normaliser seam** (`Norm`): `Norm.id` in stage 1; the default is now `Norm.stdT f` (stage 2,
+  below: `Norm.std`, then the typed rules). A stage-2 rewrite is one more `Norm` with a lemma that
+  it preserves the value under `Clif.evalInst` (`NormSound`, or `NormSoundT f` for a rule that
+  reads an atom's type). `midval-check --norm-id` measures with stage 1's `Norm.id`,
+  `--norm-const` with family 1 alone (`evalConst`), `--norm-std` without the typed rules.
 
 Rejected, with a reason: ISLE rewrites (`rewrite:*`), dead-store elimination (`alias:store`),
 moved `can_move` loads, the two checker gaps below.
@@ -59,7 +60,7 @@ moved `can_move` loads, the two checker gaps below.
   quantified away at every step. With `FunSimU.toMU`, `FunSimMU.trans` and the program-level
   lifting `runLoopX_refinesMU`, whose conclusion is that of `Opt.runLoopX_refinesU`.
 * `Opt.MidVal.check_sound : checkCert f g cert = true → FunSimMU f g` (with the default
-  normaliser `Norm.std`; for any normaliser: `check_sound_norm : checkCert f g cert norm = true →
+  normaliser `Norm.stdT f`; for any normaliser: `check_sound_norm : checkCert f g cert norm = true →
   NormSound norm → FunSimMU f g`), where `checkCert` re-checks the certificate the executable
   checker emits (`Opt.MidVal.emit`: the term table with a dominance site per term, the term of
   every value of `f` and `g`, the facts at each block's entry) and `NormSound` says the
@@ -168,8 +169,9 @@ hand-made pairs: the 4 positive ones re-check `ok`, the 8 negative ones are reje
 
 ## Stage 2: rewrites through the normaliser (agents MidendNorm1, MidendNorm2)
 
-The default normaliser `Norm.std` of `check`, `emit`, `checkCert` and `checkCertSyms` grows one
-proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h normSound_std`).
+The default normaliser of `check`, `emit`, `checkCert` and `checkCertSyms` (`Norm.std`, since
+the typed seam `Norm.stdT f`) grows one proved family at a time; `check_sound`'s text is
+unchanged (`check_sound_normT h normSoundT_stdT`).
 
 | family | normaliser step | proof | accepted (121,879 pairs) | accepted: identical to stock from `g` | projected release parity |
 |---|---|---|---|---|---|
@@ -177,6 +179,8 @@ proved family at a time; `check_sound`'s text is unchanged (`check_sound_norm h 
 | 1: constant evaluation | `evalConst` | `normSound_evalConst` | 77,905 (63.9 %) | 76,767 / 77,880 (98.6 %) | 63.1 % |
 | 2: single-node algebraic rules, first set | `Norm.alg` after `evalConst` | `normSound_alg` | 87,451 (71.8 %) | 80,622 / 87,406 (92.2 %) | 66.2 % |
 | 2: second set | `Norm.alg2` before `Norm.alg` | `normSound_alg2`, `normSound_std` | 88,966 (73.0 %) | 81,681 / 88,921 (91.9 %) | 67.1 % |
+| 3: branch conditions (`checkCertC`, hints) | none (`condPrep g hints` re-check) | `condPrep_simU`, `check_soundC` | 91,948 (75.4 %) | 84,317 / 91,898 (91.8 %) | 69.3 % |
+| typed seam (`Norm.stdT f`) | `selTyped`, `redTyped` after `Norm.std` | `normSoundT_typed`, `normSoundT_stdT`, `check_sound_normT` | 103,615 (85.0 %) | 86,843 / 103,562 (83.9 %) | 71.3 % |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -265,3 +269,94 @@ counterfactual.)
   `icmp eq x 0`, and `bmask` of a non-`icmp` shown to be no simulation); five real pairs (`isub 0,
   x`; `imul x, 2`; `icmp ule 48, x`; `icmp ult x, 1`; `icmp eq (select (icmp eq x, -1), 0, 1), 1`),
   each rejected without the second set, `checkCert` decided, simulation and program refinement.
+* **Family 3, branch conditions** (`Opt.MidVal.checkCertC`, `FV/Opt/MidValCond.lean`; proofs
+  `FV/Opt/Proof/MidValCondSim.lean`, `FV/Opt/Proof/MidValCondProg.lean`). Cranelift's mid-end
+  drops the zero test of a `brif` condition: `f` branches on `icmp ne x, 0` (or `icmp ugt x, 0`,
+  `icmp ult 0, x`, an `uextend`/`sextend` of the condition, or a chain of these) where `g` branches
+  on `x`. These are not value rewrites (`icmp ne x, 0` is `0`/`1`, `x` is not), so they are not a
+  `Norm` rule; they hold only where the value is used as a branch condition (`brif` takes its
+  `then` successor iff the value is non-zero). The validator does not relax the terminator
+  comparison of `checkCert`. Instead:
+  - `condPrep g hints` is `g` with, in each hinted block whose terminator is `brif c t e` with `c`
+    below `g.freshValue`, fresh statements appended that rebuild `f`'s wrapper chain on `c`
+    (`z = iconst ty 0; r = icmp ne c, z`, `r = uextend.ty c`, …, values numbered from
+    `g.freshValue` on) and the terminator `brif r t e`. Only wrappers that keep the condition's
+    truth whenever they evaluate are inserted (`Wrap.ok`: `icmp ne` with `0` on either side,
+    `icmp ugt y, 0`, `icmp ult 0, y`, `extend`); any other hint leaves the block unchanged. A
+    hint is a block id with a wrapper chain: it is untrusted (computed by `checkC`, the relaxed
+    executable check), `condPrep` is built from `g` and the hints only, so a wrong hint can only
+    make the re-check reject.
+  - `refsOk g` (side condition, checked in `checkCertC`): every operand of every statement and
+    terminator of `g` is below `g.freshValue`. `g.freshValue` is computed from the values `g`
+    defines (block parameters, results), not from those it reads; without the test a statement
+    of `g` could read a value numbered at or above it, which the inserted statements of
+    `condPrep` write, so `g` and the copy would read different registers there (the proof's
+    frame relation equates them only below `g.freshValue`).
+  - `checkCertC f g cert hints` = `checkCert f g cert` for no hints, else `refsOk g &&
+    checkCert f (condPrep g hints) cert`; `checkCertSymsC` the same for the hoisting mode. The
+    compiled function stays `g`: the copy exists only inside the check, and the inserted values
+    are read only by the copied `brif` (so the zero / non-zero equivalence is used only at that
+    branch, never where a value is observed).
+
+  Theorems (new names; nothing on main restated): `condPrep_simU : refsOk g = true → FunSimU
+  (condPrep g hints) g` (the inserted statements are stuttering steps that write only values
+  `g` never reads; both take the same successor at the `brif`, `prepChain_ok`),
+  `check_soundC_norm`, `check_soundC` (`checkCertC f g cert hints = true → FunSimMU f g`, by
+  `check_sound_norm` and `FunSimMU.trans`), `check_soundSymsC`, `checkedC_simMU`,
+  `ValidatedC`/`ValidatedSymsC` (every `Validated` list is one: `Validated.toC`),
+  `validatedC_refines`, `validatedC_refines_syms` (the conclusions of `validated_refines`/
+  `validated_refines_syms`). Measured (2026-11-19, the same 121,879 pairs, `midval-check --cond
+  --cert`; #1138's binary against this one): 88,966 → 91,948 (+2,982), 0 lost, every accepted
+  pair re-checks `ok` with `checkCertC` and the emitted hints; 2,977 of the newly accepted
+  functions are Lean-compiled and verified from `g` (5 have no record), 2,636 byte-identical to
+  stock. Hoisting mode: 89,065 → 92,096. Witnesses (`FVTest/Opt/MidValCondWitness.lean`): `brif (icmp
+  ne x, 0)` and `brif (uextend.i64 x)` against `brif x` accepted and rejected without hints; the
+  look-alikes `brif (icmp eq x, 1)` and `brif (icmp ugt x, 1)` against `brif x` rejected, shown to
+  be no simulation (`eq_not_sim`, `ugt1_not_sim`), so every certificate with every hint list is
+  rejected (`eq_rejected`, `ugt1_rejected`); two real pairs (crypto-bigint: `brif (uextend.i64
+  (load.i8 …))` → `brif (load.i8 …)`; `brif (icmp ne …, 0)` in a proptest runner with
+  `try_call`s), each rejected without hints, `checkCertC` decided, simulation and program
+  refinement.
+* **Typed seam** (agent MidendNorm4; design: #1119 issuecomment-7024569975). Two rewrites seen
+  in the dumps depend on an atom's width, which the term table does not hold; in an arbitrary
+  frame an atom's register may hold a value of any type, so no every-frame equality (`NormSound`)
+  covers them. The seam:
+  - Compiler side (`FV/Opt/MidVal.lean`): `atomTy f` is the static type of an atom of `f` (block
+    parameters' declared types; statement results' `Inst.resultTypes`, calls through the extern
+    signatures, `call_indirect` through `sigDeclOf`; `none` for `poison`); `tyAt` gives a term's
+    type (a node's `nodeTy`, an atom's `atomTy`). `selTyped`: `select ty c 1 0` / `select ty c 0
+    1` with `c` an integer-typed term that is not an `icmp` is `icmp ne/eq tc c 0` at `i8`, its
+    `uextend ty` wider (the `0` and the comparison are looked up with `findTm`; the untrusted
+    `intern` interns them first, `internSelAux`). `redTyped`: `ireduce ty (extend op uty x)` with
+    `x` an atom of static type `xt`, both narrower than `uty`: `x`, `extend op ty x` or
+    `ireduce ty x` (as `redExt` for a node `x`). `Norm.stdT f = Norm.orElse Norm.std (Norm.guard
+    (typedStep (atomTy f)))` is the default of `check`, `emit`, `checkCert`, `checkCertSyms`,
+    `checkCertC`, `checkC`, `emitC` (a default that reads `f`), and of `midval-check`.
+  - Obligation (`FV/Opt/Proof/MidValTerm.lean`): `AtomsTyped f tms fr mem i` (every atom reachable
+    from `i`'s operands through node operands, `TmReach`, that has a static type holds a value of
+    it in `fr`) and `NormSoundT f norm` (the normalised term has the node's value in every frame
+    where `AtomsTyped` holds); `NormSound.toT`. The simulation evaluates a normalised node only in
+    `f`'s frame at a point where its operands' sites are no later, so every atom below it is
+    available there and typed by the run-time invariant (`Inv.regs`) and `wfCheck`'s typing
+    (`atomTy_tm`, `reach_site`, `atomsTyped_of`, `FV/Opt/Proof/MidValTyped.lean`).
+  - `HypT` is `Hyp` with `NormSoundT f norm` (`Hyp.toT`); the simulation lemmas taking `Hyp` have
+    `…T` versions taking `HypT` (the two that use the normaliser, `TV_pureOkT` and `gStmtT`, get
+    `AtomsTyped` from `HypT.atomsTyped`), and the old names are corollaries with their text.
+    Theorems (new names): `check_sound_normT : checkCert f g cert norm = true → NormSoundT f norm →
+    FunSimMU f g`, `check_soundSyms_normT`, `check_soundC_normT`; `check_sound`, `check_soundSyms`,
+    `check_soundC` keep their text and are proved by them with `normSoundT_stdT : NormSoundT f
+    (Norm.stdT f)` (`ruleSoundT_selTyped`, `ruleSoundT_redTyped`, `normSoundT_typed`,
+    `FV/Opt/Proof/MidValNormTyped.lean`).
+  - Witnesses (`FVTest/Opt/MidValTypedWitness.lean`): `select (icmp eq x, 0), 0, 1` against
+    `select x, 1, 0` (`x` an `i32` parameter) and `ireduce.i16 (uextend.i64 x)` against `x`,
+    `uextend.i16 x`, `ireduce.i16 x` (`x` of `i16`, `i8`, `i32`) accepted and rejected by
+    `Norm.std`; the look-alikes `uextend.i64 (icmp ne x, 0)` against `select x, 0, 1` and the
+    `i16` pair with an `i32` atom rejected, shown to be no simulation, so every certificate is
+    rejected (`sel_rejected`, `red_rejected`); two real pairs (clap_builder in crypto-bigint's
+    test build: `br_table (ireduce.i32 (uextend.i64 (load.i8 …)))` → `br_table (uextend.i32
+    (load.i8 …))`; `select (icmp eq (load.i64 …), 0), 0, 1` → `select (load.i64 …), 1, 0`), each
+    rejected by `Norm.std`, `checkCert` decided, simulation and program refinement. Measured
+    (2026-11-19, the same 121,879 pairs, `midval-check --cond --cert`, family 3's binary against
+    this one): 91,948 → 103,615 (+11,667), 0 lost, every accepted pair re-checks `ok`; 11,664 of
+    the newly accepted functions are Lean-compiled and verified from `g` (3 have no record), 2,526
+    byte-identical to stock. Hoisting mode: 92,096 → 104,468.

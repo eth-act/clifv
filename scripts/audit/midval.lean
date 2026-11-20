@@ -10,6 +10,10 @@ import FVTest.Opt.MidValGapWitness
 import FVTest.Opt.MidValNormWitness
 import FVTest.Opt.MidValAlgWitness
 import FVTest.Opt.MidValAlg2Witness
+import FV.Opt.Proof.MidValCondProg
+import FVTest.Opt.MidValCondWitness
+import FV.Opt.Proof.MidValNormTyped
+import FVTest.Opt.MidValTypedWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -577,3 +581,174 @@ import FVTest.Opt.MidValAlg2Witness
 #print axioms Opt.MidVal.ty_width_bytes
 #print axioms Opt.MidVal.Tn.mbc
 #print axioms Opt.MidVal.Tn.ofRes_cases
+-- #1119 stage 2 family 3 (route D): branch conditions (FV/Opt/Proof/MidValCondSim.lean, MidValCondProg.lean)
+#print axioms Opt.MidVal.evalInst_chain_trap
+#print axioms Opt.MidVal.evalInst_chain_mem
+#print axioms Opt.MidVal.RunS.append
+#print axioms Opt.MidVal.RunS.congr
+#print axioms Opt.MidVal.truthy_bool8
+#print axioms Opt.MidVal.zeroExtend_eq_zero
+#print axioms Opt.MidVal.signExtend_eq_zero
+#print axioms Opt.MidVal.truthy_zeroExtend
+#print axioms Opt.MidVal.truthy_signExtend
+#print axioms Opt.MidVal.ult_zero_left
+#print axioms Opt.MidVal.truthy_icmp_zero
+#print axioms Opt.MidVal.ChainOK.comp
+#print axioms Opt.MidVal.ChainOK.nil
+#print axioms Opt.MidVal.wrap_ok
+#print axioms Opt.MidVal.prepChain_ok
+#print axioms Opt.MidVal.prepChain_res
+#print axioms Opt.MidVal.PrepRel.refl
+#print axioms Opt.MidVal.prepBlock_rel
+#print axioms Opt.MidVal.prepBlocks_rel
+#print axioms Opt.MidVal.condPrep_rel
+#print axioms Opt.MidVal.refsOk_spec
+#print axioms Opt.MidVal.CR.enter
+#print axioms Opt.MidVal.CR.enter_same
+#print axioms Opt.MidVal.CR.after
+#print axioms Opt.MidVal.CR.stepA
+#print axioms Opt.MidVal.CR.stepB
+#print axioms Opt.MidVal.ofRes_enter_next
+#print axioms Opt.MidVal.ofRes_enter_ne
+#print axioms Opt.MidVal.ofRes_get_ne
+#print axioms Opt.MidVal.CR.stepC
+#print axioms Opt.MidVal.freshValue_le_of_bound
+#print axioms Opt.MidVal.prepBlocks_mem
+#print axioms Opt.MidVal.condPrep_freshValue
+#print axioms Opt.MidVal.agree_tryRets
+#print axioms Opt.MidVal.CR.isSimWU
+#print axioms Opt.MidVal.condPrep_simU
+#print axioms Opt.MidVal.check_soundC_norm
+#print axioms Opt.MidVal.check_soundC
+#print axioms Opt.MidVal.check_soundSymsC
+#print axioms Opt.MidVal.checkCertC_nil
+#print axioms Opt.MidVal.checkedC_simMU
+#print axioms Opt.MidVal.checkedSymsC_simMUAt
+#print axioms Opt.MidVal.Validated.toC
+#print axioms Opt.MidVal.ValidatedC.funsSimMU
+#print axioms Opt.MidVal.validatedC_refines
+#print axioms Opt.MidVal.ValidatedSyms.toC
+#print axioms Opt.MidVal.ValidatedSymsC.funsSimMUAt
+#print axioms Opt.MidVal.validatedC_refines_syms
+-- witnesses of family 3 (FVTest/Opt/MidValCondWitness.lean)
+#print axioms Opt.MidVal.CondWitness.pos_ne -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.pos_ne_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.pos_ext -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.pos_ext_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.neg_eq -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.neg_ugt1 -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.eqF_text -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.neG_text -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.eq_not_sim
+#print axioms Opt.MidVal.CondWitness.eq_rejected
+#print axioms Opt.MidVal.CondWitness.ugt1F_text -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.ugt1_not_sim
+#print axioms Opt.MidVal.CondWitness.ugt1_rejected
+#print axioms Opt.MidVal.CondWitness.simC_of_checked
+#print axioms Opt.MidVal.CondWitness.real_ext_plain_rejects -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.real_ext_checked -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.real_ext_sim -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.real_ne_plain_rejects -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.real_ne_checked -- witness: native_decide
+#print axioms Opt.MidVal.CondWitness.real_ne_sim -- witness: native_decide
+-- #1119 stage 2, the typed normaliser seam (FV/Opt/Proof/MidValTerm.lean, MidValTyped.lean,
+-- MidValNormTyped.lean; the `…T` versions of the simulation lemmas take `HypT`)
+#print axioms Opt.MidVal.NormSound.toT
+#print axioms Opt.MidVal.atomTy_tm
+#print axioms Opt.MidVal.reach_site
+#print axioms Opt.MidVal.atomsTyped_of
+#print axioms Opt.MidVal.Hyp.toT
+#print axioms Opt.MidVal.HypT.wff
+#print axioms Opt.MidVal.HypT.wfg
+#print axioms Opt.MidVal.HypT.idomF
+#print axioms Opt.MidVal.HypT.idomG
+#print axioms Opt.MidVal.HypT.idomC
+#print axioms Opt.MidVal.HypT.rankF
+#print axioms Opt.MidVal.HypT.le_sound
+#print axioms Opt.MidVal.HypT.leP_trans
+#print axioms Opt.MidVal.HypT.siteF
+#print axioms Opt.MidVal.HypT.TV_stable
+#print axioms Opt.MidVal.HypT.atomsTyped
+#print axioms Opt.MidVal.FactHolds.stableT
+#print axioms Opt.MidVal.rel_entryT
+#print axioms Opt.MidVal.entry_facts_holdT
+#print axioms Opt.MidVal.FStep.regs_afterT
+#print axioms Opt.MidVal.FStep.TV_afterT
+#print axioms Opt.MidVal.FStep.rel_afterT
+#print axioms Opt.MidVal.FStep.TV_pureOkT
+#print axioms Opt.MidVal.rel_nopT
+#print axioms Opt.MidVal.rel_pureT
+#print axioms Opt.MidVal.rel_removeT
+#print axioms Opt.MidVal.MCtx.evalT
+#print axioms Opt.MidVal.MCtx.callT
+#print axioms Opt.MidVal.rel_bindT
+#print axioms Opt.MidVal.facts_nextT
+#print axioms Opt.MidVal.matched_nextT
+#print axioms Opt.MidVal.matched_trapT
+#print axioms Opt.MidVal.matched_callT
+#print axioms Opt.MidVal.matched_ciT
+#print axioms Opt.MidVal.rel_matchedT
+#print axioms Opt.MidVal.results_lenT
+#print axioms Opt.MidVal.gStepT
+#print axioms Opt.MidVal.gStmtT
+#print axioms Opt.MidVal.gPre_run_listT
+#print axioms Opt.MidVal.gPre_runT
+#print axioms Opt.MidVal.Tn.id_eqT
+#print axioms Opt.MidVal.Tn.block?_gT
+#print axioms Opt.MidVal.Tn.strict_of_leT
+#print axioms Opt.MidVal.Tn.strict_of_ancT
+#print axioms Opt.MidVal.Tn.TV_enterT
+#print axioms Opt.MidVal.AtEnd.opsT
+#print axioms Opt.MidVal.AtEnd.regs_congrT
+#print axioms Opt.MidVal.AtEnd.of_relT
+#print axioms Opt.MidVal.rel_enterT
+#print axioms Opt.MidVal.end_stepT
+#print axioms Opt.MidVal.rel_termT
+#print axioms Opt.MidVal.pair_regsT
+#print axioms Opt.MidVal.tcontT
+#print axioms Opt.MidVal.hcontT
+#print axioms Opt.MidVal.rel_tryT
+#print axioms Opt.MidVal.step_consT
+#print axioms Opt.MidVal.isSimMUT
+#print axioms Opt.MidVal.entry_relT
+#print axioms Opt.MidVal.check_sound_normT
+#print axioms Opt.MidVal.check_soundSyms_normT
+#print axioms Opt.MidVal.check_soundC_normT
+#print axioms Opt.MidVal.normSoundT_guard
+#print axioms Opt.MidVal.normSoundT_orElse
+#print axioms Opt.MidVal.tyAt_val
+#print axioms Opt.MidVal.selCC_spec
+#print axioms Opt.MidVal.icmp_zero_ne
+#print axioms Opt.MidVal.icmp_zero_eq
+#print axioms Opt.MidVal.select_one_zero
+#print axioms Opt.MidVal.select_zero_one
+#print axioms Opt.MidVal.ruleSoundT_selTyped
+#print axioms Opt.MidVal.ruleSoundT_redTyped
+#print axioms Opt.MidVal.ruleSoundT_typedStep
+#print axioms Opt.MidVal.normSoundT_typed
+#print axioms Opt.MidVal.normSoundT_stdT
+-- witnesses of the typed rules (FVTest/Opt/MidValTypedWitness.lean)
+#print axioms Opt.MidVal.TypedWitness.pos_sel -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.pos_sel_std_rejects -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.neg_sel -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.pos_red -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.pos_red_std_rejects -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.pos_redU -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.pos_redU_std_rejects -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.pos_redR -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.pos_redR_std_rejects -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.neg_red -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.selNegF_text -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.selNegG_text -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.redNegF_text -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.redNegG_text -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.sel_not_sim
+#print axioms Opt.MidVal.TypedWitness.sel_rejected
+#print axioms Opt.MidVal.TypedWitness.red_not_sim
+#print axioms Opt.MidVal.TypedWitness.red_rejected
+#print axioms Opt.MidVal.TypedWitness.real_red_std_rejects -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.real_red_checked -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.real_red_sim -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.real_sel_std_rejects -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.real_sel_checked -- witness: native_decide
+#print axioms Opt.MidVal.TypedWitness.real_sel_sim -- witness: native_decide
