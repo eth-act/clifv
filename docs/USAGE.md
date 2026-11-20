@@ -623,7 +623,7 @@ the theorem still about the unoptimised function.
 
 #### `--midval`: Cranelift's optimised function through the mid-end validator (opt-in, #1119)
 
-`cargo fv <build|run|test> --midval` (plain mode, no `--lean-link`; separate target dir
+`cargo fv <build|run|test> --midval` (plain mode, or `--lean-link --verified`; separate target dir
 `…-midval`): for every function whose dump header says cg_clif optimised it (`opt_level` not
 `none`), `cargo fv` passes the function's `.opt.clif` to `lean-backend --midval-opt`.
 `lean-backend` runs the mid-end validator's certificate generator `Opt.MidVal.emitC` on the
@@ -643,10 +643,17 @@ every function of a build whose `opt_level` is `none` (the default debug profile
 as without the flag. `fv-report.json` gives each such function `midval: {outcome, reason,
 opt_level}` and `counts.midval_validated`; `cargo fv report` lists the outcomes by reason.
 
-**What it turns off today:** `--midval` implies `--no-binary-check` and is refused with
-`--lean-link`. `link-check` (the binary check) and `lean-link` do not re-decide the validator's
-pairs yet, so no executable-level theorem covers a validated function; rather than a binary
-check about another program, there is none. It stays opt-in until they do (#1119, layer 2).
+**Executables** (#1119 layer 2): the binary check stays. `cargo fv` writes, for a function
+compiled from its optimised dump, its `.unopt.clif` as `src_dump` into the bundle; `link-check`
+re-decides every pair itself (`Link.midPairB`: `emitC`/`checkCertC` on the bundle's two texts) as
+one more per-function check, so a failing pair fails that function, `--prune` drops it and its
+callers, and the executable is not verified (#1131); when every pair holds it names the theorem
+through the validator (`…_mid`, about the program of the unoptimised dumps). With `--lean-link
+--verified`, `lean-link` decides the same pairs, leaves a failing one out of the region, and names
+the `…_sourceMid` / `…TBMid` source theorems (docs/contracts/e2e.md, "Executables through the
+mid-end validator"). `lean-backend --midval-opt` also requires `Link.midPairB` on the pair as
+`link-check` takes it (after the `i128` legalisation) and `g`'s printed CLIF to parse back to `g`.
+`--midval` is refused with `--lean-link` without `--verified`.
 
 Measured (#1119, 2026-11-20, clifv-remote; tools of #1144's head 41bb21b3e = main a8845ea89's
 validator, `checkCertC` with the default normaliser `Norm.stdT`): `cargo fv test --release`
