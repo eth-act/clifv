@@ -117,13 +117,17 @@ moved `can_move` loads, the two checker gaps below.
    unwinding and typed `backend_correct_midval_*`; docs/contracts/e2e.md "Through the mid-end
    validator"); `lean-backend --midval-opt <g.opt.clif>` runs `emitC` and decides `checkCertC`, then
    compiles `g` and names the composed theorem (`FVTest.Backend.FnVerdict.midvalVerdict`), or
-   compiles `f` exactly as without the option; `cargo fv --midval` (plain mode, no `--lean-link`,
-   no binary check) passes the `.opt.clif` of every function whose dump header's `opt_level` is
+   compiles `f` exactly as without the option; `cargo fv --midval` (plain mode, or `--lean-link
+   --verified`) passes the `.opt.clif` of every function whose dump header's `opt_level` is
    not `none`. Witness `FVTest/Backend/MidValPassWitness.lean`, audit
    `scripts/audit/midval-e2e.lean`.
-   Layer 2 (not done): bundle entries with both dumps, `link-check` re-deciding `checkCertC` per
-   pair, a `Link.midSource` like `Link.cpSource`, a gate line; crypto-bigint's executables first
-   need the unreferenced-data-object fix (#1122).
+7. Plumbing, layer 2 — **done** (per executable; #1119 design issuecomment-7016795001): bundle
+   entries with both dumps (`src_dump`, `Front.readSrcBundle`); `Link.midPairB` /
+   `midValidatedB_sound` (`FV/Link/MidPair.lean`), re-decided by `link-check` (one more
+   per-function check; the `_mid` binary theorems, `FV/E2E/MidValExecProven.lean`) and by
+   `lean-link --verified` (`Link.midSource`, `midProg`, the `…_sourceMid` and `…TBMid` source
+   theorems); docs/contracts/e2e.md "Executables through the mid-end validator", audit
+   `scripts/audit/midsource.lean`, tamper test `scripts/midval-tamper-check.py`.
 
 ## Measured (2026-11-19, 9 release crates, 121,879 dump pairs)
 

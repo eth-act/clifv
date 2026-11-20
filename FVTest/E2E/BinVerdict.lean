@@ -55,4 +55,36 @@ def binVerdict (c : Checker) (recursive ok binOk codeOk gotOk : Bool) : String :
   else if !gotOk then "theorem: none (GotOk fails)"
   else s!"theorem: {binTheorem c recursive}"
 
+/-! ### Through the mid-end validator (#1119, `cargo fv --midval`)
+
+When the bundle has functions compiled from Cranelift's optimised dumps (`src_dump`: their
+unoptimised dumps), the theorem is the `_mid` sibling: the same premises about the compiled
+program, plus `Opt.MidVal.ValidatedC P0.funcs (prog I).funcs` for the program `P0` of the
+unoptimised dumps after constant-phi removal and the `i128` legalisation (`FnInput.cp`, as
+`prog I` is of the dumps compiled; `link-check` decides `Link.midValidatedB` on the pruned
+program, `Link.midValidatedB_sound`); its conclusion is about `P0`'s runs. -/
+
+/-- The `_mid` siblings of `theorems`. -/
+def theoremsMid (c : Checker) : String × String :=
+  let (t, p) := theorems c
+  (t ++ "_mid", p ++ "_mid")
+
+/-- **The theorem the checks instantiate through the validator**, about the program of the
+unoptimised dumps. -/
+def binTheoremMid (c : Checker) (recursive : Bool) : String :=
+  let (t, p) := theoremsMid c
+  if recursive then
+    s!"{t} ({p} for the functions whose calls reach a call cycle: their stack stays a premise)"
+  else t
+
+/-- **The verdict through the validator**: as `binVerdict`, also requiring `midOk`
+(`Link.midValidatedB` on the pruned program). -/
+def binVerdictMid (c : Checker) (recursive ok binOk codeOk gotOk midOk : Bool) : String :=
+  if !ok then s!"theorem: none (the checker {c.label} fails)"
+  else if !binOk then "theorem: none (the binary checks fail)"
+  else if !codeOk then "theorem: none (codeMapB fails)"
+  else if !gotOk then "theorem: none (GotOk fails)"
+  else if !midOk then "theorem: none (Link.midValidatedB fails)"
+  else s!"theorem: {binTheoremMid c recursive} (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation)"
+
 end FVTest.E2E.BinVerdict

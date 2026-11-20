@@ -68,14 +68,15 @@ Executables run under qemu-aarch64-static. After a build the report is in target
                       scripts/build-cg-clif.sh prepares (target/cg_clif/std-src; FV_STD_SRC
                       overrides); compiler_builtins stays on LLVM and musl libc prebuilt; the
                       report counts the std crates separately; separate target dir
-  --midval            the mid-end validator (#1119), plain mode without --lean-link: a function
+  --midval            the mid-end validator (#1119), plain mode (with --lean-link only with --verified): a function
                       cg_clif optimised (opt_level not none in its dump's header, e.g. --release)
                       is compiled from Cranelift's optimised dump when lean-backend decides
                       Opt.MidVal.checkCertC on the pair and the theorem composes (an
                       E2E.backend_correct_midval_* theorem, about the unoptimised .unopt.clif),
-                      else from the .unopt.clif exactly as without it. Implies --no-binary-check:
-                      link-check does not re-decide the pair yet, so no executable theorem covers
-                      a validated function. Separate target dir
+                      else from the .unopt.clif exactly as without it. The binary check stays:
+                      link-check re-decides every pair (Link.midPairB) and names the theorem
+                      through the validator (…_mid), about the unoptimised dumps' program.
+                      Separate target dir
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json
 
@@ -351,14 +352,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     if lean_link && mode == Mode::Opt {
         die("--lean-link compiles with the proven mid-end rules only (lean-link --opt); use --opt-proven-only");
     }
-    if midval && (lean_link || mode != Mode::Plain) {
-        die("--midval is for plain mode without --lean-link (#1119: lean-link and link-check do not re-decide the pair yet)");
-    }
-    // #1119: link-check does not re-decide the validator's pairs yet, so no executable theorem
-    // covers a validated function: no binary check rather than one about another program
-    if midval && bin_check {
-        eprintln!("cargo fv: --midval: no binary check (link-check does not re-decide Opt.MidVal.checkCertC yet, #1119)");
-        bin_check = false;
+    if midval && (mode != Mode::Plain || (lean_link && !verified)) {
+        die("--midval is for plain mode, with --lean-link only with --verified (#1119: lean-link names the theorems through the mid-end validator on the source domain --verified decides)");
     }
     if value_of(&cargo_args, "--target").is_some() {
         die(&format!("cargo fv always builds for {TARGET}; drop --target"));

@@ -370,12 +370,22 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 ));
             }
             placed.push((fin.clone(), align));
-            functions.push(serde_json::json!({
+            let mut entry = serde_json::json!({
                 "name": f["symbol"],
                 "final": fin,
                 "dump": dump,
                 "ra": ra,
-            }));
+            });
+            // #1119 (`--midval`): compiled from Cranelift's optimised dump (`dump`); its
+            // unoptimised dump, the function the executable theorems are about
+            if let Some(s) = f["src_dump"].as_str() {
+                let s = PathBuf::from(s);
+                if !s.is_file() {
+                    return Err(format!("{}: missing (rebuild with --keep-temps)", s.display()));
+                }
+                entry["src_dump"] = serde_json::json!(s);
+            }
+            functions.push(entry);
         }
         nfuncs += functions.len();
         aligns.extend(region_aligns(&placed));
