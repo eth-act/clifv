@@ -1,6 +1,6 @@
 import FV.Front.Raw
 import FV.Opt.ConstPhi
-import FV.Opt.MidValCert
+import FV.Opt.MidValCond
 
 /-! # `lake exe midval-check DIR...`: the mid-end validator on cg_clif's dump pairs (#1119)
 
@@ -18,7 +18,9 @@ otherwise, `-` for a rejected pair) and its microseconds (`checkCert` alone, not
 The normaliser is the validator's default (`Opt.MidVal.Norm.std`: constant evaluation, then the
 single-node algebraic rules); with `--norm-id`, stage 1's identity; with `--norm-const`, constant
 evaluation alone. With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by
-`checkCertSyms`, whose theorem assumes the function's global values resolve).
+`checkCertSyms`, whose theorem assumes the function's global values resolve). With `--cond`,
+family 3 (branch conditions): `Opt.MidVal.checkC`, re-checked by `checkCertC` with the hints
+`emitC` gives (the `hints` column after the re-check: the number of hinted blocks).
 
 Measurement tool only: it states no theorem.
 -/
@@ -40,37 +42,43 @@ def normOf (normId normConst : Bool) : Opt.MidVal.Norm :=
   if normId then Opt.MidVal.Norm.id
   else if normConst then Opt.MidVal.evalConst else Opt.MidVal.Norm.std
 
-/-- Constant-phi removal and the check, evaluated inside the call (timing). -/
-@[noinline] def runCheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f0 g : Clif.Function) :
+/-- Constant-phi removal and the check (`checkC` with `cond`), evaluated inside the call
+(timing). -/
+@[noinline] def runCheck (nm : Opt.MidVal.Norm) (hoist cond : Bool) (f0 g : Clif.Function) :
     IO (Clif.Function × Except String Unit) := do
   let f := Opt.ConstPhi.run f0
-  let r := Opt.MidVal.check f g nm hoist
+  let r := if cond then (Opt.MidVal.checkC f g nm hoist).map fun _ => ()
+    else Opt.MidVal.check f g nm hoist
   match r with
   | .ok () => pure (f, r)
   | .error _ => pure (f, r)
 
-/-- The certificate of an accepted pair (`Opt.MidVal.emit`). -/
-@[noinline] def runEmit (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) :
-    IO (Except String Opt.MidVal.Cert) :=
-  pure (Opt.MidVal.emit f g nm hoist)
+/-- The certificate and hints of an accepted pair (`Opt.MidVal.emit`, `emitC` with `cond`). -/
+@[noinline] def runEmit (nm : Opt.MidVal.Norm) (hoist cond : Bool) (f g : Clif.Function) :
+    IO (Except String (Opt.MidVal.Cert × List (Clif.BlockId × List Opt.MidVal.Wrap))) :=
+  pure (if cond then Opt.MidVal.emitC f g nm hoist
+    else (Opt.MidVal.emit f g nm hoist).map fun c => (c, []))
 
-/-- The re-check (`Opt.MidVal.checkCert`, or `checkCertSyms` in the hoisting mode), evaluated
-inside the call (timing). -/
-@[noinline] def runRecheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert) :
-    IO Bool :=
-  pure (if hoist then Opt.MidVal.checkCertSyms f g cert nm
-    else Opt.MidVal.checkCert f g cert nm)
+/-- The re-check (`Opt.MidVal.checkCert`, or `checkCertSyms` in the hoisting mode; with hints
+`checkCertC`/`checkCertSymsC`), evaluated inside the call (timing). -/
+@[noinline] def runRecheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) (cert : Opt.MidVal.Cert)
+    (h : List (Clif.BlockId × List Opt.MidVal.Wrap)) : IO Bool :=
+  pure (if hoist then Opt.MidVal.checkCertSymsC f g cert h nm
+    else Opt.MidVal.checkCertC f g cert h nm)
 
-/-- `ok`/`MISMATCH`/`-` and the microseconds of `checkCert` (`f` after constant-phi removal). -/
-def recheck (nm : Opt.MidVal.Norm) (hoist : Bool) (f g : Clif.Function) (accepted : Bool) : IO String := do
-  if !accepted then return "-\t0"
-  match ← runEmit nm hoist f g with
-  | .error e => return s!"MISMATCH(emit {e})\t0"
-  | .ok cert =>
+/-- `ok`/`MISMATCH`/`-`, the microseconds of the re-check (`f` after constant-phi removal) and,
+with `cond`, the number of hinted blocks. -/
+def recheck (nm : Opt.MidVal.Norm) (hoist cond : Bool) (f g : Clif.Function) (accepted : Bool) :
+    IO String := do
+  let sfx := if cond then "\t0" else ""
+  if !accepted then return s!"-\t0{sfx}"
+  match ← runEmit nm hoist cond f g with
+  | .error e => return s!"MISMATCH(emit {e})\t0{sfx}"
+  | .ok (cert, h) =>
     let t0 ← IO.monoNanosNow
-    let ok ← runRecheck nm hoist f g cert
+    let ok ← runRecheck nm hoist f g cert h
     let t1 ← IO.monoNanosNow
-    return s!"{if ok then "ok" else "MISMATCH"}\t{(t1 - t0) / 1000}"
+    return s!"{if ok then "ok" else "MISMATCH"}\t{(t1 - t0) / 1000}{if cond then s!"\t{h.length}" else ""}"
 
 /-- `--pair F G`: the first function of each plain CLIF file (`Clif.parseFile`; tests). -/
 def pairMode (fp gp : String) : IO UInt32 := do
@@ -81,9 +89,9 @@ def pairMode (fp gp : String) : IO UInt32 := do
       | .error e => throw (IO.userError s!"{p}: {e}")
     | none => throw (IO.userError s!"{p}: no function")
   let g ← one gp
-  let (f, r) ← runCheck Opt.MidVal.Norm.std false (← one fp) g
+  let (f, r) ← runCheck Opt.MidVal.Norm.std false true (← one fp) g
   match r with
-  | .ok () => IO.println s!"accept\trecheck {← recheck Opt.MidVal.Norm.std false f g true}"; return 0
+  | .ok () => IO.println s!"accept\trecheck {← recheck Opt.MidVal.Norm.std false true f g true}"; return 0
   | .error e => IO.println s!"reject\t{e}"; return 1
 
 def main (args : List String) : IO UInt32 := do
@@ -96,8 +104,11 @@ def main (args : List String) : IO UInt32 := do
   let cert := args.contains "--cert"
   -- `--hoist`: the hoisting mode (`Opt.MidVal.checkCertSyms`)
   let hoist := args.contains "--hoist"
+  -- `--cond`: family 3, branch conditions (`Opt.MidVal.checkC`, `checkCertC`)
+  let cond := args.contains "--cond"
+  let noRc := if cert then (if cond then "\t-\t0\t0" else "\t-\t0") else ""
   let out ← IO.getStdout
-  for dir in args.filter (fun a => a != "--norm-id" && a != "--norm-const" && a != "--cert" && a != "--hoist") do
+  for dir in args.filter (fun a => !a.startsWith "--") do
     let mut stems : Array String := #[]
     for e in ← System.FilePath.readDir dir do
       if e.fileName.endsWith ".unopt.clif" then
@@ -105,22 +116,22 @@ def main (args : List String) : IO UInt32 := do
     for stem in stems.qsort (· < ·) do
       let gp := System.FilePath.mk dir / s!"{stem}.opt.clif"
       if !(← gp.pathExists) then
-        out.putStrLn s!"{dir}\t{stem}\treject\tinput:no-opt-dump\t0\t0\t0{if cert then "\t-\t0" else ""}"
+        out.putStrLn s!"{dir}\t{stem}\treject\tinput:no-opt-dump\t0\t0\t0{noRc}"
         continue
       let fr ← decodeOne (System.FilePath.mk dir / s!"{stem}.unopt.clif")
       let gr ← decodeOne gp
       match fr, gr with
       | .error e, _ =>
-        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-f {firstWord e}\t0\t0\t0{if cert then "\t-\t0" else ""}"
+        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-f {firstWord e}\t0\t0\t0{noRc}"
       | _, .error e =>
-        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-g {firstWord e}\t0\t0\t0{if cert then "\t-\t0" else ""}"
+        out.putStrLn s!"{dir}\t{stem}\treject\tinput:decode-g {firstWord e}\t0\t0\t0{noRc}"
       | .ok f0, .ok g =>
         let t0 ← IO.monoNanosNow
-        let (f, r) ← runCheck nm hoist f0 g
+        let (f, r) ← runCheck nm hoist cond f0 g
         let t1 ← IO.monoNanosNow
         let verdict := match r with
           | .ok () => "accept\t-"
           | .error e => s!"reject\t{e}"
-        let rc ← if cert then do pure s!"\t{← recheck nm hoist f g r.isOk}" else pure ""
+        let rc ← if cert then do pure s!"\t{← recheck nm hoist cond f g r.isOk}" else pure ""
         out.putStrLn s!"{dir}\t{stem}\t{verdict}\t{Opt.instCount f}\t{Opt.instCount g}\t{(t1 - t0) / 1000}{rc}"
   return 0

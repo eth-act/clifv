@@ -430,6 +430,20 @@ abbrev Norm := Array Tm → Inst → Option Tm
 /-- The identity normaliser (stage 1: no rewrite). -/
 def Norm.id : Norm := fun _ _ => none
 
+/-- One wrapper of a branch condition (family 3, #1119): `icmp cc ty y 0` (`zl = false`) or
+`icmp cc ty 0 y` (`zl = true`) with `0` the constant of type `ty`, or `extend op ty y`. Around
+`g`'s condition `y`, a chain of them rebuilds `f`'s (`condPrep`, `FV/Opt/MidValCond.lean`). -/
+inductive Wrap where
+  | icmp (cc : IntCC) (ty : Ty) (zl : Bool)
+  | ext (op : ExtendOp) (ty : Ty)
+  deriving DecidableEq, Repr, Inhabited
+
+/-- The wrappers that keep a condition's truth (`Sem.truthy`) whenever they evaluate:
+`y != 0`, `0 != y`, `y >u 0`, `0 <u y`, and the extensions. -/
+def Wrap.ok : Wrap → Bool
+  | .icmp .ne _ _ | .icmp .ugt _ false | .icmp .ult _ true | .ext .. => true
+  | _ => false
+
 structure St where
   tms : Array Tm := #[]
   ids : Std.HashMap Tm Nat := {}
@@ -453,6 +467,11 @@ structure St where
   usedMerge : Std.HashSet Nat := {}
   usedPart : Std.HashSet Nat := {}
   usedHoist : Std.HashSet Nat := {}
+  /-- Family 3 (`checkRun … (cond := true)`): a `brif` of `f` whose condition is `g`'s under
+  truth-keeping wrappers (`condChain`) is not a rejection; the block's wrapper chain (innermost
+  first) is recorded in `conds` (the hints of `condPrep`). -/
+  cond : Bool := false
+  conds : Array (BlockId × List Wrap) := #[]
 
 /-- The checker's monad; the state survives a rejection (for `St.hint`). -/
 abbrev M := ExceptT Reject (StateM St)
@@ -526,6 +545,22 @@ def nodeAt (tms : Array Tm) (c : Nat) : Option Inst :=
 /-- The bits of term `o`, if it is a constant of type `ty`. -/
 def constAt (tms : Array Tm) (ty : Ty) (o : Nat) : Option (BitVec ty.width) :=
   (constOf tms o).bind (·.as? ty)
+
+/-- Family 3: the wrappers (outermost first) that make `f`'s condition term `a` out of `g`'s
+`b`, each `Wrap.ok` with its constant `0`; `fuel` bounds the descent (operands are earlier). -/
+def condChain (tms : Array Tm) : Nat → Nat → Nat → Option (List Wrap)
+  | 0, a, b => if a == b then some [] else none
+  | fuel + 1, a, b =>
+    if a == b then some [] else
+    match nodeAt tms a with
+    | some (.icmp cc ty x y) =>
+      if (Wrap.icmp cc ty false).ok && constAt tms ty y == some 0 then
+        (condChain tms fuel x b).map (.icmp cc ty false :: ·)
+      else if (Wrap.icmp cc ty true).ok && constAt tms ty x == some 0 then
+        (condChain tms fuel y b).map (.icmp cc ty true :: ·)
+      else none
+    | some (.extend op ty c) => (condChain tms fuel c b).map (.ext op ty :: ·)
+    | _ => none
 
 /-- The comparison with the opposite outcome. -/
 def IntCC.inv : IntCC → IntCC
@@ -989,14 +1024,24 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
   let ft ← liftE (mapTermM (← get).envF "f" fb.term)
   let gt ← liftE (mapTermM (← get).envG "g" gb.term)
   if ft != gt then
-    if termName fb.term == termName gb.term && termSuccs fb.term == termSuccs gb.term then
-      throw s!"rewrite:operand {termName fb.term} {diffOps (← get).tms (termOperands ft) (termOperands gt)} block{fb.id}"
+    let s ← get
+    let chain := if s.cond then match ft, gt with
+      | .brif c t e, .brif c' t' e' =>
+        if t == t' && e == e' then condChain s.tms s.tms.size c c' else none
+      | _, _ => none
+      else none
+    if let some ws := chain then
+      modify fun st => { st with conds := st.conds.push (gb.id, ws.reverse) }
+    else if termName fb.term == termName gb.term && termSuccs fb.term == termSuccs gb.term then
+      throw s!"rewrite:operand {termName fb.term} {diffOps s.tms (termOperands ft) (termOperands gt)} block{fb.id}"
     else throw s!"rewrite:term {termName fb.term}/{termName gb.term} block{fb.id}"
 
 /-- The check, returning its final state, context and `f`'s `wfCheck` info on acceptance
-(certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). -/
-def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) :
-    Except Reject (St × Ctx × Info) := do
+(certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). `cond`: a
+`brif` condition of `f` that is `g`'s under wrappers is recorded instead of rejected (family 3:
+`St.conds`, the hints of `condPrep`; such a state is not a certificate's). -/
+def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false)
+    (cond : Bool := false) : Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (wfCheck f).mapError (s!"wf:f {·}")
   let gi ← (wfCheck g).mapError (s!"wf:g {·}")
@@ -1012,7 +1057,7 @@ def checkRun (f g : Function) (norm : Norm := Norm.std) (hoist : Bool := false) 
   let go : M Unit := do
     for bi in order do
       checkBlock c bi fbs[bi]! gbs[bi]!
-  let (r, st) := (go.run).run { norm }
+  let (r, st) := (go.run).run { norm, cond }
   match r, st.hint with
   | .ok (), _ => pure (st, c, fi)
   | .error e, some h => throw (if e.startsWith "wf:" || e.startsWith "placement" then e else h)
