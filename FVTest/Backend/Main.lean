@@ -16,7 +16,7 @@ import FV.E2E.RegLevelUTry
 import FV.E2E.RegLevelLeafKeep
 import FV.E2E.DeadCleanupPipeline
 import FVTest.Backend.FnVerdict
-import FV.Opt.MidValCert
+import FV.Opt.MidValCond
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
