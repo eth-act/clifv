@@ -626,9 +626,4 @@ theorem ruleSound_algStep : RuleSound algStep := by
 theorem normSound_alg : NormSound Norm.alg :=
   normSound_guard ruleSound_algStep
 
-/-- **The validator's default normaliser is sound**: constant evaluation, then the algebraic
-rules. -/
-theorem normSound_std : NormSound Norm.std :=
-  normSound_orElse normSound_evalConst normSound_alg
-
 end Opt.MidVal

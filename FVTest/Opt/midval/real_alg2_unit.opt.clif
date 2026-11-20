@@ -1,0 +1,94 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC12regex_syntax12Hi2fYLhNOZYe
+function u0:1693(i64 sret, i64, i64) system_v {
+; symbol _RNxC12regex_syntax12Hi2fYLhNOZYe
+; instance Instance { def: Item(DefId(0:166 ~ regex_syntax[1eb6]::ast::parse::{impl#7}::visit_class_set_binary_op_post)), args: ['{erased}, '{erased}, &'{erased} mut ast::parse::Parser] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut ast::parse::NestLimiter<'_, '_, &mut ast::parse::Parser>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &ast::ClassSetBinaryOp, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(72 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: core::result::Result<(), ast::Error>, layout: Layout { size: Size(128 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Multiple { tag: u64 is (..=9223372036854775807) | (18446744073709551615..), tag_encoding: Niche { untagged_variant: 1, niche_variants: 0..=0, niche_start: 18446744073709551615 }, tag_field: 0, variants: [VariantLayout { size: Size(0 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(0 bytes)], fields_in_memory_order: [0], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(128 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(0 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=9223372036854775807 }), uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14969254615078765919 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(128 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(128 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } core::result::Result<(), ast::Error>
+; arg   _1      = v1       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut ast::parse::NestLimiter<'{erased}, '{erased}, &'{erased} mut ast::parse::Parser>
+; arg   _2      = v2       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(72 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} ast::ClassSetBinaryOp
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut ast::parse::NestLimiter<'{erased}, '{erased}, &'{erased} mut ast::parse::Parser>    8b 8                var=1
+; ssa   _2    &'{erased} ast::ClassSetBinaryOp    8b 8                var=2
+; ssa   _3    u32                               4b 4                var=3
+; ssa   _4    bool                              1b 1                var=4
+; ssa   _5    u32                               4b 4                var=5
+; zst   _6    !                                 0b 1                align=1,offset=
+
+    gv0 = symbol colocated userextname0 ; alloc42335
+    sig0 = (i64) system_v
+    fn0 = u0:2071 sig0 ; Instance { def: Item(DefId(1:12018 ~ core[7b1c]::option::unwrap_failed)), args: [] }
+
+block0(v0: i64, v1: i64, v2: i64):
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} mut ast::parse::NestLimiter<'{erased}, '{erased}, &'{erased} mut ast::parse::Parser> <- ByVal(v1): &'{erased} mut ast::parse::NestLimiter<'{erased}, '{erased}, &'{erased} mut ast::parse::Parser>
+; write_cvalue: Var(_2, var2): &'{erased} ast::ClassSetBinaryOp <- ByVal(v2): &'{erased} ast::ClassSetBinaryOp
+    jump block1
+
+block1:
+    v4 = load.i32 notrap v1+8
+; _4 = Lt(copy _3, const 1_u32)
+    v13 = iconst.i32 0
+    v14 = icmp eq v4, v13  ; v13 = 0
+    brif v14, block2, block3
+
+block2 cold:
+    v7 = symbol_value.i64 gv0
+    call fn0(v7)
+    trap user1
+
+block3:
+    v5 = iconst.i32 1
+    v10 = isub.i32 v4, v5  ; v5 = 1
+; write_cvalue: Var(_5, var5): u32 <- ByVal(v10): u32
+; ((*_1).1: u32) = copy _5
+; write_cvalue: Addr(Pointer { base: Addr(v11), offset: Offset32(8) }, None): u32 <- ByVal(v10): u32
+    store notrap v10, v1+8
+; _0 = core::result::Result::<(), ast::Error>::Ok(const ())
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(0) }, None): () <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): ()
+    v12 = iconst.i64 -1
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(0) }, None): u64 <- ByVal(v12): u64
+    store notrap v12, v0  ; v12 = -1
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u1:3868
+; userextname1 = u0:2071
+; decl u0:1693 func local "_RNxC12regex_syntax12Hi2fYLhNOZYe"
+; decl u0:2071 func import "_RNvNtCsazjiGSRkgVH_4core6option13unwrap_failed"
+; decl u1:3868 data local ro notls ".Ldataf1c"
+; end clifv-extnames
