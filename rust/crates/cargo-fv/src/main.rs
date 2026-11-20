@@ -10,7 +10,7 @@ use std::process::{Command, Stdio};
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
                                 [--panic-abort] [--members-only] [--no-binary-check] [--lean-link [--verified]]
-                                [--lean-ld | --rust-lld] [--build-std] [--midval]
+                                [--lean-ld | --rust-lld] [--build-std] [--no-midval]
                                 [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
@@ -68,15 +68,17 @@ Executables run under qemu-aarch64-static. After a build the report is in target
                       scripts/build-cg-clif.sh prepares (target/cg_clif/std-src; FV_STD_SRC
                       overrides); compiler_builtins stays on LLVM and musl libc prebuilt; the
                       report counts the std crates separately; separate target dir
-  --midval            the mid-end validator (#1119), plain mode (with --lean-link only with --verified): a function
-                      cg_clif optimised (opt_level not none in its dump's header, e.g. --release)
-                      is compiled from Cranelift's optimised dump when lean-backend decides
-                      Opt.MidVal.checkCertC on the pair and the theorem composes (an
+  --no-midval         turn the mid-end validator (#1119) off. It is on by default in plain mode and
+                      with --lean-link --verified (--midval asks for it and fails elsewhere): a
+                      function cg_clif optimised (opt_level not none in its dump's header, e.g.
+                      --release) is compiled from Cranelift's optimised dump when lean-backend
+                      decides Opt.MidVal.checkCertC on the pair and the theorem composes (an
                       E2E.backend_correct_midval_* theorem, about the unoptimised .unopt.clif),
-                      else from the .unopt.clif exactly as without it. The binary check stays:
-                      link-check re-decides every pair (Link.midPairB) and names the theorem
-                      through the validator (…_mid), about the unoptimised dumps' program.
-                      Separate target dir
+                      else from the .unopt.clif exactly as without it; a build whose dumps say
+                      opt_level=none is the same either way. The binary check stays: link-check
+                      re-decides every pair (Link.midPairB) and names the theorem through the
+                      validator (…_mid), about the unoptimised dumps' program. --no-midval:
+                      separate target dir
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json
 
@@ -239,6 +241,7 @@ fn stamp_of(cfg: &Config, wrapper: &Path, backend: &str) -> String {
     // the codegen backend (a rebuilt unwinding cg_clif at the same path must rebuild everything)
     let m = std::fs::metadata(backend).ok();
     s.push_str(&format!("backend {backend} {} {:?}\n", m.as_ref().map(|m| m.len()).unwrap_or(0), m.and_then(|m| m.modified().ok())));
+    s.push_str(&format!("midval={}\n", cfg.midval));
     for k in ["FV_SKIP", "FV_ONLY"] {
         s.push_str(&format!("{k}={}\n", std::env::var(k).unwrap_or_default()));
     }
@@ -317,7 +320,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut rust_lld = false;
     let mut verified = false;
     let mut build_std = false;
-    let mut midval = false;
+    let mut midval: Option<bool> = None;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -337,7 +340,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--lean-ld" => lean_ld = true,
             "--rust-lld" => rust_lld = true,
             "--build-std" => build_std = true,
-            "--midval" => midval = true,
+            "--midval" => midval = Some(true),
+            "--no-midval" => midval = Some(false),
             _ => cargo_args.push(a),
         }
     }
@@ -352,9 +356,14 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     if lean_link && mode == Mode::Opt {
         die("--lean-link compiles with the proven mid-end rules only (lean-link --opt); use --opt-proven-only");
     }
-    if midval && (mode != Mode::Plain || (lean_link && !verified)) {
+    // #1119: the mid-end validator, on by default wherever the executable theorems cover it
+    // (plain mode; with `--lean-link` only `--verified`, whose lean-link re-decides the pairs)
+    let midval_applies = mode == Mode::Plain && (!lean_link || verified);
+    if midval == Some(true) && !midval_applies {
         die("--midval is for plain mode, with --lean-link only with --verified (#1119: lean-link names the theorems through the mid-end validator on the source domain --verified decides)");
     }
+    let no_midval = midval == Some(false) && midval_applies;
+    let midval = midval.unwrap_or(true) && midval_applies;
     if value_of(&cargo_args, "--target").is_some() {
         die(&format!("cargo fv always builds for {TARGET}; drop --target"));
     }
@@ -420,7 +429,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         if verified { "-verified" } else { "" },
         if lean_ld { "-leanld" } else { "" },
         if build_std { "-std" } else { "" },
-        if midval { "-midval" } else { "" }
+        if no_midval { "-nomidval" } else { "" }
     ));
     let cfg = Config {
         root,

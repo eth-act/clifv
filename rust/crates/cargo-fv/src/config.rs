@@ -95,7 +95,8 @@ pub struct Config {
     /// must not block a build forever). Never a fallback: a verdict that depended on the
     /// machine's load would make the verified counts flap.
     pub fn_time_limit: u64,
-    /// `--midval` (#1119), plain mode without `--lean-link`: a function whose dump header says
+    /// The mid-end validator (#1119; on unless `--no-midval`, in plain mode and with `--lean-link
+    /// --verified`): a function whose dump header says
     /// cg_clif optimised it (`opt_level` not `none`) is compiled with `lean-backend --midval-opt
     /// <stem>.opt.clif`: Cranelift's optimised function when lean-backend decides the mid-end
     /// validator's re-check (`Opt.MidVal.checkCertC`) and its theorem composes with the validator
