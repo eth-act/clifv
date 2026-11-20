@@ -447,6 +447,21 @@ fn compile_one(
         }
     };
     let out = outdir.join(format!("f{i}.o"));
+    // SCRATCH (ReleaseScope1, #1119 counterfactual; never merged): FV_SCRATCH_CLIF=opt compiles
+    // cg_clif's optimised dump as the primary input, no unopt compilation
+    if std::env::var("FV_SCRATCH_CLIF").as_deref() == Ok("opt") {
+        let c = run_backend(&split.join(format!("{}.opt.clif", d.stem)), &out);
+        return match c {
+            Compiled::Ok { obj, unverified, normal_returns, theorem, clif } => {
+                let theorem = theorem.map(|v| Verdict {
+                    about: format!("{}, compiled from cg_clif's optimised dump (.opt.clif)", v.about),
+                    ..v
+                });
+                Compiled::Ok { obj, unverified, normal_returns, theorem, clif }
+            }
+            other => other,
+        };
+    }
     let c = run_backend(&split.join(format!("{}.unopt.clif", d.stem)), &out);
     if let Compiled::Ok { .. } = &c {
         if let Some(why) = missing_ref(&out, syms) {
