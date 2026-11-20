@@ -95,6 +95,12 @@ pub struct Config {
     /// must not block a build forever). Never a fallback: a verdict that depended on the
     /// machine's load would make the verified counts flap.
     pub fn_time_limit: u64,
+    /// `--midval` (#1119), plain mode without `--lean-link`: a function whose dump header says
+    /// cg_clif optimised it (`opt_level` not `none`) is compiled with `lean-backend --midval-opt
+    /// <stem>.opt.clif`: Cranelift's optimised function when lean-backend decides the mid-end
+    /// validator's re-check (`Opt.MidVal.checkCertC`) and its theorem composes with the validator
+    /// (a theorem about the `.unopt.clif`), else the `.unopt.clif` exactly as without it.
+    pub midval: bool,
 }
 
 fn var(k: &str) -> Result<String, String> {
@@ -152,6 +158,7 @@ impl Config {
             ("FV_LEAN_LINK_VERIFIED".into(), if self.lean_link_verified { "1" } else { "0" }.into()),
             ("FV_LEAN_LD".into(), if self.lean_ld { "1" } else { "0" }.into()),
             ("FV_FN_TIME_LIMIT".into(), self.fn_time_limit.to_string()),
+            ("FV_MIDVAL".into(), if self.midval { "1" } else { "0" }.into()),
             (
                 "FV_PKG_SKIP".into(),
                 self.pkg_skip.iter().map(|(d, p)| format!("{}\t{p}", d.display())).collect::<Vec<_>>().join("\n"),
@@ -183,6 +190,7 @@ impl Config {
                 lean_link_verified: var("FV_LEAN_LINK_VERIFIED")? == "1",
                 lean_ld: var("FV_LEAN_LD")? == "1",
                 fn_time_limit: var("FV_FN_TIME_LIMIT")?.parse().map_err(|_| "FV_FN_TIME_LIMIT: not a number".to_string())?,
+                midval: var("FV_MIDVAL")? == "1",
                 pkg_skip: var("FV_PKG_SKIP")?
                     .lines()
                     .filter_map(|l| l.split_once('\t').map(|(d, p)| (PathBuf::from(d), p.to_string())))

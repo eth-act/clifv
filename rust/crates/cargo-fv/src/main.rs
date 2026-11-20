@@ -10,7 +10,7 @@ use std::process::{Command, Stdio};
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
                                 [--panic-abort] [--members-only] [--no-binary-check] [--lean-link [--verified]]
-                                [--lean-ld | --rust-lld] [--build-std]
+                                [--lean-ld | --rust-lld] [--build-std] [--midval]
                                 [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
@@ -68,6 +68,14 @@ Executables run under qemu-aarch64-static. After a build the report is in target
                       scripts/build-cg-clif.sh prepares (target/cg_clif/std-src; FV_STD_SRC
                       overrides); compiler_builtins stays on LLVM and musl libc prebuilt; the
                       report counts the std crates separately; separate target dir
+  --midval            the mid-end validator (#1119), plain mode without --lean-link: a function
+                      cg_clif optimised (opt_level not none in its dump's header, e.g. --release)
+                      is compiled from Cranelift's optimised dump when lean-backend decides
+                      Opt.MidVal.checkCertC on the pair and the theorem composes (an
+                      E2E.backend_correct_midval_* theorem, about the unoptimised .unopt.clif),
+                      else from the .unopt.clif exactly as without it. Implies --no-binary-check:
+                      link-check does not re-decide the pair yet, so no executable theorem covers
+                      a validated function. Separate target dir
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json
 
@@ -308,6 +316,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut rust_lld = false;
     let mut verified = false;
     let mut build_std = false;
+    let mut midval = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -327,6 +336,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--lean-ld" => lean_ld = true,
             "--rust-lld" => rust_lld = true,
             "--build-std" => build_std = true,
+            "--midval" => midval = true,
             _ => cargo_args.push(a),
         }
     }
@@ -340,6 +350,15 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     }
     if lean_link && mode == Mode::Opt {
         die("--lean-link compiles with the proven mid-end rules only (lean-link --opt); use --opt-proven-only");
+    }
+    if midval && (lean_link || mode != Mode::Plain) {
+        die("--midval is for plain mode without --lean-link (#1119: lean-link and link-check do not re-decide the pair yet)");
+    }
+    // #1119: link-check does not re-decide the validator's pairs yet, so no executable theorem
+    // covers a validated function: no binary check rather than one about another program
+    if midval && bin_check {
+        eprintln!("cargo fv: --midval: no binary check (link-check does not re-decide Opt.MidVal.checkCertC yet, #1119)");
+        bin_check = false;
     }
     if value_of(&cargo_args, "--target").is_some() {
         die(&format!("cargo fv always builds for {TARGET}; drop --target"));
@@ -397,7 +416,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     skip_deps.dedup();
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
     let fv_dir = target.join("fv").join(format!(
-        "{}{}{}{}{}{}{}{}",
+        "{}{}{}{}{}{}{}{}{}",
         mode.name(),
         if members_only { "-members" } else { "" },
         if trap_replaced { "-trap" } else { "" },
@@ -405,7 +424,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         if lean_link { "-leanlink" } else { "" },
         if verified { "-verified" } else { "" },
         if lean_ld { "-leanld" } else { "" },
-        if build_std { "-std" } else { "" }
+        if build_std { "-std" } else { "" },
+        if midval { "-midval" } else { "" }
     ));
     let cfg = Config {
         root,
@@ -431,6 +451,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         pkg_skip,
         fn_time_limit: cargo_fv::config::parse_fn_time_limit(std::env::var("FV_FN_TIME_LIMIT").ok().as_deref())
             .unwrap_or_else(|e| die(&e)),
+        midval,
     };
     let wrapper = std::env::current_exe()
         .ok()

@@ -16,6 +16,7 @@ import FV.E2E.RegLevelUTry
 import FV.E2E.RegLevelLeafKeep
 import FV.E2E.DeadCleanupPipeline
 import FVTest.Backend.FnVerdict
+import FV.Opt.MidValCond
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -105,12 +106,27 @@ which keeps cg_clif's code for every unverified function), a function whose verd
 unverified before it is compiled (the legalisation's reason, or over the validation budget) is
 not compiled and is listed `not compiled (--skip-unverified), unverified (…)` with the reason it
 would get compiled.
+
+With `--midval-opt <g.opt.clif>` (#1119; `cargo fv` passes Cranelift's optimised dump of a function
+whose dump header says `opt_level` is not `none`): for the input's one function `f` and the
+same-named function `g` of that file, `lean-backend` runs `Opt.MidVal.emitC (Opt.ConstPhi.run f) g`
+and decides `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` itself. When it holds, `g` is
+compiled in place of `f`, and when `g`'s verdict is a theorem that composes with the validator
+(`FVTest.Backend.FnVerdict.midvalVerdict`; with a `try_call`, also its unwinding theorem) the
+function is reported verified by the theorem through the validator
+(`E2E.backend_correct_midval_*`, `FV/E2E/MidValPass.lean`, `MidValPassLegacy.lean`), about the
+source function (`.unopt.clif`). Otherwise `f` is compiled exactly as without the option (same
+objects, same lines). One more line says which: `%name: midval: validated (…)`, or
+`%name: midval: rejected (…)` / `validated, not composed (…)`, `…; compiled from the .unopt.clif as
+without --midval-opt`. Only in the default mode (dead cleanup; no `--opt`, `--stock-config`,
+`--settings` or `--pipeline-t`). The effects of a compilation are deferred (`Act`) so that the one
+not kept leaves no trace.
 -/
 
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--pipeline-t] [--skip-unverified] [--stock-config <request.json> --config-receipt <receipt.json>] [--settings <request.json> --settings-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--pipeline-t] [--skip-unverified] [--midval-opt <g.opt.clif>] [--stock-config <request.json> --config-receipt <receipt.json>] [--settings <request.json> --settings-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -148,6 +164,29 @@ structure Opts where
   is not compiled (`preUnverifiedOf`). `cargo fv` passes it under `--lean-link`, where an
   unverified function's code is never used. -/
   skipUnverified : Bool := false
+  /-- `--midval-opt <g.opt.clif>` (#1119): Cranelift's optimised dump of the function of the
+  input (cg_clif's `.unopt.clif`, one function). `lean-backend` decides
+  `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` itself (the certificate and hints from
+  `Opt.MidVal.emitC`) and, when it holds and the theorem of the compiled `g` composes with the
+  validator (`FVTest.Backend.FnVerdict.midvalVerdict`), compiles `g` and names the theorem through
+  the validator, about the source function `f`; otherwise it compiles `f` exactly as without the
+  option. Only in the default mode (dead cleanup; no `--opt`, `--stock-config`, `--settings` or
+  `--pipeline-t`). -/
+  midvalOpt : Option String := none
+
+/-- A deferred effect of a compilation (`runCore`): `run` replays the effects of the compilation
+it keeps, in order, and drops those of a compilation of `g` it does not keep (`--midval-opt`). -/
+inductive Act where
+  | err (s : String)
+  | file (p : System.FilePath) (c : String)
+  | bin (p : System.FilePath) (b : ByteArray)
+  | mkdir (p : System.FilePath)
+
+def Act.run : Act → IO Unit
+  | .err s => IO.eprintln s
+  | .file p c => IO.FS.writeFile p c
+  | .bin p b => IO.FS.writeBinFile p b
+  | .mkdir p => IO.FS.createDirAll p
 
 /-- The compile budget's size measure of a function (#1074): instructions (statements and
 terminators) × blocks. After #1074's fixes (`Backend.repAt_eq_chain`, `Opt.Legal.checkW_eq_F`)
@@ -371,53 +410,69 @@ def typedRecheck (f : Clif.Function) (cleanup : Bool) (rec : AllocRecord) (fa : 
               if fa'.text == fa.text then none
               else some "lowerFunction's pipeline does not reproduce the emitted code (a Stock route lowered it)"
 
-def run (input output : String) (o : Opts) : IO UInt32 := do
-  let src ← IO.FS.readFile input
+/-- One compilation of the input `src` (`run`), its effects deferred to `acts`. `mid = some (n, g)`
+(`--midval-opt`, `n` the file's one function, `checkCertC` decided): `g` is compiled in place of the
+source function `n`; the second component is `none` when `g`'s verdict is a theorem through the
+validator (`FVTest.Backend.FnVerdict.midvalVerdict`, and the unwinding theorem through it for a
+`try_call` function), else why not (`run` then drops this compilation and compiles `f`). Without
+`mid` the compilation is `lean-backend`'s as before the option (#1119). -/
+def runCore (input output : String) (o : Opts) (src : String)
+    (mid : Option (String × Clif.Function)) (acts : IO.Ref (Array Act)) :
+    IO (UInt32 × Option String) := do
+  let say (s : String) : IO Unit := acts.modify (·.push (.err s))
+  let wfile (p : System.FilePath) (c : String) : IO Unit := acts.modify (·.push (.file p c))
+  let fin (rc : UInt32) : UInt32 × Option String :=
+    (rc, mid.map fun _ => s!"lean-backend exits with {rc} on the optimised function")
   let pipelineT := o.pipelineT || (← IO.getEnv "FV_PIPELINE_T") == some "1"
   let o := if pipelineT then { o with deadCleanup := false } else o
   if o.configReceipt.isSome != o.stockConfig.isSome then
-    IO.eprintln "lean-backend: --stock-config and --config-receipt must be supplied together"
-    return 2
+    say "lean-backend: --stock-config and --config-receipt must be supplied together"
+    return fin 2
   if o.stockConfig.isSome && (o.opt.isSome || o.regalloc.any (· != "regalloc2") || o.personality.isSome) then
-    IO.eprintln "lean-backend: stock configuration forbids independent opt/regalloc/personality overrides"
-    return 2
+    say "lean-backend: stock configuration forbids independent opt/regalloc/personality overrides"
+    return fin 2
   if o.settingsReceipt.isSome != o.settings.isSome then
-    IO.eprintln "lean-backend: --settings and --settings-receipt must be supplied together"
-    return 2
+    say "lean-backend: --settings and --settings-receipt must be supplied together"
+    return fin 2
   if o.settings.isSome && (o.stockConfig.isSome || o.opt.isSome || o.regalloc.any (· != "regalloc2") ||
       o.personality.isSome || pipelineT) then
-    IO.eprintln "lean-backend: --settings (the proved compiler) forbids --stock-config, --opt, --regalloc, --personality and --pipeline-t"
-    return 2
+    say "lean-backend: --settings (the proved compiler) forbids --stock-config, --opt, --regalloc, --personality and --pipeline-t"
+    return fin 2
   let mut stock : Option StockConfig.Config := none
   if let some path := o.stockConfig then
     let request ← match Lean.Json.parse (← IO.FS.readFile path) with
       | .ok j => pure j
-      | .error e => do IO.eprintln s!"lean-backend: invalid configuration JSON: {e}"; return 2
+      | .error e => do say s!"lean-backend: invalid configuration JSON: {e}"; return fin 2
     let checked := StockConfig.parse request
     let error := match checked with | .ok _ => none | .error e => some e
     if let some receipt := o.configReceipt then
-      IO.FS.writeFile receipt ((StockConfig.receipt request error none o.deadCleanup).pretty ++ "\n")
+      wfile receipt ((StockConfig.receipt request error none o.deadCleanup).pretty ++ "\n")
     match checked with
-    | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
+    | .error e => say s!"lean-backend: unsupported stock configuration: {e}"; return fin 3
     | .ok c => stock := some c
   -- the proved settings mode: the same request schema, the proved compiler unchanged
   let mut proved : Option StockConfig.Config := none
   if let (some path, some receipt) := (o.settings, o.settingsReceipt) then
     let request ← match Lean.Json.parse (← IO.FS.readFile path) with
       | .ok j => pure j
-      | .error e => do IO.eprintln s!"lean-backend: invalid settings JSON: {e}"; return 2
+      | .error e => do say s!"lean-backend: invalid settings JSON: {e}"; return fin 2
     match StockConfig.parse request with
     | .error e =>
-      IO.FS.writeFile receipt ((StockConfig.settingsReceipt request (some e) [] o.deadCleanup).pretty ++ "\n")
-      IO.eprintln s!"lean-backend: settings the proved compiler does not implement: {e}"
-      return 3
+      wfile receipt ((StockConfig.settingsReceipt request (some e) [] o.deadCleanup).pretty ++ "\n")
+      say s!"lean-backend: settings the proved compiler does not implement: {e}"
+      return fin 3
     | .ok c => proved := some c
   let ra := o.regalloc.getD "regalloc2"
   let some runAlloc ← allocRunOfName? ra
-    | do IO.eprintln s!"lean-backend: unknown allocator {ra}"; return 2
+    | do say s!"lean-backend: unknown allocator {ra}"; return fin 2
   -- the stock configuration requires regalloc2 (checked above)
   let alloc := (← Allocator.ofName? ra).getD .spill
-  let source := Clif.parseFile src
+  -- `--midval-opt`: the validated optimised function `g` in place of the source function
+  let source0 := Clif.parseFile src
+  let source : Clif.ParsedFile := match mid with
+    | some (n, g) => { source0 with funcs := source0.funcs.map fun p =>
+        if p.name == n then { p with func := .ok g } else p }
+    | none => source0
   let lg := Opt.Legalize128.parsedFile128 source
   -- constant-phi removal after the legalisation, before the mid-end (#990)
   let header := Link.clifHeader src
@@ -520,7 +575,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let fa := { fa with unverified := fa.unverified ++ outside }
   let coveredLeaves := (leaves.filter fun p => (leafMiss? p.1).isNone).map (·.1)
   for n in coveredLeaves do
-    IO.eprintln (s!"lean-backend: {input}: %{n}: frameless leaf, backend_correct_final_cleanup_leaf " ++
+    say (s!"lean-backend: {input}: %{n}: frameless leaf, backend_correct_final_cleanup_leaf " ++
       "(normal-return form: FnAsm.leafChk admits no call, so no exception unwinds through it)")
   -- The per-function verdict (#1096): a compiled function inside the theorems' scope is reported
   -- verified only by the theorem whose checkable premises `lean-backend` decided on the objects it
@@ -540,7 +595,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let recs ← records.get
   let stockOn := !pipelineT && !o.opt.isSome && stock.isNone &&
     !(pfc.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))
-  let verdicts : List (String × FVTest.Backend.FnVerdict.Verdict) := pf.funcs.filterMap fun p =>
+  let facts : List (String × FVTest.Backend.FnVerdict.Facts) := pf.funcs.filterMap fun p =>
     match p.func, fa.funcs.find? (·.name == p.name) with
     | .ok f, some a =>
       if fa.unverified.any (·.1 == p.name) || fa.unvalidated.any (·.1 == p.name) ||
@@ -560,17 +615,34 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         let cpSrc := src?.any fun g => (unverifiedReason? g).isNone
         -- the Stock compositions' `InSubset` of the source before constant-phi removal (#1100)
         let cpSrcE := src?.any Backend.verifiable
-        some (p.name, FVTest.Backend.FnVerdict.verdict
+        some (p.name,
           { scope, path := if stockOn then .stock else .legacy, cleanup := o.deadCleanup,
             opt := o.opt.isSome, optProven := provenOpt, legal := lg.accepted.contains p.name,
             cp := cpOn p.name, cpSrc, cpSrcE, cpT := passT, d0 := Stock.D0.eligible f, record, alloc,
             covered, typed })
     | _, _ => none
+  -- `--midval-opt` (#1119): the compiled `g`'s verdict through the validator, or why none applies
+  let midRes : Option (Except String FVTest.Backend.FnVerdict.Verdict) := mid.map fun (n, _) =>
+    let why (p : List (String × String)) := p.lookup n
+    match facts.lookup n with
+    | some x => FVTest.Backend.FnVerdict.midvalVerdict x
+    | none =>
+      if let some r := why fa.unsupported then .error s!"the optimised function is not compiled ({r})"
+      else if let some (_, _, r) := skipped.find? (·.1 == n) then
+        .error s!"the optimised function is unverified before it is compiled ({r})"
+      else if let some r := why fa.unverified then .error s!"the compiled g is unverified ({r})"
+      else if let some r := why fa.unvalidated then .error s!"the compiled g is not validated ({r})"
+      else if coveredLeaves.contains n then .error "frameless leaf: no theorem through the validator"
+      else .error "the optimised function is not compiled"
+  let verdicts : List (String × FVTest.Backend.FnVerdict.Verdict) := facts.map fun (n, x) =>
+    match mid, midRes with
+    | some (m, _), some (.ok v) => if n == m then (n, v) else (n, FVTest.Backend.FnVerdict.verdict x)
+    | _, _ => (n, FVTest.Backend.FnVerdict.verdict x)
   let fails : List (String × String) :=
     verdicts.filterMap fun (e : String × FVTest.Backend.FnVerdict.Verdict) => e.2.fail.map (e.1, ·)
   let fa := { fa with unverified := fa.unverified ++ fails }
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
-    IO.FS.writeFile receipt
+    wfile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
   if let (some c, some receipt) := (proved, o.settingsReceipt) then
     let rs ← rejected.get
@@ -593,8 +665,8 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson true)]
       else Lean.Json.mkObj [("compiled", Lean.toJson false)]
     for (n, why) in rs do
-      IO.eprintln s!"lean-backend: {input}: %{n}: compiled, not for these settings: {why}"
-    IO.FS.writeFile receipt ((StockConfig.settingsReceipt c.request none
+      say s!"lean-backend: {input}: %{n}: compiled, not for these settings: {why}"
+    wfile receipt ((StockConfig.settingsReceipt c.request none
       (pf.funcs.map fun p => (p.name, verdict p.name)) o.deadCleanup).pretty ++ "\n")
   let fa := match stock <|> proved with
     | some c => if c.unwind then fa else { fa with unwind := [] }
@@ -602,38 +674,38 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
     | .error e =>
-      IO.eprintln s!"lean-backend: {input}: encoding failed: {e}"
-      return 1
+      say s!"lean-backend: {input}: encoding failed: {e}"
+      return fin 1
     | .ok fbs =>
-      if output.endsWith ".o" then IO.FS.writeBinFile output (elfObject fbs fa.unwind fa.lsda o.personality)
+      if output.endsWith ".o" then acts.modify (·.push (.bin output (elfObject fbs fa.unwind fa.lsda o.personality)))
       if let some d := o.dump then
-        IO.FS.createDirAll d
+        acts.modify (·.push (.mkdir d))
         for (_, fb) in fbs do
-          IO.FS.writeBinFile (System.FilePath.mk d / s!"{fb.name}.bin") (wordsBytes fb.words)
-          IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.relocs.json") fb.relocsJson
-          IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.traps.json") fb.trapsJson
+          acts.modify (·.push (.bin (System.FilePath.mk d / s!"{fb.name}.bin") (wordsBytes fb.words)))
+          wfile (System.FilePath.mk d / s!"{fb.name}.relocs.json") fb.relocsJson
+          wfile (System.FilePath.mk d / s!"{fb.name}.traps.json") fb.trapsJson
           if let some c := stock <|> proved then
             let metadata := Lean.Json.mkObj [
               ("name", Lean.toJson fb.name), ("alignment", Lean.toJson (4 : Nat)),
               ("unwind_disabled", Lean.toJson (!c.unwind)),
               ("stack_maps", Lean.toJson ([] : List String)),
               ("exception_metadata_comparison_supported", Lean.toJson false)]
-            IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.metadata.json") (metadata.pretty ++ "\n")
-  if !output.endsWith ".o" then IO.FS.writeFile output fa.text
-  if let some t := o.traps then IO.FS.writeFile t fa.tableJson
+            wfile (System.FilePath.mk d / s!"{fb.name}.metadata.json") (metadata.pretty ++ "\n")
+  if !output.endsWith ".o" then wfile output fa.text
+  if let some t := o.traps then wfile t fa.tableJson
   let names := Isle.Aarch64.program.ruleNames fa.rules
-  if let some r := o.rules then IO.FS.writeFile r (String.join (names.map (· ++ "\n")))
+  if let some r := o.rules then wfile r (String.join (names.map (· ++ "\n")))
   for (id, n) in fa.rules.zip names do
     if !closureIds.contains id then
-      IO.eprintln s!"lean-backend: {input}: rule {n} fired outside the emitter-subset closure"
+      say s!"lean-backend: {input}: rule {n} fired outside the emitter-subset closure"
   for (n, why) in fa.unsupported do
-    IO.eprintln s!"lean-backend: {input}: %{n}: unsupported: {why}"
+    say s!"lean-backend: {input}: %{n}: unsupported: {why}"
   for (n, why) in fa.unverified do
-    IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
+    say s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
   for (n, why) in fa.unvalidated do
-    IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (validation budget): {why}"
+    say s!"lean-backend: {input}: %{n}: compiled, unverified (validation budget): {why}"
   for (n, k, why) in skipped do
-    IO.eprintln s!"lean-backend: {input}: %{n}: not compiled (--skip-unverified), unverified ({k}): {why}"
+    say s!"lean-backend: {input}: %{n}: not compiled (--skip-unverified), unverified ({k}): {why}"
   -- A function with a `try_call` is inside `backend_correct_final` for the runs in which every
   -- callee of a `try_call` returns normally (callee contract `CalleeTryOk`: the results only; the
   -- exception payload registers are havocked on the normal return). Its unwinding (landing
@@ -678,11 +750,15 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let cpSrcOf (name : String) : Bool :=
     ((lg.file.funcs.find? (·.name == name)).bind (·.func.toOption)).any
       fun g => (unverifiedReason? g).isNone
+  -- `--midval-opt`: why the compiled `g` gets no theorem through the validator (`none`: it does)
+  let mut midFail : Option String := match midRes with
+    | some (.error e) => some e
+    | _ => none
   for (name, v) in verdicts do
     if v.thm.isNone then continue
     let some f := (pf.funcs.find? (·.name == name)).bind (·.func.toOption) | continue
     if !hasTryCall f then
-      IO.eprintln s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v}"
+      say s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v}"
       continue
     let legal := lg.accepted.contains name
     let why? : Option String :=
@@ -702,7 +778,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         (fa.funcs.find? (·.name == name))).map (s!"unwinding check failed: {·}")
     let unwThm := FVTest.Backend.FnVerdict.unwindThm o.deadCleanup o.opt.isSome legal (cpOn name)
       passT
-    let unw : Except String String := match why? with
+    let unw0 : Except String String := match why? with
       | none =>
         if Compile.functionE f then .ok unwThm
         else .error "outside subset E: the unwinding theorems are about the integer lowering (lowerCheck), no unwinding theorem covers typed try_calls yet"
@@ -713,8 +789,78 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
             (unwindCheckFailure? f rec? fa? (tc := true)).isNone then
           .error "try_call with float values: the exceptional-edge conditions hold on the typed lowering (unwCheckTC, loweringUTC_of_check), no unwinding theorem covers typed try_calls yet"
         else .error why
-    IO.eprintln s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v true unw}"
-  return 0
+    -- through the validator: the unwinding theorem through it, or `f` is compiled (#1119)
+    let isMid := mid.any (·.1 == name)
+    let unw : Except String String := match unw0 with
+      | .ok _ => if isMid then .ok (FVTest.Backend.FnVerdict.unwindMidThm legal (cpOn name) passT)
+        else unw0
+      | .error why => .error why
+    if isMid then
+      if let .error why := unw0 then
+        midFail := midFail <|> some s!"try_call: no unwinding theorem for the compiled g ({why})"
+    say s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v true unw}"
+  return (0, midFail)
+
+/-- The decision of `--midval-opt` for the source text `src` and the optimised text `srcOpt`:
+the function's name and `g` when `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` holds
+for the certificate and branch-condition hints `Opt.MidVal.emitC` gives, else why not (the
+function's name when there is one). -/
+def midvalDecide (src srcOpt : String) : Except (Option String × String) (String × Clif.Function) := do
+  let fs := (Clif.parseFile src).funcs
+  let some p := fs.head? | throw (none, "the input has no function")
+  if fs.length != 1 then throw (none, s!"the input has {fs.length} functions (only single-function files)")
+  let f ← match p.func with
+    | .ok f => pure f
+    | .error _ => throw (some p.name, "the source function does not parse")
+  let some q := (Clif.parseFile srcOpt).funcs.find? (·.name == p.name)
+    | throw (some p.name, "the optimised dump has no function of that name")
+  let g ← match q.func with
+    | .ok g => pure g
+    | .error _ => throw (some p.name, "the optimised function does not parse")
+  let f' := Opt.ConstPhi.run f
+  let (cert, hints) ← match Opt.MidVal.emitC f' g with
+    | .ok c => pure c
+    | .error e => throw (some p.name, s!"Opt.MidVal.check rejects: {e}")
+  if !Opt.MidVal.checkCertC f' g cert hints then
+    throw (some p.name, "Opt.MidVal.checkCertC rejects the emitted certificate")
+  pure (p.name, g)
+
+/-- `lean-backend`: one compilation (`runCore`), its effects replayed. With `--midval-opt` (#1119)
+in the default mode: the optimised function `g` when `checkCertC` holds and its theorem composes
+with the validator, else the source function `f`, compiled exactly as without the option; an
+info line `midval: …` says which and why. -/
+def run (input output : String) (o : Opts) : IO UInt32 := do
+  let src ← IO.FS.readFile input
+  let once (mid : Option (String × Clif.Function)) : IO (UInt32 × Option String × Array Act) := do
+    let acts ← IO.mkRef #[]
+    let (rc, why) ← runCore input output o src mid acts
+    pure (rc, why, ← acts.get)
+  let replay (acts : Array Act) : IO Unit := acts.forM Act.run
+  let some optPath := o.midvalOpt | do
+    let (rc, _, acts) ← once none
+    replay acts
+    return rc
+  let note (n : Option String) (s : String) : IO Unit :=
+    IO.eprintln s!"lean-backend: {input}: {(n.map (s!"%{·}: ")).getD ""}midval: {s}"
+  let plain (n : Option String) (s : String) : IO UInt32 := do
+    let (rc, _, acts) ← once none
+    replay acts
+    note n s!"{s}; compiled from the .unopt.clif as without --midval-opt"
+    return rc
+  let pipelineT := o.pipelineT || (← IO.getEnv "FV_PIPELINE_T") == some "1"
+  if o.opt.isSome || o.stockConfig.isSome || o.settings.isSome || pipelineT || !o.deadCleanup then
+    return ← plain none "not attempted (only in the default mode: dead cleanup, no --opt, --stock-config, --settings or --pipeline-t)"
+  match midvalDecide src (← IO.FS.readFile optPath) with
+  | .error (n, why) => plain n s!"rejected ({why})"
+  | .ok (n, g) =>
+    let (rc, why, acts) ← once (some (n, g))
+    match rc, why with
+    | 0, none =>
+      replay acts
+      note (some n) s!"validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump {optPath}"
+      return 0
+    | _, some why => plain (some n) s!"validated, not composed ({why})"
+    | rc, none => plain (some n) s!"validated, not composed (lean-backend exits with {rc} on the optimised function)"
 
 def main (args : List String) : IO UInt32 := do
   let rec opts (o : Opts) : List String → Option Opts
@@ -732,6 +878,7 @@ def main (args : List String) : IO UInt32 := do
     | "--no-dead-cleanup" :: rest => opts { o with deadCleanup := false } rest
     | "--pipeline-t" :: rest => opts { o with pipelineT := true } rest
     | "--skip-unverified" :: rest => opts { o with skipUnverified := true } rest
+    | "--midval-opt" :: g :: rest => opts { o with midvalOpt := some g } rest
     | _ => none
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r
