@@ -618,7 +618,62 @@ survey's debug builds (#1076), the other 27 crates measured 88.4–96.4 %.
 
 Compiling Cranelift's optimised function instead (80.2 % byte-identical in the same release
 builds) would make the theorems about it and put Cranelift's mid-end into the trusted base; the
-options, and the plan to validate the mid-end per function instead, are in #1119.
+options are in #1119. `--midval` (below) compiles it where a proved validator accepts it, with
+the theorem still about the unoptimised function.
+
+#### `--midval`: Cranelift's optimised function through the mid-end validator (opt-in, #1119)
+
+`cargo fv <build|run|test> --midval` (plain mode, no `--lean-link`; separate target dir
+`…-midval`): for every function whose dump header says cg_clif optimised it (`opt_level` not
+`none`), `cargo fv` passes the function's `.opt.clif` to `lean-backend --midval-opt`.
+`lean-backend` runs the mid-end validator's certificate generator `Opt.MidVal.emitC` on the
+unoptimised function after constant-phi removal (`f`) and Cranelift's optimised function `g`,
+and decides `Opt.MidVal.checkCertC f g cert hints` itself (the re-check with branch-condition
+hints; nothing Cranelift or `cargo fv` says is trusted; `Opt.MidVal.check_soundC`: a run of `f`
+that returns or traps is a run of `g` with the same results, memory or trap,
+docs/contracts/midval.md). When it holds, `g` is compiled in place
+of `f`, and a verified function's theorem is `E2E.backend_correct_midval_*`
+(`FV/E2E/MidValPass.lean`, `MidValPassLegacy.lean`): the compiled code refines the
+**unoptimised** function (its `about` is `the source function (.unopt.clif), compiled from
+cg_clif's optimised dump validated by Opt.MidVal`). Otherwise (`rejected`, or `not composed`
+when no theorem through the validator covers `g`'s compilation, e.g. a `try_call` without an
+unwinding theorem for `g`) the function is compiled from its `.unopt.clif` exactly as without
+`--midval`: the same object bytes and the same verdict. A function cg_clif did not optimise, and
+every function of a build whose `opt_level` is `none` (the default debug profiles), is compiled
+as without the flag. `fv-report.json` gives each such function `midval: {outcome, reason,
+opt_level}` and `counts.midval_validated`; `cargo fv report` lists the outcomes by reason.
+
+**What it turns off today:** `--midval` implies `--no-binary-check` and is refused with
+`--lean-link`. `link-check` (the binary check) and `lean-link` do not re-decide the validator's
+pairs yet, so no executable-level theorem covers a validated function; rather than a binary
+check about another program, there is none. It stays opt-in until they do (#1119, layer 2).
+
+Measured (#1119, 2026-11-20, clifv-remote; tools of #1144's head 41bb21b3e = main a8845ea89's
+validator, `checkCertC` with the default normaliser `Norm.stdT`): `cargo fv test --release`
+with `--midval` and without (`--no-binary-check`) on the 9 release crates above:
+
+| crate | verified (without → with) | validated | byte-identical to stock (without → with) | tests vs stock `--release` |
+|---|---|---|---|---|
+| blake2 0.11.0 | 1,298 → 1,298 | 858 (66.1 %) | 367 → 836 (28.3 % → 64.4 %) | SAME 12 / SAME 12 |
+| crypto-bigint 0.7.11 | 43,170 → 43,170 | 36,354 (84.2 %) | 9,781 → 31,687 (22.7 % → 73.4 %) | SAME 657 / SAME 657 |
+| itoa 1.0.19 | 15,874 → 15,874 | 13,341 (84.0 %) | 3,669 → 11,258 (23.1 % → 70.9 %) | SAME 13 / SAME 13 |
+| memchr 2.8.3 | 5,051 → 5,051 | 4,383 (86.8 %) | 1,209 → 3,674 (23.9 % → 72.7 %) | SAME 136 / SAME 136 |
+| num-traits 0.2.19 | 1,701 → 1,701 | 1,532 (90.1 %) | 389 → 1,341 (22.9 % → 78.8 %) | SAME 246 / SAME 246 |
+| ryu 1.0.23 | 17,232 → 17,232 | 14,545 (84.4 %) | 4,126 → 12,357 (23.9 % → 71.7 %) | SAME 51 / SAME 51 |
+| semver 1.0.28 | 16,397 → 16,397 | 13,804 (84.2 %) | 3,818 → 11,683 (23.3 % → 71.3 %) | SAME 38 / SAME 38 |
+| serde_json 1.0.154 | 19,479 → 19,479 | 16,674 (85.6 %) | 4,329 → 12,596 (22.2 % → 64.7 %) | SAME 251 / SAME 251 |
+| sha3 0.12.0 | 1,565 → 1,565 | 1,112 (71.1 %) | 396 → 1,084 (25.3 % → 69.3 %) | SAME 19 / SAME 19 |
+| **total** | 121,767 → 121,767 | 102,603 (84.3 %) | 28,084 → 86,516 (23.1 % → 71.1 %) | |
+
+Every one of the 19,164 functions not validated (rejected 18,196: `rewrite:operand` 8,637,
+`rewrite:blocks` 4,809, `rewrite:domtree` 1,727, `shape:params` 1,002, `placement:symbol_value`
+979, `rewrite:skeleton` 907, `rewrite:term` 97, `alias:store` 19, `placement:func_addr` 19; not
+composed 968: `try_call` without an unwinding theorem for `g` 926, typed scope after the `i128`
+legalisation or constant-phi removal of `g` 42) had the same object bytes and verdict as without
+the flag. Without the flag, `lean-backend` of this branch and of main a8845ea89 gave identical
+objects and messages on every input (the 9 crates' 121,862 and the debug builds of fv-demo,
+survey and deps: 1,378, 3,251, 21,028), and `--midval` changed no byte and no verdict in those
+debug builds (`opt_level` `none`).
 
 ### The executable compiler (`--lean-link`, L1)
 
