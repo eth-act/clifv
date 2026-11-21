@@ -3066,7 +3066,10 @@ the file, and prints the theorem (`theorem:`, `FVTest/E2E/BinVerdict.lean`) only
 `GotOk` is decided by `E2E.GotTab.gotTabB` on the whole file (`SemanticExecBytes.gotTabB_sound`,
 `DeadCleanupExecBytes.gotTabB_sound`: the slots of the GOT pairs whose second word is an `ldr`;
 `gotB` also checks the "slot" of a pair the linker relaxed to `adrp`/`add`, which `GotSlot` does
-not contain). A failing premise is `not verified: …` and `link-check` exits 1. Until #1092 the
+not contain); `link-check` evaluates it as `gotTabFastB`, the relocated bytes in a hash set
+(`@[csimp] E2E.GotTab.gotTabB_eq_fast`, #1145: the scan of every relocation per slot byte did not
+finish in an hour on plain-mode release executables with 18,614 and 31,128 GOT pairs). A failing
+premise is `not verified: …` and `link-check` exits 1. Until #1092 the
 verdict named `E2E.Binary.binary_correct` for `checker: integer`, a theorem about the baseline
 pipeline's results (`E2E.LinkCheck.okB`), which this checker does not decide; and `codeMapB` was
 printed but not enforced, `GotOk` decided nowhere (#1093). `FVTest.E2E.BinVerdictTest` checks
