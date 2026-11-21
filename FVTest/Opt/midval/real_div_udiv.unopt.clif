@@ -1,0 +1,114 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10serde_json12H5DeaP1l1moV
+function u0:128(i64) -> i64, i64 system_v {
+; symbol _RNxC10serde_json12H5DeaP1l1moV
+; instance Instance { def: Item(DefId(24:1371 ~ serde_json[c9cb]::value::de::{impl#18}::size_hint)), args: ['{erased}] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &serde_json::value::de::SeqRefDeserializer<'_>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: std::option::Option<usize>, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: u64 is 0..=1, b: union u64, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(8 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(16 bytes), backend_repr: ScalarPair { a: u64 is 0..=1, b: union u64, b_offset: Size(8 bytes) }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: None, uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4141658672642867039 } }, mode: Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: , arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; stack _0    std::option::Option<usize>       16b 8                storage=ss0
+; ret   _0      -          Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: , arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) std::option::Option<usize>
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} serde_json::value::de::SeqRefDeserializer<'{erased}>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} serde_json::value::de::SeqRefDeserializer<'{erased}>    8b 8                var=1
+; ssa   _2    &'{erased} usize                  8b 8                var=2
+; ssa   _3    &'{erased} usize                  8b 8                var=3
+; ssa   _4    usize                             8b 8                var=4
+; stack _5    std::ptr::NonNull<serde_json::Value>    8b 8                storage=ss1
+; ssa   _6    *const serde_json::Value          8b 8                var=5
+; stack _7    std::ptr::NonNull<serde_json::Value>    8b 8                storage=ss2
+; ssa   _8    *const serde_json::Value          8b 8                var=6
+; ssa   _9    *const serde_json::Value          8b 8                var=7
+
+    ss0 = explicit_slot 16, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 8, align = 8
+
+block0(v0: i64):
+    v1 -> v0
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} serde_json::value::de::SeqRefDeserializer<'{erased}> <- ByVal(v0): &'{erased} serde_json::value::de::SeqRefDeserializer<'{erased}>
+    jump block1
+
+block1:
+    nop 
+; _6 = copy (((*_1).0: std::slice::Iter<'_, serde_json::Value>).1: *const serde_json::Value)
+; write_cvalue: Var(_6, var5): *const serde_json::Value <- ByRef(Pointer { base: Addr(v1), offset: Offset32(8) }, None): *const serde_json::Value
+    v2 = load.i64 notrap v1+8
+; _5 = copy _6 as std::ptr::NonNull<serde_json::Value> (Transmute)
+; write_cvalue_transmute: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::ptr::NonNull<serde_json::Value> <- ByVal(v2): *const serde_json::Value
+    v3 = stack_addr.i64 ss1
+    store notrap v2, v3
+; _7 = copy (((*_1).0: std::slice::Iter<'_, serde_json::Value>).0: std::ptr::NonNull<serde_json::Value>)
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): std::ptr::NonNull<serde_json::Value> <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): std::ptr::NonNull<serde_json::Value>
+    v4 = load.i64 notrap v1
+    v5 = stack_addr.i64 ss2
+    store notrap v4, v5
+; _8 = copy _7 as *const serde_json::Value (Transmute)
+; write_cvalue_transmute: Var(_8, var6): *const serde_json::Value <- ByRef(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): std::ptr::NonNull<serde_json::Value>
+    v6 = stack_addr.i64 ss2
+    v7 = load.i64 notrap v6
+; _9 = copy _5 as *const serde_json::Value (Transmute)
+; write_cvalue_transmute: Var(_9, var7): *const serde_json::Value <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::ptr::NonNull<serde_json::Value>
+    v8 = stack_addr.i64 ss1
+    v9 = load.i64 notrap v8
+; 
+; _4 = std::intrinsics::ptr_offset_from_unsigned::<serde_json::Value>(move _9, move _8)
+    v10 = isub v9, v7
+    v11 = iconst.i64 32
+    v12 = udiv v10, v11  ; v11 = 32
+    v13 -> v12
+; write_cvalue: Var(_4, var4): usize <- ByVal(v12): usize
+    jump block2
+
+block2:
+    nop 
+; _0 = std::option::Option::<usize>::Some(copy _4)
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(8) }, None): usize <- ByVal(v13): usize
+    v14 = stack_addr.i64 ss0+8
+    store.i64 notrap v13, v14
+    v15 = iconst.i64 1
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): u64 <- ByVal(v15): u64
+    v16 = stack_addr.i64 ss0
+    store notrap v15, v16  ; v15 = 1
+; 
+; return
+    v17 = stack_addr.i64 ss0
+    v18 = load.i64 notrap v17
+    v19 = stack_addr.i64 ss0+8
+    v20 = load.i64 notrap v19
+    return v18, v20
+}
+
+; clifv-extnames 1
+; decl u0:128 func local "_RNxC10serde_json12H5DeaP1l1moV"
+; end clifv-extnames

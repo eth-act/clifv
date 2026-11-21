@@ -188,6 +188,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | typed seam (`Norm.stdT f`) | `selTyped`, `redTyped` after `Norm.std` | `normSoundT_typed`, `normSoundT_stdT`, `check_sound_normT` | 103,615 (85.0 %) | 86,843 / 103,562 (83.9 %) | 71.3 % |
 | 4: neutral and affine constants, constants right, narrowing (`Norm.stdT f = Norm.narrowN f 3`) | `idStep`, `affStep`, `swapStep`, `narrowStep` after the typed rules | `ruleSoundT_idStep`, `ruleSound_affStep`, `ruleSound_swapStep`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 108,839 (89.3 %) | not measured on the pairs | measured instead with `cargo fv test --release --lean-link --verified` on the 9 crates: 71.0 % → 73.9 % (86,490 → 89,929 of 121,767) |
 | fold: constant-condition branches (`checkCertC`, fold requests) | none (`foldPre f bs` re-check) | `foldBr_simU`, `foldPre_simU`, `check_soundC` | 111,671 (91.6 %) | not measured on the pairs | 9 crates: 73.9 % → 75.6 % (89,929 → 92,018 of 121,767) |
+| division by a constant (`checkCertC`, prep requests) | none (`divPre` inside `foldPre f bs`) | `divPre_simU`, `foldPre_simU`, `check_soundC` | 112,950 (92.7 %) | not measured on the pairs | 9 crates: 75.6 % → 76.4 % (92,018 → 92,975 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -486,3 +487,57 @@ counterfactual.)
     only call of an extern with stack arguments that `g` still declares; without the test 41
     crypto-bigint functions left the executable's region (left out 1 → 42, validated 110,259,
     byte-identical 92,057; #1152, which would recover them).
+* **Division by a constant (`skeleton-removed div`)** (agent MidendCfg1; classification #1119
+  issuecomment-7063434831). Cranelift's mid-end rewrites a `udiv`/`sdiv`/`urem` whose divisor is
+  a constant (`opts/arithmetic.isle`, and the magic-number lowering); the statement skeleton of
+  `g` then lacks `f`'s division and every such pair was rejected (2,642 pairs). The validator
+  rewrites the same divisions of `f`, in the same copy as the fold, before the comparison:
+  - Compiler side (`FV/Opt/MidValFold.lean`): `divPre f bs`, when `kOk f K` (the fold's
+    constants), rewrites in the blocks `bs` a division `v = op x, y` whose divisor `y` has the
+    constant `c` of the division's type: `udiv`/`sdiv` by 1 into `imul x, y`, `urem` by 1 into
+    `iconst 0`, `udiv` by `2^k` (`k ≥ 1`) into `s = iconst k; v = ushr x, s`, `urem` by `2^k`
+    into `s = iconst (2^k - 1); v = band x, s`. The inserted values `s` come from `gapVals f`
+    (untrusted): values below `f.freshValue` that `f` never mentions, checked by `supplyOk`, so
+    `f.freshValue` and the `try_call` result windows stay the same; otherwise `f`. `foldPre f bs
+    = ConstPhi.run (foldBr (divPre f bs) bs)`; the requests are the fold requests (`foldBlocks
+    hints`), and `foldCands` also offers the blocks with a division. Divisor 0 (the division
+    traps), `srem`, `sdiv` by `2^k` (rounding toward zero) or by `-1` (the minimum traps) and
+    the magic-number divisions are left alone.
+  - Entry: unchanged (`checkCertC`, `checkC`'s re-check after `checkC0` rejects; the failure of
+    the re-check is marked `[prep]`); no theorem statement and no E2E theorem name changes.
+  - Proof (`FV/Opt/Proof/MidValDiv.lean`): **`divPre_simU : FunSimU f (divPre f bs)`** and
+    **`foldPre_simU : FunSimU f (foldPre f bs)`** (moved here from `MidValFold.lean`, the same
+    statement, now through `divPre_simU`, `foldBr_simU` and `ConstPhi.run_simU`). `divRw_spec`:
+    when a rewrite applies, the divisor is the constant and the division does not trap
+    (`udiv_pow2`, `urem_pow2`: `BitVec` division by `2^k` is the shift, the remainder the mask;
+    by 1 the identity and 0). The frame relation `DR`: the same block of `f`, the same slots,
+    registers equal outside the inserted values `S`, the rewritten body related statement by
+    statement (`BodyRel`), and `KInv`; an original statement steps as the rewritten one or its
+    two statements (`div_step`), and every other step of `f` is matched by the same step
+    (`DR.stepA`, `DR.stepC`, calls and `try_call` edges through `DR.isSimU`); `S` is disjoint
+    from every value `f` uses and lies below `f.freshValue`, so no block argument, call result
+    or exception payload touches it.
+  - Witnesses (`FVTest/Opt/MidValDivWitness.lean`): `udiv x, 8` against `ushr x, 3`, `urem x,
+    8` against `band x, 7`, `udiv`/`sdiv x, 1` against `x`, accepted and rejected without the
+    rewrite; negative: the wrong shift (`ushr x, 2`), signed for unsigned (`sdiv x, 8` against
+    `ushr x, 3`; `sdiv` is not rewritten, `sdiv_not_rewritten`), unsigned for signed (`udiv x,
+    8` against `sshr x, 3`) and the wrong mask (`band x, 8`) are rejected and no simulation, so
+    every certificate with every hint list is rejected (`shift_rejected`, `signed_rejected`,
+    `unsigned_rejected`, `mask_rejected`); divisor 0 and `sdiv` by -1 are left alone
+    (`div0_not_rewritten`, `sdivm1_not_rewritten`) and their pairs rejected; four real pairs
+    (crypto-bigint: num_integer's `urem` by `2^k`, clap_builder's `udiv` by 1; serde_json's
+    `udiv` by `2^k`; blake2: a `urem.i32` by a constant computed from constants), each rejected
+    by `checkC0`, `checkCertC` decided, simulation and program refinement.
+  - Measured (2026-11-21, the same 121,879 pairs, `midval-check --cond --cert`, main 9eb01aeb2's
+    binary against this one): 111,671 → 112,950 (+1,279, 92.7 %), 0 lost, every accepted pair
+    re-checks `ok`; gained from `skeleton-removed div` 1,241, `rewrite:operand` 35,
+    `rewrite:blocks` 2, `rewrite:domtree` 1. `skeleton-removed div` 2,642 → 460 (394 of them the
+    magic-number divisions, not covered: their proof is the `BitVec` multiply-high identity per
+    width and sign, several days for 0.33 % of the pairs). Check time summed over the pairs 57.1
+    → 61.5 s.
+    `cargo fv test --release --lean-link --verified` on the 9 crates (main with #1154's tools
+    against this one's): binary check 48/48 → 48/48, verified 121,767 → 121,767, left out of the
+    region 1 → 1, tests the same as stock's on all 9 both ways, validated 110,220 → 111,476
+    (90.5 → 91.5 %, up on every crate), byte-identical to stock 92,018 → 92,975 (75.6 → 76.4 %).
+    Without #1154 crypto-bigint's test executables failed `lean-link`: two validated `rand`
+    functions whose folded panic block held the only references to their unit's `.data.rel.ro`.

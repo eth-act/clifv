@@ -1,0 +1,134 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC12clap_builder12H8X44JQIMDlj
+function u0:1281(i64 sret, i64) system_v {
+; symbol _RNxC12clap_builder12H8X44JQIMDlj
+; instance Instance { def: Item(DefId(2:46359 ~ core[7b1c]::slice::iter::{impl#171}::size_hint)), args: ['{erased}, u8] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &std::slice::Iter<'_, u8>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: (usize, std::option::Option<usize>), layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(8 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } (usize, std::option::Option<usize>)
+; arg   _1      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} std::slice::Iter<'{erased}, u8>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} std::slice::Iter<'{erased}, u8>    8b 8                var=1
+; ssa   _2    usize                             8b 8                var=2
+; ssa   _3    *const u8                         8b 8                var=3
+; stack _4    std::ptr::NonNull<u8>             8b 8                storage=ss0
+; ssa   _5    *const u8                         8b 8                var=4
+; stack _6    std::ptr::NonNull<u8>             8b 8                storage=ss1
+; ssa   _7    usize                             8b 8                var=5
+; stack _8    std::option::Option<usize>       16b 8                storage=ss2
+; ssa   _9    *mut u8                           8b 8                var=6
+; ssa   _10   *const u8                         8b 8                var=7
+; ssa   _11   *const u8                         8b 8                var=8
+; zst   _12   ()                                0b 1                align=1,offset=
+; ssa   _13   *const ()                         8b 8                var=9
+; ssa   _14   *const ()                         8b 8                var=10
+; ssa   _15   bool                              1b 1                var=11
+; ssa   _16   bool                              1b 1                var=12
+; zst   _17   !                                 0b 1                align=1,offset=
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 16, align = 8
+    gv0 = symbol colocated userextname0 ; alloc747
+    gv1 = symbol colocated userextname1 ; alloc4228
+    sig0 = (i64, i64, i64) system_v
+    fn0 = u0:3053 sig0 ; Instance { def: Item(DefId(2:12378 ~ core[7b1c]::panicking::panic)), args: [] }
+
+block0(v0: i64, v1: i64):
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} std::slice::Iter<'{erased}, u8> <- ByVal(v1): &'{erased} std::slice::Iter<'{erased}, u8>
+    jump block1
+
+block1:
+    jump block3
+
+block3:
+    v4 = load.i64 notrap v1+8
+; _4 = copy _5 as std::ptr::NonNull<T> (Transmute)
+; write_cvalue_transmute: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): std::ptr::NonNull<u8> <- ByVal(v4): *const u8
+    v5 = stack_addr.i64 ss0
+    store notrap v4, v5
+; _6 = copy ((*_1).0: std::ptr::NonNull<T>)
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::ptr::NonNull<u8> <- ByRef(Pointer { base: Addr(v3), offset: Offset32(0) }, None): std::ptr::NonNull<u8>
+    v6 = load.i64 notrap v1
+    v7 = stack_addr.i64 ss1
+    store notrap v6, v7
+; _9 = copy _4 as *mut T (Transmute)
+; write_cvalue_transmute: Var(_9, var6): *mut u8 <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): std::ptr::NonNull<u8>
+    v9 = load.i64 notrap v5
+; _10 = copy _6 as *const T (Transmute)
+; write_cvalue_transmute: Var(_10, var7): *const u8 <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::ptr::NonNull<u8>
+    jump block8
+
+block4:
+    v31 = isub.i64 v9, v6
+    v33 -> v31
+    v16 = stack_addr.i64 ss2+8
+    store notrap v31, v16
+    v24 = iconst.i64 1
+    v18 = stack_addr.i64 ss2
+    store notrap v24, v18  ; v24 = 1
+; _0 = (move _7, move _8)
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(0) }, None): usize <- ByVal(v15): usize
+    store notrap v31, v0
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(8) }, None): std::option::Option<usize> <- ByRef(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): std::option::Option<usize>
+    v20 = load.i64 notrap v18
+    v22 = load.i64 notrap v16
+    store notrap v20, v0+8
+    store notrap v22, v0+16
+; 
+; return
+    return
+
+block5:
+    jump block4
+
+block8:
+    jump block9
+
+block9:
+    jump block10
+
+block10:
+    jump block5
+}
+
+; clifv-extnames 1
+; userextname0 = u1:883
+; userextname1 = u1:884
+; userextname2 = u0:3053
+; decl u0:1281 func local "_RNxC12clap_builder12H8X44JQIMDlj"
+; decl u0:3053 func import "_RNvNtCsazjiGSRkgVH_4core9panicking5panic"
+; decl u1:883 data local ro notls ".Ldata373"
+; decl u1:884 data local ro notls ".Ldata374"
+; end clifv-extnames

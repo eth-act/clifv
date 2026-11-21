@@ -18,6 +18,8 @@ import FV.Opt.Proof.MidValNormFam4
 import FVTest.Opt.MidValFam4Witness
 import FV.Opt.Proof.MidValFold
 import FVTest.Opt.MidValFoldWitness
+import FV.Opt.Proof.MidValDiv
+import FVTest.Opt.MidValDivWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -894,3 +896,73 @@ import FVTest.Opt.MidValFoldWitness
 #print axioms Opt.MidVal.FoldWitness.real_dom_c0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.FoldWitness.real_dom_checked -- witness: native_decide
 #print axioms Opt.MidVal.FoldWitness.real_dom_sim -- witness: native_decide
+
+-- #1119 skeleton-removed div: division by a constant (FV/Opt/Proof/MidValDiv.lean; foldPre_simU
+-- above now goes through divPre_simU)
+#print axioms Opt.MidVal.log2Exact_spec
+#print axioms Opt.MidVal.twoPow_of_toNat
+#print axioms Opt.MidVal.udiv_pow2
+#print axioms Opt.MidVal.urem_pow2
+#print axioms Opt.MidVal.divRw_spec
+#print axioms Opt.MidVal.divBody_supply
+#print axioms Opt.MidVal.bodyRel_cons
+#print axioms Opt.MidVal.divBlocks_find
+#print axioms Opt.MidVal.divBlocks_head
+#print axioms Opt.MidVal.supOk_of
+#print axioms Opt.MidVal.DR.enter
+#print axioms Opt.MidVal.div_step
+#print axioms Opt.MidVal.div_only_next
+#print axioms Opt.MidVal.kInv_next
+#print axioms Opt.MidVal.DR.stepA
+#print axioms Opt.MidVal.DR.stepC
+#print axioms Opt.MidVal.DR.isSimU
+#print axioms Opt.MidVal.divFn_simU
+#print axioms Opt.MidVal.divPre_simU
+-- witnesses (FVTest/Opt/MidValDivWitness.lean)
+#print axioms Opt.MidVal.DivWitness.pos_udiv -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_udiv_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_udiv_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_urem -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_urem_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_urem_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_udiv1 -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_udiv1_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_sdiv1 -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.pos_sdiv1_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.udiv8_text -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.sdiv8_text -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.urem8_text -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.ushr2_text -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.ushr3_text -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.sshr3_text -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.band8_text -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.not_sim_at
+#print axioms Opt.MidVal.DivWitness.shift_not_sim
+#print axioms Opt.MidVal.DivWitness.neg_shift -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.shift_rejected
+#print axioms Opt.MidVal.DivWitness.sdiv_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.signed_not_sim
+#print axioms Opt.MidVal.DivWitness.neg_signed -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.signed_rejected
+#print axioms Opt.MidVal.DivWitness.unsigned_not_sim
+#print axioms Opt.MidVal.DivWitness.neg_unsigned -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.unsigned_rejected
+#print axioms Opt.MidVal.DivWitness.mask_not_sim
+#print axioms Opt.MidVal.DivWitness.neg_mask -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.mask_rejected
+#print axioms Opt.MidVal.DivWitness.div0_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.sdivm1_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.neg_div0 -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.neg_sdivm1 -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_urem_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_urem_checked -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_urem_sim -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_udiv_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_udiv_checked -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_udiv_sim -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_urem32_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_urem32_checked -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_urem32_sim -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_one_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_one_checked -- witness: native_decide
+#print axioms Opt.MidVal.DivWitness.real_one_sim -- witness: native_decide

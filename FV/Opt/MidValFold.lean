@@ -22,11 +22,23 @@ input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
   selects.
 * `foldBr f bs`: when `kOk f K` for `K = kLook f.freshValue (kTable f)`, each block of `bs` whose
   `brif`/`br_table` condition has a constant ends in the `jump` it selects; otherwise `f`.
-* `foldPre f bs = ConstPhi.run (foldBr f bs)`: the folded function without the blocks that became
-  unreachable (`Opt.removeUnreachable`, and constant-phi removal, inside `ConstPhi.run`).
-* `foldBlocks hints`: the fold requests among the hints of `checkCertC` (`FV/Opt/MidValCond.lean`):
-  a hinted block with an empty wrapper chain, which `condPrep` leaves unchanged.
-* `foldCands f g` (untrusted): the blocks whose `brif`/`br_table` is a `jump` in `g`.
+* `divPre f bs` (division by a constant, `skeleton-removed div`): when `kOk f K`, in the blocks
+  `bs`, a `udiv`/`sdiv` whose divisor has the constant 1 becomes `imul x, y`, a `urem` by 1
+  `iconst 0`, a `udiv` by `2^k` (`k ≥ 1`) `ushr x, s` with a new `s = iconst k`, and a `urem` by
+  `2^k` `band x, s` with a new `s = iconst (2^k - 1)`, each `s` placed just before, as
+  Cranelift's mid-end does; the new values are gap values (`gapVals f`, untrusted) below
+  `f.freshValue` that `f` never uses (`supplyOk`), so `f.freshValue`, and with it the `try_call`
+  windows, is unchanged; otherwise `f`. Divisor 0, `srem`, `sdiv` by other constants (rounding
+  toward zero, the `-1` trap) and the magic-number divisions are left alone
+  (`Opt.MidVal.divPre_simU`, `FV/Opt/Proof/MidValDiv.lean`).
+* `foldPre f bs = ConstPhi.run (foldBr (divPre f bs) bs)`: the divisions rewritten and the
+  branches folded, without the blocks that became unreachable (`Opt.removeUnreachable`, and
+  constant-phi removal, inside `ConstPhi.run`).
+* `foldBlocks hints`: the prep requests (fold and division) among the hints of `checkCertC`
+  (`FV/Opt/MidValCond.lean`): a hinted block with an empty wrapper chain, which `condPrep` leaves
+  unchanged.
+* `foldCands f g` (untrusted): the blocks whose `brif`/`br_table` is a `jump` in `g`, and the
+  blocks with a division.
 -/
 
 namespace Opt.MidVal
@@ -113,22 +125,129 @@ def foldBr (f : Function) (bs : List BlockId) : Function :=
     let K := kLook fv hm
     if kOk f K then foldFn f K bs else f
 
-/-- **The folded function without its unreachable blocks** (module doc). -/
+/-! ## Division by a constant -/
+
+/-- `k` with `2 ^ k = n`, if `n` is a power of two. -/
+def log2Exact (n : Nat) : Option Nat :=
+  if 2 ^ n.log2 == n then some n.log2 else none
+
+/-- The statements that replace `v = op ty x y` when `y` has the constant `c` in `K`
+(`udiv`/`sdiv` by 1: `imul x, y`; `urem` by 1: `iconst 0`; `udiv` by `2^k`: `ushr x, k`;
+`urem` by `2^k`: `band x, 2^k - 1`), with `s` the value of an inserted constant; whether `s`
+is used. `none`: the statement is left alone. -/
+def divRw (K : ValueId → Option Val) (s : ValueId) (st : Stmt) : Option (List Stmt × Bool) :=
+  match st.results, st.inst with
+  | [v], .div op ty x y =>
+    match K y with
+    | some c =>
+      match log2Exact c.bits.toNat with
+      | some k =>
+        if c.ty ≠ ty then none
+        else if k = 0 then
+          if op = .urem then some ([⟨[v], .iconst ty 0⟩], false)
+          else if op = .udiv ∨ op = .sdiv then some ([⟨[v], .binary .imul ty x y⟩], false)
+          else none
+        else if op = .udiv then
+          some ([⟨[s], .iconst ty (BitVec.ofNat _ k)⟩, ⟨[v], .binary .ushr ty x s⟩], true)
+        else if op = .urem then
+          some ([⟨[s], .iconst ty (BitVec.ofNat _ (2 ^ k - 1))⟩, ⟨[v], .binary .band ty x s⟩], true)
+        else none
+      | none => none
+    | none => none
+  | _, _ => none
+
+/-- A body with its divisions by constants rewritten (`divRw`), the inserted constants taking
+values from the supply `sup` (a statement needing one is left alone when it is empty); the rest
+of the supply. -/
+def divBody (K : ValueId → Option Val) : List Stmt → List ValueId → List Stmt × List ValueId
+  | [], sup => ([], sup)
+  | st :: ss, sup =>
+    match sup with
+    | s :: sup' =>
+      match divRw K s st with
+      | some (xs, true) => let r := divBody K ss sup'; (xs ++ r.1, r.2)
+      | some (xs, false) => let r := divBody K ss sup; (xs ++ r.1, r.2)
+      | none => let r := divBody K ss sup; (st :: r.1, r.2)
+    | [] =>
+      match divRw K 0 st with
+      | some (xs, false) => let r := divBody K ss []; (xs ++ r.1, r.2)
+      | _ => let r := divBody K ss []; (st :: r.1, r.2)
+
+/-- The blocks of `bs` with their divisions rewritten, the supply threaded through them. -/
+def divBlocks (K : ValueId → Option Val) (bs : List BlockId) :
+    List Block → List ValueId → List Block
+  | [], _ => []
+  | b :: rest, sup =>
+    if bs.contains b.id then
+      let r := divBody K b.body sup
+      { b with body := r.1 } :: divBlocks K bs rest r.2
+    else b :: divBlocks K bs rest sup
+
+/-- Every value `f` defines or reads. -/
+def usedVals (f : Function) : List ValueId :=
+  f.blocks.flatMap fun b => b.params.map (·.1) ++
+    b.body.flatMap (fun st => st.results ++ operands st.inst) ++ termOperands b.term
+
+/-- Values below `f.freshValue` that `f` neither defines nor reads, at most `n` (untrusted: the
+supply of `divPre`; `divPre` checks it). -/
+def gapVals (f : Function) (n : Nat) : List ValueId := Id.run do
+  let used : Std.HashSet ValueId := (usedVals f).foldl (fun s v => s.insert v) {}
+  let mut out : Array ValueId := #[]
+  for v in [0:f.freshValue] do
+    if out.size ≥ n then break
+    if !used.contains v then out := out.push v
+  return out.toList
+
+/-- Every block through `divBlocks`, with the supply `S`. -/
+def divFn (f : Function) (K : ValueId → Option Val) (bs : List BlockId) (S : List ValueId) :
+    Function :=
+  { f with blocks := divBlocks K bs f.blocks S }
+
+/-- The supply's check: values below `f.freshValue` that `f` neither defines nor reads. -/
+def supplyOk (f : Function) (S : List ValueId) : Bool :=
+  let used := usedVals f
+  S.all fun s => s < f.freshValue && !used.contains s
+
+/-- **Division by a constant** (module doc): in the blocks of `bs`, the divisions whose divisor
+has a constant (`kOk`, as `foldBr`) become the pure statements `divRw` gives, inserted constants
+taking values that `f` neither defines nor reads (`supplyOk`) and that keep its fresh value;
+`f` otherwise. -/
+def divPre (f : Function) (bs : List BlockId) : Function :=
+  if bs.isEmpty then f
+  else
+    let fv := f.freshValue
+    let hm := kTable f
+    let K := kLook fv hm
+    if kOk f K then
+      let n := f.blocks.foldl (fun n b => n + (b.body.filter fun st => match st.inst with
+        | .div .. => true | _ => false).length) 0
+      let S := gapVals f n
+      let f' := divFn f K bs S
+      if supplyOk f S && f'.freshValue == fv then f' else f
+    else f
+
+/-- **The folded function without its unreachable blocks** (module doc): divisions by
+constants rewritten (`divPre`), constant-condition branches folded (`foldBr`), then
+constant-phi removal. -/
 def foldPre (f : Function) (bs : List BlockId) : Function :=
-  ConstPhi.run (foldBr f bs)
+  ConstPhi.run (foldBr (divPre f bs) bs)
 
 /-- The fold requests among `checkCertC`'s hints: the blocks hinted with an empty wrapper
 chain. -/
 def foldBlocks (hints : List (BlockId × List Wrap)) : List BlockId :=
   hints.filterMap fun (b, ws) => if ws.isEmpty then some b else none
 
-/-- The blocks of `f` ending in a `brif`/`br_table` that ends in a `jump` in `g` (untrusted). -/
+/-- The blocks of `f` ending in a `brif`/`br_table` that ends in a `jump` in `g`, and the blocks
+with a division (untrusted). -/
 def foldCands (f g : Function) : List BlockId :=
   let gt : Std.HashMap BlockId Bool := g.blocks.foldl (fun m b =>
     if m.contains b.id then m
     else m.insert b.id (match b.term with | .jump _ => true | _ => false)) {}
-  f.blocks.filterMap fun b => match b.term with
-    | .brif .. | .brTable .. => if gt[b.id]?.getD false then some b.id else none
-    | _ => none
+  f.blocks.filterMap fun b =>
+    let fold := match b.term with
+      | .brif .. | .brTable .. => gt[b.id]?.getD false
+      | _ => false
+    let div := b.body.any fun st => match st.inst with | .div .. => true | _ => false
+    if fold || div then some b.id else none
 
 end Opt.MidVal
