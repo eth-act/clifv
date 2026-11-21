@@ -20,7 +20,7 @@ takes only the `ldr` form (`ldrFormB_ldrW`), so `gotTabB` is sound for both `Got
 
 `link-check` evaluates it as `gotTabFastB` (`@[csimp] gotTabB_eq_fast`, #1145): `relocAtB` scans
 every relocation of the table for each byte of each slot, so `gotTabB` takes GOT pairs ×
-relocations steps (serde_json's release test executable, 18,639 GOT pairs: not done after an
+relocations steps (serde_json's release test executable, 18,614 GOT pairs: not done after an
 hour); `gotTabFastB` puts the relocated bytes in a hash set once (`relocAtB_eq_contains`).
 -/
 
