@@ -16,6 +16,8 @@ import FV.Opt.Proof.MidValNormTyped
 import FVTest.Opt.MidValTypedWitness
 import FV.Opt.Proof.MidValNormFam4
 import FVTest.Opt.MidValFam4Witness
+import FV.Opt.Proof.MidValFold
+import FVTest.Opt.MidValFoldWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -825,3 +827,70 @@ import FVTest.Opt.MidValFam4Witness
 #print axioms Opt.MidVal.Fam4Witness.real_narrow_t0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.Fam4Witness.real_narrow_checked -- witness: native_decide
 #print axioms Opt.MidVal.Fam4Witness.real_narrow_sim -- witness: native_decide
+
+-- #1119 rewrite:blocks: constant-condition branch folding (FV/Opt/Proof/MidValFold.lean); the
+-- check_soundC_* theorems above are re-proved through checkCertC's fold requests (MidValCondProg.lean)
+#print axioms Opt.MidVal.kInv_empty
+#print axioms Opt.MidVal.kInv_set
+#print axioms Opt.MidVal.kOk_spec
+#print axioms Opt.MidVal.constEval_pure
+#print axioms Opt.MidVal.constEval_sound
+#print axioms Opt.MidVal.kInv_stmt
+#print axioms Opt.MidVal.kOk_none
+#print axioms Opt.MidVal.foldFn_freshValue
+#print axioms Opt.MidVal.foldFn_block?
+#print axioms Opt.MidVal.foldFn_entry?
+#print axioms Opt.MidVal.foldBlock_term
+#print axioms Opt.MidVal.getMany_fold
+#print axioms Opt.MidVal.get_fold
+#print axioms Opt.MidVal.callArgs_fold
+#print axioms Opt.MidVal.tailArgs_fold
+#print axioms Opt.MidVal.ciArgs_fold
+#print axioms Opt.MidVal.tcArgs_fold
+#print axioms Opt.MidVal.ticArgs_fold
+#print axioms Opt.MidVal.FR.enter
+#print axioms Opt.MidVal.FR.stepA
+#print axioms Opt.MidVal.FR.stepC
+#print axioms Opt.MidVal.kNone_window
+#print axioms Opt.MidVal.FR.term_try
+#print axioms Opt.MidVal.FR.isSimU
+#print axioms Opt.MidVal.foldFn_simU
+#print axioms Opt.MidVal.kLook_lt
+#print axioms Opt.MidVal.foldBr_simU
+#print axioms Opt.MidVal.foldPre_simU
+-- witnesses (FVTest/Opt/MidValFoldWitness.lean)
+#print axioms Opt.MidVal.FoldWitness.pos_ult -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_ult_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_ult_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_cross -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_cross_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_cross_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_table -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_table_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.pos_table_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.ultF_text -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.ult_blocks -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.paramF_text -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.ultG_text -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.param_not_folded -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.neg_param -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.param_not_sim
+#print axioms Opt.MidVal.FoldWitness.param_rejected
+#print axioms Opt.MidVal.FoldWitness.keepWrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.neg_keep_wrong -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.keep_wrong_not_sim
+#print axioms Opt.MidVal.FoldWitness.keep_wrong_rejected
+#print axioms Opt.MidVal.FoldWitness.tableF_text -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.tableWrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.neg_table -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.table_not_sim
+#print axioms Opt.MidVal.FoldWitness.table_rejected
+#print axioms Opt.MidVal.FoldWitness.real_mul_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_mul_checked -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_mul_sim -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_table_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_table_checked -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_table_sim -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_dom_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_dom_checked -- witness: native_decide
+#print axioms Opt.MidVal.FoldWitness.real_dom_sim -- witness: native_decide

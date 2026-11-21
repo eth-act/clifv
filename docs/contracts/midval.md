@@ -187,6 +187,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 3: branch conditions (`checkCertC`, hints) | none (`condPrep g hints` re-check) | `condPrep_simU`, `check_soundC` | 91,948 (75.4 %) | 84,317 / 91,898 (91.8 %) | 69.3 % |
 | typed seam (`Norm.stdT f`) | `selTyped`, `redTyped` after `Norm.std` | `normSoundT_typed`, `normSoundT_stdT`, `check_sound_normT` | 103,615 (85.0 %) | 86,843 / 103,562 (83.9 %) | 71.3 % |
 | 4: neutral and affine constants, constants right, narrowing (`Norm.stdT f = Norm.narrowN f 3`) | `idStep`, `affStep`, `swapStep`, `narrowStep` after the typed rules | `ruleSoundT_idStep`, `ruleSound_affStep`, `ruleSound_swapStep`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 108,839 (89.3 %) | not measured on the pairs | measured instead with `cargo fv test --release --lean-link --verified` on the 9 crates: 71.0 % → 73.9 % (86,490 → 89,929 of 121,767) |
+| fold: constant-condition branches (`checkCertC`, fold requests) | none (`foldPre f bs` re-check) | `foldBr_simU`, `foldPre_simU`, `check_soundC` | 111,671 (91.6 %) | not measured on the pairs | 9 crates: 73.9 % → 75.6 % (89,929 → 92,018 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -413,3 +414,75 @@ counterfactual.)
     this one's): binary check 48/48 → 48/48, verified 121,767 → 121,767, tests the same as stock's
     on all 9 both ways, validated 102,433 → 107,461 (84.1 → 88.3 %), byte-identical to stock
     86,490 → 89,929 (71.0 → 73.9 %).
+* **Constant-condition branch folding (`rewrite:blocks`)** (agent MidendCfg1; design note #1119
+  issuecomment-7059042402). Cranelift's mid-end turns a `brif`/`br_table` whose condition is a
+  constant into a `jump` and drops the blocks that became unreachable; the comparison needs the
+  same blocks in the same order, so every such pair was rejected (`rewrite:blocks`, and
+  `rewrite:domtree`/`rewrite:term` where the block set survived). The validator folds the same
+  branches of `f`, in a copy, before the comparison:
+  - Compiler side (`FV/Opt/MidValFold.lean`): `constEval K i` is the constant of an `iconst`, or
+    of a pure, non-partial instruction with operands whose operands have constants in `K`
+    (`Clif.evalInst` in a frame holding `K`, as family 1); `kTable f` (untrusted) collects
+    constants by passes over the statements; `kLook f.freshValue` keeps those below the fresh
+    value; `kOk f K` checks them: no block parameter has a constant, and a statement that defines
+    a value with a constant defines only that value and `constEval K` gives the constant.
+    `foldBr f bs`: when `kOk`, the `brif`/`br_table` of the blocks `bs` on a value with a
+    constant become the `jump` the constant selects; `foldPre f bs = ConstPhi.run (foldBr f bs)`
+    (the blocks that became unreachable removed, and the constant phis of the new graph).
+  - Entry: `checkCertC` (compiler side; its theorems keep their text). A hint with an empty
+    wrapper chain, which `condPrep` leaves alone and `emitC` never emitted before, is a fold
+    request; with fold requests `bs` (`foldBlocks hints`), `checkCertC f g cert hints = refsOk g
+    && checkCert (foldPre f bs) (condPrep g hints) cert` with the default normaliser of `foldPre f
+    bs`; without them it is unchanged (`checkCertC_nil` still holds by `rfl`). `checkC`
+    (untrusted) tries it when `checkC0` (the former `checkC`) rejects, for the blocks whose
+    branch is a `jump` in `g` (`foldCands`), not in the hoisting mode, and only when a branch
+    folds and the folded blocks are `g`'s; `emitC` emits against `foldPre f bs`. Every caller
+    decides through it with the same pair: `lean-backend --midval-opt` and `Link.midPairB`
+    (link-check's `…_mid` binary theorems, lean-link's `midSource`), so they decide the same
+    thing; no theorem statement and no E2E theorem name changes.
+  - Proof (`FV/Opt/Proof/MidValFold.lean`): **`foldBr_simU : FunSimU f (foldBr f bs)`**,
+    **`foldPre_simU : FunSimU f (foldPre f bs)`** (with `ConstPhi.run_simU`). The frame relation
+    `FR`: the same point of a block `b` of `f`, the same registers and slots, the folded frame
+    with `foldBlock`'s terminator, and `KInv`: every register whose value has a constant holds
+    it or nothing. A register is written only by its definitions (statement results, block
+    parameters, which have no constant, and `try_call` results and exception payloads at
+    `f.freshValue` and above), and a definition of a value with a constant evaluates to it once
+    its operands hold theirs (`constEval_sound`: `evalInst_ops`, `evalInst_isPure_frame`,
+    `evalInst_pureK_mem`); at a folded branch the source reads the condition, so it enters the
+    block the `jump` enters. `check_soundC_norm` and `check_soundC_normT` are re-proved with the
+    fold branch `(foldPre_simU f bs).toMU.trans ((check_sound h).trans (condPrep_simU hR).toMU)`;
+    `check_soundC`, `checkedC_simMU`, `ValidatedC`, `validatedC_refines` and the E2E and Link
+    theorems on them cover the folded pairs, about the original `f`.
+  - Witnesses (`FVTest/Opt/MidValFoldWitness.lean`): `brif (icmp ult 64, 0)`, a constant of
+    the entry block branched on in another block, and `br_table` on a constant, each against
+    the `jump` and without the dropped blocks, accepted and rejected without folding (by
+    `check` and by `checkC0`); negative: a branch on a parameter is not folded
+    (`param_not_folded`), the fold keeps the selected block and drops the other
+    (`ult_blocks`), and the pairs against a `jump` on a parameter, against `g` keeping the other
+    block, and against a `br_table` folded to the wrong entry are rejected, no simulation, so
+    every certificate with every hint list is rejected (`param_rejected`,
+    `keep_wrong_rejected`, `table_rejected`); three real pairs (crypto-bigint: criterion's
+    `brif (icmp ule (imul 160, 48), 4096)`; a `br_table` on `ireduce.i32` of another block's
+    constant with a `try_call`; memchr: a quickcheck `brif` on a block parameter that is a
+    constant once constant-phi removal has run, formerly `rewrite:domtree`), each rejected by
+    `checkC0`, `checkCertC` decided, simulation and program refinement.
+  - Measured (2026-11-21, the same 121,879 pairs, `midval-check --cond --cert`, #1151's binary
+    against this one): 108,839 → 111,671 (+2,832, 91.6 %), 0 lost, every accepted pair
+    re-checks `ok`; gained from `rewrite:blocks` 2,012, `rewrite:domtree` 719, `rewrite:term`
+    101. `rewrite:blocks` 4,809 → 976 (966 of them with a condition that is not a constant
+    tree: loads, parameters, calls). Of the 3,709 constant-condition pairs, 3,699 pass the block
+    comparison: 1,964 accepted, 1,515 now first fail on a removed division by a constant
+    (`skeleton-removed div`), 215 on `rewrite:operand` (136 of them `jump` arity). Check time
+    summed over the pairs 54.9 → 57.1 s, re-check 17.0 → 17.8 s.
+    `cargo fv test --release --lean-link --verified` on the 9 crates (#1151's tools → this
+    one's): binary check 48/48 → 48/48, verified 121,767 → 121,767, left out of the region 1 → 1,
+    tests the same as stock's on all 9 both ways, validated 107,461 → 110,220 (88.3 → 90.5 %, up
+    on every crate), byte-identical to stock 89,929 → 92,018 (73.9 → 75.6 %).
+  - Selection (`lean-backend --midval-opt`, `FVTest/Backend/Main.lean`): a validated `g` is
+    compiled only if link-check's `outFits` input condition is no worse for it than for `f`
+    (`outScopeLeB f g`: every extern whose stack arguments fit `f`'s stack-argument area fits
+    `g`'s; `outScopeB_of_le`: then `outScopeB P f → outScopeB P g` for every program `P`, which
+    `lean-backend` does not know); otherwise `f`, as without `--midval-opt`. A fold can drop `g`'s
+    only call of an extern with stack arguments that `g` still declares; without the test 41
+    crypto-bigint functions left the executable's region (left out 1 → 42, validated 110,259,
+    byte-identical 92,057; #1152, which would recover them).

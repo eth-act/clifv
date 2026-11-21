@@ -20,6 +20,7 @@ import FV.Opt.MidValCond
 import FV.Link.ConstPhiCompile
 import FV.Link.MidPair
 import FV.E2E.SrcScopeDefs
+import FV.E2E.LinkOwnFramesDefs
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -115,7 +116,10 @@ whose dump header says `opt_level` is not `none`): for the input's one function 
 same-named function `g` of that file, `lean-backend` runs `Opt.MidVal.emitC (Opt.ConstPhi.run f) g`
 and decides `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` itself, and `Link.midPairB`
 on the two functions after constant-phi removal and the `i128` legalisation (`FnInput.cp`: the
-pair `link-check` re-decides for its binary theorem `…_mid`). When both hold, `g` is
+pair `link-check` re-decides for its binary theorem `…_mid`). When both hold, and link-check's
+`outFits` input condition is no worse for `g` than for `f` (`outScopeLeB`, below: a fold of the
+validator can drop `g`'s only call of an extern with stack arguments that `g` still declares,
+#1152, which would leave `g` out of the executable's region), `g` is
 compiled in place of `f`, and when `g`'s verdict is a theorem that composes with the validator
 (`FVTest.Backend.FnVerdict.midvalVerdict`; with a `try_call`, also its unwinding theorem) the
 function is reported verified by the theorem through the validator
@@ -806,12 +810,34 @@ def runCore (input output : String) (o : Opts) (src : String)
     say s!"lean-backend: {input}: %{name}: {FVTest.Backend.FnVerdict.line v true unw}"
   return (0, midFail)
 
+/-- link-check's `outFits` input condition (`E2E.LinkCheck.outScopeB P _`) is no worse for `g`
+than for `f`, whatever the program `P` (`lean-backend` compiles one function and does not know
+it): every extern whose stack arguments fit `f`'s stack-argument area fits `g`'s
+(`outScopeB_of_le`). -/
+def outScopeLeB (f g : Clif.Function) : Bool :=
+  g.externs.all fun e => E2E.LinkCheck.outFitsB e.2.sig (E2E.LinkCheck.callStack g) ||
+    !E2E.LinkCheck.outFitsB e.2.sig (E2E.LinkCheck.callStack f)
+
+theorem outScopeB_of_le {f g : Clif.Function} (h : outScopeLeB f g = true)
+    (hx : f.externs = g.externs) {P : Clif.Program} (hf : E2E.LinkCheck.outScopeB P f = true) :
+    E2E.LinkCheck.outScopeB P g = true := by
+  unfold outScopeLeB at h
+  unfold E2E.LinkCheck.outScopeB at hf ⊢
+  rw [List.all_eq_true] at h hf ⊢
+  intro e he
+  have h1 := h e he
+  have h2 := hf e (hx ▸ he)
+  cases hp : (P.func? e.2.name).isSome <;> simp_all
+
 /-- The decision of `--midval-opt` for the source text `src` and the optimised text `srcOpt`:
 the function's name and `g` when `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` holds
 for the certificate and branch-condition hints `Opt.MidVal.emitC` gives, and `Link.midPairB` holds
 on the pair as `link-check` re-decides it on the bundle (each function's input after constant-phi
 removal and the `i128` legalisation, `FnInput.cp`/`FnInput.func`: the program its binary theorem
-is about), else why not (the function's name when there is one). -/
+is about), and link-check's `outFits` input condition is no worse for `g` than for `f` after
+constant-phi removal (`outScopeLeB`; otherwise compiling `g` could leave the function out of the
+executable's region where `f` stays in it, #1152), else why not (the function's name when there
+is one). -/
 def midvalDecide (src srcOpt : String) : Except (Option String × String) (String × Clif.Function) := do
   let fs := (Clif.parseFile src).funcs
   let some p := fs.head? | throw (none, "the input has no function")
@@ -832,6 +858,10 @@ def midvalDecide (src srcOpt : String) : Except (Option String × String) (Strin
     | .error e => throw (some p.name, s!"Opt.MidVal.check rejects: {e}")
   if !Opt.MidVal.checkCertC f' g cert hints then
     throw (some p.name, "Opt.MidVal.checkCertC rejects the emitted certificate")
+  -- link-check's `outFits` input condition: never trade a function in the region for one out
+  -- of it (#1152: a fold can drop `g`'s only call of a stack-argument extern it still declares)
+  if !outScopeLeB f' g then
+    throw (some p.name, "g fails link-check's outFits input condition for an extern f meets it for (outScopeLeB: a stack-argument extern g declares but no longer calls, #1152)")
   -- #1119 layer 2: the pair `link-check` decides for the binary theorem (`…_mid`), and `g`'s
   -- printed CLIF parsing back to it (`Front.mkInput`: else `link-check` cannot assemble the bundle)
   let fi0 : E2E.LinkCheck.FnInput := { clif := src, ra := "" }
