@@ -714,6 +714,14 @@ the same as stock's on all 9 both ways; validated 102,433 → 107,461 (84.1 % �
 crate); byte-identical to stock 86,490 → 89,929 of 121,767 (71.0 % → 73.9 %); `cargo fv test`
 wall summed 2,986 → 2,790 s. Rejected `rewrite:operand` 8,637 → 3,168.
 
+Constant-condition branch folding (`rewrite:blocks`; docs/contracts/midval.md; measured
+2026-11-21 on clifv-remote, #1151's tools against this one's, the same 9 crates and command):
+binary check 48 of 48 both ways, 121,767 verified both ways, test outcomes the same as stock's on
+all 9 both ways; validated 107,461 → 110,259 (88.3 % → 90.5 %; up on every crate);
+byte-identical to stock 89,929 → 92,057 of 121,767 (73.9 % → 75.6 %); left out 1 → 42 (41
+crypto-bigint functions fail link-check's `outFits` input condition, #1152); `cargo fv test` wall
+summed 2,790 → 2,725 s.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
