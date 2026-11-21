@@ -325,6 +325,15 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
      final link are unaffected;
    * check: each Lean-compiled symbol of the merged object has its marker's address. If not,
      the CGU is left as cg_clif wrote it and all its functions fall back.
+   * data of the source program (#1154): a function compiled from its optimised dump (the
+     mid-end validator, #1119) may no longer reference a data object that its unoptimised code
+     references, for example the `Location` of a panic block Cranelift folded away. The
+     executable theorems are about the program of the unoptimised dumps, whose data closure has
+     that object. So each section of cg_clif's object holding such an object is marked
+     `SHF_GNU_RETAIN`, and `--gc-sections` keeps it (rust-lld and `lean-ld` alike). The only
+     cost is a few bytes of dead data, and no code byte changes. Without the mark, a unit
+     whose `.data.rel.ro` had no other linked referrer lost the section, and `lean-link`'s
+     `dataFastB` failed ("not in the link map").
    * unwind tables: each Lean object has its own `.eh_frame` (FDEs relocated against its
      `.text`), so the merged object has FDEs for the Lean code and cg_clif's FDEs for its own
      sections (which reference cg_clif's section symbols, never the Lean code). The linker
