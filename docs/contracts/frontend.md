@@ -127,7 +127,8 @@ an error.
   "symbols": [["<executable symbol defined once>", 1234]],
   "markers": [["<linked name>", 1234]],
   "aligns": [["<linked name>", 8]],
-  "skipped": [["<linked name>", "<why the function is not in the region>"]]
+  "skipped": [["<linked name>", "<why the function is not in the region>"]],
+  "unlinked": ["<linked name>"]
 }
 ```
 
@@ -142,6 +143,10 @@ an error.
   `symsOkB`, `outsideOkB`); `skipped` non-empty is an error. The functions' sizes are not read:
   `lean-link` fills `Bundle.sizes` with placeholders and replaces them by the compiled code's
   (`placedPar`, the Lean compiler's layout).
+* `unlinked` (optional, #1148; not read by Lean): without `--lean-link`, the functions of a unit
+  none of whose object's code sections the link map lists (`--gc-sections` dropped them while the
+  unit's data stayed) and whose marker is not in it: not in the executable, so neither in the
+  bundle nor skipped. The unit's data objects stay in the bundle.
 * `aligns` (optional, #1061): the region functions `ld -r` starts beyond a word, with that
   alignment in bytes (a function's object's `.text` alignment, `fv-link.json` `align`; a unit's
   first function its unit's largest one); every other function starts at a word. `buildSpec`
