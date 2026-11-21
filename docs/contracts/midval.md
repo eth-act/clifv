@@ -46,9 +46,9 @@ function's arguments), the same dominator tree.
   region): every store, call, `call_indirect`, atomic, `fence` and `try_call` starts a version, a
   join of different versions starts one; explicit traps keep it.
 * **Normaliser seam** (`Norm`): `Norm.id` in stage 1; the default is now `Norm.stdT f` (stage 2,
-  below: `Norm.std`, then the typed rules). A stage-2 rewrite is one more `Norm` with a lemma that
-  it preserves the value under `Clif.evalInst` (`NormSound`, or `NormSoundT f` for a rule that
-  reads an atom's type). `midval-check --norm-id` measures with stage 1's `Norm.id`,
+  below: `Norm.std`, the typed rules, then family 4). A stage-2 rewrite is one more `Norm` with a
+  lemma that it preserves the value under `Clif.evalInst` (`NormSound`, or `NormSoundT f` for a
+  rule that reads an atom's type). `midval-check --norm-id` measures with stage 1's `Norm.id`,
   `--norm-const` with family 1 alone (`evalConst`), `--norm-std` without the typed rules.
 
 Rejected, with a reason: ISLE rewrites (`rewrite:*`), dead-store elimination (`alias:store`),
@@ -186,6 +186,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 2: second set | `Norm.alg2` before `Norm.alg` | `normSound_alg2`, `normSound_std` | 88,966 (73.0 %) | 81,681 / 88,921 (91.9 %) | 67.1 % |
 | 3: branch conditions (`checkCertC`, hints) | none (`condPrep g hints` re-check) | `condPrep_simU`, `check_soundC` | 91,948 (75.4 %) | 84,317 / 91,898 (91.8 %) | 69.3 % |
 | typed seam (`Norm.stdT f`) | `selTyped`, `redTyped` after `Norm.std` | `normSoundT_typed`, `normSoundT_stdT`, `check_sound_normT` | 103,615 (85.0 %) | 86,843 / 103,562 (83.9 %) | 71.3 % |
+| 4: neutral and affine constants, constants right, narrowing (`Norm.stdT f = Norm.narrowN f 3`) | `idStep`, `affStep`, `swapStep`, `narrowStep` after the typed rules | `ruleSoundT_idStep`, `ruleSound_affStep`, `ruleSound_swapStep`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 108,839 (89.3 %) | not measured on the pairs | measured instead with `cargo fv test --release --lean-link --verified` on the 9 crates: 71.0 % → 73.9 % (86,490 → 89,929 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -335,8 +336,9 @@ counterfactual.)
     `intern` interns them first, `internSelAux`). `redTyped`: `ireduce ty (extend op uty x)` with
     `x` an atom of static type `xt`, both narrower than `uty`: `x`, `extend op ty x` or
     `ireduce ty x` (as `redExt` for a node `x`). `Norm.stdT f = Norm.orElse Norm.std (Norm.guard
-    (typedStep (atomTy f)))` is the default of `check`, `emit`, `checkCert`, `checkCertSyms`,
-    `checkCertC`, `checkC`, `emitC` (a default that reads `f`), and of `midval-check`.
+    (typedStep (atomTy f)))` was the default of `check`, `emit`, `checkCert`, `checkCertSyms`,
+    `checkCertC`, `checkC`, `emitC` (a default that reads `f`), and of `midval-check`, until
+    family 4 (below).
   - Obligation (`FV/Opt/Proof/MidValTerm.lean`): `AtomsTyped f tms fr mem i` (every atom reachable
     from `i`'s operands through node operands, `TmReach`, that has a static type holds a value of
     it in `fr`) and `NormSoundT f norm` (the normalised term has the node's value in every frame
@@ -365,3 +367,49 @@ counterfactual.)
     this one): 91,948 → 103,615 (+11,667), 0 lost, every accepted pair re-checks `ok`; 11,664 of
     the newly accepted functions are Lean-compiled and verified from `g` (3 have no record), 2,526
     byte-identical to stock. Hoisting mode: 92,096 → 104,468.
+* **Family 4: neutral and affine constants, constants on the right, narrowed `ireduce`** (agent
+  MidendNorm5; classification of the 8,669 `rewrite:operand` rejections: #1119
+  issuecomment-7059025455). Four steps after the typed rules, each a normaliser with its lemma
+  (`FV/Opt/Proof/MidValNormFam4.lean`), after Cranelift 0.135.0's rules (identical in 0.136.1):
+  - `idStep` (typed; `arithmetic.isle` `x*1`, `x+0`, `bitops.isle`): `op ty x k` with `k` a neutral
+    constant of type `ty` (`rNeutral`: `0` for `iadd`/`isub`/`bor`/`bxor`, `1` for `imul`, `-1`
+    for `band`), or `op ty k x` with `op` commutative (`commOp`), is `x` when `tyAt` gives `x`
+    the type `ty`. `ruleSoundT_idStep` (`rNeutral_spec`, `commOp_spec`); with no value for `x`
+    neither side has one.
+  - `affStep` (`cprop.isle` reassociation): `iadd ty x k`, `iadd ty k x` with `x` an `iadd` of a
+    constant, and `isub ty x k` are `iadd ty y K` with the constants added up (`affPlan`;
+    `isub x k = iadd x (-k)`); the constant is looked up (`findTm`) and interned first
+    (`affAux`). `ruleSound_affStep` (no typing: both sides read `y` at `ty`).
+  - `swapStep` (`cprop.isle` "constants to the right"): `op ty k x` is `op ty x k` for `iadd`,
+    `imul`, `band`, `bor`, `bxor`, `umin`, `umax`, `smin`, `smax`. `ruleSound_swapStep`.
+  - `narrowStep n` (typed; `extends.isle` 86–91): `ireduce ty (op wty a b)` with `op` one of
+    `iadd isub imul band bor bxor`, `a`, `b` of static type `wty` wider than `ty`, is
+    `op ty a' b'` with `a'`, `b'` the terms of `ireduce ty a`, `ireduce ty b` under `n`
+    (`redOf`; the checker interns them first with the same normaliser, `narrowAux`, `internD`),
+    then `affStep`/`swapStep` on that node. `ruleSoundT_narrowStep : NormSoundT f n → RuleSoundT f
+    (narrowStep n (atomTy f))` (`setWidth_ring`, `redOf_spec`, `AtomsTyped.of_ops`).
+  - `Norm.base f` = the typed default before, then `idStep`, `affStep`, `swapStep`;
+    `Norm.narrowN f (k + 1)` = `Norm.base f`, then `narrowStep (Norm.narrowN f k)`; the default is
+    `Norm.stdT f = Norm.narrowN f 3`. `normSoundT_base`, `normSoundT_narrowN`; `normSoundT_stdT`
+    keeps its text and moves to `FV/Opt/Proof/MidValNormFam4.lean`. `intern` is `internD 4`
+    (auxiliary terms interned recursively; untrusted, a missed term only rejects).
+  - Witnesses (`FVTest/Opt/MidValFam4Witness.lean`): `imul x, 1` and `iadd 0, x` against `x`,
+    `(x + 3) - 5` against `x + (-2)`, `band 255, x` against `band x, 255`, `ireduce.i32 (imul x,
+    5)` against `imul.i32 (ireduce.i32 x), 5` accepted, each rejected by the normaliser before
+    family 4; the look-alikes `iadd x, 1` and `isub 0, x` against `x`, `(x + 3) - 5` against `x +
+    8`, `isub 7, x` against `isub x, 7`, `ireduce.i32 (ushr x, 1)` against `ushr.i32 (ireduce.i32
+    x), 1` rejected, shown to be no simulation, so every certificate is rejected; the two typed
+    steps are no `NormSound` normalisers (`idStep_not_normSound`, `narrowStep_not_normSound`: a
+    frame whose parameters hold values of other types); four real pairs (blake2 `x*1` in a
+    `memcmp` call, regex_syntax `isub x, K` and a constant-left operation, core's `<u32 as
+    Mul>::mul` narrowed `imul`), each rejected before family 4, `checkCert` decided, simulation
+    and program refinement.
+  - Measured (2026-11-21, the same 121,879 pairs, `midval-check --cond --cert`, main 70b91376d's
+    binary against this one): 103,615 → 108,839 (+5,224, 89.3 %), 0 lost, every accepted pair
+    re-checks `ok`; `rewrite:operand` 8,669 → 3,194; check time 52.5 → 54.9 s summed over the
+    pairs. Cumulative per step: `idStep` 107,274, `+ affStep` 107,620, `+ swapStep` 107,981,
+    `+ narrowStep` 108,839.
+    `cargo fv test --release --lean-link --verified` on the 9 crates (main 70b91376d's tools →
+    this one's): binary check 48/48 → 48/48, verified 121,767 → 121,767, tests the same as stock's
+    on all 9 both ways, validated 102,433 → 107,461 (84.1 → 88.3 %), byte-identical to stock
+    86,490 → 89,929 (71.0 → 73.9 %).

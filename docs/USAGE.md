@@ -706,6 +706,14 @@ both ways, tests the same, `cargo fv test` 2,776 → 2,767 s. Debug builds (`opt
 fv-demo, survey, deps and fv-demo with `--build-std` gave byte-identical objects and executables
 and the same verdicts with the default on and with main's `cargo fv`.
 
+Family 4 of the normaliser (neutral and affine constants, constants on the right, narrowed
+`ireduce`; docs/contracts/midval.md; measured 2026-11-21 on clifv-remote, main 70b91376d's tools
+against this one's, the 9 crates with `cargo fv test --release --lean-link --verified`, validator
+on): binary check 48 of 48 both ways, 121,767 verified both ways, left out 1 → 1, test outcomes
+the same as stock's on all 9 both ways; validated 102,433 → 107,461 (84.1 % → 88.3 %; up on every
+crate); byte-identical to stock 86,490 → 89,929 of 121,767 (71.0 % → 73.9 %); `cargo fv test`
+wall summed 2,986 → 2,790 s. Rejected `rewrite:operand` 8,637 → 3,168.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
