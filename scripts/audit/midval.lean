@@ -14,6 +14,8 @@ import FV.Opt.Proof.MidValCondProg
 import FVTest.Opt.MidValCondWitness
 import FV.Opt.Proof.MidValNormTyped
 import FVTest.Opt.MidValTypedWitness
+import FV.Opt.Proof.MidValNormFam4
+import FVTest.Opt.MidValFam4Witness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -726,6 +728,24 @@ import FVTest.Opt.MidValTypedWitness
 #print axioms Opt.MidVal.ruleSoundT_redTyped
 #print axioms Opt.MidVal.ruleSoundT_typedStep
 #print axioms Opt.MidVal.normSoundT_typed
+-- #1119 stage 2, family 4 (FV/Opt/Proof/MidValNormFam4.lean)
+#print axioms Opt.MidVal.tmVal_same
+#print axioms Opt.MidVal.tyAt_ops
+#print axioms Opt.MidVal.rNeutral_spec
+#print axioms Opt.MidVal.commOp_spec
+#print axioms Opt.MidVal.setWidth_ring
+#print axioms Opt.MidVal.idPick_spec
+#print axioms Opt.MidVal.ruleSoundT_idStep
+#print axioms Opt.MidVal.foldAdd_spec
+#print axioms Opt.MidVal.affPlan_spec
+#print axioms Opt.MidVal.ruleSound_affStep
+#print axioms Opt.MidVal.ruleSound_swapStep
+#print axioms Opt.MidVal.TmReach.of_ops
+#print axioms Opt.MidVal.AtomsTyped.of_ops
+#print axioms Opt.MidVal.redOf_spec
+#print axioms Opt.MidVal.ruleSoundT_narrowStep
+#print axioms Opt.MidVal.normSoundT_base
+#print axioms Opt.MidVal.normSoundT_narrowN
 #print axioms Opt.MidVal.normSoundT_stdT
 -- witnesses of the typed rules (FVTest/Opt/MidValTypedWitness.lean)
 #print axioms Opt.MidVal.TypedWitness.pos_sel -- witness: native_decide
@@ -752,3 +772,56 @@ import FVTest.Opt.MidValTypedWitness
 #print axioms Opt.MidVal.TypedWitness.real_sel_std_rejects -- witness: native_decide
 #print axioms Opt.MidVal.TypedWitness.real_sel_checked -- witness: native_decide
 #print axioms Opt.MidVal.TypedWitness.real_sel_sim -- witness: native_decide
+-- witnesses of family 4 (FVTest/Opt/MidValFam4Witness.lean)
+#print axioms Opt.MidVal.Fam4Witness.pos_id -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_id_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_idL -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_idL_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.neg_idOne -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.neg_idSubL -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_aff -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_aff_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.neg_aff -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_swap -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_swap_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.neg_swap -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_narrow -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.pos_narrow_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.neg_narrow -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.idOneF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.idSubLF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.idG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.affF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.affNegG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.swapNegF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.swapNegG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.narrowNegF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.narrowNegG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.idOne_not_sim
+#print axioms Opt.MidVal.Fam4Witness.idOne_rejected
+#print axioms Opt.MidVal.Fam4Witness.idSubL_not_sim
+#print axioms Opt.MidVal.Fam4Witness.idSubL_rejected
+#print axioms Opt.MidVal.Fam4Witness.aff_not_sim
+#print axioms Opt.MidVal.Fam4Witness.aff_rejected
+#print axioms Opt.MidVal.Fam4Witness.swap_not_sim
+#print axioms Opt.MidVal.Fam4Witness.swap_rejected
+#print axioms Opt.MidVal.Fam4Witness.narrow_not_sim
+#print axioms Opt.MidVal.Fam4Witness.narrow_rejected
+#print axioms Opt.MidVal.Fam4Witness.idStep_fires -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.idStep_frame -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.idStep_not_normSound -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.narrowStep_fires -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.narrowStep_frame -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.narrowStep_not_normSound -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_id_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_id_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_id_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_aff_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_aff_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_aff_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_swap_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_swap_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_swap_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_narrow_t0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_narrow_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam4Witness.real_narrow_sim -- witness: native_decide

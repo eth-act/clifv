@@ -1,0 +1,108 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC12regex_syntax12H7R5jhjf3Ia4
+function u0:732(i64) -> i64 system_v {
+; symbol _RNxC12regex_syntax12H7R5jhjf3Ia4
+; instance Instance { def: Item(DefId(0:1010 ~ regex_syntax[1eb6]::hir::{impl#16}::len)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &hir::ClassUnicodeRange, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    usize                             8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }) &'{erased} hir::ClassUnicodeRange
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} hir::ClassUnicodeRange    8b 8                var=2
+; ssa   _2    u32                               4b 4                var=3
+; ssa   _3    u32                               4b 4                var=4
+; ssa   _4    u32                               4b 4                var=5
+; ssa   _5    char                              4b 4                var=6
+; ssa   _6    u32                               4b 4                var=7
+; ssa   _7    char                              4b 4                var=8
+; stack _8    core::result::Result<usize, core::num::TryFromIntError>   16b 8                storage=ss0
+; ssa   _9    usize                             8b 8                var=9
+
+    ss0 = explicit_slot 16, align = 8
+    gv0 = symbol colocated userextname0 ; alloc39223
+    gv1 = symbol colocated userextname1 ; alloc41901
+    sig0 = (i64, i64, i64, i64) -> i64 system_v
+    fn0 = colocated u0:1508 sig0 ; Instance { def: Item(DefId(1:12928 ~ core[7b1c]::result::{impl#0}::expect)), args: [usize, core::num::TryFromIntError] }
+
+block0(v0: i64):
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} hir::ClassUnicodeRange <- ByVal(v0): &'{erased} hir::ClassUnicodeRange
+    jump block1
+
+block1:
+    v2 = load.i32 notrap v0+4
+; _4 = copy _5 as u32 (IntToInt)
+; write_cvalue: Var(_4, var5): u32 <- ByVal(v2): u32
+; _3 = Add(const 1_u32, move _4)
+    v5 = load.i32 notrap v0
+; _6 = copy _7 as u32 (IntToInt)
+; write_cvalue: Var(_6, var7): u32 <- ByVal(v5): u32
+; _2 = Sub(move _3, move _6)
+    v3 = iconst.i32 1
+    v17 = iadd v2, v3  ; v3 = 1
+    v6 = isub v17, v5
+; write_cvalue: Var(_2, var3): u32 <- ByVal(v6): u32
+; _9 = copy _2 as usize (IntToInt)
+    v7 = uextend.i64 v6
+; write_cvalue: Var(_9, var9): usize <- ByVal(v7): usize
+; _8 = core::result::Result::<usize, core::num::TryFromIntError>::Ok(move _9)
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(8) }, None): usize <- ByVal(v7): usize
+    v8 = stack_addr.i64 ss0+8
+    store notrap v7, v8
+    v9 = iconst.i8 0
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): u8 <- ByVal(v9): u8
+    v10 = stack_addr.i64 ss0
+    store notrap v9, v10  ; v9 = 0
+; 
+; _0 = core::result::Result::<usize, core::num::TryFromIntError>::expect(move _8, const "char class len fits in usize")
+    v11 = symbol_value.i64 gv0
+    v12 = iconst.i64 28
+    v13 = symbol_value.i64 gv1
+    v15 = call fn0(v10, v11, v12, v13)  ; v12 = 28
+; write_cvalue: Var(_0, var1): usize <- ByVal(v15): usize
+    jump block2
+
+block2:
+    return v15
+}
+
+; clifv-extnames 1
+; userextname0 = u1:1690
+; userextname1 = u1:1691
+; userextname2 = u0:1508
+; decl u0:732 func export "_RNxC12regex_syntax12H7R5jhjf3Ia4"
+; decl u0:1508 func local "_RNxC12regex_syntax12HfooARWYWVV9"
+; decl u1:1690 data local ro notls ".Ldata69a"
+; decl u1:1691 data local ro notls ".Ldata69b"
+; end clifv-extnames

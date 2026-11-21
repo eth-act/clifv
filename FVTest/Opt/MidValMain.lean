@@ -16,7 +16,8 @@ With `--cert`, two more columns: the re-check of the emitted certificate
 (`Opt.MidVal.checkCert f g (emit f g)`: `ok` when it gives `check`'s verdict, `MISMATCH`
 otherwise, `-` for a rejected pair) and its microseconds (`checkCert` alone, not the emission).
 The normaliser is the validator's default (`Opt.MidVal.Norm.stdT f`: constant evaluation, the
-single-node algebraic rules, then the typed rules with `f`'s atom types); with `--norm-std`, the
+single-node algebraic rules, the typed rules with `f`'s atom types, then family 4: neutral and
+affine constants, constants on the right, narrowed `ireduce`); with `--norm-std`, the
 untyped `Norm.std`; with `--norm-id`, stage 1's identity; with `--norm-const`, constant
 evaluation alone. With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by
 `checkCertSyms`, whose theorem assumes the function's global values resolve). With `--cond`,

@@ -49,7 +49,10 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   `select` of an `icmp` with constant arms 1/0, `imul` by a power of two, `iadd` of a
   `stack_addr` and a constant, `ireduce` of an extension of a typed node), then the typed rules
   (`typedStep`: `select` of an integer term with constant arms 1/0, `ireduce` of an extension of
-  an atom), which read an atom's static type in `f` (`atomTy`).
+  an atom), which read an atom's static type in `f` (`atomTy`), then family 4 (`Norm.base`,
+  `Norm.narrowN`: a neutral constant is dropped, `x+0`, `x*1`, …, typed; constants added to `x`
+  are added up, `isub x k` is `iadd x (-k)`; a constant moves to the right of a commutative
+  operation; `ireduce` of a ring operation is the operation on the narrowed operands, typed).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -849,10 +852,144 @@ def typedStep (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
   | .ireduce ty u => redTyped aty tms ty u
   | _ => none
 
+/-! ### Family 4: neutral constants, affine constants, constants on the right, narrowed `ireduce`
+
+The most frequent `rewrite:operand` shapes of the 121,879 release pairs (#1119, agent
+MidendNorm5), after Cranelift 0.135.0's `opts/arithmetic.isle` (`x+0`, `x*1`, …), `cprop.isle`
+(constants to the right, reassociated constants) and the narrowing of `ireduce` over an
+arithmetic operation. Each step is a normaliser of its own with its soundness lemma
+(`FV/Opt/Proof/MidValNormFam4.lean`). -/
+
+/-- `k` is a right neutral element of `op`: `Sem.binary op x k = x` for every `x`. -/
+def rNeutral {w : Nat} (op : BinaryOp) (k : BitVec w) : Bool :=
+  match op with
+  | .iadd | .isub | .bor | .bxor => k == 0
+  | .imul => k == 1
+  | .band => k == BitVec.allOnes w
+  | _ => false
+
+/-- `op` is commutative: `Sem.binary op x y = Sem.binary op y x`. -/
+def commOp : BinaryOp → Bool
+  | .iadd | .imul | .band | .bor | .bxor | .umin | .umax | .smin | .smax => true
+  | _ => false
+
+/-- `op ty x k` with `k` a neutral constant of type `ty` (`rNeutral`) and `x` a term of static
+type `ty` (`tyAt`): `x`. -/
+def idPick (aty : Tm → Option Ty) (tms : Array Tm) (op : BinaryOp) (ty : Ty) (x k : Nat) :
+    Option Tm :=
+  match constAt tms ty k with
+  | some kv => if rNeutral op kv && tyAt aty tms x == some ty then tms[x]? else none
+  | none => none
+
+/-- `op ty a b` with `b` a neutral constant, or `a` one and `op` commutative (`idPick`). -/
+def idTyped (aty : Tm → Option Ty) (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) :
+    Option Tm :=
+  (idPick aty tms op ty a b).orElse fun _ => if commOp op then idPick aty tms op ty b a else none
+
+/-- **Neutral constants** (typed; Cranelift's `x+0`, `x-0`, `x*1`, `x|0`, `x^0`, `x&-1` and
+their commuted forms): the operand itself. Without the typing the rewrite is false: an `iadd.i64`
+of an `i32` value is `stuck`, the value is not. -/
+def idStep (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .binary op ty a b => idTyped aty tms op ty a b
+  | _ => none
+
+/-- `x` is `iadd ty y k1` with `k1` a constant of type `ty`: `(y, k1 + k)`. -/
+def foldAdd (tms : Array Tm) (ty : Ty) (x : Nat) (k : BitVec ty.width) : Option (Nat × Val) :=
+  match nodeAt tms x with
+  | some (.binary .iadd ty' y k1) =>
+    if ty' == ty then (constAt tms ty k1).map fun v => (y, ⟨ty, v + k⟩) else none
+  | _ => none
+
+/-- The affine form `(y, K)` (value `y + K`, `K` of the node's type) of `iadd ty x k`,
+`iadd ty k x` whose `x` is an `iadd` with a constant (the constants added up), and of
+`isub ty x k` (`x + (-k)`, the constants added up when `x` is such an `iadd`). -/
+def affPlan (tms : Array Tm) : Inst → Option (Nat × Val)
+  | .binary .iadd ty a b =>
+    match constAt tms ty b, constAt tms ty a with
+    | some kb, _ => foldAdd tms ty a kb
+    | none, some ka => foldAdd tms ty b ka
+    | none, none => none
+  | .binary .isub ty a b =>
+    match constAt tms ty b with
+    | some kb => (foldAdd tms ty a (-kb)).orElse fun _ => some (a, ⟨ty, -kb⟩)
+    | none => none
+  | _ => none
+
+/-- **Affine constants** (Cranelift's reassociation of constants, `cprop.isle`): a node with an
+affine form `(y, K)` (`affPlan`) is `iadd ty y K`, the constant `K` looked up (`findTm`; the
+checker interns it first, `affAux`). -/
+def affStep (tms : Array Tm) (i : Inst) : Option Tm :=
+  (affPlan tms i).bind fun (y, K) =>
+    (findTm tms (.node (.iconst K.ty K.bits))).map fun kc => .node (.binary .iadd K.ty y kc)
+
+/-- The constant `affStep` looks up. -/
+def affAux (tms : Array Tm) (i : Inst) : List Tm :=
+  (affPlan tms i).toList.map fun (_, K) => .node (.iconst K.ty K.bits)
+
+/-- **Constants on the right** (Cranelift's `cprop.isle` commutativity rules): `op ty k x` with
+`op` commutative, `k` a constant and `x` not: `op ty x k`. -/
+def swapStep (tms : Array Tm) : Inst → Option Tm
+  | .binary op ty a b =>
+    if commOp op && (constOf tms a).isSome && (constOf tms b).isNone then
+      some (.node (.binary op ty b a))
+    else none
+  | _ => none
+
+/-- The operations whose result truncated is the operation on the truncated operands. -/
+def ringOp : BinaryOp → Bool
+  | .iadd | .isub | .imul | .band | .bor | .bxor => true
+  | _ => false
+
+/-- The term standing for `ireduce ty a` under the normaliser `n`: what `n` makes of the node,
+else the node itself (`findTm`). -/
+def redOf (n : Norm) (tms : Array Tm) (ty : Ty) (a : Nat) : Option Nat :=
+  findTm tms ((n tms (.ireduce ty a)).getD (.node (.ireduce ty a)))
+
+/-- **Narrowed `ireduce`** (typed): `ireduce ty (op wty a b)` with `op` a ring operation and `a`,
+`b` of static type `wty` wider than `ty`: `op ty a' b'` with `a'`, `b'` the terms of
+`ireduce ty a`, `ireduce ty b` under `n` (`redOf`; the checker interns them first,
+`narrowAux`), then `affStep` or `swapStep` on that node. -/
+def narrowStep (n : Norm) (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .ireduce ty u =>
+    match nodeAt tms u with
+    | some (.binary op wty a b) =>
+      if ringOp op && ty.width < wty.width && tyAt aty tms a == some wty &&
+          tyAt aty tms b == some wty then
+        (redOf n tms ty a).bind fun a' => (redOf n tms ty b).map fun b' =>
+          let j := Inst.binary op ty a' b'
+          ((affStep tms j).orElse fun _ => swapStep tms j).getD (.node j)
+      else none
+    | _ => none
+  | _ => none
+
+/-- The terms `narrowStep` looks up: `ireduce ty a`, `ireduce ty b`. -/
+def narrowAux (tms : Array Tm) : Inst → List Tm
+  | .ireduce ty u =>
+    match nodeAt tms u with
+    | some (.binary op wty a b) =>
+      if ringOp op && ty.width < wty.width then [.node (.ireduce ty a), .node (.ireduce ty b)]
+      else []
+    | _ => []
+  | _ => []
+
+/-- Everything but the narrowing: `Norm.std`, the typed rules, then family 4's neutral
+constants, affine constants and constants on the right. -/
+def Norm.base (f : Function) : Norm :=
+  Norm.orElse (Norm.orElse Norm.std (Norm.guard (typedStep (atomTy f))))
+    (Norm.orElse (Norm.guard (idStep (atomTy f)))
+      (Norm.orElse (Norm.guard affStep) (Norm.guard swapStep)))
+
+/-- `Norm.base`, then the narrowing with the operands' terms under `Norm.narrowN f k`
+(`k` nested narrowings). -/
+def Norm.narrowN (f : Function) : Nat → Norm
+  | 0 => Norm.base f
+  | k + 1 => Norm.orElse (Norm.base f) (Norm.guard (narrowStep (Norm.narrowN f k) (atomTy f)))
+
 /-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
-`checkCert`, `checkCertSyms`): `Norm.std`, then the typed rules with `f`'s atom types; proved
-sound under typing (`normSoundT_stdT`). -/
-def Norm.stdT (f : Function) : Norm := Norm.orElse Norm.std (Norm.guard (typedStep (atomTy f)))
+`checkCert`, `checkCertSyms`): `Norm.std`, the typed rules with `f`'s atom types, family 4
+(`Norm.base`, then up to three nested narrowings, `Norm.narrowN`); proved sound under typing
+(`normSoundT_stdT`). -/
+def Norm.stdT (f : Function) : Norm := Norm.narrowN f 3
 
 /-- Intern a term (normalised, if a node), without auxiliary terms. -/
 def intern1 (t : Tm) : M Nat := do
@@ -882,12 +1019,40 @@ def internSelAux (ty : Ty) (c x y : Nat) : M Unit := do
           discard (intern1 (.node (.icmp cc tc c z)))
     | _, _, _ => pure ()
 
-/-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`). -/
-def intern (t : Tm) : M Nat := do
-  if let .node i := t then
-    for a in auxTms (← get).tms i do discard (intern1 a)
-    if let .select ty c x y := i then internSelAux ty c x y
-  intern1 t
+/-- The node `narrowStep` builds for `ireduce ty u` (before `affStep`/`swapStep`), its operands'
+terms under `n`, if any. -/
+def narrowNode (n : Norm) (tms : Array Tm) : Inst → Option Inst
+  | .ireduce ty u =>
+    match nodeAt tms u with
+    | some (.binary op wty a b) =>
+      if ringOp op && ty.width < wty.width then
+        (redOf n tms ty a).bind fun a' => (redOf n tms ty b).map fun b' => .binary op ty a' b'
+      else none
+    | _ => none
+  | _ => none
+
+/-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`,
+`affAux`; `narrowAux` interned the same way, `d` levels deep, then the constant `affStep` looks
+up for the narrowed node). -/
+def internD : Nat → Tm → M Nat
+  | 0, t => do
+    if let .node i := t then
+      for a in auxTms (← get).tms i do discard (intern1 a)
+      if let .select ty c x y := i then internSelAux ty c x y
+    intern1 t
+  | d + 1, t => do
+    if let .node i := t then
+      for a in auxTms (← get).tms i do discard (intern1 a)
+      if let .select ty c x y := i then internSelAux ty c x y
+      for a in affAux (← get).tms i do discard (intern1 a)
+      for a in narrowAux (← get).tms i do discard (internD d a)
+      let s ← get
+      if let some j := narrowNode s.norm s.tms i then
+        for a in affAux s.tms j do discard (intern1 a)
+    intern1 t
+
+/-- Intern a term with its auxiliary terms (`internD`, four levels). -/
+def intern (t : Tm) : M Nat := internD 4 t
 
 /-- The term of `v` on one side. -/
 def termOf (env : Std.HashMap ValueId Nat) (side : String) (v : ValueId) : Except Reject Nat :=

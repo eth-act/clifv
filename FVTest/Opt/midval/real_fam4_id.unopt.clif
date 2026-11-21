@@ -1,0 +1,98 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC3mac12H8Wt5rLuKukP
+function u0:96(i64, i64, i64) -> i8 uext system_v {
+; symbol _RNxC3mac12H8Wt5rLuKukP
+; instance Instance { def: Item(DefId(2:14834 ~ core[7b1c]::slice::cmp::{impl#5}::equal_same_length)), args: [u8, u8] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: *const u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 3, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    bool                              1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) bool
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const u8
+; arg   _2      = v1       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const u8
+; arg   _3      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+
+; kind  local ty                              size align (abi)
+; ssa   _1    *const u8                         8b 8                var=2
+; ssa   _2    *const u8                         8b 8                var=3
+; ssa   _3    usize                             8b 8                var=4
+; ssa   _4    usize                             8b 8                var=5
+; ssa   _5    i32                               4b 4                var=6
+; ssa   _6    *const u8                         8b 8                var=7
+; ssa   _7    *const u8                         8b 8                var=8
+
+    sig0 = (i64, i64, i64) -> i32 system_v
+    fn0 = u0:257 sig0 ; "memcmp"
+
+block0(v0: i64, v1: i64, v2: i64):
+    v6 -> v0
+    v7 -> v1
+    v3 -> v2
+    nop 
+; write_cvalue: Var(_1, var2): *const u8 <- ByVal(v0): *const u8
+; write_cvalue: Var(_2, var3): *const u8 <- ByVal(v1): *const u8
+; write_cvalue: Var(_3, var4): usize <- ByVal(v2): usize
+    jump block1
+
+block1:
+    nop 
+; _4 = MulUnchecked(copy _3, const <A as std::mem::SizedTypeProperties>::SIZE)
+    v4 = iconst.i64 1
+    v5 = imul.i64 v3, v4  ; v4 = 1
+; write_cvalue: Var(_4, var5): usize <- ByVal(v5): usize
+; _6 = copy _1 as *const u8 (PtrToPtr)
+; write_cvalue: Var(_6, var7): *const u8 <- ByVal(v6): *const u8
+; _7 = copy _2 as *const u8 (PtrToPtr)
+; write_cvalue: Var(_7, var8): *const u8 <- ByVal(v7): *const u8
+; 
+; _5 = std::intrinsics::compare_bytes(move _6, move _7, move _4)
+; lib_call memcmp
+    v8 = call fn0(v6, v7, v5)
+    v9 -> v8
+; write_cvalue: Var(_5, var6): i32 <- ByVal(v8): i32
+    jump block2
+
+block2:
+    nop 
+; _0 = Eq(move _5, const 0_i32)
+    v10 = iconst.i32 0
+    v11 = icmp.i32 eq v9, v10  ; v10 = 0
+; write_cvalue: Var(_0, var1): bool <- ByVal(v11): bool
+; 
+; return
+    return v11
+}
+
+; clifv-extnames 1
+; userextname0 = u0:257
+; decl u0:96 func local "_RNxC3mac12H8Wt5rLuKukP"
+; decl u0:257 func import "memcmp"
+; end clifv-extnames

@@ -3,7 +3,8 @@ import FV.Opt.Proof.MidValNormAlg2
 /-!
 # The typed rules are a sound normaliser under typing (#1119 stage 2, the typed seam)
 
-`Norm.stdT f = Norm.orElse Norm.std (Norm.guard (typedStep (atomTy f)))` (`FV/Opt/MidVal.lean`).
+`Norm.guard (typedStep (atomTy f))`, the typed rules of the validator's default normaliser
+(`Norm.base f`, `FV/Opt/MidVal.lean`).
 The typed rules read an atom's static type in `f` (`atomTy`), so they hold only in frames where
 the atoms below the node hold values of those types (`AtomsTyped`): their obligation is
 `NormSoundT f` (`FV/Opt/Proof/MidValTerm.lean`), proved here against `Clif.evalInst`:
@@ -18,8 +19,8 @@ the atoms below the node hold values of those types (`AtomsTyped`): their obliga
   narrower than `uty`: `x` if `xt = ty`, `extend op ty x` if narrower, `ireduce ty x` if wider
   (as `redExt`, whose `x` is a node typed by `nodeTy`).
 
-Main results: `ruleSoundT_selTyped`, `ruleSoundT_redTyped`, `normSoundT_typed`, and
-**`normSoundT_stdT : NormSoundT f (Norm.stdT f)`** (the validator's default normaliser).
+Main results: `ruleSoundT_selTyped`, `ruleSoundT_redTyped`, `normSoundT_typed` (the default
+normaliser `normSoundT_stdT`: `FV/Opt/Proof/MidValNormFam4.lean`).
 -/
 
 namespace Opt.MidVal
@@ -287,9 +288,5 @@ theorem ruleSoundT_typedStep {f : Function} : RuleSoundT f (typedStep (atomTy f)
 /-- **The typed rules are sound under typing.** -/
 theorem normSoundT_typed {f : Function} : NormSoundT f (Norm.guard (typedStep (atomTy f))) :=
   normSoundT_guard ruleSoundT_typedStep
-
-/-- **The validator's default normaliser is sound under typing.** -/
-theorem normSoundT_stdT {f : Function} : NormSoundT f (Norm.stdT f) :=
-  normSoundT_orElse normSound_std.toT normSoundT_typed
 
 end Opt.MidVal
