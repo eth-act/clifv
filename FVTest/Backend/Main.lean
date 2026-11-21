@@ -3,6 +3,7 @@ import FV.Backend.ReturnPinProduction
 import FV.Opt.Legalize128Pass
 import FV.Opt.LegalExn
 import FV.Opt.ConstPhiSelect
+import FV.Opt.NotrapDrop
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.I128Native
@@ -482,7 +483,17 @@ def runCore (input output : String) (o : Opts) (src : String)
   -- constant-phi removal after the legalisation, before the mid-end (#990)
   let header := Link.clifHeader src
   let lgc := Opt.ConstPhi.selectFile header lg.file
-  let pf := match o.opt with | some c => Opt.optimizeParsedFile c lgc | none => lgc
+  let pf0 := match o.opt with | some c => Opt.optimizeParsedFile c lgc | none => lgc
+  -- option D prototype (#1017, scratch): Cranelift 0.136.1's drop of unused `notrap` loads, the
+  -- last pass before lowering (Cranelift drops them while lowering, after its mid-end); not
+  -- proved yet, so the functions it changes are reported unverified
+  -- `FV_SCRATCH_NOTRAP_OFF=1`: main's pipeline (for same-path comparisons)
+  let pf := if (← IO.getEnv "FV_SCRATCH_NOTRAP_OFF").isSome then pf0
+    else Opt.NotrapDrop.selectFile header pf0
+  let notrapChanged : List String := (pf0.funcs.zip pf.funcs).filterMap fun (a, b) =>
+    match a.func, b.func with
+    | .ok fa, .ok fb => if decide (fa = fb) then none else some a.name
+    | _, _ => none
   -- the compile budget (#1074): functions over it are not compiled (unsupported)
   let overCompile : List (String × String) := pf.funcs.filterMap fun p =>
     p.func.toOption.bind fun f => (overCompileBudget? f).map (p.name, ·)
@@ -495,7 +506,10 @@ def runCore (input output : String) (o : Opts) (src : String)
       else lg.unverified ++ lg.accepted.map
         (·, "i128 legalized and optimised with unproven rules (outside backend_correct_legal_opt: --opt)")
     | none => lg.unverified
-  let unvTry : List (String × String) := []
+  -- `FV_SCRATCH_NOTRAP_VERIFIED=1`: measure as if the pass were proved (the projected verdicts)
+  let asProved := (← IO.getEnv "FV_SCRATCH_NOTRAP_VERIFIED").isSome
+  let unvTry : List (String × String) := if asProved then [] else notrapChanged.map
+    (·, "scratch: unused notrap loads dropped (option D prototype, not proved)")
   -- `--skip-unverified` (#1074): a function unverified before it is compiled is not compiled
   let skipped : List (String × String × String) :=
     if o.skipUnverified && o.opt.isNone && stock.isNone && proved.isNone && !pipelineT then

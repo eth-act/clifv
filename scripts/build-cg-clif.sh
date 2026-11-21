@@ -28,12 +28,19 @@
 # time (~40 s per variant).
 #
 #   scripts/build-cg-clif.sh      (run it through scripts/memcap.sh on shared machines)
+#
+# Experiment (agent/NightlyPin1, not for main): FV_CG_CLIF_CRANELIFT=0.136.1 builds the same
+# nightly's cg_clif against that Cranelift version instead of the one its Cargo.lock pins
+# (output target/cg_clif-cl<version>/…; API adaptations in scripts/patches/cg-clif-cl<version>.patch
+# when that file exists).
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TC=${FV_TOOLCHAIN:-nightly-2026-09-26}
-OUT=$ROOT/target/cg_clif
+CL=${FV_CG_CLIF_CRANELIFT:-}
+OUT=${FV_CG_CLIF_OUT:-$ROOT/target/cg_clif${CL:+-cl$CL}}
 SRC=$OUT/rust
 PATCH=$ROOT/scripts/patches/cg-clif-extnames.patch
+CLPATCH=$ROOT/scripts/patches/cg-clif-cl$CL.patch
 commit=$(rustc +"$TC" -vV | sed -n 's/^commit-hash: //p')
 [[ -n "$commit" ]] || { echo "no commit-hash in rustc +$TC -vV" >&2; exit 1; }
 rustup component add rustc-dev rust-src --toolchain "$TC"
@@ -50,6 +57,25 @@ fi
 # the patch, exactly: reset the patched files, then apply
 git -C "$SRC" checkout -q -- compiler/rustc_codegen_cranelift
 git -C "$SRC" apply "$PATCH"
+if [[ -n "$CL" ]]; then
+  cg="$SRC/compiler/rustc_codegen_cranelift"
+  sed -i -E "s/^(cranelift-[a-z]+ = \{ version = \")[0-9.]+\"/\1=$CL\"/" "$cg/Cargo.toml"
+  # cranelift-object 0.136.x writes with object 0.40 (cg_clif's own upstream update to 0.137
+  # made the same change)
+  sed -i -E 's/^(object = \{ version = ")0\.39\.1"/\10.40.0"/' "$cg/Cargo.toml"
+  grep -E '^(cranelift-|object)' "$cg/Cargo.toml"
+  (cd "$cg" && cargo +"$TC" update -p cranelift-codegen -p cranelift-frontend -p cranelift-module \
+    -p cranelift-native -p cranelift-jit -p cranelift-object)
+  # cranelift-codegen's own dependencies on -meta/-shared/-control/-srcgen are caret
+  # requirements: pin every cranelift-* crate to exactly $CL, as rust/Cargo.lock does (several
+  # passes: a crate can only be downgraded once the crates requiring a newer one are)
+  off() { awk '/^name = "cranelift-/{n=$3; getline; if ($3 != "\"'"$CL"'\"") print n}' "$cg/Cargo.lock" | tr -d '"'; }
+  for _ in 1 2 3 4 5; do
+    for p in $(off); do (cd "$cg" && cargo +"$TC" update -q -p "$p" --precise "$CL") || true; done
+  done
+  [[ -z "$(off)" ]] || { echo "not pinned to $CL: $(off)" >&2; exit 1; }
+  if [[ -f "$CLPATCH" ]]; then git -C "$SRC" apply "$CLPATCH"; fi
+fi
 sysroot=$(rustc +"$TC" --print sysroot)
 for variant in unwind abort; do
   features=()
