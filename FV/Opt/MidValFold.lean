@@ -127,19 +127,21 @@ def divRw (K : ValueId → Option Val) (s : ValueId) (st : Stmt) : Option (List 
   match st.results, st.inst with
   | [v], .div op ty x y =>
     match K y with
-    | none => none
     | some c =>
-      if c.ty = ty then
-        match op, log2Exact c.bits.toNat with
-        | .udiv, some 0 => some ([{ results := [v], inst := .binary .imul ty x y }], false)
-        | .sdiv, some 0 => some ([{ results := [v], inst := .binary .imul ty x y }], false)
-        | .urem, some 0 => some ([{ results := [v], inst := .iconst ty 0 }], false)
-        | .udiv, some k => some ([{ results := [s], inst := .iconst ty (BitVec.ofNat _ k) },
-            { results := [v], inst := .binary .ushr ty x s }], true)
-        | .urem, some k => some ([{ results := [s], inst := .iconst ty (BitVec.ofNat _ (2 ^ k - 1)) },
-            { results := [v], inst := .binary .band ty x s }], true)
-        | _, _ => none
-      else none
+      match log2Exact c.bits.toNat with
+      | some k =>
+        if c.ty ≠ ty then none
+        else if k = 0 then
+          if op = .urem then some ([⟨[v], .iconst ty 0⟩], false)
+          else if op = .udiv ∨ op = .sdiv then some ([⟨[v], .binary .imul ty x y⟩], false)
+          else none
+        else if op = .udiv then
+          some ([⟨[s], .iconst ty (BitVec.ofNat _ k)⟩, ⟨[v], .binary .ushr ty x s⟩], true)
+        else if op = .urem then
+          some ([⟨[s], .iconst ty (BitVec.ofNat _ (2 ^ k - 1))⟩, ⟨[v], .binary .band ty x s⟩], true)
+        else none
+      | none => none
+    | none => none
   | _, _ => none
 
 /-- A body with its divisions by constants rewritten (`divRw`), the inserted constants taking
@@ -184,23 +186,33 @@ def gapVals (f : Function) (n : Nat) : List ValueId := Id.run do
     if !used.contains v then out := out.push v
   return out.toList
 
+/-- Every block through `divBlocks`, with the supply `S`. -/
+def divFn (f : Function) (K : ValueId → Option Val) (bs : List BlockId) (S : List ValueId) :
+    Function :=
+  { f with blocks := divBlocks K bs f.blocks S }
+
+/-- The supply's check: values below `f.freshValue` that `f` neither defines nor reads. -/
+def supplyOk (f : Function) (S : List ValueId) : Bool :=
+  let used := usedVals f
+  S.all fun s => s < f.freshValue && !used.contains s
+
 /-- **Division by a constant** (module doc): in the blocks of `bs`, the divisions whose divisor
 has a constant (`kOk`, as `foldBr`) become the pure statements `divRw` gives, inserted constants
-taking values that `f` neither defines nor reads and that keep its fresh value; `f` otherwise. -/
+taking values that `f` neither defines nor reads (`supplyOk`) and that keep its fresh value;
+`f` otherwise. -/
 def divPre (f : Function) (bs : List BlockId) : Function :=
   if bs.isEmpty then f
   else
     let fv := f.freshValue
     let hm := kTable f
     let K := kLook fv hm
-    if !kOk f K then f
-    else
+    if kOk f K then
       let n := f.blocks.foldl (fun n b => n + (b.body.filter fun st => match st.inst with
         | .div .. => true | _ => false).length) 0
       let S := gapVals f n
-      let used := usedVals f
-      let f' : Function := { f with blocks := divBlocks K bs f.blocks S }
-      if S.all (fun s => !used.contains s) && f'.freshValue == fv then f' else f
+      let f' := divFn f K bs S
+      if supplyOk f S && f'.freshValue == fv then f' else f
+    else f
 
 /-- **The folded function without its unreachable blocks** (module doc): divisions by
 constants rewritten (`divPre`), constant-condition branches folded (`foldBr`), then

@@ -1,6 +1,6 @@
 import FV.Opt.Proof.MidValProg
 import FV.Opt.Proof.MidValCondSim
-import FV.Opt.Proof.MidValFold
+import FV.Opt.Proof.MidValDiv
 
 /-!
 # The re-check with branch-condition hints is sound (#1119 family 3, route D)

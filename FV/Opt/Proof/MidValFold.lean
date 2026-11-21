@@ -9,7 +9,8 @@ import FV.Opt.Proof.SimpDen
 `Opt.MidVal.foldBr f bs` (`FV/Opt/MidValFold.lean`) turns the `brif`/`br_table` of the blocks
 `bs` whose condition has a constant in `K = kLook f.freshValue (kTable f)` into the `jump` the
 constant selects, when `kOk f K` accepts the constants. Here: **`foldBr_simU : FunSimU f
-(foldBr f bs)`** and **`foldPre_simU : FunSimU f (foldPre f bs)`** (with `ConstPhi.run_simU`).
+(foldBr f bs)`** (`foldPre_simU`, with division by constants and `ConstPhi.run_simU`:
+`FV/Opt/Proof/MidValDiv.lean`).
 
 The frame relation `FR`: the two frames run the same point of a block `b` of `f` with the same
 registers and slots, the folded frame with `foldBlock K bs b`'s terminator; and in `f`'s frame
@@ -559,9 +560,5 @@ theorem foldBr_simU (f : Function) (bs : List BlockId) : FunSimU f (foldBr f bs)
     · rename_i hk
       exact foldFn_simU hk (fun _ _ h => kLook_lt h)
     · exact FunSimU.refl f
-
-/-- **The folded function without its unreachable blocks is simulated by its input.** -/
-theorem foldPre_simU (f : Function) (bs : List BlockId) : FunSimU f (foldPre f bs) :=
-  (foldBr_simU f bs).trans (ConstPhi.run_simU _)
 
 end Opt.MidVal
