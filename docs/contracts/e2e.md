@@ -3083,7 +3083,12 @@ codegen units whose Lean code is in the executable: with `--lean-link`, the unit
 (rust-lld and lean-ld extract an archive member only for a non-weak undefined reference to one
 of its symbols, `FV/Link/Ld/Resolve.lean`; a member that only holds weak copies of region
 functions can be left out, and its functions are still in the region); without `--lean-link`, the units whose object
-the link map names (the Lean code is inside that object). link-check decides the data objects
+the link map names (the Lean code is inside that object). Without `--lean-link` a unit's object can
+be in the link map with none of its code (`--gc-sections` dropped its `.text` while its data
+stayed, #1148: crypto-bigint's `bit_vec` unit in five release test executables): its functions
+are not in the executable, and link-proof leaves them out of the bundle (`unlinked`) instead of
+listing them as skipped, which stopped the binary check; only when no code section of the object
+is linked and the function's marker is not in the map. link-check decides the data objects
 the functions reach against the file whatever unit they come from. link-proof names every
 Lean-compiled function of the executable (its `__fvlean$` marker is in the link map) that is not
 in the bundle, and `cargo fv` counts an executable as verified only when the named theorem's

@@ -21,9 +21,11 @@
 //! link took the unit's own object: rust-lld and lean-ld leave an archive member out when the
 //! region object defines every symbol the program needs from it, and the unit's functions are
 //! still in the region (#1130). Without `--lean-link`, the units whose object the link map names
-//! (the Lean code is inside that object). Every Lean-compiled function of the executable (its
-//! `__fvlean$` marker is in the link map) that is not in the bundle is named
-//! ([`NOT_IN_BUNDLE`]): the binary check does not cover it.
+//! (the Lean code is inside that object); a function of such a unit none of whose object's code
+//! sections is linked (`--gc-sections` dropped them, the unit's data may stay) is not in the
+//! executable and is left out of the bundle (listed as `unlinked`, #1148), not skipped. Every
+//! Lean-compiled function of the executable (its `__fvlean$` marker is in the link map) that is
+//! not in the bundle is named ([`NOT_IN_BUNDLE`]): the binary check does not cover it.
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -74,6 +76,13 @@ fn input_object(text: &str) -> String {
     Path::new(t).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
 }
 
+/// A map input is a code section (`…:(.text)`, `…:(.text.<name>)`).
+fn input_is_code(text: &str) -> bool {
+    text.rsplit_once(":(")
+        .and_then(|(_, s)| s.strip_suffix(')'))
+        .is_some_and(|s| s == ".text" || s.starts_with(".text."))
+}
+
 struct LinkMap {
     /// symbol → its addresses (a local name may occur in several objects)
     syms: HashMap<String, BTreeSet<u64>>,
@@ -81,17 +90,27 @@ struct LinkMap {
     local: HashMap<(String, String), BTreeSet<u64>>,
     /// the object file names linked
     objects: BTreeSet<String>,
+    /// the object file names with a code section in the link (#1148: `--gc-sections` may drop
+    /// every code section of an object and keep its data)
+    code: BTreeSet<String>,
 }
 
 fn read_map(p: &Path) -> Result<LinkMap, String> {
     let text = fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?;
-    let mut m = LinkMap { syms: HashMap::new(), local: HashMap::new(), objects: BTreeSet::new() };
+    Ok(parse_map(&text))
+}
+
+fn parse_map(text: &str) -> LinkMap {
+    let mut m = LinkMap { syms: HashMap::new(), local: HashMap::new(), objects: BTreeSet::new(), code: BTreeSet::new() };
     let mut cur = String::new();
     for l in text.lines() {
         match parse_map_line(l) {
             Some(MapLine::Input(t)) => {
                 cur = input_object(&t);
                 m.objects.insert(cur.clone());
+                if input_is_code(&t) {
+                    m.code.insert(cur.clone());
+                }
             }
             Some(MapLine::Symbol(s, a)) => {
                 m.local.entry((cur.clone(), s.clone())).or_default().insert(a);
@@ -100,7 +119,17 @@ fn read_map(p: &Path) -> Result<LinkMap, String> {
             _ => {}
         }
     }
-    Ok(m)
+    m
+}
+
+/// #1148: without a list of units (the Lean code is inside the unit's object `obj`), function
+/// `fin` is not in the executable when its `__fvlean$` marker is not in the link map and no code
+/// section of `obj` is linked (`--gc-sections` dropped all of the object's code; its data may
+/// stay): it is neither checked nor unverified code of the executable, so it is left out of the
+/// bundle instead of being skipped. A marker missing while some code of the object is linked
+/// stays a skipped function.
+fn not_linked(map: &LinkMap, by_object: bool, obj: &str, fin: &str) -> bool {
+    by_object && !map.code.contains(obj) && !map.syms.contains_key(&format!("{MARKER}{fin}"))
 }
 
 /// The defined symbols of an executable: name → addresses.
@@ -332,6 +361,8 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     // the region functions `ld -r` starts beyond a word (`Link.LinkSpec.aligns`, #1061)
     let mut aligns: Vec<(String, u64)> = Vec::new();
     let mut skipped: Vec<(String, String)> = Vec::new();
+    // #1148: the functions of a linked unit none of whose code is in the executable
+    let mut unlinked: Vec<String> = Vec::new();
     let mut nfuncs = 0;
     for (obj, j, dir) in &cgus {
         let rec = dir.join(CGU_FILE);
@@ -343,6 +374,10 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             let fin = f["final"].as_str().unwrap_or_default().to_string();
             if excluded.contains(&fin) {
                 n_excluded += 1;
+                continue;
+            }
+            if not_linked(&map, list.is_none(), obj, &fin) {
+                unlinked.push(fin);
                 continue;
             }
             if !f["verified"].as_bool().unwrap_or(false) {
@@ -424,7 +459,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         .iter()
         .filter_map(|(n, a)| if a.len() == 1 { a.iter().next().map(|a| (n, *a)) } else { None })
         .collect();
-    let bundle = serde_json::json!({
+    let mut bundle = serde_json::json!({
         "format": "clifv-frontend-bundle",
         "version": 2,
         "exe": exe,
@@ -435,11 +470,15 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         "aligns": aligns.iter().map(|(n, a)| serde_json::json!([n, a])).collect::<Vec<_>>(),
         "skipped": skipped,
     });
+    // #1148: for the record only (the program does not hold them; Lean does not read it)
+    if !unlinked.is_empty() {
+        bundle["unlinked"] = serde_json::json!(unlinked);
+    }
     let bp = o.out.join("bundle.json");
     fs::write(&bp, serde_json::to_string_pretty(&bundle).unwrap_or_default())
         .map_err(|e| format!("{}: {e}", bp.display()))?;
     eprintln!(
-        "cargo fv link-proof: {nfuncs} functions of {} codegen unit(s) of {exe} ({}; skipped {}, left out of the region {n_excluded}), {} executable symbols → {}",
+        "cargo fv link-proof: {nfuncs} functions of {} codegen unit(s) of {exe} ({}; skipped {}, left out of the region {n_excluded}{}), {} executable symbols → {}",
         cgus.len(),
         match (&o.cgus, &list) {
             (Some(_), _) => "the units --cgus lists",
@@ -447,6 +486,15 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             (None, None) => "the units whose object the link map names",
         },
         skipped.len(),
+        if unlinked.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "; not in the executable {}: no code section of their unit's object is linked (--gc-sections), first: {}",
+                unlinked.len(),
+                unlinked[0]
+            )
+        },
         symbols.len(),
         bp.display()
     );
@@ -556,5 +604,34 @@ mod tests {
         let syms = ["__fvlean$f", "__fvlean$g", "__fvlean$s", "__fvlean$h", "__fvlean$g", "f", "__fvlean_start"];
         assert_eq!(not_in_bundle(syms.into_iter(), &bundle, &skipped), ["g", "h"]);
         assert!(not_in_bundle(["__fvlean$f", "f"].into_iter(), &bundle, &skipped).is_empty());
+    }
+
+    /// #1148: a unit whose code `--gc-sections` dropped while its data stayed (crypto-bigint's
+    /// `bit_vec` unit): its functions are not in the executable; with some code of the object
+    /// linked, or with a list of units (`--lean-link`: the code is in the region object), a
+    /// missing marker stays a skipped function.
+    #[test]
+    fn unit_without_linked_code() {
+        let line = |vma: u64, ind: usize, text: &str| format!("{vma:>16x} {vma:>16x} {:>8x} {:>5} {}{text}", 16, 1, " ".repeat(ind));
+        let text = [
+            line(0x1000, 0, ".rodata"),
+            line(0x1000, 8, "/t/libbit_vec.rlib(bit_vec-1.bit_vec.0-cgu.0.rcgu.o):(.rodata)"),
+            line(0x1000, 16, "__fv_c0__Ldata1"),
+            line(0x2000, 0, ".text"),
+            line(0x2000, 8, "/t/liba.rlib(a-1.a.0-cgu.0.rcgu.o):(.text)"),
+            line(0x2000, 16, "__fvlean$f"),
+            line(0x2010, 8, "/t/libb.rlib(b-1.b.0-cgu.0.rcgu.o):(.text.g)"),
+            line(0x2010, 16, "g"),
+        ]
+        .join("\n");
+        let m = parse_map(&text);
+        assert!(m.objects.contains("bit_vec-1.bit_vec.0-cgu.0.rcgu.o"));
+        assert_eq!(m.code, ["a-1.a.0-cgu.0.rcgu.o".to_string(), "b-1.b.0-cgu.0.rcgu.o".to_string()].into());
+        assert!(not_linked(&m, true, "bit_vec-1.bit_vec.0-cgu.0.rcgu.o", "__fv_c0__h"));
+        assert!(!not_linked(&m, false, "bit_vec-1.bit_vec.0-cgu.0.rcgu.o", "__fv_c0__h"));
+        // some code of the object is linked: a missing marker is not explained by the link
+        assert!(!not_linked(&m, true, "a-1.a.0-cgu.0.rcgu.o", "h"));
+        assert!(!not_linked(&m, true, "b-1.b.0-cgu.0.rcgu.o", "h"));
+        assert!(!not_linked(&m, true, "a-1.a.0-cgu.0.rcgu.o", "f"));
     }
 }
