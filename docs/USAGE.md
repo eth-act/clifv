@@ -716,11 +716,13 @@ wall summed 2,986 → 2,790 s. Rejected `rewrite:operand` 8,637 → 3,168.
 
 Constant-condition branch folding (`rewrite:blocks`; docs/contracts/midval.md; measured
 2026-11-21 on clifv-remote, #1151's tools against this one's, the same 9 crates and command):
-binary check 48 of 48 both ways, 121,767 verified both ways, test outcomes the same as stock's on
-all 9 both ways; validated 107,461 → 110,259 (88.3 % → 90.5 %; up on every crate);
-byte-identical to stock 89,929 → 92,057 of 121,767 (73.9 % → 75.6 %); left out 1 → 42 (41
-crypto-bigint functions fail link-check's `outFits` input condition, #1152); `cargo fv test` wall
-summed 2,790 → 2,725 s.
+binary check 48 of 48 both ways, 121,767 verified both ways, left out 1 → 1, test outcomes the
+same as stock's on all 9 both ways; validated 107,461 → 110,220 (88.3 % → 90.5 %; up on every
+crate); byte-identical to stock 89,929 → 92,018 of 121,767 (73.9 % → 75.6 %); `cargo fv test` wall
+summed 2,790 → 2,622 s. `lean-backend --midval-opt` compiles `g` only when link-check's `outFits`
+input condition is no worse for it than for `f` (`outScopeLeB`): without that test, 41
+crypto-bigint functions whose folded `g` no longer calls a stack-argument extern it still declares
+left the executable's region (left out 1 → 42; #1152).
 
 ### The executable compiler (`--lean-link`, L1)
 

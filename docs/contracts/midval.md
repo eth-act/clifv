@@ -187,7 +187,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 3: branch conditions (`checkCertC`, hints) | none (`condPrep g hints` re-check) | `condPrep_simU`, `check_soundC` | 91,948 (75.4 %) | 84,317 / 91,898 (91.8 %) | 69.3 % |
 | typed seam (`Norm.stdT f`) | `selTyped`, `redTyped` after `Norm.std` | `normSoundT_typed`, `normSoundT_stdT`, `check_sound_normT` | 103,615 (85.0 %) | 86,843 / 103,562 (83.9 %) | 71.3 % |
 | 4: neutral and affine constants, constants right, narrowing (`Norm.stdT f = Norm.narrowN f 3`) | `idStep`, `affStep`, `swapStep`, `narrowStep` after the typed rules | `ruleSoundT_idStep`, `ruleSound_affStep`, `ruleSound_swapStep`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 108,839 (89.3 %) | not measured on the pairs | measured instead with `cargo fv test --release --lean-link --verified` on the 9 crates: 71.0 % → 73.9 % (86,490 → 89,929 of 121,767) |
-| fold: constant-condition branches (`checkCertC`, fold requests) | none (`foldPre f bs` re-check) | `foldBr_simU`, `foldPre_simU`, `check_soundC` | 111,671 (91.6 %) | not measured on the pairs | 9 crates: 73.9 % → 75.6 % (89,929 → 92,057 of 121,767) |
+| fold: constant-condition branches (`checkCertC`, fold requests) | none (`foldPre f bs` re-check) | `foldBr_simU`, `foldPre_simU`, `check_soundC` | 111,671 (91.6 %) | not measured on the pairs | 9 crates: 73.9 % → 75.6 % (89,929 → 92,018 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -475,9 +475,14 @@ counterfactual.)
     (`skeleton-removed div`), 215 on `rewrite:operand` (136 of them `jump` arity). Check time
     summed over the pairs 54.9 → 57.1 s, re-check 17.0 → 17.8 s.
     `cargo fv test --release --lean-link --verified` on the 9 crates (#1151's tools → this
-    one's): binary check 48/48 → 48/48, verified 121,767 → 121,767, tests the same as stock's on
-    all 9 both ways, validated 107,461 → 110,259 (88.3 → 90.5 %, up on every crate),
-    byte-identical to stock 89,929 → 92,057 (73.9 → 75.6 %); left out of the region 1 → 42: 41
-    crypto-bigint functions whose `g` no longer calls an extern with stack arguments that it
-    still declares fail link-check's `outFits` input condition (#1152); they keep their
-    per-function theorems and are linked with cg_clif's code.
+    one's): binary check 48/48 → 48/48, verified 121,767 → 121,767, left out of the region 1 → 1,
+    tests the same as stock's on all 9 both ways, validated 107,461 → 110,220 (88.3 → 90.5 %, up
+    on every crate), byte-identical to stock 89,929 → 92,018 (73.9 → 75.6 %).
+  - Selection (`lean-backend --midval-opt`, `FVTest/Backend/Main.lean`): a validated `g` is
+    compiled only if link-check's `outFits` input condition is no worse for it than for `f`
+    (`outScopeLeB f g`: every extern whose stack arguments fit `f`'s stack-argument area fits
+    `g`'s; `outScopeB_of_le`: then `outScopeB P f → outScopeB P g` for every program `P`, which
+    `lean-backend` does not know); otherwise `f`, as without `--midval-opt`. A fold can drop `g`'s
+    only call of an extern with stack arguments that `g` still declares; without the test 41
+    crypto-bigint functions left the executable's region (left out 1 → 42, validated 110,259,
+    byte-identical 92,057; #1152, which would recover them).
