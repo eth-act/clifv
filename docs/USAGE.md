@@ -733,6 +733,15 @@ input condition is no worse for it than for `f` (`outScopeLeB`): without that te
 crypto-bigint functions whose folded `g` no longer calls a stack-argument extern it still declares
 left the executable's region (left out 1 → 42; #1152).
 
+Division by a constant (`skeleton-removed div`; docs/contracts/midval.md; measured 2026-11-21 on
+clifv-remote, main with #1154's tools against this one's, the same 9 crates and command): binary
+check 48 of 48 both ways, 121,767 verified both ways, left out 1 → 1, test outcomes the same as
+stock's on all 9 both ways; validated 110,220 → 111,476 (90.5 % → 91.5 %; up on every crate);
+byte-identical to stock 92,018 → 92,975 of 121,767 (75.6 % → 76.4 %); `cargo fv test` wall summed
+2,678 → 2,664 s. The validator rewrites `f`'s `udiv`/`sdiv` by 1, `urem` by 1 and `udiv`/`urem`
+by a power of two as Cranelift does; the magic-number divisions (394 of the 121,879 pairs) stay
+rejected.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
