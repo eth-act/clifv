@@ -16,7 +16,13 @@ operations, multiply-add/subtract, the integer extensions (`uxtb`/`sxth`/…), t
 constant moves (`fmov #imm`, `movi`; #967: they sit between the dead `fcmp` of
 `select_le_f32` and the `fcmp` of its `select`), the scalar `fneg` (`fpuRR .neg`; #1117: the
 `fneg` that the `fma` rules fold into `fmsub`/`fnmsub`/`fnmadd` is dead afterwards; witnesses
-`FVTest/Backend/DeadFnegWitness.lean`), and `cset` (it
+`FVTest/Backend/DeadFnegWitness.lean`), the float-to-integer conversions (`fcvtzu`/`fcvtzs`,
+`fpuToInt`; #1141: they sit between the dead `fcmp eq x, x` of cg_clif's NaN test before a
+saturating `fcvt_to_{u,s}int_sat` and the `fcmp` of its `select`; a conversion whose result is
+unused also goes, as Cranelift does not lower an unused saturating conversion; for the trapping
+`fcvt_to_{u,s}int`, which cg_clif never emits (`src/cast.rs` uses the saturating forms), stock
+would keep an unused one's `fcvtzu`/`fcvtzs` after its checks; witnesses
+`FVTest/Backend/DeadFcmpCvtWitness.lean`), and `cset` (it
 reads the flags but writes only its definition; #552: the boolean of an `icmp` that the
 `brif`/`select` rule re-compares, which Cranelift does not lower because no lowered instruction
 uses it, `machinst/lower.rs` `lower_clif_block`). Other forms remain in place.
