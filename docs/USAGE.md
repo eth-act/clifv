@@ -618,13 +618,16 @@ survey's debug builds (#1076), the other 27 crates measured 88.4–96.4 %.
 
 Compiling Cranelift's optimised function instead (80.2 % byte-identical in the same release
 builds) would make the theorems about it and put Cranelift's mid-end into the trusted base; the
-options are in #1119. `--midval` (below) compiles it where a proved validator accepts it, with
-the theorem still about the unoptimised function.
+options are in #1119. By default (the mid-end validator, below) `cargo fv` compiles it where a
+proved validator accepts it, with the theorem still about the unoptimised function; the rest of
+this section describes the functions it does not accept and `--no-midval` builds.
 
-#### `--midval`: Cranelift's optimised function through the mid-end validator (opt-in, #1119)
+#### The mid-end validator: Cranelift's optimised function, theorem about the unoptimised one (#1119)
 
-`cargo fv <build|run|test> --midval` (plain mode, or `--lean-link --verified`; separate target dir
-`…-midval`): for every function whose dump header says cg_clif optimised it (`opt_level` not
+On by default in `cargo fv <build|run|test>` (plain mode, and `--lean-link --verified`;
+`--no-midval` turns it off, separate target dir `…-nomidval`; `--midval` asks for it and is
+refused with `--opt`, `--opt-proven-only` or `--lean-link` without `--verified`): for every
+function whose dump header says cg_clif optimised it (`opt_level` not
 `none`), `cargo fv` passes the function's `.opt.clif` to `lean-backend --midval-opt`.
 `lean-backend` runs the mid-end validator's certificate generator `Opt.MidVal.emitC` on the
 unoptimised function after constant-phi removal (`f`) and Cranelift's optimised function `g`,
@@ -638,9 +641,9 @@ of `f`, and a verified function's theorem is `E2E.backend_correct_midval_*`
 cg_clif's optimised dump validated by Opt.MidVal`). Otherwise (`rejected`, or `not composed`
 when no theorem through the validator covers `g`'s compilation, e.g. a `try_call` without an
 unwinding theorem for `g`) the function is compiled from its `.unopt.clif` exactly as without
-`--midval`: the same object bytes and the same verdict. A function cg_clif did not optimise, and
+the validator: the same object bytes and the same verdict. A function cg_clif did not optimise, and
 every function of a build whose `opt_level` is `none` (the default debug profiles), is compiled
-as without the flag. `fv-report.json` gives each such function `midval: {outcome, reason,
+as with `--no-midval`. `fv-report.json` gives each such function `midval: {outcome, reason,
 opt_level}` and `counts.midval_validated`; `cargo fv report` lists the outcomes by reason.
 
 **Executables** (#1119 layer 2): the binary check stays. `cargo fv` writes, for a function
@@ -653,7 +656,7 @@ through the validator (`…_mid`, about the program of the unoptimised dumps). W
 the `…_sourceMid` / `…TBMid` source theorems (docs/contracts/e2e.md, "Executables through the
 mid-end validator"). `lean-backend --midval-opt` also requires `Link.midPairB` on the pair as
 `link-check` takes it (after the `i128` legalisation) and `g`'s printed CLIF to parse back to `g`.
-`--midval` is refused with `--lean-link` without `--verified`.
+Before #1119 step 3 it was opt-in (`--midval`).
 
 Measured (#1119, 2026-11-20, clifv-remote; tools of #1144's head 41bb21b3e = main a8845ea89's
 validator, `checkCertC` with the default normaliser `Norm.stdT`): `cargo fv test --release`
@@ -692,6 +695,16 @@ crates: binary check 48 of 48 executables both ways (per crate equal), verified 
 executables of 7 crates; on serde_json and crypto-bigint the plain-mode binary check did not end
 within 4 hours with `--midval`, and without it `link-check` stalls at the same step (#1145:
 its GOT check on large release executables; `--lean-link --verified` is not affected).
+
+Default on (#1119 step 3, measured 2026-11-20/21 on clifv-remote, layer-2 tools on main
+62ec128f5's tree, the 9 crates with `--release`, validator on vs off): with `--lean-link
+--verified` no executable, verified function or test outcome is worse on any crate (binary check
+48 of 48 both ways, 121,767 verified, left out 2 → 1); summed tool wall time `lean-backend`
+10,924 → 10,415 s, `link-check` 683 → 838 s, `lean-link` 941 → 965 s, `cargo fv test` 2,638 →
+2,732 s (+3.6 %). Plain mode on the 7 crates whose plain binary check ends (#1145): 28 of 28
+both ways, tests the same, `cargo fv test` 2,776 → 2,767 s. Debug builds (`opt_level=none`):
+fv-demo, survey, deps and fv-demo with `--build-std` gave byte-identical objects and executables
+and the same verdicts with the default on and with main's `cargo fv`.
 
 ### The executable compiler (`--lean-link`, L1)
 
