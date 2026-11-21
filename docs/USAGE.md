@@ -696,6 +696,16 @@ executables of 7 crates; on serde_json and crypto-bigint the plain-mode binary c
 within 4 hours with `--midval`, and without it `link-check` stalls at the same step (#1145:
 its GOT check on large release executables; `--lean-link --verified` is not affected).
 
+Default on (#1119 step 3, measured 2026-11-20/21 on clifv-remote, layer-2 tools on main
+62ec128f5's tree, the 9 crates with `--release`, validator on vs off): with `--lean-link
+--verified` no executable, verified function or test outcome is worse on any crate (binary check
+48 of 48 both ways, 121,767 verified, left out 2 → 1); summed tool wall time `lean-backend`
+10,924 → 10,415 s, `link-check` 683 → 838 s, `lean-link` 941 → 965 s, `cargo fv test` 2,638 →
+2,732 s (+3.6 %). Plain mode on the 7 crates whose plain binary check ends (#1145): 28 of 28
+both ways, tests the same, `cargo fv test` 2,776 → 2,767 s. Debug builds (`opt_level=none`):
+fv-demo, survey, deps and fv-demo with `--build-std` gave byte-identical objects and executables
+and the same verdicts with the default on and with main's `cargo fv`.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
