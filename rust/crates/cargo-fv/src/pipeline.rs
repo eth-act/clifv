@@ -26,7 +26,10 @@
 //!    function. Then `ld -r --unique obj ours` merges the two: each symbol we define resolves to
 //!    our (strong) definition, including the relocations inside cg_clif's code and data
 //!    (calls, vtables); cg_clif's copy stays as dead code. The renamed symbols are made local
-//!    again, so the object's interface to the rest of the program is unchanged.
+//!    again, so the object's interface to the rest of the program is unchanged. A section of
+//!    `obj` holding a data object of a validated function's unoptimised code that the compiled
+//!    optimised code no longer references is marked `SHF_GNU_RETAIN` (#1154): the program the
+//!    executable theorems are about has it, so `--gc-sections` must keep it.
 //! 6. Check on the merged object: every compiled symbol has its marker's address; otherwise the
 //!    CGU is left as cg_clif wrote it (all fallback).
 //!
@@ -270,6 +273,35 @@ fn clif_decl_names(path: &Path) -> Result<Vec<String>, String> {
         }
     }
     Ok(names)
+}
+
+/// `SHF_GNU_RETAIN`: a section the linker keeps under `--gc-sections` whatever references it.
+const SHF_GNU_RETAIN: u64 = 0x20_0000;
+
+/// Mark the sections `secs` (section header indices) of the ELF64 little-endian object `path`
+/// `SHF_GNU_RETAIN` (#1154), in place: only their headers' flags change.
+fn retain_sections(path: &Path, secs: &BTreeSet<usize>) -> Result<(), String> {
+    if secs.is_empty() {
+        return Ok(());
+    }
+    let mut data = fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let u64_at = |d: &[u8], o: usize| d.get(o..o + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap()));
+    let u16_at = |d: &[u8], o: usize| d.get(o..o + 2).map(|b| u16::from_le_bytes(b.try_into().unwrap()) as usize);
+    if data.get(0..6) != Some(&[0x7f, b'E', b'L', b'F', 2, 1][..]) {
+        return Err(format!("{}: not an ELF64 little-endian object", path.display()));
+    }
+    let (Some(shoff), Some(shentsize), Some(shnum)) = (u64_at(&data, 0x28), u16_at(&data, 0x3a), u16_at(&data, 0x3c)) else {
+        return Err(format!("{}: truncated ELF header", path.display()));
+    };
+    for &i in secs {
+        let at = shoff as usize + i * shentsize + 8;
+        let flags = match (i < shnum, u64_at(&data, at)) {
+            (true, Some(f)) => f,
+            _ => return Err(format!("{}: no section header {i}", path.display())),
+        };
+        data[at..at + 8].copy_from_slice(&(flags | SHF_GNU_RETAIN).to_le_bytes());
+    }
+    fs::write(path, data).map_err(|e| format!("{}: {e}", path.display()))
 }
 
 fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
@@ -1040,6 +1072,9 @@ fn process_in(
     // from their dumps (`Front.buildSpec`), so each needs its linked name even when the Lean
     // mid-end (`--opt-proven-only`) removed the code referencing it
     let mut declared: BTreeSet<String> = BTreeSet::new();
+    // #1154: source-program data objects (cg_clif's local symbols) that a validated function's
+    // compiled code no longer references; their sections are kept (`retain_sections`)
+    let mut dropped_data: BTreeSet<String> = BTreeSet::new();
     for ((sym, d), c) in funcs.iter().zip(results) {
         // #1119 (`from_unopt`): a Lean-compiled function compiled from its `.unopt.clif` (not the
         // `.opt.clif` retry, not the validated optimised function of `--midval`); with the dump's
@@ -1093,7 +1128,8 @@ fn process_in(
                 match bad {
                     Some(b) => report(Status::Fallback, Some(b), false, None, false, None),
                     None => {
-                        referenced_locals.extend(locals);
+                        let code_locals: BTreeSet<String> = locals.into_iter().collect();
+                        referenced_locals.extend(code_locals.iter().cloned());
                         // `--lean-link`, and a function the mid-end validator accepted (#1119):
                         // every name the compiled file declares gets its linked name (the
                         // optimised function may declare names its code no longer references);
@@ -1104,10 +1140,15 @@ fn process_in(
                             if validated {
                                 files.push(clif.with_file_name(format!("{}.opt.clif", d.stem)));
                             }
-                            for file in &files {
+                            for (k, file) in files.iter().enumerate() {
                                 for n in clif_decl_names(file)? {
                                     let o = obj_name_of(&n);
                                     if syms.local_count.get(&o) == Some(&1) {
+                                        // #1154: a data object of the source program that the
+                                        // compiled optimised code no longer references
+                                        if validated && k == 0 && !syms.text.contains_key(&o) && !code_locals.contains(&o) {
+                                            dropped_data.insert(o.clone());
+                                        }
                                         referenced_locals.insert(o);
                                     }
                                     declared.insert(n);
@@ -1179,6 +1220,15 @@ fn process_in(
         &[format!("--globalize-symbols={}", glob.display()), format!("--weaken-symbols={}", weak.display())],
         &cg,
     )?;
+    // #1154: a validated function's optimised code may no longer reference a data object of its
+    // unoptimised code (a folded panic block's location); the program link-check and lean-link
+    // assemble from the unoptimised dumps keeps it in its data closure, so its section must stay
+    // even when no other linked code references it (`--gc-sections`, rust-lld and lean-ld)
+    if !dropped_data.is_empty() {
+        let s = read_syms(&cg)?;
+        let secs: BTreeSet<usize> = dropped_data.iter().filter_map(|l| s.at.get(&final_name(l)).map(|p| p.0)).collect();
+        retain_sections(&cg, &secs)?;
+    }
 
     if cfg.trap_replaced {
         trap_bodies(&cg, &ours.iter().map(|(s, _)| final_name(s)).collect::<Vec<_>>())?;
@@ -1431,6 +1481,35 @@ mod tests {
         let level = |s: &str| index.by_symbol[s].opt_level.clone();
         assert_eq!((level("fast"), level("plain"), level("bare")), ("speed_and_size".into(), "none".into(), String::new()));
         assert_eq!(index.by_symbol["fast"].instance, "c::fast");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// #1154: `retain_sections` sets `SHF_GNU_RETAIN` in the named sections' headers only, and
+    /// refuses a section index past the table and a file that is not ELF64 little-endian.
+    #[test]
+    fn retain_sections_sets_only_their_flags() {
+        let dir = std::env::temp_dir().join(format!("cargo-fv-retain-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let o = dir.join("a.o");
+        // ELF header (64 bytes) then 3 section headers (64 bytes each) at 64
+        let mut elf = vec![0u8; 64 + 3 * 64];
+        elf[..6].copy_from_slice(&[0x7f, b'E', b'L', b'F', 2, 1]);
+        elf[0x28..0x30].copy_from_slice(&64u64.to_le_bytes());
+        elf[0x3a..0x3c].copy_from_slice(&64u16.to_le_bytes());
+        elf[0x3c..0x3e].copy_from_slice(&3u16.to_le_bytes());
+        let flags_at = |i: usize| 64 + i * 64 + 8;
+        for i in 0..3 {
+            elf[flags_at(i)..flags_at(i) + 8].copy_from_slice(&3u64.to_le_bytes());
+        }
+        fs::write(&o, &elf).unwrap();
+        retain_sections(&o, &BTreeSet::from([1])).unwrap();
+        let got = fs::read(&o).unwrap();
+        let flags = |i: usize| u64::from_le_bytes(got[flags_at(i)..flags_at(i) + 8].try_into().unwrap());
+        assert_eq!((flags(0), flags(1), flags(2)), (3, 3 | SHF_GNU_RETAIN, 3));
+        assert_eq!(got.len(), elf.len());
+        assert!(retain_sections(&o, &BTreeSet::from([3])).is_err());
+        fs::write(&o, b"not an object").unwrap();
+        assert!(retain_sections(&o, &BTreeSet::from([1])).is_err());
         fs::remove_dir_all(&dir).unwrap();
     }
 }
