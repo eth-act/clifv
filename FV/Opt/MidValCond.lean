@@ -124,11 +124,12 @@ def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false)
   | .error e =>
     let bs := foldCands f g
     let fail (e' : Reject) : Except Reject (List (BlockId × List Wrap)) :=
-      .error (if e == "rewrite:blocks" then s!"{e'} [fold]" else e)
+      .error (if e == "rewrite:blocks" || e.startsWith "rewrite:skeleton-removed div" then
+        s!"{e'} [prep]" else e)
     if hoist || bs.isEmpty then .error e
     else
-      let f1 := foldBr f bs
-      if f1.blocks.map (·.term) == f.blocks.map (·.term) then fail "rewrite:blocks"
+      let f1 := foldBr (divPre f bs) bs
+      if f1.blocks == f.blocks then fail e
       else
         -- `foldPre f bs`
         let f' := ConstPhi.run f1
