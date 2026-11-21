@@ -7,9 +7,9 @@ import FV.Opt.Proof.SimpDen
 # Branch folding is simulated by its input (#1119, `rewrite:blocks`)
 
 `Opt.MidVal.foldBr f bs` (`FV/Opt/MidValFold.lean`) turns the `brif`/`br_table` of the blocks
-`bs` whose condition has a constant in `K = kMap f` into the `jump` the constant selects, when
-`kOk f K` accepts the constants. Here: **`foldBr_simU : FunSimU f (foldBr f bs)`** and
-**`foldPre_simU : FunSimU f (foldPre f bs)`** (with `ConstPhi.run_simU`).
+`bs` whose condition has a constant in `K = kLook f.freshValue (kTable f)` into the `jump` the
+constant selects, when `kOk f K` accepts the constants. Here: **`foldBr_simU : FunSimU f
+(foldBr f bs)`** and **`foldPre_simU : FunSimU f (foldPre f bs)`** (with `ConstPhi.run_simU`).
 
 The frame relation `FR`: the two frames run the same point of a block `b` of `f` with the same
 registers and slots, the folded frame with `foldBlock K bs b`'s terminator; and in `f`'s frame
@@ -541,10 +541,10 @@ theorem foldFn_simU (hk : kOk f K = true) (hK : ∀ x v, K x = some v → x < f.
 
 end
 
-/-- `kMap`'s constants are below the fresh value. -/
-theorem kMap_lt {f : Function} {x : ValueId} {v : Val} (h : kMap f x = some v) :
-    x < f.freshValue := by
-  simp only [kMap] at h
+/-- `kLook fv`'s constants are below `fv`. -/
+theorem kLook_lt {fv : Nat} {hm : Std.HashMap ValueId Val} {x : ValueId} {v : Val}
+    (h : kLook fv hm x = some v) : x < fv := by
+  unfold kLook at h
   split at h
   · assumption
   · cases h
@@ -557,7 +557,7 @@ theorem foldBr_simU (f : Function) (bs : List BlockId) : FunSimU f (foldBr f bs)
   · dsimp only
     split
     · rename_i hk
-      exact foldFn_simU hk (fun _ _ h => kMap_lt h)
+      exact foldFn_simU hk (fun _ _ h => kLook_lt h)
     · exact FunSimU.refl f
 
 /-- **The folded function without its unreachable blocks is simulated by its input.** -/

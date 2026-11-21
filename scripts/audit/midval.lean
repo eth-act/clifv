@@ -855,7 +855,7 @@ import FVTest.Opt.MidValFoldWitness
 #print axioms Opt.MidVal.FR.term_try
 #print axioms Opt.MidVal.FR.isSimU
 #print axioms Opt.MidVal.foldFn_simU
-#print axioms Opt.MidVal.kMap_lt
+#print axioms Opt.MidVal.kLook_lt
 #print axioms Opt.MidVal.foldBr_simU
 #print axioms Opt.MidVal.foldPre_simU
 -- witnesses (FVTest/Opt/MidValFoldWitness.lean)

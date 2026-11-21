@@ -114,20 +114,28 @@ def checkC0 (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false
 
 /-- The hints of the relaxed check (`checkC0`); when it rejects (not in the hoisting mode), the
 same on `foldPre f bs` for the blocks `bs` whose branch is a `jump` in `g` (`foldCands`), with
-the fold requests `(b, [])` of `bs` appended. A pair rejected for `rewrite:blocks` that the fold
-does not rescue reports the folded check's rejection, marked `[fold]`. -/
+the fold requests `(b, [])` of `bs` appended. The folded check is skipped when no branch folds
+or the folded function's blocks are not `g`'s. A pair rejected for `rewrite:blocks` that the
+fold does not rescue reports the folded check's rejection, marked `[fold]`. -/
 def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
     Except Reject (List (BlockId × List Wrap)) :=
   match checkC0 f g norm hoist with
   | .ok h => .ok h
   | .error e =>
     let bs := foldCands f g
+    let fail (e' : Reject) : Except Reject (List (BlockId × List Wrap)) :=
+      .error (if e == "rewrite:blocks" then s!"{e'} [fold]" else e)
     if hoist || bs.isEmpty then .error e
     else
-      let f' := foldPre f bs
-      match checkC0 f' g with
-      | .ok h => .ok (h ++ bs.map fun b => (b, []))
-      | .error e' => .error (if e == "rewrite:blocks" then s!"{e'} [fold]" else e)
+      let f1 := foldBr f bs
+      if f1.blocks.map (·.term) == f.blocks.map (·.term) then fail "rewrite:blocks"
+      else
+        -- `foldPre f bs`
+        let f' := ConstPhi.run f1
+        if f'.blocks.map (·.id) != g.blocks.map (·.id) then fail "rewrite:blocks"
+        else match checkC0 f' g with
+          | .ok h => .ok (h ++ bs.map fun b => (b, []))
+          | .error e' => fail e'
 
 /-- The certificate and hints of an accepted pair (`checkC`, then `emit` against the copy, from
 `foldPre f bs` for fold requests `bs`). -/

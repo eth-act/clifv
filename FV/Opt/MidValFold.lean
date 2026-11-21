@@ -13,15 +13,15 @@ input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
 
 * `constEval K i`: the constant value of a pure, non-partial instruction whose operands all have
   constants in `K` (`Clif.evalInst` in a frame holding `K`), or of an `iconst`.
-* `kMap f` (untrusted): constants of `f`'s values, by passes over the statements in layout order;
-  only values below `f.freshValue`.
+* `kTable f` (untrusted): constants of `f`'s values, by passes over the statements in layout
+  order; `kLook f.freshValue (kTable f)` keeps only values below `f.freshValue`.
 * `kOk f K` (the checker the proof relies on): no block parameter has a constant; every statement
   that defines a value with a constant `v` defines only that value and `constEval K` gives `v`
   for it. Then, in every run of `f`, a value with a constant holds it or nothing (each register
   is written only by its definitions), so a branch on it can only take the branch the constant
   selects.
-* `foldBr f bs`: when `kOk f (kMap f)`, each block of `bs` whose `brif`/`br_table` condition
-  has a constant ends in the `jump` it selects; otherwise `f`.
+* `foldBr f bs`: when `kOk f K` for `K = kLook f.freshValue (kTable f)`, each block of `bs` whose
+  `brif`/`br_table` condition has a constant ends in the `jump` it selects; otherwise `f`.
 * `foldPre f bs = ConstPhi.run (foldBr f bs)`: the folded function without the blocks that became
   unreachable (`Opt.removeUnreachable`, and constant-phi removal, inside `ConstPhi.run`).
 * `foldBlocks hints`: the fold requests among the hints of `checkCertC` (`FV/Opt/MidValCond.lean`):
@@ -50,7 +50,7 @@ def constEval (K : ValueId → Option Val) (i : Inst) : Option Val :=
       | _ => none
     else none
 
-/-- One pass of `kMap` over `f`'s statements in layout order. -/
+/-- One pass of `kTable` over `f`'s statements in layout order. -/
 def kPass (f : Function) (hm : Std.HashMap ValueId Val) : Std.HashMap ValueId Val :=
   f.blocks.foldl (fun hm b => b.body.foldl (fun hm st =>
     match st.results with
@@ -62,16 +62,19 @@ def kPass (f : Function) (hm : Std.HashMap ValueId Val) : Std.HashMap ValueId Va
     | _ => hm) hm) hm
 
 /-- **The constants of `f`'s values** (untrusted; `kOk` checks them): passes of `kPass` until
-nothing changes (at most four), restricted to the values below `f.freshValue`. -/
-def kMap (f : Function) : ValueId → Option Val :=
+nothing changes (at most four). -/
+def kTable (f : Function) : Std.HashMap ValueId Val :=
   let rec go : Nat → Std.HashMap ValueId Val → Std.HashMap ValueId Val
     | 0, hm => hm
     | n + 1, hm =>
       let hm' := kPass f hm
       if hm'.size == hm.size then hm' else go n hm'
-  let hm := go 4 {}
-  let fv := f.freshValue
-  fun x => if x < fv then hm[x]? else none
+  go 4 {}
+
+/-- The constants of a table, restricted to the values below `fv` (`f.freshValue`, computed once
+by the caller: a lookup must not recompute the table or the fresh value). -/
+def kLook (fv : Nat) (hm : Std.HashMap ValueId Val) (x : ValueId) : Option Val :=
+  if x < fv then hm[x]? else none
 
 /-- **The constants' checker** (module doc). -/
 def kOk (f : Function) (K : ValueId → Option Val) : Bool :=
@@ -101,11 +104,13 @@ def foldFn (f : Function) (K : ValueId → Option Val) (bs : List BlockId) : Fun
   { f with blocks := f.blocks.map (foldBlock K bs) }
 
 /-- **Branch folding** (module doc): the blocks of `bs` with their constant-condition branches
-folded, when `kOk` accepts `f`'s constants; `f` otherwise. -/
+folded, when `kOk` accepts `f`'s constants (`kTable`, below `f.freshValue`); `f` otherwise. -/
 def foldBr (f : Function) (bs : List BlockId) : Function :=
   if bs.isEmpty then f
   else
-    let K := kMap f
+    let fv := f.freshValue
+    let hm := kTable f
+    let K := kLook fv hm
     if kOk f K then foldFn f K bs else f
 
 /-- **The folded function without its unreachable blocks** (module doc). -/
