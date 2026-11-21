@@ -1,5 +1,6 @@
 import FV.E2E.SemanticExecGot
 import FV.E2E.DeadCleanupExecGot
+import Std.Data.HashSet.Lemmas
 
 /-! # The GOT premise `GotOk` decided on a result table (#1093)
 
@@ -16,6 +17,11 @@ also where the linker relaxed the pair to `adrp`/`add` (then no GOT slot is read
 is the target itself, which may be writable data), so it can fail where `GotOk` holds; `GotSlot`
 takes only the `ldr` form (`ldrFormB_ldrW`), so `gotTabB` is sound for both `GotOk`s
 (`SemanticExecBytes.gotTabB_sound`, `DeadCleanupExecBytes.gotTabB_sound`).
+
+`link-check` evaluates it as `gotTabFastB` (`@[csimp] gotTabB_eq_fast`, #1145): `relocAtB` scans
+every relocation of the table for each byte of each slot, so `gotTabB` takes GOT pairs ×
+relocations steps (serde_json's release test executable, 18,639 GOT pairs: not done after an
+hour); `gotTabFastB` puts the relocated bytes in a hash set once (`relocAtB_eq_contains`).
 -/
 
 namespace E2E.GotTab
@@ -51,6 +57,45 @@ def gotTabB (T : List (Clif.Function × Art)) (ex : Excerpt) : Bool :=
           (roB phs a || relroB phs a) && (m a).isSome && !relocAtB T a
       | _, _ => false
   | none => false
+
+/-- The addresses of the relocated instruction bytes of the images `T` (`relocAtB`'s). -/
+def relocAddrs (T : List (Clif.Function × Art)) : List Nat :=
+  T.flatMap fun e => e.2.fb.relocs.flatMap fun r =>
+    (List.range 4).map fun i => (wAt e.2 (r.offset + i)).toNat
+
+theorem relocAtB_eq_contains (T : List (Clif.Function × Art)) (a : BitVec 64) :
+    relocAtB T a = (Std.HashSet.ofList (relocAddrs T)).contains a.toNat := by
+  rw [Std.HashSet.contains_ofList, Bool.eq_iff_iff, List.contains_iff_mem]
+  simp only [relocAtB, relocAddrs, List.any_eq_true, List.mem_flatMap, List.mem_map,
+    List.mem_range, beq_iff_eq]
+  constructor
+  · rintro ⟨e, he, r, hr, i, hi, rfl⟩
+    exact ⟨e, he, r, hr, i, hi, rfl⟩
+  · rintro ⟨e, he, r, hr, i, hi, h⟩
+    exact ⟨e, he, r, hr, i, hi, (BitVec.eq_of_toNat_eq h).symm⟩
+
+/-- `gotTabB` as the compiler runs it (`gotTabB_eq_fast`, `@[csimp]`, #1145): the relocated
+bytes of `T` in a hash set built once (`relocAtB_eq_contains`), so that each byte of a slot is one
+lookup instead of a scan of every relocation of the table. -/
+def gotTabFastB (T : List (Clif.Function × Art)) (ex : Excerpt) : Bool :=
+  match phdrs (exRd ex) with
+  | some phs =>
+    let m := memIn (exRd ex) phs
+    let S := Std.HashSet.ofList (relocAddrs T)
+    T.all fun e => e.2.fb.relocs.all fun rl =>
+      !decide (rl.type = .adrGotPage) ||
+      match readN m 4 (wAt e.2 rl.offset), readN m 4 (wAt e.2 (rl.offset + 4)) with
+      | some x0, some x1 =>
+        !ldrFormB x1 ||
+        (List.range 8).all fun i =>
+          let a := BitVec.ofNat 64 (BinCheck.gotOf (wAt e.2 rl.offset).toNat x0 x1) + BitVec.ofNat 64 i
+          (roB phs a || relroB phs a) && (m a).isSome && !S.contains a.toNat
+      | _, _ => false
+  | none => false
+
+@[csimp] theorem gotTabB_eq_fast : @gotTabB = @gotTabFastB := by
+  funext T ex
+  simp only [gotTabB, gotTabFastB, relocAtB_eq_contains]
 
 /-- The number of GOT pairs (`adrGotPage` relocations whose second word is an `ldr`) `gotTabB`
 checks (report only). -/

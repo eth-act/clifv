@@ -26,6 +26,7 @@ import FV.Front.BundleFast
 import FV.Link.ScopePlacement
 import FV.Link.Ld.DataFast
 import FV.E2E.BinCheckFast
+import FV.E2E.GotTab
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -175,3 +176,7 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 -- by name and parameter types, one task per function
 #print axioms E2E.StackBound.budCands_of
 #print axioms E2E.StackBound.budSuccFast_eq_idx
+-- #1145: link-check's GOT check with the relocated bytes in a hash set (one lookup per slot
+-- byte instead of a scan of every relocation)
+#print axioms E2E.GotTab.relocAtB_eq_contains
+#print axioms E2E.GotTab.gotTabB_eq_fast
