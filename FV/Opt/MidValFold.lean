@@ -22,11 +22,23 @@ input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
   selects.
 * `foldBr f bs`: when `kOk f K` for `K = kLook f.freshValue (kTable f)`, each block of `bs` whose
   `brif`/`br_table` condition has a constant ends in the `jump` it selects; otherwise `f`.
-* `foldPre f bs = ConstPhi.run (foldBr f bs)`: the folded function without the blocks that became
-  unreachable (`Opt.removeUnreachable`, and constant-phi removal, inside `ConstPhi.run`).
-* `foldBlocks hints`: the fold requests among the hints of `checkCertC` (`FV/Opt/MidValCond.lean`):
-  a hinted block with an empty wrapper chain, which `condPrep` leaves unchanged.
-* `foldCands f g` (untrusted): the blocks whose `brif`/`br_table` is a `jump` in `g`.
+* `divPre f bs` (division by a constant, `skeleton-removed div`): when `kOk f K`, in the blocks
+  `bs`, a `udiv`/`sdiv` whose divisor has the constant 1 becomes `imul x, y`, a `urem` by 1
+  `iconst 0`, a `udiv` by `2^k` (`k ≥ 1`) `ushr x, s` with a new `s = iconst k`, and a `urem` by
+  `2^k` `band x, s` with a new `s = iconst (2^k - 1)`, each `s` placed just before, as
+  Cranelift's mid-end does; the new values are gap values (`gapVals f`, untrusted) below
+  `f.freshValue` that `f` never uses (`supplyOk`), so `f.freshValue`, and with it the `try_call`
+  windows, is unchanged; otherwise `f`. Divisor 0, `srem`, `sdiv` by other constants (rounding
+  toward zero, the `-1` trap) and the magic-number divisions are left alone
+  (`Opt.MidVal.divPre_simU`, `FV/Opt/Proof/MidValDiv.lean`).
+* `foldPre f bs = ConstPhi.run (foldBr (divPre f bs) bs)`: the divisions rewritten and the
+  branches folded, without the blocks that became unreachable (`Opt.removeUnreachable`, and
+  constant-phi removal, inside `ConstPhi.run`).
+* `foldBlocks hints`: the prep requests (fold and division) among the hints of `checkCertC`
+  (`FV/Opt/MidValCond.lean`): a hinted block with an empty wrapper chain, which `condPrep` leaves
+  unchanged.
+* `foldCands f g` (untrusted): the blocks whose `brif`/`br_table` is a `jump` in `g`, and the
+  blocks with a division.
 -/
 
 namespace Opt.MidVal
