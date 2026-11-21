@@ -1,0 +1,92 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC9criterion12H1ZdGtZEgmyb
+function u0:824() -> i64 system_v {
+; symbol _RNxC9criterion12H1ZdGtZEgmyb
+; instance Instance { def: Item(DefId(2:14618 ~ core[7b1c]::slice::sort::shared::smallsort::{impl#4}::small_sort_threshold)), args: [report::BenchmarkId] }
+; abi FnAbi { args: [], ret: ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 0, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    usize                             8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+
+; kind  local ty                              size align (abi)
+; ssa   _1    bool                              1b 1                var=2
+; ssa   _2    usize                             8b 8                var=3
+
+block0:
+    nop 
+    jump block1
+
+block1:
+    nop 
+; _2 = Mul(const <T as std::mem::SizedTypeProperties>::SIZE, const 48_usize)
+    v0 = iconst.i64 160
+    v1 = iconst.i64 48
+    v2 = imul v0, v1  ; v0 = 160, v1 = 48
+; write_cvalue: Var(_2, var3): usize <- ByVal(v2): usize
+; _1 = Le(move _2, const 4096_usize)
+    v3 = iconst.i64 4096
+    v4 = icmp ule v2, v3  ; v3 = 4096
+; write_cvalue: Var(_1, var2): bool <- ByVal(v4): bool
+; 
+; switchInt(move _1)
+    brif v4, block2, block3
+
+block2:
+    nop 
+; _0 = const 32_usize
+    v5 = iconst.i64 32
+; write_cvalue: Var(_0, var1): usize <- ByVal(v5): usize
+; 
+; goto
+    return v5  ; v5 = 32
+
+block3:
+    nop 
+; _0 = const 16_usize
+    v6 = iconst.i64 16
+; write_cvalue: Var(_0, var1): usize <- ByVal(v6): usize
+; 
+; goto
+    return v6  ; v6 = 16
+
+block4:
+    v8 = iconst.i64 0
+    v7 -> v8
+    nop 
+; 
+; return
+    return v7  ; v7 = 0
+}
+
+; clifv-extnames 1
+; decl u0:824 func local "_RNxC9criterion12H1ZdGtZEgmyb"
+; end clifv-extnames
