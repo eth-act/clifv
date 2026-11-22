@@ -1,0 +1,262 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10num_bigint12HdMYx0CdD3Of
+function u0:371(i64 sret, i64, i32) system_v {
+; symbol _RNxC10num_bigint12HdMYx0CdD3Of
+; instance Instance { def: Item(DefId(0:3388 ~ num_bigint[d9b7]::bigint::shift::{impl#87}::shr)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: bigint::BigInt, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(24 bytes), Size(0 bytes)], in_memory_order: [1, 0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14564007502729133149 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, ArgAbi { layout: TyAndLayout { ty: i32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(i32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462603027873795 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: bigint::BigInt, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(24 bytes), Size(0 bytes)], in_memory_order: [1, 0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14564007502729133149 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } bigint::BigInt
+; arg   _1      = v1       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } bigint::BigInt
+; arg   _2      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) i32
+
+; kind  local ty                              size align (abi)
+; reuse _1    bigint::BigInt                   32b 8                storage=v1
+; ssa   _2    i32                               4b 4                var=1
+; ssa   _3    bool                              1b 1                var=2
+; ssa   _4    &'{erased} bigint::BigInt         8b 8                var=3
+; stack _5    biguint::BigUint                 24b 8                storage=ss0
+; stack _6    biguint::BigUint                 24b 8                storage=ss1
+; stack _7    biguint::BigUint                 24b 8                storage=ss2
+; stack _8    bigint::Sign                      1b 1                storage=ss3
+; ssa   _9    bool                              1b 1                var=4
+; stack _10   alloc::borrow::Cow<'{erased}, biguint::BigUint>   24b 8                storage=ss4
+
+    ss0 = explicit_slot 24, align = 8
+    ss1 = explicit_slot 24, align = 8
+    ss2 = explicit_slot 24, align = 8
+    ss3 = explicit_slot 1
+    ss4 = explicit_slot 24, align = 8
+    sig0 = (i64, i32) -> i8 uext system_v
+    sig1 = (i64 sret, i64, i32) system_v
+    sig2 = (i64 sret, i64, i32) system_v
+    sig3 = (i64 sret, i8, i64) system_v
+    sig4 = (i64) system_v
+    sig5 = (i64) system_v
+    sig6 = () system_v
+    fn0 = colocated u0:256 sig0 ; Instance { def: Item(DefId(0:615 ~ num_bigint[d9b7]::bigint::shift::shr_round_down)), args: [i32] }
+    fn1 = colocated u0:596 sig1 ; Instance { def: Item(DefId(0:1282 ~ num_bigint[d9b7]::biguint::shift::biguint_shr)), args: [i32] }
+    fn2 = colocated u0:504 sig2 ; Instance { def: Item(DefId(0:831 ~ num_bigint[d9b7]::biguint::addition::{impl#2}::add)), args: [] }
+    fn3 = colocated u0:448 sig3 ; Instance { def: Item(DefId(0:732 ~ num_bigint[d9b7]::bigint::{impl#26}::from_biguint)), args: [] }
+    fn4 = u0:646 sig4 ; "_Unwind_Resume"
+    fn5 = colocated u0:443 sig5 ; Instance { def: Shim(DropGlue(DefId(1:3580 ~ core[7b1c]::ptr::drop_glue), Some(biguint::BigUint))), args: [biguint::BigUint] }
+    fn6 = u0:645 sig6 ; "_RNvNtCsazjiGSRkgVH_4core9panicking16panic_in_cleanup"
+
+block0(v0: i64, v1: i64, v2: i32):
+    v4 -> v2
+    v17 -> v2
+    nop 
+; write_cvalue: Var(_2, var1): i32 <- ByVal(v2): i32
+    jump block1
+
+block1:
+    nop 
+; _9 = const true
+    v3 = iconst.i8 1
+; write_cvalue: Var(_9, var4): bool <- ByVal(v3): bool
+; _4 = &_1
+; write_cvalue: Var(_4, var3): &'{erased} bigint::BigInt <- ByVal(v1): &'{erased} bigint::BigInt
+; 
+; _3 = bigint::shift::shr_round_down::<i32>(move _4, copy _2)
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &bigint::BigInt, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: i32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(i32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462603027873795 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+    try_call fn0(v1, v4), sig0, block12(ret0), [ tag0: block13(exn0) ]
+
+block13(v5: i64) cold:
+    jump block9(v3, v5)  ; v3 = 1
+
+block12(v6: i8):
+    v39 -> v6
+    nop 
+; write_cvalue: Var(_3, var2): bool <- ByVal(v6): bool
+    jump block2
+
+block2:
+    nop 
+; _9 = const false
+    v7 = iconst.i8 0
+    v42 -> v7
+    v44 -> v7
+; write_cvalue: Var(_9, var4): bool <- ByVal(v7): bool
+; _6 = move (_1.1: biguint::BigUint)
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): biguint::BigUint <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): biguint::BigUint
+    v8 = stack_addr.i64 ss1
+    v9 = load.i64 notrap aligned v1
+    v10 = load.i64 notrap aligned v1+8
+    v11 = load.i64 notrap aligned v1+16
+    store notrap aligned v9, v8
+    store notrap aligned v10, v8+8
+    store notrap aligned v11, v8+16
+; _10 = alloc::borrow::Cow::<'_, biguint::BigUint>::Owned(copy _6)
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(0) }, None): biguint::BigUint <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): biguint::BigUint
+    v12 = stack_addr.i64 ss1
+    v13 = stack_addr.i64 ss4
+    v14 = load.i64 notrap aligned v12
+    v15 = load.i64 notrap aligned v12+8
+    v16 = load.i64 notrap aligned v12+16
+    store notrap aligned v14, v13
+    store notrap aligned v15, v13+8
+    store notrap aligned v16, v13+16
+; 
+; _5 = biguint::shift::biguint_shr::<i32>(move _10, move _2)
+    v18 = stack_addr.i64 ss0
+    v19 = stack_addr.i64 ss4
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: alloc::borrow::Cow<'_, biguint::BigUint>, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551614..) }), uninhabited: false, variants: Multiple { tag: u64 is (..=9223372036854775807) | (18446744073709551614..), tag_encoding: Niche { untagged_variant: 1, niche_variants: 0..=0, niche_start: 18446744073709551614 }, tag_field: 0, variants: [VariantLayout { size: Size(16 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(24 bytes), backend_repr: Memory { sized: true }, field_offsets: [Size(0 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 15067519997297241090 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, ArgAbi { layout: TyAndLayout { ty: i32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(i32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462603027873795 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: biguint::BigUint, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 5291982247123328823 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+    try_call fn1(v18, v19, v17), sig1, block14, [ tag0: block15(exn0) ]
+
+block15(v20: i64) cold:
+    jump block9(v7, v20)  ; v7 = 0
+
+block14:
+    nop 
+    jump block10
+
+block3:
+    nop 
+; 
+; _7 = <biguint::BigUint as core::ops::Add<u32>>::add(move _5, const 1_u32)
+    v21 = iconst.i32 1
+    v22 = stack_addr.i64 ss2
+    v23 = stack_addr.i64 ss0
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: biguint::BigUint, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 5291982247123328823 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, ArgAbi { layout: TyAndLayout { ty: u32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(u32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462607322841091 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: biguint::BigUint, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 5291982247123328823 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+    try_call fn2(v22, v23, v21), sig2, block16, [ tag0: block17(exn0) ]  ; v21 = 1
+
+block17(v24: i64) cold:
+    jump block9(v42, v24)  ; v42 = 0
+
+block16:
+    nop 
+    jump block11
+
+block4:
+    nop 
+; _7 = copy _5
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): biguint::BigUint <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): biguint::BigUint
+    v25 = stack_addr.i64 ss0
+    v26 = stack_addr.i64 ss2
+    v27 = load.i64 notrap aligned v25
+    v28 = load.i64 notrap aligned v25+8
+    v29 = load.i64 notrap aligned v25+16
+    store notrap aligned v27, v26
+    store notrap aligned v28, v26+8
+    store notrap aligned v29, v26+16
+; 
+; goto
+    jump block5(v42)  ; v42 = 0
+
+block5(v43: i8):
+    nop 
+; _8 = copy (_1.0: bigint::Sign)
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): bigint::Sign <- ByRef(Pointer { base: Addr(v1), offset: Offset32(24) }, None): bigint::Sign
+    v30 = load.i8 notrap v1+24
+    v31 = stack_addr.i64 ss3
+    store notrap v30, v31
+; 
+; _0 = bigint::BigInt::from_biguint(move _8, move _7)
+    v32 = stack_addr.i64 ss3
+    v33 = load.i8 notrap v32
+    v34 = stack_addr.i64 ss2
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: bigint::Sign, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=2), fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=2 }), uninhabited: false, variants: Multiple { tag: u8 is 0..=2, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(1 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(1 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(1 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 3524997862881055852 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: biguint::BigUint, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 5291982247123328823 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }], ret: ArgAbi { layout: TyAndLayout { ty: bigint::BigInt, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(24 bytes), Size(0 bytes)], in_memory_order: [1, 0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14564007502729133149 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+    try_call fn3(v0, v33, v34), sig3, block18, [ tag0: block19(exn0) ]
+
+block19(v35: i64) cold:
+    jump block9(v43, v35)
+
+block18:
+    nop 
+    jump block6
+
+block6:
+    nop 
+; 
+; return
+    return
+
+block7(v36: i64) cold:
+    nop 
+; 
+; resume
+; lib_call _Unwind_Resume
+    call fn4(v36)
+    trap user1
+
+block8 cold:
+    nop 
+; 
+; drop((_1.1: biguint::BigUint))
+    try_call fn5(v1), sig5, block7(v40), [ tag0: block21(exn0) ]
+
+block21(v37: i64) cold:
+; panic _RNvNtCsazjiGSRkgVH_4core9panicking16panic_in_cleanup
+    nop 
+    call fn6()
+    trap user1
+
+block9(v38: i8, v41: i64) cold:
+    v40 -> v41
+    nop 
+; 
+; switchInt(copy _9)
+    brif v38, block8, block7(v41)
+
+block10:
+    nop 
+; 
+; switchInt(copy _3)
+    brif.i8 v39, block3, block4
+
+block11:
+    nop 
+; 
+; goto
+    jump block5(v44)  ; v44 = 0
+}
+
+; clifv-extnames 1
+; userextname0 = u0:256
+; userextname1 = u0:596
+; userextname2 = u0:504
+; userextname3 = u0:448
+; userextname4 = u0:646
+; userextname5 = u0:443
+; userextname6 = u0:645
+; decl u0:256 func local "_RNxC10num_bigint12H95i1GHMpVKD"
+; decl u0:371 func local "_RNxC10num_bigint12HdMYx0CdD3Of"
+; decl u0:443 func local "_RNxC10num_bigint12HgAHWR9HGR0U"
+; decl u0:448 func local "_RNxC10num_bigint12HgCcScaMMEKj"
+; decl u0:504 func local "_RNxC10num_bigint12HiKgTFL21l6I"
+; decl u0:596 func local "_RNxC10num_bigint12HlXzEYp1nAR5"
+; decl u0:645 func import "_RNvNtCsazjiGSRkgVH_4core9panicking16panic_in_cleanup"
+; decl u0:646 func import "_Unwind_Resume"
+; end clifv-extnames

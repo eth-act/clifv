@@ -1,4 +1,5 @@
 import FV.Opt.Proof.MidValFold
+import FV.Opt.Proof.MidValPhi
 
 /-!
 # Division by a constant is simulated by its input (#1119, `skeleton-removed div`)
@@ -10,8 +11,8 @@ import FV.Opt.Proof.MidValFold
 by `2^k` into `s = iconst 2^k-1; band x, s`. The inserted values `s` come from a supply `S` of
 values below `f.freshValue` that `f` neither defines nor reads (`supplyOk`), and the rewritten
 function keeps `f`'s fresh value. Here: **`divPre_simU : FunSimU f (divPre f bs)`** and
-**`foldPre_simU : FunSimU f (foldPre f bs)`** (`foldPre f bs = ConstPhi.run (foldBr (divPre f
-bs) bs)`).
+**`foldPre_simU : FunSimU f (foldPre f bs)`** (`foldPre f bs = ConstPhi.run (foldBr (divPre
+(phiPre f) bs) bs)`, `phiPre_simU`: `FV/Opt/Proof/MidValPhi.lean`).
 
 The frame relation `DR`: the same point of a block of `f`, the rewritten frame running the
 rewritten rest of that block's body (`BodyRel`), registers agreeing outside `S`, the same slots
@@ -968,8 +969,9 @@ theorem divPre_simU (f : Function) (bs : List BlockId) : FunSimU f (divPre f bs)
     · exact FunSimU.refl f
 
 /-- **The folded function without its unreachable blocks is simulated by its input**
-(divisions by constants rewritten, branches folded, constant-phi removal). -/
+(the validator's constant-phi removal `phiPre`, divisions by constants rewritten, branches
+folded, constant-phi removal). -/
 theorem foldPre_simU (f : Function) (bs : List BlockId) : FunSimU f (foldPre f bs) :=
-  (divPre_simU f bs).trans ((foldBr_simU _ bs).trans (ConstPhi.run_simU _))
+  (phiPre_simU f).trans ((divPre_simU _ bs).trans ((foldBr_simU _ bs).trans (ConstPhi.run_simU _)))
 
 end Opt.MidVal

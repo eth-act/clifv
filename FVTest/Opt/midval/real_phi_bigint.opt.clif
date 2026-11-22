@@ -1,0 +1,205 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10num_bigint12HdMYx0CdD3Of
+function u0:371(i64 sret, i64, i32) system_v {
+; symbol _RNxC10num_bigint12HdMYx0CdD3Of
+; instance Instance { def: Item(DefId(0:3388 ~ num_bigint[d9b7]::bigint::shift::{impl#87}::shr)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: bigint::BigInt, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(24 bytes), Size(0 bytes)], in_memory_order: [1, 0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14564007502729133149 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, ArgAbi { layout: TyAndLayout { ty: i32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(i32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462603027873795 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: bigint::BigInt, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(24 bytes), Size(0 bytes)], in_memory_order: [1, 0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: (..=9223372036854775807) | (18446744073709551615..) }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14564007502729133149 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } bigint::BigInt
+; arg   _1      = v1       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } bigint::BigInt
+; arg   _2      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) i32
+
+; kind  local ty                              size align (abi)
+; reuse _1    bigint::BigInt                   32b 8                storage=v1
+; ssa   _2    i32                               4b 4                var=1
+; ssa   _3    bool                              1b 1                var=2
+; ssa   _4    &'{erased} bigint::BigInt         8b 8                var=3
+; stack _5    biguint::BigUint                 24b 8                storage=ss0
+; stack _6    biguint::BigUint                 24b 8                storage=ss1
+; stack _7    biguint::BigUint                 24b 8                storage=ss2
+; stack _8    bigint::Sign                      1b 1                storage=ss3
+; ssa   _9    bool                              1b 1                var=4
+; stack _10   alloc::borrow::Cow<'{erased}, biguint::BigUint>   24b 8                storage=ss4
+
+    ss0 = explicit_slot 24, align = 8
+    ss1 = explicit_slot 24, align = 8
+    ss2 = explicit_slot 24, align = 8
+    ss3 = explicit_slot 1
+    ss4 = explicit_slot 24, align = 8
+    sig0 = (i64, i32) -> i8 uext system_v
+    sig1 = (i64 sret, i64, i32) system_v
+    sig2 = (i64 sret, i64, i32) system_v
+    sig3 = (i64 sret, i8, i64) system_v
+    sig4 = (i64) system_v
+    sig5 = (i64) system_v
+    sig6 = () system_v
+    fn0 = colocated u0:256 sig0 ; Instance { def: Item(DefId(0:615 ~ num_bigint[d9b7]::bigint::shift::shr_round_down)), args: [i32] }
+    fn1 = colocated u0:596 sig1 ; Instance { def: Item(DefId(0:1282 ~ num_bigint[d9b7]::biguint::shift::biguint_shr)), args: [i32] }
+    fn2 = colocated u0:504 sig2 ; Instance { def: Item(DefId(0:831 ~ num_bigint[d9b7]::biguint::addition::{impl#2}::add)), args: [] }
+    fn3 = colocated u0:448 sig3 ; Instance { def: Item(DefId(0:732 ~ num_bigint[d9b7]::bigint::{impl#26}::from_biguint)), args: [] }
+    fn4 = u0:646 sig4 ; "_Unwind_Resume"
+    fn5 = colocated u0:443 sig5 ; Instance { def: Shim(DropGlue(DefId(1:3580 ~ core[7b1c]::ptr::drop_glue), Some(biguint::BigUint))), args: [biguint::BigUint] }
+    fn6 = u0:645 sig6 ; "_RNvNtCsazjiGSRkgVH_4core9panicking16panic_in_cleanup"
+
+block0(v0: i64, v1: i64, v2: i32):
+    nop 
+; write_cvalue: Var(_2, var1): i32 <- ByVal(v2): i32
+    jump block1
+
+block1:
+    try_call fn0(v1, v2), sig0, block12(ret0), [ tag0: block13(exn0) ]
+
+block13(v5: i64) cold:
+    v3 = iconst.i8 1
+; write_cvalue: Var(_9, var4): bool <- ByVal(v3): bool
+; _4 = &_1
+; write_cvalue: Var(_4, var3): &'{erased} bigint::BigInt <- ByVal(v1): &'{erased} bigint::BigInt
+; 
+; _3 = bigint::shift::shr_round_down::<i32>(move _4, copy _2)
+    jump block9(v3, v5)  ; v3 = 1
+
+block12(v6: i8):
+    jump block2
+
+block2:
+    v9 = load.i64 notrap aligned v1
+    v10 = load.i64 notrap aligned v1+8
+    v11 = load.i64 notrap aligned v1+16
+    v8 = stack_addr.i64 ss1
+    store notrap aligned v9, v8
+    store notrap aligned v10, v8+8
+    store notrap aligned v11, v8+16
+; _10 = alloc::borrow::Cow::<'_, biguint::BigUint>::Owned(copy _6)
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(0) }, None): biguint::BigUint <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): biguint::BigUint
+    v14 = load.i64 notrap aligned v8
+    v15 = load.i64 notrap aligned v8+8
+    v13 = stack_addr.i64 ss4
+    store notrap aligned v14, v13
+    store notrap aligned v15, v13+8
+    store notrap aligned v11, v13+16
+; 
+; _5 = biguint::shift::biguint_shr::<i32>(move _10, move _2)
+    v18 = stack_addr.i64 ss0
+    try_call fn1(v18, v13, v2), sig1, block14, [ tag0: block15(exn0) ]
+
+block15(v20: i64) cold:
+    v48 = iconst.i8 0
+    jump block9(v48, v20)  ; v48 = 0
+
+block14:
+    jump block10
+
+block3:
+    v45 = stack_addr.i64 ss2
+    v21 = iconst.i32 1
+    try_call fn2(v45, v18, v21), sig2, block16, [ tag0: block17(exn0) ]  ; v21 = 1
+
+block17(v24: i64) cold:
+    v7 = iconst.i8 0
+; write_cvalue: Var(_9, var4): bool <- ByVal(v7): bool
+; _6 = move (_1.1: biguint::BigUint)
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): biguint::BigUint <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): biguint::BigUint
+    jump block9(v7, v24)  ; v7 = 0
+
+block16:
+    jump block11
+
+block4:
+    v27 = load.i64 notrap aligned v18
+    v28 = load.i64 notrap aligned v18+8
+    v29 = load.i64 notrap aligned v18+16
+    v26 = stack_addr.i64 ss2
+    store notrap aligned v27, v26
+    store notrap aligned v28, v26+8
+    store notrap aligned v29, v26+16
+; 
+; goto
+    jump block5
+
+block5:
+    v30 = load.i8 notrap v1+24
+    v31 = stack_addr.i64 ss3
+    store notrap v30, v31
+; 
+; _0 = bigint::BigInt::from_biguint(move _8, move _7)
+    v46 = stack_addr.i64 ss2
+    try_call fn3(v0, v30, v46), sig3, block18, [ tag0: block19(exn0) ]
+
+block19(v35: i64) cold:
+    v47 = iconst.i8 0
+    jump block9(v47, v35)  ; v47 = 0
+
+block18:
+    jump block6
+
+block6:
+    return
+
+block7(v36: i64) cold:
+; lib_call _Unwind_Resume
+    call fn4(v36)
+    trap user1
+
+block8 cold:
+    try_call fn5(v1), sig5, block7(v41), [ tag0: block21(exn0) ]
+
+block21(v37: i64) cold:
+    call fn6()
+    trap user1
+
+block9(v38: i8, v41: i64) cold:
+    brif v38, block8, block7(v41)
+
+block10:
+    brif.i8 v6, block3, block4
+
+block11:
+    jump block5
+}
+
+; clifv-extnames 1
+; userextname0 = u0:256
+; userextname1 = u0:596
+; userextname2 = u0:504
+; userextname3 = u0:448
+; userextname4 = u0:646
+; userextname5 = u0:443
+; userextname6 = u0:645
+; decl u0:256 func local "_RNxC10num_bigint12H95i1GHMpVKD"
+; decl u0:371 func local "_RNxC10num_bigint12HdMYx0CdD3Of"
+; decl u0:443 func local "_RNxC10num_bigint12HgAHWR9HGR0U"
+; decl u0:448 func local "_RNxC10num_bigint12HgCcScaMMEKj"
+; decl u0:504 func local "_RNxC10num_bigint12HiKgTFL21l6I"
+; decl u0:596 func local "_RNxC10num_bigint12HlXzEYp1nAR5"
+; decl u0:645 func import "_RNvNtCsazjiGSRkgVH_4core9panicking16panic_in_cleanup"
+; decl u0:646 func import "_Unwind_Resume"
+; end clifv-extnames
