@@ -17,6 +17,12 @@ theorem mspec_pure {sb : Nat} {i : MInst} {us outs : List CV}
     rcases us with _ | ⟨a, _ | ⟨b, us⟩⟩ <;> simp [mspec, ispec, ispecFP] at h
     obtain ⟨_, _, _, rfl, rfl⟩ := h
     exact ⟨rfl, rfl⟩
+  -- the float-to-integer conversion (#1141) runs by `ispecFP` too: same world, `next`
+  by_cases hfc : ∃ op rd rn, i = .fpuToInt op rd rn
+  · obtain ⟨op, rd, rn, rfl⟩ := hfc
+    rcases us with _ | ⟨a, _ | ⟨b, us⟩⟩ <;> simp [mspec, ispec, ispecFP] at h
+    obtain ⟨_, rfl, rfl⟩ := h
+    exact ⟨rfl, rfl⟩
   unfold mspec at h
   split at h <;> try { simp_all [pureForm, pureAlu] }
   unfold ispec at h
