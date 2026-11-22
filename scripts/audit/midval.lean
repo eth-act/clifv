@@ -22,6 +22,7 @@ import FV.Opt.Proof.MidValDiv
 import FVTest.Opt.MidValDivWitness
 import FV.Opt.Proof.MidValPhi
 import FVTest.Opt.MidValPhiWitness
+import FVTest.Opt.MidValPhiMWitness
 import FVTest.Opt.MidValZeroWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
@@ -995,6 +996,35 @@ import FVTest.Opt.MidValZeroWitness
 #print axioms Opt.MidVal.PhiWitness.real_criterion_c0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.PhiWitness.real_criterion_checked -- witness: native_decide
 #print axioms Opt.MidVal.PhiWitness.real_criterion_sim -- witness: native_decide
+
+-- #1119 removed block parameters in functions with a call_indirect (FV/Opt/Proof/MidValPhiM.lean;
+-- phiPre_simU above now also goes through phiOkM_simU)
+#print axioms Opt.ConstPhi.CRel.ciM
+#print axioms Opt.ConstPhi.CR.isSimWUM
+#print axioms Opt.MidVal.phiOkM_facts
+#print axioms Opt.MidVal.phiOkM_simU
+-- witnesses (FVTest/Opt/MidValPhiMWitness.lean)
+#print axioms Opt.MidVal.PhiMWitness.ci_phiOk -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.ci_phiOkM -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.ci_params -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.pos_ci -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.pos_ci_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.twoMF_text -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.wrongMG_text -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.twoM_phiPre -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.twoM_phiOkM_wrong -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.neg_twoM -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.twoM_not_sim
+#print axioms Opt.MidVal.PhiMWitness.twoM_rejected
+#print axioms Opt.MidVal.PhiMWitness.real_proptest_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_proptest_checked -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_proptest_sim -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_toml_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_toml_checked -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_toml_sim -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_memchr_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_memchr_checked -- witness: native_decide
+#print axioms Opt.MidVal.PhiMWitness.real_memchr_sim -- witness: native_decide
 
 -- #1119 unsigned comparisons with 0 in the fold constants (FV/Opt/Proof/MidValFold.lean: zeroCmp_sound,
 -- used by constEval_sound / constEval_pure)

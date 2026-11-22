@@ -1,0 +1,225 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC6memchr12HjadP9nQLgKF
+function u0:94(i64, i64, i64) -> i64, i64 system_v {
+; symbol _RNxC6memchr12HjadP9nQLgKF
+; instance Instance { def: Item(DefId(0:599 ~ memchr[91af]::memmem::searcher::{impl#8}::find)), args: ['{erased}] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut memmem::searcher::Pre<'_>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &[u8], layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u64 is .., b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16 } }, mode: Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: core::option::Option<usize>, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: u64 is 0..=1, b: union u64, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(8 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(16 bytes), backend_repr: ScalarPair { a: u64 is 0..=1, b: union u64, b_offset: Size(8 bytes) }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: None, uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4141658672642867039 } }, mode: Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: , arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; stack _0    core::option::Option<usize>      16b 8                storage=ss0
+; ret   _0      -          Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: , arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) core::option::Option<usize>
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut memmem::searcher::Pre<'{erased}>
+; arg   _2      = v1,v2    Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} [u8]
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut memmem::searcher::Pre<'{erased}>    8b 8                var=1
+; ssa   _2    &'{erased} [u8]                  16b 8                var=(2, 3)
+; ssa   _3    usize                             8b 8                var=4
+; ssa   _4    &'{erased} memmem::searcher::Prefilter    8b 8                var=5
+; ssa   _5    &'{erased} mut memmem::searcher::PrefilterState    8b 8                var=6
+; ssa   _6    Binder { value: unsafe fn(&'^0 memmem::searcher::Prefilter, &'^1 [u8]) -> core::option::Option<usize>, bound_vars: [Region(BrAnon), Region(BrAnon)] }    8b 8                var=7
+; ssa   _7    isize                             8b 8                var=8
+; ssa   _8    u32                               4b 4                var=9
+; ssa   _9    u32                               4b 4                var=10
+; ssa   _10   u32                               4b 4                var=11
+; ssa   _11   u32                               4b 4                var=12
+; ssa   _12   bool                              1b 1                var=13
+; ssa   _13   u32                               4b 4                var=14
+
+    ss0 = explicit_slot 16, align = 8
+    sig0 = (i64, i64, i64) -> i64, i64 system_v
+
+                                block0(v0: i64, v1: i64, v2: i64):
+                                    v3 -> v0
+                                    v12 -> v0
+                                    v6 -> v1
+                                    v14 -> v1
+                                    v7 -> v2
+                                    v15 -> v2
+                                    nop 
+; write_cvalue: Var(_1, var1): &'{erased} mut memmem::searcher::Pre<'{erased}> <- ByVal(v0): &'{erased} mut memmem::searcher::Pre<'{erased}>
+; write_cvalue: VarPair(_2, var2, var3): &'{erased} [u8] <- ByValPair(v1, v2): &'{erased} [u8]
+                                    jump block1
+
+                                block1:
+                                    nop 
+; _4 = no_retag copy ((*_1).1: &memmem::searcher::Prefilter)
+; write_cvalue: Var(_4, var5): &'{erased} memmem::searcher::Prefilter <- ByRef(Pointer { base: Addr(v3), offset: Offset32(8) }, None): &'{erased} memmem::searcher::Prefilter
+@0000                               v4 = load.i64 notrap v3+8
+; _6 = copy ((*_4).0: for<'a, 'b> unsafe fn(&'a memmem::searcher::Prefilter, &'b [u8]) -> core::option::Option<usize>)
+; write_cvalue: Var(_6, var7): Binder { value: unsafe fn(&'^0 memmem::searcher::Prefilter, &'^1 [u8]) -> core::option::Option<usize>, bound_vars: [Region(BrAnon), Region(BrAnon)] } <- ByRef(Pointer { base: Addr(v4), offset: Offset32(48) }, None): Binder { value: unsafe fn(&'^0 memmem::searcher::Prefilter, &'^1 [u8]) -> core::option::Option<usize>, bound_vars: [Region(BrAnon), Region(BrAnon)] }
+@0001                               v5 = load.i64 notrap v4+48
+; 
+; _0 = copy _6(move _4, copy _2)
+@0001                               nop 
+; indirect call
+@0001                               nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &memmem::searcher::Prefilter, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(64 bytes), pointee_align: Some(Align(16 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &[u8], layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u64 is .., b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16 } }, mode: Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: core::option::Option<usize>, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: u64 is 0..=1, b: union u64, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(8 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(16 bytes), backend_repr: ScalarPair { a: u64 is 0..=1, b: union u64, b_offset: Size(8 bytes) }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: None, uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4141658672642867039 } }, mode: Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: , arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+@0001                               v8, v9 = call_indirect sig0, v5(v4, v6, v7)
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): core::option::Option<usize> <- ByValPair(v8, v9): core::option::Option<usize>
+@0001                               v10 = stack_addr.i64 ss0
+@0001                               store notrap v8, v10
+@0001                               v11 = stack_addr.i64 ss0+8
+@0001                               store notrap v9, v11
+@0001                               jump block2
+
+                                block2:
+@0001                               nop 
+; _5 = no_retag copy ((*_1).0: &mut memmem::searcher::PrefilterState)
+; write_cvalue: Var(_5, var6): &'{erased} mut memmem::searcher::PrefilterState <- ByRef(Pointer { base: Addr(v12), offset: Offset32(0) }, None): &'{erased} mut memmem::searcher::PrefilterState
+@0003                               v13 = load.i64 notrap v12
+                                    v52 -> v13
+                                    v53 -> v13
+; _3 = PtrMetadata(copy _2)
+; write_cvalue: Var(_3, var4): usize <- ByVal(v15): usize
+; _7 = discriminant(_0)
+@0006                               v16 = stack_addr.i64 ss0
+@0006                               v17 = load.i64 notrap v16
+; write_cvalue: Var(_7, var8): isize <- ByVal(v17): isize
+; 
+; switchInt(move _7)
+@0007                               v18 = iconst.i64 0xffff_ffff
+@0007                               v19 = icmp ugt v17, v18  ; v18 = 0xffff_ffff
+@0007                               brif v19, block4, block12
+
+                                block12:
+@0007                               v20 = ireduce.i32 v17
+@0007                               br_table v20, block4, [block5, block6]
+
+                                block3(v21: i64, v57: i64):
+                                    v37 -> v21
+                                    v45 -> v21
+                                    v54 -> v21
+                                    v55 -> v21
+                                    v39 -> v57
+                                    v43 -> v57
+@0007                               nop 
+; _9 = copy ((*_5).0: u32)
+; write_cvalue: Var(_9, var10): u32 <- ByRef(Pointer { base: Addr(v21), offset: Offset32(0) }, None): u32
+@0008                               v22 = load.i32 notrap v21
+; 
+; _8 = core::intrinsics::saturating_add::<u32>(move _9, const 1_u32)
+@0009                               v23 = iconst.i32 1
+@0009                               v24 = iconst.i32 0
+@0009                               v25 = iconst.i32 -1
+@0009                               v26 = iadd v22, v23  ; v23 = 1
+@0009                               v27 = icmp ult v26, v22
+@0009                               v28 = select v27, v25, v26  ; v25 = -1
+                                    v38 -> v28
+; write_cvalue: Var(_8, var9): u32 <- ByVal(v28): u32
+@0009                               jump block8
+
+                                block4 cold:
+@0009                               nop 
+; 
+; unreachable
+@0006                               trap user1
+
+                                block5:
+@0006                               nop 
+; 
+; goto
+@000a                               jump block3(v52, v15)
+
+                                block6:
+@000a                               nop 
+; _3 = copy ((_0 as Some).0: usize)
+; write_cvalue: Var(_3, var4): usize <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(8) }, None): usize
+@000b                               v29 = stack_addr.i64 ss0+8
+@000b                               v30 = load.i64 notrap v29
+; 
+; goto
+@000c                               jump block3(v53, v30)
+
+                                block7(v31: i64, v32: i32):
+@000c                               nop 
+; ((*_5).1: u32) = move _10
+; write_cvalue: Addr(Pointer { base: Addr(v31), offset: Offset32(4) }, None): u32 <- ByVal(v32): u32
+@000d                               store notrap v32, v31+4
+; 
+; return
+@000f                               v33 = stack_addr.i64 ss0
+@000f                               v34 = load.i64 notrap v33
+@000f                               v35 = stack_addr.i64 ss0+8
+@000f                               v36 = load.i64 notrap v35
+@000f                               return v34, v36
+
+                                block8:
+@000f                               nop 
+; ((*_5).0: u32) = move _8
+; write_cvalue: Addr(Pointer { base: Addr(v37), offset: Offset32(0) }, None): u32 <- ByVal(v38): u32
+@0011                               store.i32 notrap v38, v37
+; _12 = Gt(copy _3, const 4294967295_usize)
+@0013                               v40 = iconst.i64 0xffff_ffff
+@0013                               v41 = icmp.i64 ugt v39, v40  ; v40 = 0xffff_ffff
+; write_cvalue: Var(_12, var13): bool <- ByVal(v41): bool
+; 
+; switchInt(move _12)
+@0013                               brif v41, block9, block10
+
+                                block9:
+@0013                               nop 
+; _10 = const u32::MAX
+@0015                               v42 = iconst.i32 -1
+; write_cvalue: Var(_10, var11): u32 <- ByVal(v42): u32
+; 
+; goto
+@0015                               jump block7(v54, v42)  ; v42 = -1
+
+                                block10:
+@0015                               nop 
+; _13 = copy _3 as u32 (IntToInt)
+@0016                               v44 = ireduce.i32 v43
+; write_cvalue: Var(_13, var14): u32 <- ByVal(v44): u32
+; _11 = copy ((*_5).1: u32)
+; write_cvalue: Var(_11, var12): u32 <- ByRef(Pointer { base: Addr(v45), offset: Offset32(4) }, None): u32
+@0017                               v46 = load.i32 notrap v45+4
+; 
+; _10 = core::intrinsics::saturating_add::<u32>(move _11, move _13)
+@0009                               v47 = iconst.i32 0
+@0009                               v48 = iconst.i32 -1
+@0009                               v49 = iadd v46, v44
+@0009                               v50 = icmp ult v49, v46
+@0009                               v51 = select v50, v48, v49  ; v48 = -1
+                                    v56 -> v51
+; write_cvalue: Var(_10, var11): u32 <- ByVal(v51): u32
+@0009                               jump block11
+
+                                block11:
+@0009                               nop 
+; 
+; goto
+@0018                               jump block7(v55, v56)
+}
+
+; clifv-extnames 1
+; decl u0:94 func local "_RNxC6memchr12HjadP9nQLgKF"
+; end clifv-extnames

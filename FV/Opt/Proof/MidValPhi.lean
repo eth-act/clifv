@@ -1,4 +1,5 @@
 import FV.Opt.Proof.ConstPhiSimU
+import FV.Opt.Proof.MidValPhiM
 import FV.Opt.MidValFold
 
 /-!
@@ -96,8 +97,10 @@ theorem phiPre_simU (f : Function) : FunSimU f (phiPre f) := by
   dsimp only
   split
   · rename_i h
-    simp only [Bool.and_eq_true] at h
-    exact phiOk_simU h.2
+    simp only [Bool.and_eq_true, Bool.or_eq_true] at h
+    rcases h.2 with h2 | h2
+    · exact phiOk_simU h2
+    · exact phiOkM_simU h2
   · exact FunSimU.refl f
 
 end Opt.MidVal

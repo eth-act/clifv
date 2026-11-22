@@ -1,0 +1,110 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC8proptest12HhalgfOZBPGD
+function u0:3222(i64, i64, i64) -> i64 system_v {
+; symbol _RNxC8proptest12HhalgfOZBPGD
+; instance Instance { def: Item(DefId(37:114 ~ getrandom[9c05]::backends::linux_android_with_fallback::fill_inner::{closure#0})), args: [i8, Binder { value: extern "RustCall" fn((&'^0 mut [core::mem::MaybeUninit<u8>],)) -> isize, bound_vars: [Region(BrAnon)] }, (&'{erased} Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] },)] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &{closure@getrandom::backends::linux_android_with_fallback::fill_inner::{closure#0}}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &mut [core::mem::MaybeUninit<u8>], layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u64 is .., b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16 } }, mode: Pair(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: isize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(i64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4294967303 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    isize                             8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) isize
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} Closure(DefId(37:114 ~ getrandom[9c05]::backends::linux_android_with_fallback::fill_inner::{closure#0}), [i8, Binder { value: extern "RustCall" fn((&'^0 mut [core::mem::MaybeUninit<u8>],)) -> isize, bound_vars: [Region(BrAnon)] }, (&'{erased} Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] },)])
+; arg   _2      = v1,v2    Pair(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} mut [core::mem::MaybeUninit<u8>]
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} Closure(DefId(37:114 ~ getrandom[9c05]::backends::linux_android_with_fallback::fill_inner::{closure#0}), [i8, Binder { value: extern "RustCall" fn((&'^0 mut [core::mem::MaybeUninit<u8>],)) -> isize, bound_vars: [Region(BrAnon)] }, (&'{erased} Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] },)])    8b 8                var=2
+; stack _2    &'{erased} mut [core::mem::MaybeUninit<u8>]   16b 8                storage=ss0
+; ssa   _3    Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] }    8b 8                var=3
+; ssa   _4    *mut core::ffi::c_void            8b 8                var=4
+; ssa   _5    usize                             8b 8                var=5
+; ssa   _6    &'{erased} Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] }    8b 8                var=6
+; ssa   _7    *mut [core::mem::MaybeUninit<u8>]   16b 8                var=(7, 8)
+; ssa   _8    bool                              1b 1                var=9
+; ssa   _9    usize                             8b 8                var=10
+; ssa   _10   bool                              1b 1                var=11
+; ssa   _11   bool                              1b 1                var=12
+
+    ss0 = explicit_slot 16, align = 8
+    sig0 = (i64, i64, i32) -> i64 system_v
+
+block0(v0: i64, v1: i64, v2: i64):
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} Closure(DefId(37:114 ~ getrandom[9c05]::backends::linux_android_with_fallback::fill_inner::{closure#0}), [i8, Binder { value: extern "RustCall" fn((&'^0 mut [core::mem::MaybeUninit<u8>],)) -> isize, bound_vars: [Region(BrAnon)] }, (&'{erased} Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] },)]) <- ByVal(v0): &'{erased} Closure(DefId(37:114 ~ getrandom[9c05]::backends::linux_android_with_fallback::fill_inner::{closure#0}), [i8, Binder { value: extern "RustCall" fn((&'^0 mut [core::mem::MaybeUninit<u8>],)) -> isize, bound_vars: [Region(BrAnon)] }, (&'{erased} Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] },)])
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): &'{erased} mut [core::mem::MaybeUninit<u8>] <- ByValPair(v1, v2): &'{erased} mut [core::mem::MaybeUninit<u8>]
+    v3 = stack_addr.i64 ss0
+    store notrap v1, v3
+    v4 = stack_addr.i64 ss0+8
+    store notrap v2, v4
+    jump block1
+
+block1:
+    v6 = load.i64 notrap v0
+; _3 = copy (*_6)
+; write_cvalue: Var(_3, var3): Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] } <- ByRef(Pointer { base: Addr(v6), offset: Offset32(0) }, None): Binder { value: unsafe extern "C { unwind: false }" fn(*mut core::ffi::c_void, usize, u32) -> isize, bound_vars: [] }
+    v7 = load.i64 notrap v6
+; _7 = &raw mut (*_2)
+    v9 = load.i64 notrap v3
+    v16 = iconst.i32 0
+    v17 = call_indirect sig0, v7(v9, v2, v16)  ; v16 = 0
+; write_cvalue: Var(_0, var1): isize <- ByVal(v17): isize
+    jump block2
+
+block2:
+    v19 = iconst.i64 0
+    v20 = icmp.i64 sge v17, v19  ; v19 = 0
+; write_cvalue: Var(_8, var9): bool <- ByVal(v20): bool
+; 
+; switchInt(move _8)
+    brif v20, block4, block5
+
+block4:
+    jump block9
+
+block5:
+    return v17
+
+block6:
+    return v17
+
+block7:
+    return v17
+
+block9:
+    v30 = icmp.i64 ule v17, v2
+; write_cvalue: Var(_10, var11): bool <- ByVal(v30): bool
+; 
+; switchInt(move _10)
+    brif v30, block6, block7
+}
+
+; clifv-extnames 1
+; decl u0:3222 func local "_RNxC8proptest12HhalgfOZBPGD"
+; end clifv-extnames
