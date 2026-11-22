@@ -12,7 +12,10 @@ folded `f` (the theorem stays about the original `f`: the fold is proved to be s
 input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
 
 * `constEval K i`: the constant value of a pure, non-partial instruction whose operands all have
-  constants in `K` (`Clif.evalInst` in a frame holding `K`), or of an `iconst`.
+  constants in `K` (`Clif.evalInst` in a frame holding `K`), of an `iconst`, or of an unsigned
+  comparison with 0 whatever the other operand (`zeroCmp`: `icmp ult x, 0` and `icmp ugt 0, x`
+  are 0, `icmp uge x, 0` and `icmp ule 0, x` are 1; Cranelift's mid-end folds the branches on
+  them, `rewrite:domtree`/`rewrite:blocks`).
 * `kTable f` (untrusted): constants of `f`'s values, by passes over the statements in layout
   order; `kLook f.freshValue (kTable f)` keeps only values below `f.freshValue`.
 * `kOk f K` (the checker the proof relies on): no block parameter has a constant; every statement
@@ -31,12 +34,18 @@ input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
   windows, is unchanged; otherwise `f`. Divisor 0, `srem`, `sdiv` by other constants (rounding
   toward zero, the `-1` trap) and the magic-number divisions are left alone
   (`Opt.MidVal.divPre_simU`, `FV/Opt/Proof/MidValDiv.lean`).
-* `foldPre f bs = ConstPhi.run (foldBr (divPre f bs) bs)`: the divisions rewritten and the
-  branches folded, without the blocks that became unreachable (`Opt.removeUnreachable`, and
-  constant-phi removal, inside `ConstPhi.run`).
-* `foldBlocks hints`: the prep requests (fold and division) among the hints of `checkCertC`
-  (`FV/Opt/MidValCond.lean`): a hinted block with an empty wrapper chain, which `condPrep` leaves
-  unchanged.
+* `phiPre f` (removed block parameters, `shape:params`/`jump arity`): `ConstPhi`'s solution
+  applied when `phiOk` accepts it, which is `ConstPhi.cpOk` without two conditions the backend
+  needs for the function it compiles (`ConstPhi.run f`: in a function with a `try_call`, an
+  unchanged fresh value; the result's well-formedness); Cranelift removes those parameters
+  (`Opt.MidVal.phiPre_simU`, `FV/Opt/Proof/MidValPhi.lean`).
+* `foldPre f bs = ConstPhi.run (foldBr (divPre (phiPre f) bs) bs)`: the parameters removed (before
+  the folds, as Cranelift's `remove_constant_phis` runs before its mid-end), the divisions
+  rewritten and the branches folded, without the blocks that became unreachable
+  (`Opt.removeUnreachable`, and constant-phi removal, inside `ConstPhi.run`).
+* `foldBlocks hints`: the prep requests (fold, division, and the entry block alone for
+  `phiPre`) among the hints of `checkCertC` (`FV/Opt/MidValCond.lean`): a hinted block with an
+  empty wrapper chain, which `condPrep` leaves unchanged.
 * `foldCands f g` (untrusted): the blocks whose `brif`/`br_table` is a `jump` in `g`, and the
   blocks with a division.
 -/
@@ -50,8 +59,22 @@ slots (a pure instruction with operands reads neither). -/
 def kFrame (K : ValueId → Option Val) : Frame :=
   { func := default, regs := K, slots := [], body := [], term := .ret [] }
 
-/-- The constant value of `i` when its operands have the constants `K`: an `iconst`, or a pure,
-non-partial instruction with operands, evaluated by `Clif.evalInst` (module doc). -/
+/-- An unsigned comparison with 0 whose value does not depend on the other operand: `x <u 0`
+and `0 >u x` are false, `x ≥u 0` and `0 ≤u x` true, when the operand compared with has the
+constant 0 of the compared type in `K` (module doc). -/
+def zeroCmp (K : ValueId → Option Val) : Inst → Option Val
+  | .icmp cc ty x y =>
+    match cc with
+    | .ult => if K y == some ⟨ty, 0⟩ then some ⟨.i8, 0⟩ else none
+    | .uge => if K y == some ⟨ty, 0⟩ then some ⟨.i8, 1⟩ else none
+    | .ule => if K x == some ⟨ty, 0⟩ then some ⟨.i8, 1⟩ else none
+    | .ugt => if K x == some ⟨ty, 0⟩ then some ⟨.i8, 0⟩ else none
+    | _ => none
+  | _ => none
+
+/-- The constant value of `i` when its operands have the constants `K`: an `iconst`, a pure,
+non-partial instruction with operands, evaluated by `Clif.evalInst`, or an unsigned comparison
+with 0 (`zeroCmp`; module doc). -/
 def constEval (K : ValueId → Option Val) (i : Inst) : Option Val :=
   match i with
   | .iconst ty imm => some ⟨ty, imm⟩
@@ -60,7 +83,7 @@ def constEval (K : ValueId → Option Val) (i : Inst) : Option Val :=
       match evalInst (kFrame K) Mem.empty i with
       | .ok ([v], _) => some v
       | _ => none
-    else none
+    else zeroCmp K i
 
 /-- One pass of `kTable` over `f`'s statements in layout order. -/
 def kPass (f : Function) (hm : Std.HashMap ValueId Val) : Std.HashMap ValueId Val :=
@@ -226,11 +249,31 @@ def divPre (f : Function) (bs : List BlockId) : Function :=
       if supplyOk f S && f'.freshValue == fv then f' else f
     else f
 
-/-- **The folded function without its unreachable blocks** (module doc): divisions by
-constants rewritten (`divPre`), constant-condition branches folded (`foldBr`), then
-constant-phi removal. -/
+/-! ## Constant-phi removal without the backend's fresh-value condition -/
+
+/-- **The validator's constant-phi checker**: `ConstPhi.cpOk` without its last two conjuncts,
+the well-formedness of the result and, in a function with a `try_call`, the unchanged fresh
+value. Both are for the backend, which compiles `ConstPhi.run f`; the copy `phiPre f` only
+exists inside the check, and the soundness proof (`ConstPhi.cpOk_facts`) uses neither. -/
+def phiOk (f : Function) (sol : List (ValueId × ValueId)) : Bool :=
+  match Opt.check f with
+  | .error _ => false
+  | .ok fi =>
+    let m := ConstPhi.solMap sol
+    ConstPhi.keysOk (defMap f) fi.cfg.idom m sol && ConstPhi.edgesOk fi.cfg.index m f
+
+/-- **Constant-phi removal for the comparison** (module doc): `ConstPhi`'s solution of `f`
+applied when `phiOk` accepts it, `f` otherwise. -/
+def phiPre (f : Function) : Function :=
+  let sol := ConstPhi.solve f
+  if !sol.isEmpty && phiOk f sol then ConstPhi.apply f sol else f
+
+/-- **The folded function without its unreachable blocks** (module doc): the parameters
+`ConstPhi.run` kept removed (`phiPre`, before the folds, where Cranelift removes them),
+divisions by constants rewritten (`divPre`), constant-condition branches folded (`foldBr`),
+then constant-phi removal. -/
 def foldPre (f : Function) (bs : List BlockId) : Function :=
-  ConstPhi.run (foldBr (divPre f bs) bs)
+  ConstPhi.run (foldBr (divPre (phiPre f) bs) bs)
 
 /-- The fold requests among `checkCertC`'s hints: the blocks hinted with an empty wrapper
 chain. -/

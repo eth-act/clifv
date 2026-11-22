@@ -742,6 +742,16 @@ byte-identical to stock 92,018 → 92,975 of 121,767 (75.6 % → 76.4 %); `cargo
 by a power of two as Cranelift does; the magic-number divisions (394 of the 121,879 pairs) stay
 rejected.
 
+Removed block parameters and unsigned comparisons with 0 (docs/contracts/midval.md; measured
+2026-11-22 on clifv-remote, main 8e750ac2f's tools against this one's, the same 9 crates and
+command): binary check 48 of 48 both ways, 121,767 verified both ways, left out 1 → 1, test
+outcomes the same as stock's on all 9 both ways; validated 111,476 → 113,187 (91.5 % → 93.0 %; up
+on 8 crates, num-traits unchanged); byte-identical to stock 93,039 → 93,799 of 121,767 (76.4 % →
+77.0 %); `cargo fv test` wall summed 5,014 → 4,542 s. The validator removes the block parameters
+that `ConstPhi.run` keeps for the backend but Cranelift removes (functions with a `try_call`), and
+folds the branches on `icmp ult x, 0`, `uge x, 0`, `ule 0, x` and `ugt 0, x`. The shared pair corpus
+these validator measurements use is `~/clifv/shared/midval-corpus/` on clifv-remote (README there).
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of

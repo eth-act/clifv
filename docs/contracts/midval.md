@@ -189,6 +189,8 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 4: neutral and affine constants, constants right, narrowing (`Norm.stdT f = Norm.narrowN f 3`) | `idStep`, `affStep`, `swapStep`, `narrowStep` after the typed rules | `ruleSoundT_idStep`, `ruleSound_affStep`, `ruleSound_swapStep`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 108,839 (89.3 %) | not measured on the pairs | measured instead with `cargo fv test --release --lean-link --verified` on the 9 crates: 71.0 % → 73.9 % (86,490 → 89,929 of 121,767) |
 | fold: constant-condition branches (`checkCertC`, fold requests) | none (`foldPre f bs` re-check) | `foldBr_simU`, `foldPre_simU`, `check_soundC` | 111,671 (91.6 %) | not measured on the pairs | 9 crates: 73.9 % → 75.6 % (89,929 → 92,018 of 121,767) |
 | division by a constant (`checkCertC`, prep requests) | none (`divPre` inside `foldPre f bs`) | `divPre_simU`, `foldPre_simU`, `check_soundC` | 112,950 (92.7 %) | not measured on the pairs | 9 crates: 75.6 % → 76.4 % (92,018 → 92,975 of 121,767) |
+| removed block parameters (`checkCertC`, prep requests) | none (`phiPre` inside `foldPre f bs`) | `phiOk_simU`, `phiPre_simU`, `foldPre_simU`, `check_soundC` | 114,082 (93.6 %) | not measured on the pairs | 9 crates: with the next row |
+| unsigned comparisons with 0 (fold constants) | none (`zeroCmp` in `constEval`) | `zeroCmp_sound`, `constEval_sound`, `foldBr_simU`, `check_soundC` | 114,829 (94.2 %) | not measured on the pairs | 9 crates: see the bullet below |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -541,3 +543,60 @@ counterfactual.)
     (90.5 → 91.5 %, up on every crate), byte-identical to stock 92,018 → 92,975 (75.6 → 76.4 %).
     Without #1154 crypto-bigint's test executables failed `lean-link`: two validated `rand`
     functions whose folded panic block held the only references to their unit's `.data.rel.ro`.
+* **Removed block parameters (`shape:params`, `jump`/`brif`/`br_table arity`)** (agent
+  MidendNext1; classification #1119 issuecomment-7074691069: 2,250 pairs). `ConstPhi.run` (what
+  the backend compiles, and the `f` every check starts from) keeps a parameter Cranelift's
+  `remove_constant_phis` removes in two cases: in a function with a `try_call` when the removal
+  lowers the fresh value (`cpOk`'s backend condition: the windows where `try_call` results are
+  bound; 1,025 pairs + 257 after the fold prep), and when `Opt.check` rejects `f` because it
+  resolves no signature declaration (`call_indirect` with results; 870 pairs, not covered: the
+  proof-side `Wf` reads result types without them).
+  - Compiler side (`FV/Opt/MidValFold.lean`): `phiOk f sol` is `ConstPhi.cpOk` without its last
+    two conjuncts (the result's well-formedness and that fresh-value condition); `phiPre f`
+    applies `ConstPhi.solve f` when `phiOk` accepts it. `foldPre f bs = ConstPhi.run (foldBr
+    (divPre (phiPre f) bs) bs)`: the parameters go first, as in Cranelift, where the removal runs
+    before the mid-end (removing them after the folds instead accepted 194 fewer pairs). `checkC`
+    requests the entry block alone when no block is to be folded or divided, so the re-check
+    runs `foldPre` (`checkCertC`'s fold requests, unchanged).
+  - Proof (`FV/Opt/Proof/MidValPhi.lean`): **`phiOk_facts`** (the facts `ConstPhi.CpFacts` the
+    proof of `ConstPhi.cpOk_simU` uses, from `phiOk`), **`phiOk_simU : phiOk f sol = true →
+    FunSimU f (ConstPhi.apply f sol)`** (that proof: the two sides' fresh values are never
+    compared, results and payloads are bound at each side's own one), **`phiPre_simU`**;
+    `foldPre_simU` (same statement) now starts with `phiPre_simU`.
+  - Witnesses (`FVTest/Opt/MidValPhiWitness.lean`): a `try_call` function whose `block3(v3)`
+    only receives `v0`, kept by `ConstPhi.run` and removed by `phiPre` (`try_params`), accepted
+    against Cranelift's `g` and rejected without the prep; negative: a parameter receiving two
+    values is not removed (`two_phiPre`), `phiOk` rejects the solution naming one of them
+    (`two_phiOk_wrong`), and the pair against a `g` returning that value is rejected and no
+    simulation, so every certificate with every hint list is rejected (`two_rejected`); three
+    real pairs (num_bigint, dissimilar, criterion), each rejected by `checkC0`, `checkCertC`
+    decided, simulation and program refinement.
+  - Measured (2026-11-22, the shared corpus `~/clifv/shared/midval-corpus` on clifv-remote,
+    `midval-check --cert --cond`, main 8e750ac2f's binary against this one): 112,950 → 114,082
+    (+1,132), 0 lost, every accepted pair re-checks `ok`.
+* **Unsigned comparisons with 0 in the fold constants (`rewrite:domtree`, `rewrite:blocks`)**
+  (agent MidendNext1). Cranelift's mid-end folds `icmp ult x, 0` and `icmp ugt 0, x` to 0 and
+  `icmp uge x, 0` and `icmp ule 0, x` to 1 whatever `x` is, and then the branch on them (1,046 of
+  the 2,000 branch-fold rejections: 435 `rewrite:domtree`, the other target still reachable; 611
+  `rewrite:blocks`).
+  - Compiler side: `zeroCmp K i` gives those constants when the operand compared with has the
+    constant 0 of the compared type in `K`; `constEval K i` uses it when the instruction is not
+    evaluated from constants. `kOk` checks the table as before.
+  - Proof (`FV/Opt/Proof/MidValFold.lean`): **`zeroCmp_sound`** (in a frame where the zero
+    operand holds its constant or nothing, an `icmp` that evaluates gives `zeroCmp`'s value:
+    `icmp_ult_zero`, `icmp_uge_zero`, `icmp_ule_zero`, `icmp_ugt_zero`), `zeroCmp_pure`;
+    `constEval_sound` and `constEval_pure` (same statements) use them, so `foldBr_simU`,
+    `divPre_simU` and `foldPre_simU` are unchanged.
+  - Witnesses (`FVTest/Opt/MidValZeroWitness.lean`): the four forms against the `jump` Cranelift
+    leaves, accepted and rejected without the rule; negative: `icmp ugt x, 0`, `icmp ult 0, x`
+    and `icmp ult x, 1` are not folded and their pairs rejected, `icmp ugt x, 0` against a `jump`
+    is no simulation, so every certificate with every hint list is rejected (`ugt_rejected`);
+    three real pairs (toml and `char::is_whitespace`: `icmp ule 0, x`, `rewrite:domtree`;
+    serde_core: `icmp ult x, 0`, `rewrite:blocks`).
+  - Measured (the same corpus and command): 114,082 → 114,829 (+747), 0 lost, every accepted
+    pair re-checks `ok`; both rules together 112,950 → 114,829 (+1,879, 92.7 % → 94.2 %).
+  - Both rules, `cargo fv test --release --lean-link --verified` on the 9 crates (2026-11-22,
+    clifv-remote, main 8e750ac2f's tools against this one's): binary check 48/48 → 48/48,
+    verified 121,767 → 121,767, left out of the region 1 → 1, tests the same as stock's on all 9
+    both ways, validated 111,476 → 113,187 (91.5 → 93.0 %; up on 8 crates, num-traits unchanged),
+    byte-identical to stock 93,039 → 93,799 (76.4 → 77.0 %).

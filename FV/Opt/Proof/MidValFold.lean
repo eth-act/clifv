@@ -2,6 +2,7 @@ import FV.Opt.Proof.MidValCondSim
 import FV.Opt.Proof.ConstPhiSimU
 import FV.Opt.Proof.MidValNormConst
 import FV.Opt.Proof.SimpDen
+import FV.Opt.Proof.RuleNode
 
 /-!
 # Branch folding is simulated by its input (#1119, `rewrite:blocks`)
@@ -58,6 +59,69 @@ theorem kOk_spec {f : Function} {K : ValueId → Option Val} (h : kOk f K = true
   simp only [hv, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at this
   exact this
 
+/-- An unsigned comparison with 0 is pure. -/
+theorem zeroCmp_pure {K : ValueId → Option Val} {i : Inst} {v : Val}
+    (h : zeroCmp K i = some v) : isPure i = true := by
+  unfold zeroCmp at h
+  split at h
+  · rfl
+  · cases h
+
+/-- A register whose value has the constant `0` of type `ty` holds the bits 0 at that type. -/
+theorem kZero {K : ValueId → Option Val} {r : Regs} (hI : KInv K r) {x : ValueId} {ty : Ty}
+    {a : BitVec ty.width} (hz : (K x == some ⟨ty, 0⟩) = true) (hx : r x = some ⟨ty, a⟩) :
+    a = 0 := by
+  have h := hI x _ _ (by simpa using hz) hx
+  simpa using h
+
+theorem icmp_ult_zero {w : Nat} (a : BitVec w) : Sem.icmp .ult a 0 = 0#8 := by
+  simp [Sem.icmp, Sem.intcc, Sem.bool8, BitVec.ult]
+theorem icmp_uge_zero {w : Nat} (a : BitVec w) : Sem.icmp .uge a 0 = 1#8 := by
+  simp [Sem.icmp, Sem.intcc, Sem.bool8, BitVec.ule]
+theorem icmp_ule_zero {w : Nat} (a : BitVec w) : Sem.icmp .ule 0 a = 1#8 := by
+  simp [Sem.icmp, Sem.intcc, Sem.bool8, BitVec.ule]
+theorem icmp_ugt_zero {w : Nat} (a : BitVec w) : Sem.icmp .ugt 0 a = 0#8 := by
+  simp [Sem.icmp, Sem.intcc, Sem.bool8, BitVec.ult]
+
+/-- **An unsigned comparison with 0 has its value**: evaluated in a frame whose operand with the
+constant 0 holds it or nothing, `zeroCmp` gives the comparison's result whatever the other
+operand holds. -/
+theorem zeroCmp_sound {K : ValueId → Option Val} {fr : Frame} {m m1 : Mem} {i : Inst}
+    {v : Val} {vals : List Val} (hI : KInv K fr.regs) (hc : zeroCmp K i = some v)
+    (he : evalInst fr m i = .ok (vals, m1)) : vals = [v] := by
+  unfold zeroCmp at hc
+  split at hc
+  · rename_i cc ty x y
+    cases ha : fr.getAs x ty with
+    | ok a =>
+      cases hb : fr.getAs y ty with
+      | ok b =>
+        simp only [evalInst, ha, hb, bind, Res.bind, pure, Res.ok.injEq, Prod.mk.injEq] at he
+        rw [← he.1]
+        have hxa := (Opt.Proof.getAs_ok fr).1 ha
+        have hyb := (Opt.Proof.getAs_ok fr).1 hb
+        cases cc
+        case ult =>
+          simp at hc
+          obtain ⟨hK, rfl⟩ := hc
+          rw [kZero hI (by simp [hK]) hyb, icmp_ult_zero]; rfl
+        case uge =>
+          simp at hc
+          obtain ⟨hK, rfl⟩ := hc
+          rw [kZero hI (by simp [hK]) hyb, icmp_uge_zero]; rfl
+        case ule =>
+          simp at hc
+          obtain ⟨hK, rfl⟩ := hc
+          rw [kZero hI (by simp [hK]) hxa, icmp_ule_zero]; rfl
+        case ugt =>
+          simp at hc
+          obtain ⟨hK, rfl⟩ := hc
+          rw [kZero hI (by simp [hK]) hxa, icmp_ugt_zero]; rfl
+        all_goals simp at hc
+      | _ => simp [evalInst, ha, hb, bind, Res.bind] at he
+    | _ => simp [evalInst, ha, bind, Res.bind] at he
+  · cases hc
+
 /-- A value with a constant is defined by an `iconst` or a pure instruction. -/
 theorem constEval_pure {K : ValueId → Option Val} {i : Inst} {v : Val}
     (h : constEval K i = some v) : isPure i = true := by
@@ -68,7 +132,7 @@ theorem constEval_pure {K : ValueId → Option Val} {i : Inst} {v : Val}
     · rename_i hc
       simp only [Bool.and_eq_true] at hc
       exact hc.1.1.1
-    · cases h
+    · exact zeroCmp_pure h
 
 /-- **The constant is the value**: an instruction with a constant, evaluated in a frame whose
 operands hold their constants or nothing, gives exactly that constant. -/
@@ -106,7 +170,7 @@ theorem constEval_sound {K : ValueId → Option Val} {fr : Frame} {m m1 : Mem} {
         simp only [Res.ok.injEq, Prod.mk.injEq] at h4
         exact h4.1
       · cases hc
-    · cases hc
+    · exact zeroCmp_sound hI hc he
 
 /-- A statement of `f` keeps `KInv`. -/
 theorem kInv_stmt {f : Function} {K : ValueId → Option Val} (hk : kOk f K = true) {b : Block}
