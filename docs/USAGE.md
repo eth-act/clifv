@@ -752,6 +752,16 @@ that `ConstPhi.run` keeps for the backend but Cranelift removes (functions with 
 folds the branches on `icmp ult x, 0`, `uge x, 0`, `ule 0, x` and `ugt 0, x`. The shared pair corpus
 these validator measurements use is `~/clifv/shared/midval-corpus/` on clifv-remote (README there).
 
+Removed block parameters in functions with a `call_indirect` (docs/contracts/midval.md; measured
+2026-11-22 on clifv-remote, #1160's run against this one's tools, the same 9 crates and command):
+binary check 48 of 48 both ways, 121,767 verified both ways, left out 1 → 1, test outcomes the
+same as stock's on all 9 both ways; validated 113,187 → 114,001 (93.0 % → 93.6 %; up on 8 crates,
+num-traits unchanged); byte-identical to stock 93,799 → 94,442 of 121,767 (77.0 % → 77.6 %). The
+validator now removes those parameters also where `Opt.check` rejects the function because of a
+`call_indirect` (its well-formedness check `wfCheck` reads the signature declarations). A
+`symbol_value` that Cranelift hoists out of a loop stays rejected (`placement:symbol_value`):
+whether it is sound depends on the executable's symbol table, which `lean-backend` does not see.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of

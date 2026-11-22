@@ -191,6 +191,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | division by a constant (`checkCertC`, prep requests) | none (`divPre` inside `foldPre f bs`) | `divPre_simU`, `foldPre_simU`, `check_soundC` | 112,950 (92.7 %) | not measured on the pairs | 9 crates: 75.6 % → 76.4 % (92,018 → 92,975 of 121,767) |
 | removed block parameters (`checkCertC`, prep requests) | none (`phiPre` inside `foldPre f bs`) | `phiOk_simU`, `phiPre_simU`, `foldPre_simU`, `check_soundC` | 114,082 (93.6 %) | not measured on the pairs | 9 crates: with the next row |
 | unsigned comparisons with 0 (fold constants) | none (`zeroCmp` in `constEval`) | `zeroCmp_sound`, `constEval_sound`, `foldBr_simU`, `check_soundC` | 114,829 (94.2 %) | not measured on the pairs | 9 crates: see the bullet below |
+| removed block parameters in functions with a `call_indirect` (`checkCertC`, prep requests) | none (`phiPre` with `phiOkM`, inside `foldPre f bs`) | `phiOkM_simU`, `CR.isSimWUM`, `phiPre_simU`, `check_soundC` | 115,674 (94.9 %) | not measured on the pairs | 9 crates: 77.0 % → 77.6 % (93,799 → 94,442 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -600,3 +601,46 @@ counterfactual.)
     verified 121,767 → 121,767, left out of the region 1 → 1, tests the same as stock's on all 9
     both ways, validated 111,476 → 113,187 (91.5 → 93.0 %; up on 8 crates, num-traits unchanged),
     byte-identical to stock 93,039 → 93,799 (76.4 → 77.0 %).
+* **Removed block parameters in functions with a `call_indirect`** (agent MidendNext2; the 870
+  pairs the removed-block-parameters bullet left: `Opt.check` gives a `call_indirect` no result
+  types, so `Opt.Wf` holds only for functions without one, `Opt.Wf.noCI`).
+  - Compiler side (`FV/Opt/MidValFold.lean`): `phiOkM f sol` is `phiOk` with the validator's
+    `wfCheck` in place of `Opt.check` (`call_indirect` result types from the function's signature
+    declarations, `sigDeclOf`; `bitcast` as `Clif.evalInst` types it); `phiPre f` applies the
+    solution when `phiOk f sol || phiOkM f sol`. `ConstPhi.run`, `cpOk` and `phiOk` are unchanged.
+  - Proof (`FV/Opt/Proof/MidValPhiM.lean`; new names, nothing on main restated): `CpFactsM` is
+    `ConstPhi.CpFacts` with `WfM` in place of `Wf`; **`phiOkM_facts`**; the simulation of
+    `FV/Opt/Proof/ConstPhiSim.lean`/`ConstPhiSimU.lean` (the relation `ConstPhi.CR`, unchanged)
+    from `CpFactsM`, through the `WfM` lemmas of `FV/Opt/Proof/MidValWf.lean` (`…M` names), plus
+    the `call_indirect` step `Wf` made vacuous: **`CRel.ciM`** (the same signature, the renamed
+    callee and arguments read the same values, `ciArgs_rename`; the results bound alike, their
+    types from the signature declarations, `WfM.inv_results`), **`CR.isSimWUM`**;
+    **`phiOkM_simU : phiOkM f sol = true → FunSimU f (ConstPhi.apply f sol)`**. `phiPre_simU`
+    (same statement) takes either branch.
+  - Witnesses (`FVTest/Opt/MidValPhiMWitness.lean`): `block1(v2)` receiving only a
+    `call_indirect` result: `phiOk` rejects the solution, `phiOkM` accepts it, `phiPre` removes
+    the parameter, the pair against Cranelift's `g` accepted and rejected without the prep;
+    negative: a parameter receiving two values in a function with a `call_indirect` is not removed,
+    `phiOkM` rejects the solution naming one of them, and the pair against a `g` returning the
+    other is rejected and no simulation, so every certificate with every hint list is rejected
+    (`twoM_rejected`); three real pairs (crypto-bigint's proptest, serde_json's toml_parser,
+    memchr), each rejected by `checkC0`, `checkCertC` decided, simulation and program refinement.
+  - Measured (2026-11-22, the shared corpus, `midval-check --cert --cond`, main 5559412f9's
+    checker against this one): 114,829 → 115,674 (+845, 94.2 % → 94.9 %), 0 lost, every accepted
+    pair re-checks `ok`; gained from `shape:params` 702, `jump` arity 103, `brif` arity 33,
+    `rewrite:domtree` 7.
+    `cargo fv test --release --lean-link --verified` on the 9 crates (2026-11-22, clifv-remote,
+    #1160's run against this one's tools): binary check 48/48 → 48/48, verified 121,767 → 121,767,
+    left out of the region 1 → 1, tests the same as stock's on all 9 both ways, validated
+    113,187 → 114,001 (93.0 → 93.6 %; up on 8 crates, num-traits unchanged), byte-identical to
+    stock 93,799 → 94,442 (77.0 → 77.6 %).
+* **`symbol_value` placement (`placement:symbol_value`, 1,012 pairs): not decidable per
+  function.** Cranelift's loop-invariant code motion moves a `symbol_value` (pure, no operands)
+  out of a loop into its preheader, so `g` evaluates it on paths where `f` leaves the loop
+  first. `Clif.run` is `stuck` on a symbol the image lacks (`mem.symbols`), so for such pairs
+  `FunSimMU f g`, which holds for every symbol table, is false: `neg_symhoist`
+  (`FVTest/Opt/MidValNegWitness.lean`, `sh_not_sim`, `sh_rejected`). The hoisting mode
+  (`checkCertSymsC`, `check_soundSyms`: `FunSimMUAt syms` under `globalsResolve f syms`) covers
+  them (889 of the 1,012 accepted with `--hoist`, folds off) but needs the image's symbol table,
+  which only `link-check`/`lean-link` hold (`cm.symbols = I.syms.lookup`); the plumbing is a
+  layer-2 change (#1119 design comment).

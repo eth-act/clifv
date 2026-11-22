@@ -262,11 +262,22 @@ def phiOk (f : Function) (sol : List (ValueId × ValueId)) : Bool :=
     let m := ConstPhi.solMap sol
     ConstPhi.keysOk (defMap f) fi.cfg.idom m sol && ConstPhi.edgesOk fi.cfg.index m f
 
+/-- **`phiOk` with the validator's well-formedness check** `wfCheck` in place of `Opt.check`:
+`wfCheck` also accepts a `call_indirect` (its result types from the function's signature
+declarations, `sigDeclOf`), which `Opt.check` rejects; so the parameters Cranelift removes in a
+function with a `call_indirect` are removed here too (`Opt.MidVal.phiOkM_simU`). -/
+def phiOkM (f : Function) (sol : List (ValueId × ValueId)) : Bool :=
+  match wfCheck f with
+  | .error _ => false
+  | .ok fi =>
+    let m := ConstPhi.solMap sol
+    ConstPhi.keysOk (defMap f) fi.cfg.idom m sol && ConstPhi.edgesOk fi.cfg.index m f
+
 /-- **Constant-phi removal for the comparison** (module doc): `ConstPhi`'s solution of `f`
-applied when `phiOk` accepts it, `f` otherwise. -/
+applied when `phiOk` or `phiOkM` accepts it, `f` otherwise. -/
 def phiPre (f : Function) : Function :=
   let sol := ConstPhi.solve f
-  if !sol.isEmpty && phiOk f sol then ConstPhi.apply f sol else f
+  if !sol.isEmpty && (phiOk f sol || phiOkM f sol) then ConstPhi.apply f sol else f
 
 /-- **The folded function without its unreachable blocks** (module doc): the parameters
 `ConstPhi.run` kept removed (`phiPre`, before the folds, where Cranelift removes them),

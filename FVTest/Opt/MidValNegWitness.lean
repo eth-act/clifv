@@ -1,6 +1,7 @@
 import FVTest.Opt.MidValPairs
 import FV.Opt.Proof.MidValNeg
 import FV.Opt.Proof.MidValProg
+import FV.Opt.Proof.MidValCondProg
 
 /-! # Negative witnesses of the mid-end validator (#1119)
 
@@ -27,6 +28,11 @@ the re-check rejects **every** certificate (`*_rejected`):
 * `neg_call`: a store forwarded across a call: the callee may leave any memory with the same
   symbols; when it leaves zeros, `f` reloads and returns `0`, `g` returns `1`
   (`not_funSimMU_call_ret`).
+
+Also (#1119 `placement:symbol_value`, not a file of `FVTest/Opt/midval`): `neg_symhoist`, a
+`symbol_value` evaluated by `g` before the branch where `f` evaluates it on one side only (the
+shape of Cranelift's loop-invariant hoisting): with no symbols, `g` is `stuck`, `f` returns
+(`sh_not_sim`), so `checkCertC` rejects every certificate and hint list (`sh_rejected`).
 
 `neg_type` is different: it IS a simulation, and the checker is merely conservative. Memory is
 little-endian, so after `store.i64 v1, v0` the `load.i32 v0` reads exactly the low 32 bits of
@@ -135,6 +141,41 @@ theorem ho_rejected (cert : Cert) : checkCert (ConstPhi.run hoF) hoG cert = fals
   cases h : checkCert (ConstPhi.run hoF) hoG cert
   · rfl
   · exact absurd (checked_simMU h) ho_not_sim
+
+/-! ## `neg_symhoist` (#1119 `placement:symbol_value`)
+
+Cranelift's LICM moves a `symbol_value` (pure, no operands) out of a loop into its preheader,
+so `g` evaluates it on paths where `f` does not (the loop exits before reaching it). With a
+symbol table lacking the symbol, `g` is `stuck` there and `f` returns: the per-function
+simulation, which holds for every symbol table, is false, so every certificate is rejected.
+The hoisting mode's theorem (`check_soundSyms`) assumes the symbol table resolves the
+function's global values (`globalsResolve`), a property of the link-time image. -/
+
+def shSv : Stmt := { results := [2], inst := .symbolValue .i64 0 }
+def shB : Block := { id := 0, params := [(0, .i64), (1, .i64)], cold := false, body := [], term := br }
+def shB' : Block := { id := 0, params := [(0, .i64), (1, .i64)], cold := false, body := [shSv], term := br }
+def shB1 : Block := { id := 1, params := [], cold := false, body := [shSv], term := .ret [2] }
+def shB1' : Block := { id := 1, params := [], cold := false, body := [], term := .ret [2] }
+def shGv : List (Nat × GlobalValue) := [(0, .symbol "s" 0 false)]
+def shF : Function := { name := "f", sig := sig3, globals := shGv, blocks := [shB, shB1, stB2] }
+def shG : Function := { name := "f", sig := sig3, globals := shGv, blocks := [shB', shB1', stB2] }
+
+theorem shF_text : Pairs.fn? "function %f(i64, i64) -> i64 {\n    gv0 = symbol %s\nblock0(v0: i64, v1: i64):\n    brif v1, block1, block2\nblock1:\n    v2 = symbol_value.i64 gv0\n    return v2\nblock2:\n    return v0\n}" = some shF := by native_decide
+theorem shG_text : Pairs.fn? "function %f(i64, i64) -> i64 {\n    gv0 = symbol %s\nblock0(v0: i64, v1: i64):\n    v2 = symbol_value.i64 gv0\n    brif v1, block1, block2\nblock1:\n    return v2\nblock2:\n    return v0\n}" = some shG := by native_decide
+
+/-- With `v1 = 0` and no symbols, `f` takes `block2` and returns, `g` is `stuck` on the
+`symbol_value`. -/
+theorem sh_not_sim : ¬ FunSimMU shF shG :=
+  not_funSimMU_ret (b := shB) (b' := shB') (args := [⟨.i64, 0⟩, ⟨.i64, 0⟩]) (regs := hoRegs)
+    (m := Mem.empty) (fr1 := ⟨shF, hoRegs, [], [], .ret [0]⟩) (vals := [⟨.i64, 0⟩])
+    rfl rfl rfl rfl rfl rfl rfl ⟨_, rfl⟩
+
+/-- The re-check rejects every certificate and every hint list for `neg_symhoist`. -/
+theorem sh_rejected (cert : Cert) (hints : List (BlockId × List Wrap)) :
+    checkCertC (ConstPhi.run shF) shG cert hints = false := by
+  cases h : checkCertC (ConstPhi.run shF) shG cert hints
+  · rfl
+  · exact absurd (checkedC_simMU h) sh_not_sim
 
 /-! ## Shared pieces of the store/load pairs -/
 
