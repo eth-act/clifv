@@ -22,6 +22,7 @@ import FV.Opt.Proof.MidValDiv
 import FVTest.Opt.MidValDivWitness
 import FV.Opt.Proof.MidValPhi
 import FVTest.Opt.MidValPhiWitness
+import FVTest.Opt.MidValZeroWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -994,3 +995,44 @@ import FVTest.Opt.MidValPhiWitness
 #print axioms Opt.MidVal.PhiWitness.real_criterion_c0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.PhiWitness.real_criterion_checked -- witness: native_decide
 #print axioms Opt.MidVal.PhiWitness.real_criterion_sim -- witness: native_decide
+
+-- #1119 unsigned comparisons with 0 in the fold constants (FV/Opt/Proof/MidValFold.lean: zeroCmp_sound,
+-- used by constEval_sound / constEval_pure)
+#print axioms Opt.MidVal.zeroCmp_pure
+#print axioms Opt.MidVal.kZero
+#print axioms Opt.MidVal.icmp_ult_zero
+#print axioms Opt.MidVal.icmp_uge_zero
+#print axioms Opt.MidVal.icmp_ule_zero
+#print axioms Opt.MidVal.icmp_ugt_zero
+#print axioms Opt.MidVal.zeroCmp_sound
+-- witnesses (FVTest/Opt/MidValZeroWitness.lean)
+#print axioms Opt.MidVal.ZeroWitness.pos_ult -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ult_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ult_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ugt -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ugt_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ugt_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_uge -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_uge_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_uge_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ule -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ule_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.pos_ule_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.ugtF_text -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.ugt_not_folded -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.neg_ugt -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.ugt_not_sim
+#print axioms Opt.MidVal.ZeroWitness.ugt_rejected
+#print axioms Opt.MidVal.ZeroWitness.ult0_not_folded -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.neg_ult0 -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.ult1_not_folded -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.neg_ult1 -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_toml_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_toml_checked -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_toml_sim -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_ws_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_ws_checked -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_ws_sim -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_serde_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_serde_checked -- witness: native_decide
+#print axioms Opt.MidVal.ZeroWitness.real_serde_sim -- witness: native_decide

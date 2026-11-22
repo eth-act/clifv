@@ -1,0 +1,109 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNvMNtNtCsazjiGSRkgVH_4core4char7methodsc13is_whitespace
+function u0:9(i32) -> i8 uext system_v {
+; symbol _RNvMNtNtCsazjiGSRkgVH_4core4char7methodsc13is_whitespace
+; instance Instance { def: Item(DefId(2:6972 ~ core[7b1c]::char::methods::{impl#0}::is_whitespace)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: char, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(u32 is 0..=1114111), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u32, valid_range: 0..=1114111 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462607322775572 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    bool                              1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) bool
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) char
+
+; kind  local ty                              size align (abi)
+; ssa   _1    char                              4b 4                var=2
+; ssa   _2    bool                              1b 1                var=3
+; ssa   _3    bool                              1b 1                var=4
+; ssa   _4    bool                              1b 1                var=5
+; ssa   _5    bool                              1b 1                var=6
+
+    sig0 = (i32) -> i8 uext system_v
+    fn0 = colocated u0:28 sig0 ; Instance { def: Item(DefId(2:47739 ~ core[7b1c]::unicode::unicode_data::white_space::lookup)), args: [] }
+
+block0(v0: i32):
+    nop 
+; write_cvalue: Var(_1, var2): char <- ByVal(v0): char
+    jump block1
+
+block1:
+    v2 = iconst.i32 32
+    v3 = icmp.i32 eq v0, v2  ; v2 = 32
+    brif v3, block8, block3
+
+block2:
+    jump block7
+
+block3:
+    v7 = iconst.i32 9
+    v21 = icmp.i32 uge v0, v7  ; v7 = 9
+    brif v21, block4, block2
+
+block4:
+    v11 = iconst.i32 13
+    v12 = icmp.i32 ule v0, v11  ; v11 = 13
+; write_cvalue: Var(_3, var4): bool <- ByVal(v12): bool
+; 
+; switchInt(move _3)
+    brif v12, block8, block2
+
+block5:
+    v14 = call fn0(v0)
+; write_cvalue: Var(_0, var1): bool <- ByVal(v14): bool
+    jump block9
+
+block6:
+    v15 = iconst.i8 0
+; write_cvalue: Var(_0, var1): bool <- ByVal(v15): bool
+; 
+; goto
+    return v15  ; v15 = 0
+
+block7:
+    v17 = iconst.i32 132
+    v18 = icmp.i32 ule v0, v17  ; v17 = 132
+; write_cvalue: Var(_5, var6): bool <- ByVal(v18): bool
+; 
+; switchInt(move _5)
+    brif v18, block6, block5
+
+block8:
+    v24 = iconst.i8 1
+    return v24  ; v24 = 1
+
+block9:
+    return v14
+}
+
+; clifv-extnames 1
+; userextname0 = u0:28
+; decl u0:9 func local "_RNvMNtNtCsazjiGSRkgVH_4core4char7methodsc13is_whitespace"
+; decl u0:28 func local "_RNvNtNtNtCsazjiGSRkgVH_4core7unicode12unicode_data11white_space6lookup"
+; end clifv-extnames

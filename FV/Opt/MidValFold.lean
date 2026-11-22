@@ -12,7 +12,10 @@ folded `f` (the theorem stays about the original `f`: the fold is proved to be s
 input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
 
 * `constEval K i`: the constant value of a pure, non-partial instruction whose operands all have
-  constants in `K` (`Clif.evalInst` in a frame holding `K`), or of an `iconst`.
+  constants in `K` (`Clif.evalInst` in a frame holding `K`), of an `iconst`, or of an unsigned
+  comparison with 0 whatever the other operand (`zeroCmp`: `icmp ult x, 0` and `icmp ugt 0, x`
+  are 0, `icmp uge x, 0` and `icmp ule 0, x` are 1; Cranelift's mid-end folds the branches on
+  them, `rewrite:domtree`/`rewrite:blocks`).
 * `kTable f` (untrusted): constants of `f`'s values, by passes over the statements in layout
   order; `kLook f.freshValue (kTable f)` keeps only values below `f.freshValue`.
 * `kOk f K` (the checker the proof relies on): no block parameter has a constant; every statement
@@ -56,8 +59,22 @@ slots (a pure instruction with operands reads neither). -/
 def kFrame (K : ValueId → Option Val) : Frame :=
   { func := default, regs := K, slots := [], body := [], term := .ret [] }
 
-/-- The constant value of `i` when its operands have the constants `K`: an `iconst`, or a pure,
-non-partial instruction with operands, evaluated by `Clif.evalInst` (module doc). -/
+/-- An unsigned comparison with 0 whose value does not depend on the other operand: `x <u 0`
+and `0 >u x` are false, `x ≥u 0` and `0 ≤u x` true, when the operand compared with has the
+constant 0 of the compared type in `K` (module doc). -/
+def zeroCmp (K : ValueId → Option Val) : Inst → Option Val
+  | .icmp cc ty x y =>
+    match cc with
+    | .ult => if K y == some ⟨ty, 0⟩ then some ⟨.i8, 0⟩ else none
+    | .uge => if K y == some ⟨ty, 0⟩ then some ⟨.i8, 1⟩ else none
+    | .ule => if K x == some ⟨ty, 0⟩ then some ⟨.i8, 1⟩ else none
+    | .ugt => if K x == some ⟨ty, 0⟩ then some ⟨.i8, 0⟩ else none
+    | _ => none
+  | _ => none
+
+/-- The constant value of `i` when its operands have the constants `K`: an `iconst`, a pure,
+non-partial instruction with operands, evaluated by `Clif.evalInst`, or an unsigned comparison
+with 0 (`zeroCmp`; module doc). -/
 def constEval (K : ValueId → Option Val) (i : Inst) : Option Val :=
   match i with
   | .iconst ty imm => some ⟨ty, imm⟩
@@ -66,7 +83,7 @@ def constEval (K : ValueId → Option Val) (i : Inst) : Option Val :=
       match evalInst (kFrame K) Mem.empty i with
       | .ok ([v], _) => some v
       | _ => none
-    else none
+    else zeroCmp K i
 
 /-- One pass of `kTable` over `f`'s statements in layout order. -/
 def kPass (f : Function) (hm : Std.HashMap ValueId Val) : Std.HashMap ValueId Val :=
