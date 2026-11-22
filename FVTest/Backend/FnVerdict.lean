@@ -32,8 +32,12 @@ Paths (`lean-backend`'s driver, `FVTest/Backend/Main.lean`):
   (`lowerCheckFor`: `lowerCheckT`/`TC`/`TCF`), `prepare`, `checkAlloc`, `lowerRFunc` and the
   emission with the function's allocation and checks that they reproduce the emitted code; the
   theorem is the typed scope's (`backend_correct_final_cleanupT`, `backend_correct_world_cleanupTC`,
-  `backend_correct_world_cleanupTCF`; without dead cleanup `finalT`/`finalTC`/`finalTCF`), about
-  the compiled function. A function with `fcopysign` or `fma` at `f32`/`f64` (#35:
+  `backend_correct_world_cleanupTCF`; without dead cleanup `finalT`/`finalTC`/`finalTCF`), composed
+  with the `i128` legalisation and constant-phi removal where those changed the function and their
+  checks hold (#1112, `FV/E2E/PassTypedCleanup.lean`: `pass_*`, `legal_wide_*`,
+  `legal_pass_wide_*`; without dead cleanup only constant-phi removal in `typedTCF`,
+  `backend_correct_pass_finalTCF`); otherwise about the compiled function. A function with
+  `fcopysign` or `fma` at `f32`/`f64` (#35:
   `Compile.functionETCF`'s `instETFLO`, no `fma` with an `fneg`-defined second operand,
   `fmaNegYFree`) is in the scope `typedTCF`: `backend_correct_world_cleanupTCF` (without dead
   cleanup `backend_correct_finalTCF`), whose statement covers it through `functionETCF` and
@@ -138,6 +142,33 @@ def typedThm (x : Facts) : String :=
   | _, true => "E2E.backend_correct_world_cleanupTCF"
   | _, false => "E2E.backend_correct_finalTCF"
 
+/-- The typed theorem composed with the transformations that changed the function (#1112,
+`FV/E2E/PassTypedCleanup.lean`): the `i128` legalisation, constant-phi removal at `T := x.cpT`, or
+both, for the typed scope's theorem with dead cleanup; without dead cleanup constant-phi removal
+alone in the scope `typedTCF` (`backend_correct_pass_finalTCF`, `FV/E2E/PassX.lean`). Their subset
+and artifact premises are the typed theorem's, of the compiled function. `none` (the typed theorem
+about the compiled function): the mid-end ran, or no composed theorem exists for the scope and
+pipeline. -/
+def typedComposedThm (x : Facts) : Option String :=
+  if x.opt || !(x.legal || x.cp) then none
+  else if !x.cleanup then
+    if x.scope == .typedTCF && x.cp && !x.legal then
+      some s!"E2E.backend_correct_pass_finalTCF (T := {x.cpT})"
+    else none
+  else
+    let t := match x.scope with
+      | .typedT => "final_cleanupT"
+      | .typedTC => "world_cleanupTC"
+      | _ => "world_cleanupTCF"
+    if x.cp then
+      if x.legal then some s!"E2E.backend_correct_legal_pass_wide_{t} (T := {x.cpT})"
+      else some s!"E2E.backend_correct_pass_{t} (T := {x.cpT})"
+    else some s!"E2E.backend_correct_legal_wide_{t}"
+
+/-- The checks the typed composition adds (`typedComposedThm`). -/
+def typedComposedChecks (x : Facts) : List String :=
+  (if x.legal then ["Opt.Legal.checkW"] else []) ++ (if x.cp then ["Opt.ConstPhi.keeps"] else [])
+
 /-- What the theorem is about when it is not composed with the transformations that ran. -/
 def compiledAbout (x : Facts) : String :=
   let ts := (if x.legal then ["the i128 legalisation"] else []) ++
@@ -195,9 +226,11 @@ def verdict (x : Facts) : Verdict :=
       stockVerdict x (["unverifiedReason? (InSubset)",
         s!"SemanticABI.checkCalls (the route's validator: {stockCallsThm})", "prepCheck"] ++ common)
     | _, _ =>
-      { thm := some (typedThm x), about := compiledAbout x,
-        checks := ["unverifiedReason? (the typed scope)", "lowerFunction", "lowerCheckFor (re-run)",
-          "prepCheck", "the emitted code reproduced"] ++ common }
+      let base := ["unverifiedReason? (the typed scope)", "lowerFunction", "lowerCheckFor (re-run)",
+        "prepCheck", "the emitted code reproduced"] ++ common
+      match typedComposedThm x with
+      | some t => { thm := some t, about := "the source function", checks := base ++ typedComposedChecks x }
+      | none => { thm := some (typedThm x), about := compiledAbout x, checks := base }
 
 /-- The line `lean-backend` prints (after `%name: `). `normal`: a function with a `try_call` whose
 unwinding is not covered; `unw`: the unwinding theorem, or why none applies. -/
