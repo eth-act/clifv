@@ -757,7 +757,11 @@ docs/contracts/dead-cleanup.md; `lean-link --no-dead-cleanup` runs the baseline
 describes the route the others refine. `lean-link` prints the compiler it took (`written by
 …`) and the theorems of that route (`coverage: …`); each route theorem is about the compiler that
 ran, on exactly the input it compiled (the coverage per route: the module docstring of
-`FVTest/Link/LeanLinkMain.lean`; audit #1096). When `lean-link` prints `written by Link.DeadCleanup.compileExe`, the
+`FVTest/Link/LeanLinkMain.lean`; audit #1096). Every theorem name `lean-link` prints comes from
+one table, `FVTest/Link/Coverage.lean` (#1104: a `Claim` per printed claim, its names printed
+only when the premises the route decided hold; `FVTest/Link/CoverageTest.lean` checks every name
+is a theorem; `scripts/check-coverage-literals.py` rejects any other theorem-name literal in the
+driver). When `lean-link` prints `written by Link.DeadCleanup.compileExe`, the
 executable is covered by the theorems its `coverage:` line names (docs/contracts/e2e.md, "The
 executable compiler" and "The shipped compiler"), proven once for every input:
 `compileExe_correct` (whenever code outside the program calls one of its Lean-compiled

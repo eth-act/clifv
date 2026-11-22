@@ -77,7 +77,8 @@ are not tried: the bare linker links on the Stock placement (`Link.leanLinkProdu
 routes of `compileWithRoutes` in order; no compiler theorem). **`--verified`** fails closed: an input outside `SrcScopeB`, outside
 the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) or outside
 `InScopeP` is an error and the executable is not written. Every executable it writes is covered
-by the theorems its `coverage:` line names for the route that wrote it (#1096): the ReturnPin
+by the theorems its `coverage:` line names for the route that wrote it (#1096; every name from the
+claim table `FVTest/Link/Coverage.lean`, #1104): the ReturnPin
 route `Link.ReturnPinCompilerWith.attempt_correct{,_depth}`, the Stock routes
 `Link.SemanticCompilerWith.attempt_correct{,_depth,_peak}`, the typed Stock route
 `…attemptT_correct{,_depth,_peak}`, the typed fallback `Link.TypedCompilerWith.attempt_correct…`,
