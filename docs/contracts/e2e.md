@@ -211,6 +211,30 @@ entries of both runs and their relation (`hexp`, `hsl`, `hmem`), `TrapsExplicit`
 and of the transformed run. `FVTest/Backend/SemanticReturnPinsPassWitness.lean` instantiates one
 on a real function of the examples with every checkable premise proved.
 
+**The typed theorems composed with the `i128` legalisation and constant-phi removal** (#1112;
+`FV/E2E/PassTypedCleanup.lean`). Outside subset E `lean-backend` names the typed theorems
+(`backend_correct_final_cleanupT`, `backend_correct_world_cleanupTC`,
+`backend_correct_world_cleanupTCF`) about the compiled function; where the legalisation or
+constant-phi removal changed it (not with `--opt`), it names their compositions, which take the
+same typed artifact and subset premises of the compiled function and conclude about the run of
+the source `f`:
+
+* `backend_correct_pass_final_cleanupT`, `backend_correct_pass_world_cleanupTC`,
+  `backend_correct_pass_world_cleanupTCF`: any pass `T` with `Opt.FunSimX` and `ShapeFacts`
+  (named at `T := Opt.ConstPhi.run`), `T f` compiled, `Opt.EnvKeepsSymbols env`; by `pass_entry`
+  (as `backend_correct_pass_finalTCF`, which `lean-backend` names without dead cleanup);
+* `backend_correct_legal_wide_final_cleanupT`, `backend_correct_legal_wide_world_cleanupTC`,
+  `backend_correct_legal_wide_world_cleanupTCF` (`Clif.Rust.env`): `g` compiled; every return of
+  `f`'s run is a return of `g`'s run with the values expanded, every trap a trap with the same
+  code (`legal_refines_wide`, by `Opt.Legal.checkW_refines`); the `T` form concludes
+  `ArmRefinesLegalT` (`ArmRefinesLegal` with returned values by class);
+* `backend_correct_legal_pass_wide_final_cleanupT`, `…_world_cleanupTC`, `…_world_cleanupTCF`
+  (`Clif.Rust.env`): `T g` compiled (`legal_pass_refines_wide`).
+
+Their remaining premises are those of the integer compositions above. The typed `try_call`
+functions keep their normal-returns form (unwinding trusted). `FVTest/Backend/TypedPassWitness.lean`
+instantiates each on a function the transformation changes, compiled by the typed pipeline.
+
 **Through the mid-end validator** (#1119, `lean-backend --midval-opt`, `cargo fv --midval`;
 `FV/E2E/MidValPass.lean`, `FV/E2E/MidValPassLegacy.lean`). In a build whose Cranelift
 `opt_level` is not `none`, `lean-backend <f.unopt.clif> --midval-opt <g.opt.clif>` runs

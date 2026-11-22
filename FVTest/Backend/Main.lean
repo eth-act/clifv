@@ -85,7 +85,10 @@ function the pass changed is covered by the theorems above composed with the pas
 (`compileFileReturnPinWhen` enabled) the Stock theorem `backend_correct_world_niX_semantic_return_pins`
 is composed with them (#1100, `FV/E2E/SemanticReturnPinsPass.lean`):
 `E2E.backend_correct_legal_wide_semantic_return_pins`, `backend_correct_pass_semantic_return_pins`
-and `backend_correct_legal_pass_wide_semantic_return_pins` (`FVTest.Backend.FnVerdict`).
+and `backend_correct_legal_pass_wide_semantic_return_pins`; on the typed path (outside subset E,
+dead cleanup) so are the typed theorems (#1112, `FV/E2E/PassTypedCleanup.lean`):
+`E2E.backend_correct_pass_{final_cleanupT,world_cleanupTC,world_cleanupTCF}`,
+`backend_correct_legal_wide_…` and `backend_correct_legal_pass_wide_…` (`FVTest.Backend.FnVerdict`).
 
 With `--settings <request.json> --settings-receipt <receipt.json>` (the proved settings mode),
 the settings of a Cranelift filetest (the `--stock-config` request schema) are compiler input:
