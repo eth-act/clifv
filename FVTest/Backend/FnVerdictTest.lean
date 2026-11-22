@@ -20,6 +20,7 @@ import FV.E2E.LegalOptUnwind
 import FV.Backend.StockCheckCalls
 import FV.E2E.SemanticReturnPinsPass
 import FV.E2E.MidValPassLegacy
+import FV.E2E.PassTypedCleanup
 
 /-! # Tests of `lean-backend`'s per-function verdict (#1096)
 
@@ -121,6 +122,27 @@ run_cmd do
 #guard (verdict { scope := .typedT, path := .legacy }).thm = some "E2E.backend_correct_final_cleanupT"
 #guard (verdict { scope := .typedTC, path := .legacy, cleanup := false }).thm =
   some "E2E.backend_correct_finalTC"
+-- the typed scope composed with the transformations that changed the function (#1112)
+#guard (verdict { scope := .typedT, path := .stock, cp := true }).thm =
+  some "E2E.backend_correct_pass_final_cleanupT (T := Opt.ConstPhi.run)"
+#guard (verdict { scope := .typedTC, path := .legacy, legal := true }).thm =
+  some "E2E.backend_correct_legal_wide_world_cleanupTC"
+#guard (verdict { scope := .typedTCF, path := .stock, legal := true, cp := true }).thm =
+  some "E2E.backend_correct_legal_pass_wide_world_cleanupTCF (T := Opt.ConstPhi.run)"
+#guard (verdict { scope := .typedTCF, path := .stock, legal := true, cp := true }).about =
+  "the source function"
+#guard (verdict { scope := .typedTCF, path := .stock, legal := true, cp := true }).checks.getLast? =
+  some "Opt.ConstPhi.keeps"
+#guard (verdict { scope := .typedTCF, path := .legacy, cleanup := false, cp := true }).thm =
+  some "E2E.backend_correct_pass_finalTCF (T := Opt.ConstPhi.run)"
+-- not composed: the mid-end ran, or no theorem for the scope without dead cleanup
+#guard (verdict { scope := .typedTCF, path := .legacy, opt := true, cp := true }).about =
+  "the compiled function, after constant-phi removal and the mid-end (not composed on this path)"
+#guard (verdict { scope := .typedT, path := .legacy, cleanup := false, legal := true }).thm =
+  some "E2E.backend_correct_finalT"
+-- with dead cleanup and without the mid-end, every typed verdict is about the source function
+#guard allFacts.all fun x => x.scope == .integer || !x.cleanup || x.opt ||
+  (verdict x).about == "the source function"
 -- a failing decided premise names no theorem
 #guard (verdict { scope := .integer, path := .stock, covered := false }).thm = none
 #guard (verdict { scope := .integer, path := .legacy, alloc := false }).thm = none
