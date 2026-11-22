@@ -443,6 +443,10 @@ import FVTest.Opt.MidValZeroWitness
 #print axioms Opt.MidVal.NegWitness.hoG_text -- witness: native_decide
 #print axioms Opt.MidVal.NegWitness.ho_not_sim
 #print axioms Opt.MidVal.NegWitness.ho_rejected
+#print axioms Opt.MidVal.NegWitness.shF_text -- witness: native_decide
+#print axioms Opt.MidVal.NegWitness.shG_text -- witness: native_decide
+#print axioms Opt.MidVal.NegWitness.sh_not_sim
+#print axioms Opt.MidVal.NegWitness.sh_rejected
 #print axioms Opt.MidVal.NegWitness.enF_text -- witness: native_decide
 #print axioms Opt.MidVal.NegWitness.enG_text -- witness: native_decide
 #print axioms Opt.MidVal.NegWitness.en_not_sim
