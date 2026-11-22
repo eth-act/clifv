@@ -20,6 +20,8 @@ import FV.Opt.Proof.MidValFold
 import FVTest.Opt.MidValFoldWitness
 import FV.Opt.Proof.MidValDiv
 import FVTest.Opt.MidValDivWitness
+import FV.Opt.Proof.MidValPhi
+import FVTest.Opt.MidValPhiWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -966,3 +968,29 @@ import FVTest.Opt.MidValDivWitness
 #print axioms Opt.MidVal.DivWitness.real_one_c0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.DivWitness.real_one_checked -- witness: native_decide
 #print axioms Opt.MidVal.DivWitness.real_one_sim -- witness: native_decide
+
+-- #1119 removed block parameters: the validator's constant-phi removal (FV/Opt/Proof/MidValPhi.lean;
+-- foldPre_simU above now goes through phiPre_simU)
+#print axioms Opt.MidVal.phiOk_facts
+#print axioms Opt.MidVal.phiOk_simU
+#print axioms Opt.MidVal.phiPre_simU
+-- witnesses (FVTest/Opt/MidValPhiWitness.lean)
+#print axioms Opt.MidVal.PhiWitness.try_params -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.pos_try -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.pos_try_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.twoF_text -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.wrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.two_phiPre -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.two_phiOk_wrong -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.neg_two -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.two_not_sim
+#print axioms Opt.MidVal.PhiWitness.two_rejected
+#print axioms Opt.MidVal.PhiWitness.real_bigint_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_bigint_checked -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_bigint_sim -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_dissimilar_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_dissimilar_checked -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_dissimilar_sim -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_criterion_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_criterion_checked -- witness: native_decide
+#print axioms Opt.MidVal.PhiWitness.real_criterion_sim -- witness: native_decide

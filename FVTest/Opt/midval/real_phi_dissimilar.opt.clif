@@ -1,0 +1,198 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10dissimilar12H7KZWvxZckFY
+function u0:88(i64, i64) -> i64 system_v {
+; symbol _RNxC10dissimilar12H7KZWvxZckFY
+; instance Instance { def: Item(DefId(3:5442 ~ alloc[e0b3]::collections::vec_deque::{impl#6}::push_back_mut)), args: [usize, std::alloc::Global] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut std::collections::VecDeque<usize>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: &mut usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    &'{erased} mut usize              8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut usize
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut std::collections::VecDeque<usize, std::alloc::Global>
+; arg   _2      = v1       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut std::collections::VecDeque<usize, std::alloc::Global>    8b 8                var=2
+; ssa   _2    usize                             8b 8                var=3
+; ssa   _3    bool                              1b 1                var=4
+; zst   _4    ()                                0b 1                align=1,offset=
+; ssa   _5    usize                             8b 8                var=5
+; ssa   _6    usize                             8b 8                var=6
+; ssa   _7    usize                             8b 8                var=7
+; ssa   _8    usize                             8b 8                var=8
+; ssa   _9    &'{erased} alloc::raw_vec::RawVec<usize, std::alloc::Global>    8b 8                var=9
+; ssa   _10   &'{erased} alloc::raw_vec::RawVecInner<std::alloc::Global>    8b 8                var=10
+; stack _11   core::num::niche_types::UsizeNoHighBit    8b 8                storage=ss0
+; ssa   _12   usize                             8b 8                var=11
+; ssa   _13   usize                             8b 8                var=12
+; ssa   _14   &'{erased} alloc::raw_vec::RawVec<usize, std::alloc::Global>    8b 8                var=13
+; ssa   _15   &'{erased} alloc::raw_vec::RawVecInner<std::alloc::Global>    8b 8                var=14
+; stack _16   core::num::niche_types::UsizeNoHighBit    8b 8                storage=ss1
+; ssa   _17   bool                              1b 1                var=15
+; ssa   _18   usize                             8b 8                var=16
+; stack _19   *mut usize                        8b 8                storage=ss2
+; ssa   _20   *mut usize                        8b 8                var=17
+; stack _21   std::ptr::NonNull<u8>             8b 8                storage=ss3
+; ssa   _22   usize                             8b 8                var=18
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 8, align = 8
+    ss3 = explicit_slot 8, align = 8
+    sig0 = (i64) system_v
+    sig1 = (i64) system_v
+    fn0 = colocated u0:47 sig0 ; Instance { def: Item(DefId(3:5460 ~ alloc[e0b3]::collections::vec_deque::{impl#6}::grow)), args: [usize, std::alloc::Global] }
+    fn1 = u0:237 sig1 ; "_Unwind_Resume"
+
+block0(v0: i64, v1: i64):
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} mut std::collections::VecDeque<usize, std::alloc::Global> <- ByVal(v0): &'{erased} mut std::collections::VecDeque<usize, std::alloc::Global>
+; write_cvalue: Var(_2, var3): usize <- ByVal(v1): usize
+    jump block1
+
+block1:
+    v3 = load.i64 notrap v0+24
+; 
+; switchInt(const <T as std::mem::SizedTypeProperties>::IS_ZST)
+    jump block8
+
+block2:
+    try_call fn0(v0), sig0, block20, [ tag0: block21(exn0) ]
+
+block21(v6: i64) cold:
+    jump block5
+
+block20:
+    jump block19
+
+block3:
+    v8 = load.i64 notrap v0+24
+; ((*_1).1: usize) = Add(copy ((*_1).1: usize), const 1_usize)
+    v9 = iconst.i64 1
+    v11 = iadd v8, v9  ; v9 = 1
+; write_cvalue: Addr(Pointer { base: Addr(v7), offset: Offset32(24) }, None): usize <- ByVal(v11): usize
+    store notrap v11, v0+24
+; _22 = copy (((*_1).0: std::collections::vec_deque::index::WrappedIndex).0: usize)
+; write_cvalue: Var(_22, var18): usize <- ByRef(Pointer { base: Addr(v7), offset: Offset32(16) }, None): usize
+    v12 = load.i64 notrap v0+16
+; _12 = Add(copy _22, copy _5)
+    jump block13
+
+block4 cold:
+; lib_call _Unwind_Resume
+    call fn1(v6)
+    trap user1
+
+block5 cold:
+    jump block4
+
+block6:
+    v18 = icmp.i64 eq v3, v21
+; write_cvalue: Var(_3, var4): bool <- ByVal(v18): bool
+; 
+; switchInt(move _3)
+    brif v18, block2, block3
+
+block8:
+    jump block10
+
+block10:
+    v21 = load.i64 notrap v0
+    v22 = stack_addr.i64 ss0
+    store notrap v21, v22
+; _8 = copy _11 as usize (Transmute)
+; write_cvalue_transmute: Var(_8, var8): usize <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): core::num::niche_types::UsizeNoHighBit
+    jump block6
+
+block11:
+    v13 = iadd.i64 v12, v8
+; write_cvalue: Var(_12, var11): usize <- ByVal(v13): usize
+; 
+; switchInt(const <T as std::mem::SizedTypeProperties>::IS_ZST)
+    v27 = icmp uge v13, v30
+; write_cvalue: Var(_17, var15): bool <- ByVal(v27): bool
+; 
+; switchInt(move _17)
+    brif v27, block16, block17
+
+block13:
+    jump block15
+
+block15:
+    v30 = load.i64 notrap v0
+    v31 = stack_addr.i64 ss1
+    store notrap v30, v31
+; _13 = copy _16 as usize (Transmute)
+; write_cvalue_transmute: Var(_13, var12): usize <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): core::num::niche_types::UsizeNoHighBit
+    jump block11
+
+block16:
+    v36 = isub.i64 v13, v30
+; write_cvalue: Var(_18, var16): usize <- ByVal(v36): usize
+; 
+; goto
+    jump block18(v36)
+
+block17:
+    jump block18(v13)
+
+block18(v44: i64):
+    v40 = load.i64 notrap v0+8
+    v41 = stack_addr.i64 ss3
+    store notrap v40, v41
+; _20 = copy _21 as *mut T (Transmute)
+; write_cvalue_transmute: Var(_20, var17): *mut usize <- ByRef(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): std::ptr::NonNull<u8>
+    v60 = iconst.i64 3
+    v61 = ishl v44, v60  ; v60 = 3
+    v47 = iadd v40, v61
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): *mut usize <- ByVal(v47): *mut usize
+    v48 = stack_addr.i64 ss2
+    store notrap v47, v48
+; (*_19) = copy _6
+    store.i64 notrap v1, v47
+; _0 = &mut (*_19)
+    v52 = load.i64 notrap v48
+; write_cvalue: Var(_0, var1): &'{erased} mut usize <- ByVal(v52): &'{erased} mut usize
+; 
+; return
+    return v52
+
+block19:
+    jump block3
+}
+
+; clifv-extnames 1
+; userextname0 = u0:47
+; userextname1 = u0:237
+; decl u0:47 func export "_RNxC10dissimilar12H2N1WfSBcPH2"
+; decl u0:88 func local "_RNxC10dissimilar12H7KZWvxZckFY"
+; decl u0:237 func import "_Unwind_Resume"
+; end clifv-extnames

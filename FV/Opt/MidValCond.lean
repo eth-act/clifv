@@ -20,13 +20,14 @@ The compiled function stays `g`: the copy only exists inside the check.
 * `checkCertC f g cert hints`: `checkCert f g cert` without hints; otherwise `refsOk g` and
   `checkCert f (condPrep g hints) cert`, or, when some hint has an empty wrapper chain (a fold
   request, `foldBlocks`, `FV/Opt/MidValFold.lean`), `checkCert (foldPre f bs) (condPrep g hints)
-  cert` with the default normaliser of `foldPre f bs`: `f`'s constant-condition branches in the
+  cert` with the default normaliser of `foldPre f bs`: the block parameters `ConstPhi.run` kept
+  removed (`phiPre`), divisions by constants rewritten, `f`'s constant-condition branches in the
   requested blocks folded and the blocks that became unreachable removed (`rewrite:blocks`).
   `checkCertSymsC`: the hoisting mode (no folding).
 * `checkC`/`emitC` (untrusted): the check without hints, else with the hints the relaxed check
   (`checkRun … (cond := true)`) records, else (not in the hoisting mode) the same on `foldPre f
-  bs` for the blocks `bs` whose branch is a `jump` in `g` (`foldCands`), with `bs` as fold
-  requests appended to the hints.
+  bs` for the blocks `bs` whose branch is a `jump` in `g` or that divide (`foldCands`; the entry
+  block alone when there is none), with `bs` as fold requests appended to the hints.
 -/
 
 namespace Opt.MidVal
@@ -113,30 +114,32 @@ def checkC0 (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false
     | .error _ => .error e
 
 /-- The hints of the relaxed check (`checkC0`); when it rejects (not in the hoisting mode), the
-same on `foldPre f bs` for the blocks `bs` whose branch is a `jump` in `g` (`foldCands`), with
-the fold requests `(b, [])` of `bs` appended. The folded check is skipped when no branch folds
-or the folded function's blocks are not `g`'s. A pair rejected for `rewrite:blocks` that the
-fold does not rescue reports the folded check's rejection, marked `[fold]`. -/
+same on `foldPre f bs` for the blocks `bs` whose branch is a `jump` in `g` or that divide
+(`foldCands`), or, when there is none, the entry block alone (a request for `foldPre`'s
+constant-phi removal `phiPre`), with the fold requests `(b, [])` of `bs` appended. The folded
+check is skipped when `foldPre f bs` has `f`'s blocks or its blocks are not `g`'s. A pair rejected
+for `rewrite:blocks`, a division or a block parameter that the prep does not rescue reports the
+folded check's rejection, marked `[prep]`. -/
 def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
     Except Reject (List (BlockId × List Wrap)) :=
   match checkC0 f g norm hoist with
   | .ok h => .ok h
   | .error e =>
-    let bs := foldCands f g
+    let bs := match foldCands f g with
+      | [] => (f.blocks.head?.map (·.id)).toList
+      | bs => bs
     let fail (e' : Reject) : Except Reject (List (BlockId × List Wrap)) :=
-      .error (if e == "rewrite:blocks" || e.startsWith "rewrite:skeleton-removed div" then
+      .error (if e == "rewrite:blocks" || e.startsWith "rewrite:skeleton-removed div" ||
+          e.startsWith "shape:params" || (e.splitOn " arity").length > 1 then
         s!"{e'} [prep]" else e)
     if hoist || bs.isEmpty then .error e
     else
-      let f1 := foldBr (divPre f bs) bs
-      if f1.blocks == f.blocks then fail e
-      else
-        -- `foldPre f bs`
-        let f' := ConstPhi.run f1
-        if f'.blocks.map (·.id) != g.blocks.map (·.id) then fail "rewrite:blocks"
-        else match checkC0 f' g with
-          | .ok h => .ok (h ++ bs.map fun b => (b, []))
-          | .error e' => fail e'
+      let f' := foldPre f bs
+      if f'.blocks == f.blocks then fail e
+      else if f'.blocks.map (·.id) != g.blocks.map (·.id) then fail "rewrite:blocks"
+      else match checkC0 f' g with
+        | .ok h => .ok (h ++ bs.map fun b => (b, []))
+        | .error e' => fail e'
 
 /-- The certificate and hints of an accepted pair (`checkC`, then `emit` against the copy, from
 `foldPre f bs` for fold requests `bs`). -/
