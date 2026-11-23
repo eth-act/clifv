@@ -141,8 +141,9 @@ impl Config {
     /// `--lean-link` (the region holds verified code only) and in plain mode, whose executables
     /// then hold Lean-compiled code only where a per-function theorem covers it. Unverified Lean
     /// code in an executable is not the proven program, so the binary check stopped on it for the
-    /// whole executable (ark-bn254: 3 functions over the validation budget, 14,739 functions
-    /// uncovered); with cg_clif's code it is outside the program, as every fallback is.
+    /// whole executable (#1169; ark-bn254's debug test executable: 2 functions over the validation
+    /// budget, 14,739 functions uncovered); with cg_clif's code it is outside the program, as
+    /// every fallback is.
     pub fn keeps_unverified(&self) -> bool {
         self.lean_link || self.mode == Mode::Plain
     }
