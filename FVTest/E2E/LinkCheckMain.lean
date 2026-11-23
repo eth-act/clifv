@@ -1,3 +1,4 @@
+import FV.E2E.GotIdx
 import FVTest.E2E.BinVerdict
 import FV.E2E.GotTab
 import FV.E2E.ProductionPipelineWith

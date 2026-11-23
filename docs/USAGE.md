@@ -17,9 +17,12 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
   theorem for which function, and the hypotheses about the run that no tool decides: *What is
   verified, and what is not*);
 * **compiled, unverified**: compiled by the Lean backend but outside the theorem (the reason
-  is given, e.g. a special-purpose parameter other than one `sret` pointer, or any function
-  under `--opt`),
-  or over the validation budget (see *What is verified, and what is not*);
+  is given, e.g. any function under `--opt`); only under `--opt` and `--opt-proven-only`
+  without `--lean-link`: in plain mode and with `--lean-link` such a function (e.g. one over the
+  validation budget, see *What is verified, and what is not*) keeps cg_clif's code and is a
+  fallback with the reason `unverified (…): cg_clif's code kept`, so that an executable holds
+  Lean-compiled code only where a theorem covers it (the binary check stops on Lean code
+  outside the proven program);
 * **fallback**: cg_clif's code (the reason is given).
 
 ```
@@ -546,10 +549,11 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `i128 legalized (outside backend_correct: validation budget: N instructions × values >
   1000000000, Opt.Legal.checkW not run)`. No function of std or `examples/` reaches it; ruint's
   macro-generated `bits::tests::test_primitive_shifts` (105,241 instructions, 7.4 × 10⁹) does.
-  Both verdicts are known before the function is compiled, and under `--lean-link` (which keeps
-  cg_clif's code for every unverified function) `cargo fv` passes `--skip-unverified`:
-  `lean-backend` does not compile such a function (`not compiled (--skip-unverified),
-  unverified (…)`), and the report gives it the same fallback and reason as a compiled one.
+  Both verdicts are known before the function is compiled, and in plain mode and under
+  `--lean-link` (which keep cg_clif's code for every unverified function) `cargo fv` passes
+  `--skip-unverified`: `lean-backend` does not compile such a function (`not compiled
+  (--skip-unverified), unverified (…)`), and the report gives it the same fallback and reason
+  as a compiled one.
 * **Compile budget.** A function with more than 20000000000 instructions × blocks is not
   compiled (`unsupported: compile budget: N instructions × blocks > 20000000000`; cg_clif's
   code): a deterministic bound on the steps whose time grows faster than the function (the
@@ -593,8 +597,8 @@ profile. So in an optimised build:
   mid-end is neither applied to the verified code nor trusted. The exception is a function
   retried from its `.opt.clif` (step 4 of *How it works*): its `about` ends in `compiled from
   cg_clif's optimised dump (.opt.clif)`, and its theorem is about Cranelift's optimised function;
-* fallback functions, and with `--lean-link` the unverified ones and those `lean-link
-  --verified` leaves out of a region, keep cg_clif's code from the same build, i.e. stock
+* fallback functions, the unverified ones (plain mode and `--lean-link`) and those `lean-link
+  --verified` leaves out of a region keep cg_clif's code from the same build, i.e. stock
   Cranelift's optimised code;
 * the Lean-compiled code is in general not byte-equal to stock's (stock compiles another
   function, the optimised one), and larger in total (measured below).

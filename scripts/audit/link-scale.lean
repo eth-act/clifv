@@ -27,6 +27,7 @@ import FV.Link.ScopePlacement
 import FV.Link.Ld.DataFast
 import FV.E2E.BinCheckFast
 import FV.E2E.GotTab
+import FV.E2E.GotIdx
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -180,3 +181,16 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 -- byte instead of a scan of every relocation)
 #print axioms E2E.GotTab.relocAtB_eq_contains
 #print axioms E2E.GotTab.gotTabB_eq_fast
+-- #1090: the GOT symbol of each `blr` site from a per-function index (one pass over the VCode)
+-- instead of a scan of the whole VCode per site and per function the site may enter
+#print axioms E2E.lookupMap_get
+#print axioms E2E.GotIdx.syms_of
+#print axioms E2E.gotB_flat
+#print axioms E2E.GotIdx.ok_of
+#print axioms E2E.GotIdx.got_of
+#print axioms E2E.GotIdx.tab_get
+#print axioms E2E.gotOf_eq_tab
+#print axioms E2E.LinkCheck.linkChksWithI_eq_got
+#print axioms E2E.LinkCheck.linkChksWithTI_eq_got
+#print axioms E2E.LinkCheck.linkChksWithTSI_eq_got
+#print axioms E2E.LinkCheck.returnPinsIdx_eq_got
