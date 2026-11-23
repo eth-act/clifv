@@ -280,6 +280,12 @@ theorem runLoopX_toX : runLoopX env.toX p fuel xs = (runLoop env p fuel xs.s).to
   bare `; run`, `; print: …`. Literals: decimal, negative, `0x` hex with `_`, reduced mod
   `2^w`. Run arguments/expectations are typed by the signature of the function the comment
   follows (as in the reader); run commands attach to the preceding function.
+- Names: a `%name` is read up to the first character that is not alphanumeric, `_`, `.`, `$` or
+  `@` (`Parse.isNameChar`). cranelift-reader stops at the last three, which never follow a name
+  in its syntax; they are read for the frontend bundle's linked names of local symbols the
+  object merge left local (`sym@tag`, e.g. `.Ldata10@b7f1e7e76b13`, `Front.PCgu.fin`), whose
+  printed functions must parse back (`Front.mkInput`, #1163). Such a name is not CLIF
+  cranelift-reader accepts; it occurs only in link-check's renamed inputs.
 - Round trip: `parse (print p) = p` for the program of every file's supported functions
   (checked by `clif-filetest` on all 395 runtests: 0 failures), and every printed file is
   accepted by `cranelift-reader` + the Cranelift verifier (`clif-oracle check`: 146 files,
