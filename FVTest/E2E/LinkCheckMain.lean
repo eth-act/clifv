@@ -43,6 +43,108 @@ def returnPinDetail (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Li
       | _ => [])
     | _ => []
 
+/-- A checker `link-check` may decide the program in (#1164): its results, their per-function
+checks that do not depend on the rest of the program (`staticChks…`: the validators), and the
+lowering the typed Stock proof files name. -/
+structure Cand where
+  checker : FVTest.E2E.BinVerdict.Checker
+  R0 : Res
+  stat : List (String × List (String × Bool))
+  lowerName : String
+
+/-- The functions of `R` named in `gone` and, transitively, their callers in `R`. -/
+partial def callerClosure (R : Res) (gone : Std.HashSet String) : Std.HashSet String :=
+  let callers := R.filter fun e => !gone.contains e.1.name &&
+    e.1.externs.any fun x => gone.contains x.2.name
+  if callers.isEmpty then gone
+  else callerClosure R (callers.foldl (fun s e => s.insert e.1.name) gone)
+
+/-- An upper bound of the size of `pruneRun`'s program for these results and checks: the
+functions left when only the ones failing the static checks and their callers are dropped. -/
+def staticBound (R : Res) (stat : List (String × List (String × Bool))) : Nat :=
+  let statM := assocMap stat
+  let fails : Std.HashSet String := R.foldl (fun s e =>
+    if (bad ((statM[e.1.name]?).getD [])).isEmpty then s else s.insert e.1.name) {}
+  let gone := callerClosure R fails
+  (R.filter fun e => !gone.contains e.1.name).length
+
+/-- What `pruneRun` decided: the program left (`keep`), the functions dropped with their failing
+checks, the failures of the last round (`d`, empty but for program-level checks with `--prune`)
+and its input; `d1`/`I1`: the first round's (the whole program, as without `--prune`). -/
+structure PruneRun where
+  keep : Res
+  dropped : List (String × List String)
+  d : List (String × List String)
+  I : LinkInput
+  d1 : List (String × List String)
+  I1 : LinkInput
+
+/-- The checks of the checker `c` on its results, all of them (`staticChks…` from `c.stat`, the
+link checks, the global checks), with `--prune` (`prune`) repeated after dropping the failing
+functions and their callers until none fails. -/
+def pruneRun (I0 : LinkInput) (dataSyms : List String) (c : Cand) (prune : Bool) : IO PruneRun := do
+  let typed := c.checker != .integer
+  let typedS := c.checker == .typedStock
+  let mut keep := c.R0
+  let mut dropped : List (String × List String) := []
+  let mut d : List (String × List String) := []
+  let mut first : Option (List (String × List String) × LinkInput) := none
+  let mut I := I0
+  -- hash maps instead of list scans per element (T3d: a 28k-function program); the checks are
+  -- `globalChks`/`linkChks` evaluated through `LinkCtx.of` (`globalChksWith_of`, `linkChksWith_of`)
+  let addrs0 := assocMap I0.addrs
+  let statM := assocMap c.stat
+  repeat
+    let keepSet : Std.HashSet String := keep.foldl (fun s e => s.insert e.1.name) {}
+    let names := Front.dedupFirst ((keep.flatMap fun e => addrNames e.1) ++
+      dataSyms.filter keepSet.contains)
+    let syms := names.filterMap fun n => addrs0[n]?.map (n, ·)
+    let D := (keep.map fun e => frameDrop (getOk e.2).af).foldl max 0
+    I := { I0 with syms, D }
+    let P := progOf keep
+    let T := tabOf keep
+    let C := LinkCtx.of I P T
+    -- the program's scans per call site indexed (#1062: `linkChksWithI_of`, `linkChksWithTI_of`,
+    -- `linkChksWithTSI_of`)
+    let X := LinkIdx.of P C.ents
+    let returnPins := ReturnPinCtx.of I keep
+    -- the return-pin sites tested against the entries they may enter, indexed by GOT name and
+    -- parameter types (`returnPinsIdx_eq`: the same value as `returnPinsWith`, #1108; ruint:
+    -- every `blr` site against all 227,551 entries, hours on 64 cores)
+    let returnPinsY := ReturnPinIdx.of returnPins
+    let gl := bad (globalChksWith C I P T)
+    -- typed: `chksWithT`'s call-site checks (`linkChksT`: a `blr` that enters no function of the
+    -- program may have float uses/defs, `linkChksWithT_of`) and `calleeInt` with `C`'s declared
+    -- names and indirect-call flag (`calleeWithB_eq`); typed Stock (`okRWithTS`, #742): the
+    -- class-aware call-site checks `linkChksWithTS` (`linkChksWithTS_of`), no `calleeInt`
+    let tyChk := fun (g : Clif.Function) => if typed && !typedS then
+        [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S g || g.sig.returns.all (·.ty.isInt))]
+      else []
+    let lc := fun (e : Clif.Function × Except String Art) =>
+      if typedS then linkChksWithTSI C X P e.1 e.2
+      else if typed then linkChksWithTI C X P e.1 e.2 else linkChksWithI C X P e.1 e.2 ++ [("returnPins", returnPinsIdx returnPins returnPinsY e.1)]
+    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
+      match b with
+      | [] => none
+      | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))
+    d := (if gl.isEmpty then [] else [("(program)", gl)]) ++ fs
+    if first.isNone then first := some (d, I)
+    let fails := d.filter (·.1 != "(program)")
+    if !prune || fails.isEmpty then break
+    dropped := dropped ++ fails
+    -- and their callers in the program, so that what is left is closed under calls (no function
+    -- of the crate becomes an extern of the base environment)
+    let mut gone : Std.HashSet String := fails.foldl (fun s b => s.insert b.1) {}
+    repeat
+      let callers := keep.filter fun e => !gone.contains e.1.name &&
+        e.1.externs.any fun x => gone.contains x.2.name
+      if callers.isEmpty then break
+      dropped := dropped ++ callers.map fun e => (e.1.name, ["(calls a dropped function)"])
+      gone := callers.foldl (fun s e => s.insert e.1.name) gone
+    keep := keep.filter fun e => !gone.contains e.1.name
+  let (d1, I1) := first.getD (d, I)
+  return { keep, dropped, d, I, d1, I1 }
+
 def main (args : List String) : IO UInt32 := do
   let some o := parseOpts args none | do IO.eprintln usage; return 2
   let dir : System.FilePath := o.dir
@@ -154,8 +256,8 @@ def main (args : List String) : IO UInt32 := do
   -- the typed checks on the Stock route's results (#722, `Link.SemanticCompilerWith.attemptT`'s
   -- output, typed `--verified` when the units hold Stock code): the results `R0I` with
   -- `staticChksWithTS` (the checker `okRWithTS`: the Stock validator on an integer function, the
-  -- typed validators on `lowerFunction`'s output); used when they accept every function the
-  -- integer validators reject and the executable holds `R0I`'s code wherever it is not
+  -- typed validators on `lowerFunction`'s output); a candidate checker (#1164, below) when
+  -- integer validators reject functions and the executable holds `R0I`'s code wherever it is not
   -- `lowerFunction`'s; theorem `E2E.SemanticExecBytes.binary_correct_exec_provenTS`.
   -- #1040: the route recovery above takes the ABI-aware Stock routes first, so where one of them
   -- gives the same bytes as the route the compiler's typed route `attemptT` took (an `sret` copy:
@@ -163,7 +265,7 @@ def main (args : List String) : IO UInt32 := do
   -- the Stock one, which `lowerOkTSB` rejects. Such a function takes, for the typed checker, the
   -- first route in the compiler's order with the same bytes that passes `lowerOkTSB`
   -- (`typedRoute?`); the proof files then name that route list.
-  let stockTS : Option (Res × String × List (String × List (String × Bool)) × Nat) :=
+  let stockTS : Option (Res × String × List (String × List (String × Bool)) × Nat × Nat × Bool) :=
     if !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let statS0 := Link.parMap (fun (p : (Clif.Function × Except String Art) × List (String × Bool)) =>
@@ -197,23 +299,15 @@ def main (args : List String) : IO UInt32 := do
         | some phs => (Link.parMap (fun e => match e.2 with
             | .ok a => artB I0 (fileRd file) phs a || lowersToB e.1 a.vc
             | .error _ => true) R0S).all id
-      if fixedS == failI.length && bytesS then some (R0S, lowerNameOf choicesS, statS, reroute.length)
-      else none
+      some (R0S, lowerNameOf choicesS, statS, reroute.length, fixedS, bytesS)
     else none
   -- the typed checker (S11e6, #615): when integer validators reject functions, the cleanup
   -- results `I.resultsCleanup` with the typed checks `chksWithT cleanupStage` (the checker
   -- `okBCleanupT`, which accepts integer functions too: `Link.DeadCleanup.compileExeT`'s output,
-  -- typed `--verified`); used when the typed validators accept some of the rejected functions;
-  -- theorem `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`. The integer results are
-  -- dropped before the typed ones are computed (one result set at a time).
-  let (typed, typedS, R0, stat, note, lowerNameS) :
-      Bool × Bool × Res × List (String × List (String × Bool)) × String × String :=
-    match stockTS with
-    | some (R0S, nameS, statS, nRe) =>
-      (true, true, R0S, statS,
-        s!"  typed checks: the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's){if nRe == 0 then "" else s!", {nRe} function(s) on the typed route with the same bytes (#1040)"}; the typed Stock checker is used",
-        nameS)
-    | none => if o.deadCleanup && !failI.isEmpty then
+  -- typed `--verified`); a candidate checker (#1164, below) when the typed validators accept some
+  -- of the rejected functions; theorem `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`.
+  let (candT, noteT) : Option Cand × String :=
+    if o.deadCleanup && !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let probe := Link.parMap (fun (fi : FnInput) =>
         let r := I0.pipeCleanupOf fi
@@ -223,76 +317,64 @@ def main (args : List String) : IO UInt32 := do
       if fixed > 0 then
         let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
         let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
-        (true, false, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT cleanupStage { I0 with D := DT } e.1 e.2)) R0T,
-          s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used", lowerName)
-      else (false, false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones", lowerName)
-    else (false, false, R0I, statI, "", lowerName)
+        (some ⟨.typed, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT cleanupStage { I0 with D := DT } e.1 e.2)) R0T, lowerName⟩,
+          s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's)")
+      else (none, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's)")
+    else (none, "")
+  let (candS, noteS) : Option Cand × String := match stockTS with
+    | some (R0S, nameS, statS, nRe, fixedS, bytesS) =>
+      (if bytesS then some ⟨.typedStock, R0S, statS, nameS⟩ else none,
+        s!"  typed checks: {fixedS} of the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's){if nRe == 0 then "" else s!", {nRe} function(s) on the typed route with the same bytes (#1040)"}{if bytesS then "" else "; the executable does not hold those results' code (artB), so this checker is not a candidate"}")
+    | none => (none, "")
   -- #1119: the mid-end validator's pair is one more check of each function
   let midChk := "Link.midPairB (the compiled function validated against the unoptimised one)"
-  let stat := if src0.isNone then stat else
-    stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)])
+  let withMid := fun (c : Cand) => if src0.isNone then c else
+    { c with stat := c.stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)]) }
   if src0.isSome then
     IO.println s!"  mid-end validator: {nSrc} function(s) compiled from Cranelift's optimised dumps (src_dump: the unoptimised one); Link.midPairB fails for {(midStat.toList.filter (!·.2)).length}"
-  let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
-  if !note.isEmpty then IO.println note
-  IO.println s!"  checker: {if typedS then "typed Stock (okRWithTS)" else if typed then "typed (okBCleanupT)" else "integer"}"
-  IO.println s!"  static checks (the validators): {nStat} function(s) fail"
+  for n in [noteS, noteT] do
+    if !n.isEmpty then IO.println n
+  -- #1164: the checker is the candidate whose `--prune` program is the largest (ties: typed Stock,
+  -- typed, integer), each candidate decided completely by `pruneRun`. One binary theorem is about
+  -- one checker's results, so the program is checked by one checker; this only chooses which.
+  -- A candidate whose validators alone leave fewer functions (`staticBound`) than the best found
+  -- cannot win and is not run.
+  let cI : Cand := withMid ⟨.integer, R0I, statI, lowerName⟩
+  let cands : List Cand := (candS.toList ++ candT.toList).map withMid ++ [cI]
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
-  let mut keep := R0
-  let mut dropped : List (String × List String) := []
-  let mut d : List (String × List String) := []
-  let mut I := I0
-  -- hash maps instead of list scans per element (T3d: a 28k-function program); the checks are
-  -- `globalChks`/`linkChks` evaluated through `LinkCtx.of` (`globalChksWith_of`, `linkChksWith_of`)
-  let addrs0 := assocMap I0.addrs
-  let statM := assocMap stat
-  repeat
-    let keepSet : Std.HashSet String := keep.foldl (fun s e => s.insert e.1.name) {}
-    let names := Front.dedupFirst ((keep.flatMap fun e => addrNames e.1) ++
-      dataSyms.filter keepSet.contains)
-    let syms := names.filterMap fun n => addrs0[n]?.map (n, ·)
-    let D := (keep.map fun e => frameDrop (getOk e.2).af).foldl max 0
-    I := { I0 with syms, D }
-    let P := progOf keep
-    let T := tabOf keep
-    let C := LinkCtx.of I P T
-    -- the program's scans per call site indexed (#1062: `linkChksWithI_of`, `linkChksWithTI_of`,
-    -- `linkChksWithTSI_of`)
-    let X := LinkIdx.of P C.ents
-    let returnPins := ReturnPinCtx.of I keep
-    -- the return-pin sites tested against the entries they may enter, indexed by GOT name and
-    -- parameter types (`returnPinsIdx_eq`: the same value as `returnPinsWith`, #1108; ruint:
-    -- every `blr` site against all 227,551 entries, hours on 64 cores)
-    let returnPinsY := ReturnPinIdx.of returnPins
-    let gl := bad (globalChksWith C I P T)
-    -- typed: `chksWithT`'s call-site checks (`linkChksT`: a `blr` that enters no function of the
-    -- program may have float uses/defs, `linkChksWithT_of`) and `calleeInt` with `C`'s declared
-    -- names and indirect-call flag (`calleeWithB_eq`); typed Stock (`okRWithTS`, #742): the
-    -- class-aware call-site checks `linkChksWithTS` (`linkChksWithTS_of`), no `calleeInt`
-    let tyChk := fun (g : Clif.Function) => if typed && !typedS then
-        [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S g || g.sig.returns.all (·.ty.isInt))]
-      else []
-    let lc := fun (e : Clif.Function × Except String Art) =>
-      if typedS then linkChksWithTSI C X P e.1 e.2
-      else if typed then linkChksWithTI C X P e.1 e.2 else linkChksWithI C X P e.1 e.2 ++ [("returnPins", returnPinsIdx returnPins returnPinsY e.1)]
-    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
-      match b with
-      | [] => none
-      | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))
-    d := (if gl.isEmpty then [] else [("(program)", gl)]) ++ fs
-    let bad := d.filter (·.1 != "(program)")
-    if !o.prune || bad.isEmpty then break
-    dropped := dropped ++ bad
-    -- and their callers in the program, so that what is left is closed under calls (no function
-    -- of the crate becomes an extern of the base environment)
-    let mut gone : Std.HashSet String := bad.foldl (fun s b => s.insert b.1) {}
-    repeat
-      let callers := keep.filter fun e => !gone.contains e.1.name &&
-        e.1.externs.any fun x => gone.contains x.2.name
-      if callers.isEmpty then break
-      dropped := dropped ++ callers.map fun e => (e.1.name, ["(calls a dropped function)"])
-      gone := callers.foldl (fun s e => s.insert e.1.name) gone
-    keep := keep.filter fun e => !gone.contains e.1.name
+  let (cand, run) ← match cands with
+    | [c] => do pure (c, ← pruneRun I0 dataSyms c o.prune)
+    | _ => do
+      IO.println s!"  checker candidates (#1164: the one whose --prune program is the largest; ties: typed Stock, typed, integer):"
+      let ranked := (cands.zipIdx.map fun (c, i) => (staticBound c.R0 c.stat, i, c)).mergeSort
+        fun x y => x.1 > y.1 || (x.1 == y.1 && x.2.1 ≤ y.2.1)
+      let mut best : Option (Nat × Nat × Cand × PruneRun) := none
+      for (b, i, c) in ranked do
+        let skip := match best with
+          | some (k, j, _, _) => b < k || (b == k && i > j)
+          | none => false
+        if skip then
+          IO.println s!"    {c.checker.label}: not run (its validators leave at most {b} of {c.R0.length} functions)"
+          continue
+        let run ← pruneRun I0 dataSyms c true
+        IO.println s!"    {c.checker.label}: {run.keep.length} of {c.R0.length} functions pass ({(c.stat.filter fun e => !(bad e.2).isEmpty).length} fail the validators)"
+        let better := match best with
+          | some (k, j, _, _) => run.keep.length > k || (run.keep.length == k && i < j)
+          | none => true
+        if better then best := some (run.keep.length, i, c, run)
+      match best with
+      | some (_, _, c, run) => pure (c, run)
+      | none => do pure (cI, ← pruneRun I0 dataSyms cI o.prune)
+  let typed := cand.checker != .integer
+  let typedS := cand.checker == .typedStock
+  let R0 := cand.R0
+  let lowerNameS := cand.lowerName
+  let nStat := (cand.stat.filter fun e => !(bad e.2).isEmpty).length
+  IO.println s!"  checker: {cand.checker.label}"
+  IO.println s!"  static checks (the validators): {nStat} function(s) fail"
+  -- without `--prune`, the first round: the failures on the whole program
+  let (keep, dropped, d, I) := if o.prune then (run.keep, run.dropped, run.d, run.I)
+    else (R0, [], run.d1, run.I1)
   let ms := (← IO.monoMsNow) - t0
   -- report
   IO.println s!"  {R0.length} functions, {I0.addrs.length} link-map addresses, {I.syms.length} CLIF image symbols, D = {I.D}; checked in {ms} ms"
@@ -474,8 +556,7 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"  stack: recursive: the calls of {bad.length} function(s) reach a call cycle (their stack stays a premise): {(bad.map (·.name)).take 10}{if bad.length > 10 then " …" else ""}; the other {Pk.funcs.length - bad.length}: {s} bytes at most"
   -- the theorem these checks instantiate (#1092): named only when every premise it takes that
   -- is a fact about the program and the file holds (`FVTest.E2E.BinVerdict`)
-  let checker : FVTest.E2E.BinVerdict.Checker :=
-    if typedS then .typedStock else if typed then .typed else .integer
+  let checker : FVTest.E2E.BinVerdict.Checker := cand.checker
   -- #1119: with source dumps, the theorem through the validator (`…_mid`), about the program of
   -- the unoptimised dumps; its premise `Opt.MidVal.ValidatedC P0.funcs (prog I).funcs` decided
   -- here on the (pruned) program (`Link.midValidatedB_sound`)
