@@ -235,6 +235,12 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Numbers (ParityLower15/16, #586):** fetch 426 MB of 6.7 GB (5,718 archives, 15 min, 16 connections); the 116-module cone built serially, none above 2.9 GB; the 33-module compiler cone 53 s; the interpreted compiler 2.6 s per small file, and its output for the issue's repro (32 → 28 bytes) was known before the one CI run was dispatched.
 - **Limits:** measured on files of one or two small functions only; the gate is still CI's full run (every other importer, the audits, the run-time gates). The range-fetch helper is not in the repository (an agent's scratch script; the steps above are all it does).
 
+### A change to `FV/Clif/Parse.lean` rebuilds everything: measure with the executables' cone, let the gate build the rest
+- **Problem:** #1163's fix is one line in the CLIF lexer, which every module imports: 4,791 of 5,907 `FV FVTest` modules out of date. Built first as whole `FV FVTest` scheduler runs at `--budget 32G`/`48G`, `--max-jobs 16-20`, beside other agents' gates (clifv-remote, 2026-11-23): 2,455 modules built in 9.2 h. Mostly 4-5 modules ran at once: the ISLE table chain (`IselPrgTab*`, `IselSzTab*`, 1,200-3,000 s each) bounds the DAG, and at 32G four 8G-cap `IselSzTTabH*` modules filled the budget.
+- **Trick:** the crate measurements only need `lean-backend`, `clif-decode` and `link-check`. `lake-serial-build.py FVTest.Backend.Main FVTest.E2E.LinkCheckMain FVTest.Front.DecodeMain` builds their import cone only: 2,190 modules. Build that, measure, and leave the other modules to the full gate, which runs at `GATE_BUDGET=96G`.
+- **Numbers:** with the cone mostly built, its last 115 modules took 1.3 min; the gate then built the remaining 2,806 modules in 91.5 min, and its whole run took 3 h 35 min.
+- **Where:** #1163 (agent PlainCheck1). Diagnose a round-trip failure before changing anything with `lake env lean --run <scratch>.lean <bundle dir>` (`Front.readBundle`, `parseUnit`, `renamedOf`, then print and parse each function); it runs on main's build and names the text that does not parse.
+
 ## Compiled checkers (`lean-link`, `link-check`)
 
 ### Hash maps behind a lookup parameter, not `List.lookup`/`P.func?` per element
