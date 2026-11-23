@@ -306,30 +306,38 @@ def main (args : List String) : IO UInt32 := do
   -- `okBCleanupT`, which accepts integer functions too: `Link.DeadCleanup.compileExeT`'s output,
   -- typed `--verified`); a candidate checker (#1164, below) when the typed validators accept some
   -- of the rejected functions; theorem `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`.
-  let (candT, noteT) : Option Cand × String :=
+  -- `okBCleanupT`'s static checks of one function on its cleanup result (their "depth" check holds
+  -- at every `D` at least the function's own frame, so this is its entry in the candidate's checks)
+  let typedOk := fun (fi : FnInput) =>
+    let r := I0.pipeCleanupOf fi
+    (bad (staticChksWithT cleanupStage { I0 with D := max D0 (frameDrop (getOk r).af) }
+      fi.func r)).isEmpty
+  -- #1119: the mid-end validator's pair is one more check of each function
+  let midChk := "Link.midPairB (the compiled function validated against the unoptimised one)"
+  let withMid := fun (c : Cand) => if src0.isNone then c else
+    { c with stat := c.stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)]) }
+  -- the candidate's results are computed only when it is run; its bound: the functions left when
+  -- the integer-rejected ones it rejects too and their callers are dropped
+  let (lazyT, noteT) : Option (Nat × Thunk Cand) × String :=
     if o.deadCleanup && !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
-      let probe := Link.parMap (fun (fi : FnInput) =>
-        let r := I0.pipeCleanupOf fi
-        (bad (staticChksWithT cleanupStage { I0 with D := max D0 (frameDrop (getOk r).af) }
-          fi.func r)).isEmpty) (I0.funcs.filter fun fi => failSet.contains fi.func.name)
-      let fixed := (probe.filter id).length
+      let probe := Link.parMap (fun (fi : FnInput) => (fi.func.name, typedOk fi))
+        (I0.funcs.filter fun fi => failSet.contains fi.func.name)
+      let fixed := (probe.filter (·.2)).length
       if fixed > 0 then
-        let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
-        let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
-        (some ⟨.typed, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT cleanupStage { I0 with D := DT } e.1 e.2)) R0T, lowerName⟩,
+        let gone := callerClosure R0I (probe.foldl (fun s p => if p.2 then s else s.insert p.1) {})
+        (some ((R0I.filter fun e => !gone.contains e.1.name).length, Thunk.mk fun _ =>
+          let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
+          let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
+          withMid ⟨.typed, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT cleanupStage { I0 with D := DT } e.1 e.2)) R0T, lowerName⟩),
           s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's)")
       else (none, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's)")
     else (none, "")
   let (candS, noteS) : Option Cand × String := match stockTS with
     | some (R0S, nameS, statS, nRe, fixedS, bytesS) =>
-      (if bytesS then some ⟨.typedStock, R0S, statS, nameS⟩ else none,
+      (if bytesS then some (withMid ⟨.typedStock, R0S, statS, nameS⟩) else none,
         s!"  typed checks: {fixedS} of the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's){if nRe == 0 then "" else s!", {nRe} function(s) on the typed route with the same bytes (#1040)"}{if bytesS then "" else "; the executable does not hold those results' code (artB), so this checker is not a candidate"}")
     | none => (none, "")
-  -- #1119: the mid-end validator's pair is one more check of each function
-  let midChk := "Link.midPairB (the compiled function validated against the unoptimised one)"
-  let withMid := fun (c : Cand) => if src0.isNone then c else
-    { c with stat := c.stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)]) }
   if src0.isSome then
     IO.println s!"  mid-end validator: {nSrc} function(s) compiled from Cranelift's optimised dumps (src_dump: the unoptimised one); Link.midPairB fails for {(midStat.toList.filter (!·.2)).length}"
   for n in [noteS, noteT] do
@@ -337,27 +345,32 @@ def main (args : List String) : IO UInt32 := do
   -- #1164: the checker is the candidate whose `--prune` program is the largest (ties: typed Stock,
   -- typed, integer), each candidate decided completely by `pruneRun`. One binary theorem is about
   -- one checker's results, so the program is checked by one checker; this only chooses which.
-  -- A candidate whose validators alone leave fewer functions (`staticBound`) than the best found
-  -- cannot win and is not run.
+  -- A candidate whose validators alone leave fewer functions (`staticBound`, or the typed probe's
+  -- bound) than the best found cannot win and is not run.
   let cI : Cand := withMid ⟨.integer, R0I, statI, lowerName⟩
-  let cands : List Cand := (candS.toList ++ candT.toList).map withMid ++ [cI]
+  let entries : List (FVTest.E2E.BinVerdict.Checker × Option Nat × Thunk Cand) :=
+    (candS.map fun c => (c.checker, none, Thunk.pure c)).toList ++
+      (lazyT.map fun (b, t) => (.typed, some b, t)).toList ++ [(.integer, none, Thunk.pure cI)]
+  let nF := I0.funcs.length
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
-  let (cand, run) ← match cands with
-    | [c] => do pure (c, ← pruneRun I0 dataSyms c o.prune)
+  let (cand, run) ← match entries with
+    | [(_, _, t)] => do pure (t.get, ← pruneRun I0 dataSyms t.get o.prune)
     | _ => do
       IO.println s!"  checker candidates (#1164: the one whose --prune program is the largest; ties: typed Stock, typed, integer):"
-      let ranked := (cands.zipIdx.map fun (c, i) => (staticBound c.R0 c.stat, i, c)).mergeSort
+      let ranked := (entries.zipIdx.map fun ((ch, b, t), i) =>
+          ((b.getD (staticBound t.get.R0 t.get.stat)), i, ch, t)).mergeSort
         fun x y => x.1 > y.1 || (x.1 == y.1 && x.2.1 ≤ y.2.1)
       let mut best : Option (Nat × Nat × Cand × PruneRun) := none
-      for (b, i, c) in ranked do
+      for (b, i, ch, t) in ranked do
         let skip := match best with
           | some (k, j, _, _) => b < k || (b == k && i > j)
           | none => false
         if skip then
-          IO.println s!"    {c.checker.label}: not run (its validators leave at most {b} of {c.R0.length} functions)"
+          IO.println s!"    {ch.label}: not run (its validators leave at most {b} of {nF} functions)"
           continue
+        let c := t.get
         let run ← pruneRun I0 dataSyms c true
-        IO.println s!"    {c.checker.label}: {run.keep.length} of {c.R0.length} functions pass ({(c.stat.filter fun e => !(bad e.2).isEmpty).length} fail the validators)"
+        IO.println s!"    {ch.label}: {run.keep.length} of {nF} functions pass ({(c.stat.filter fun e => !(bad e.2).isEmpty).length} fail the validators)"
         let better := match best with
           | some (k, j, _, _) => run.keep.length > k || (run.keep.length == k && i < j)
           | none => true
@@ -374,12 +387,16 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"  static checks (the validators): {nStat} function(s) fail"
   -- what a per-function mix of the checkers would add (none is proven: one binary theorem is
   -- about one checker's results): the other candidates' validators on the chosen one's rejections
-  if cands.length > 1 then
+  if entries.length > 1 then
     let failC := cand.stat.filterMap fun e => if (bad e.2).isEmpty then none else some e.1
     if !failC.isEmpty then
       let fs : Std.HashSet String := failC.foldl (·.insert ·) {}
-      let others := (cands.filter (·.checker != cand.checker)).map fun c =>
-        s!"the {c.checker.label} ones accept {(c.stat.filter fun e => fs.contains e.1 && (bad e.2).isEmpty).length}"
+      let others := (entries.filter (·.1 != cand.checker)).map fun (ch, _, t) =>
+        let k := if ch == .typed then
+            (Link.parMap (fun fi => typedOk fi && (src0.isNone || midStat.getD fi.func.name false))
+              (I0.funcs.filter fun fi => fs.contains fi.func.name)).countP id
+          else (t.get.stat.filter fun e => fs.contains e.1 && (bad e.2).isEmpty).length
+        s!"the {ch.label} ones accept {k}"
       IO.println s!"  of the {failC.length} function(s) the chosen checker's validators reject, {", ".intercalate others}"
   -- without `--prune`, the first round: the failures on the whole program
   let (keep, dropped, d, I) := if o.prune then (run.keep, run.dropped, run.d, run.I)
