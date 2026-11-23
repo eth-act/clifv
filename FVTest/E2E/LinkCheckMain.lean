@@ -372,6 +372,15 @@ def main (args : List String) : IO UInt32 := do
   let nStat := (cand.stat.filter fun e => !(bad e.2).isEmpty).length
   IO.println s!"  checker: {cand.checker.label}"
   IO.println s!"  static checks (the validators): {nStat} function(s) fail"
+  -- what a per-function mix of the checkers would add (none is proven: one binary theorem is
+  -- about one checker's results): the other candidates' validators on the chosen one's rejections
+  if cands.length > 1 then
+    let failC := cand.stat.filterMap fun e => if (bad e.2).isEmpty then none else some e.1
+    if !failC.isEmpty then
+      let fs : Std.HashSet String := failC.foldl (·.insert ·) {}
+      let others := (cands.filter (·.checker != cand.checker)).map fun c =>
+        s!"the {c.checker.label} ones accept {(c.stat.filter fun e => fs.contains e.1 && (bad e.2).isEmpty).length}"
+      IO.println s!"  of the {failC.length} function(s) the chosen checker's validators reject, {", ".intercalate others}"
   -- without `--prune`, the first round: the failures on the whole program
   let (keep, dropped, d, I) := if o.prune then (run.keep, run.dropped, run.d, run.I)
     else (R0, [], run.d1, run.I1)
