@@ -197,3 +197,7 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 -- #1090 (lean-link): the same table in lean-link's indexed checks
 #print axioms E2E.LinkCheck.linkChksWithTSX_eq_got
 #print axioms E2E.LinkCheck.linkChksWithIX_eq_got
+-- #1090: the lowering validators' context check with the function equality behind a call
+-- (inlined ahead of the loops it made them super-linear: `check_sub` 154 s → 0.1 s)
+#print axioms Backend.Proof.Driver.ctxOk_eq_fast
+#print axioms Backend.Proof.Driver.ctxOkT_eq_fast

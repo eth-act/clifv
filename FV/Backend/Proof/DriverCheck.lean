@@ -499,6 +499,53 @@ def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
       decide (ctx.valueType? x = some (.int 64))
     | _ => true)
 
+/-- `decide (ctx.func = f)` behind a call that is never inlined (`ctxOk_eq_fast`). -/
+@[noinline] def funcEqB (f : Clif.Function) (ctx : Ctx) : Bool := decide (ctx.func = f)
+
+/-- **`ctxOk` as the compiler runs it** (`ctxOk_eq_fast`, `@[csimp]`, #1090): the same checks,
+the function equality behind `funcEqB`. With the derived `DecidableEq Clif.Function` inlined
+ahead of the loops over the instructions and values, those loops took time super-linear in the
+function (measured in a scratch link-check: 2.2 s on a 7,085-instruction function, 154 s on
+num-bigint's `check_sub`, 31,084 instructions); with the equality behind the call, 0.01 s and
+0.1 s. -/
+def ctxOkFast (f : Clif.Function) (ctx : Ctx) : Bool :=
+  funcEqB f ctx &&
+  ctx.insts.toList.all (fun info => match info.clif with
+    | some i =>
+      Compile.instE i &&
+        ((match instData f i with
+            | .ok d => d == info.data
+            | .error _ => false) &&
+          ctxResTysOk f info i)
+    | none => true) &&
+  (List.range ctx.valReg.size).all (fun x => match ctx.valueReg? x with
+    | some r => decide (r = .vreg x .int)
+    | none => true) &&
+  (List.range ctx.valTy.size).all (fun x => match ctx.valueType? x with
+    | some _ => decide (ctx.valueReg? x = some (.vreg x .int))
+    | none => true) &&
+  (List.range ctx.valDef.size).all (fun x => match ctx.defInst? x with
+    | some d => match ctx.insts[d]? with
+      | some info => decide (x ∈ info.results) && info.clif.isSome
+      | none => false
+    | none => true) &&
+  decide (ctx.slotOff = (slotLayout f.slots).1) &&
+  ctx.insts.toList.all (fun info => info.resTys.all fun t =>
+    [CTy.int 8, .int 16, .int 32, .int 64].any fun u => decide (t = u)) &&
+  (List.range ctx.valTy.size).all (fun x => match ctx.valueType? x with
+    | some t => [CTy.int 8, .int 16, .int 32, .int 64].any fun u => decide (t = u)
+    | none => true) &&
+  ctx.insts.toList.all (fun info => match info.clif with
+    | some (.load _ _ _ x _) | some (.store _ _ _ _ x _) | some (.atomicLoad _ _ x)
+    | some (.atomicStore _ _ _ x) | some (.atomicRmw _ _ _ x _) | some (.atomicCas _ _ x _ _) =>
+      decide (ctx.valueType? x = some (.int 64))
+    | _ => true)
+
+/-- The compiler runs `ctxOkFast` in place of `ctxOk`. -/
+@[csimp] theorem ctxOk_eq_fast : @ctxOk = @ctxOkFast := by
+  funext f ctx
+  rfl
+
 /-- The successor facts of `LowerShape` for block `B` (lowering `L`). For a `try_call`: an edge
 block per successor, and the normal return's (the last) holds the `jump` with the return's
 arguments (`normArgReg`; the landing pads are not checked: the theorem covers the normal
