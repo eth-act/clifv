@@ -462,9 +462,9 @@ fn compile_one(
             .arg(out)
             .args(cfg.mode.backend_args())
             .args(["--personality", "rust_eh_personality"])
-            // `--lean-link` keeps cg_clif's code for an unverified function: one unverified
-            // before it is compiled is not compiled (#1074)
-            .args(cfg.lean_link.then_some("--skip-unverified"));
+            // an unverified function keeps cg_clif's code (plain mode, `--lean-link`): one
+            // unverified before it is compiled is not compiled (#1074)
+            .args(cfg.keeps_unverified().then_some("--skip-unverified"));
         // #1119: Cranelift's optimised function, compiled when lean-backend decides the mid-end
         // validator's re-check on the pair (else the `.unopt.clif`, as without it)
         if let Some(g) = midval {
@@ -713,9 +713,10 @@ impl From<String> for CguFail {
     }
 }
 
-/// The fallback reason of a function `lean-backend` lists unverified (`u`) under `--lean-link`.
+/// The fallback reason of a function `lean-backend` lists unverified (`u`) where an unverified
+/// function keeps cg_clif's code ([`Config::keeps_unverified`]: plain mode, `--lean-link`).
 fn kept_reason(u: &str) -> String {
-    format!("unverified ({u}): cg_clif's code kept under --lean-link")
+    format!("unverified ({u}): cg_clif's code kept")
 }
 
 /// lean-backend's verdict line for a verified function (`FVTest/Backend/FnVerdict.lean`):
@@ -1118,9 +1119,9 @@ fn process_in(
                 if bad.is_none() && syms.local_count.get(sym).copied().unwrap_or(0) > 1 {
                     bad = Some("the function's name is defined locally more than once in cg_clif's object".into());
                 }
-                // `--lean-link`: the region holds verified code only; an unverified function
-                // keeps cg_clif's code (the outside part)
-                if bad.is_none() && cfg.lean_link {
+                // plain mode and `--lean-link`: the executable holds verified Lean code only; an
+                // unverified function keeps cg_clif's code (with `--lean-link`: the outside part)
+                if bad.is_none() && cfg.keeps_unverified() {
                     if let Some(u) = &unverified {
                         bad = Some(kept_reason(u));
                     }
@@ -1403,7 +1404,7 @@ mod tests {
     }
 
     /// #1074: a function `lean-backend --skip-unverified` did not compile falls back with the
-    /// reason the compiled function gets under `--lean-link`.
+    /// reason the compiled function gets where an unverified function keeps cg_clif's code.
     #[test]
     fn skipped_unverified_keeps_the_reason() {
         let root = std::env::temp_dir().join(format!("cargo-fv-skip-{}", std::process::id()));
@@ -1422,6 +1423,51 @@ mod tests {
             let c = classify(&cfg, line, true, &out, "f", &input);
             assert!(matches!(&c, Compiled::Fallback(r) if *r == kept_reason(why)), "{line}");
         }
+    }
+
+    /// Plain mode and `--lean-link` pass `--skip-unverified` (an unverified function keeps
+    /// cg_clif's code, so the binary check is not stopped by Lean code no theorem covers);
+    /// `--opt` and `--opt-proven-only` without `--lean-link` do not.
+    #[test]
+    fn plain_mode_keeps_unverified() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = std::env::temp_dir().join(format!("cargo-fv-plain-skip-{}", std::process::id()));
+        let bin = root.join(".lake/build/bin");
+        fs::create_dir_all(&bin).unwrap();
+        let backend = bin.join("lean-backend");
+        fs::write(
+            &backend,
+            "#!/bin/sh\ncase \" $* \" in\n  *' --skip-unverified '*) echo 'lean-backend: x.clif: %f: not compiled (--skip-unverified), unverified (validation budget): 9 instructions × values > 1, lowerCheck not run' >&2 ;;\n  *) echo 'lean-backend: x.clif: %f: unsupported: compiled' >&2 ;;\nesac\n",
+        )
+        .unwrap();
+        fs::set_permissions(&backend, fs::Permissions::from_mode(0o755)).unwrap();
+        let (split, outdir) = (root.join("split"), root.join("o"));
+        fs::create_dir_all(&split).unwrap();
+        fs::create_dir_all(&outdir).unwrap();
+        fs::write(split.join("f.unopt.clif"), "function %f() {\nblock0:\n    return\n}\n").unwrap();
+        let syms = ObjSyms {
+            text: HashMap::new(),
+            defined: BTreeSet::new(),
+            local_count: HashMap::new(),
+            undefined: BTreeSet::new(),
+            at: HashMap::new(),
+        };
+        let d = Dump { stem: "f".into(), instance: "f".into(), opt_level: "none".into() };
+        let kept = kept_reason("validation budget: 9 instructions × values > 1, lowerCheck not run");
+        for (mode, lean_link, skips) in [
+            (Mode::Plain, false, true),
+            (Mode::Plain, true, true),
+            (Mode::OptProven, true, true),
+            (Mode::OptProven, false, false),
+            (Mode::Opt, false, false),
+        ] {
+            let cfg = Config { mode, lean_link, ..test_config(&root, 0) };
+            assert_eq!(cfg.keeps_unverified(), skips, "{mode:?} lean_link={lean_link}");
+            let c = compile_one(&cfg, &syms, &split, &outdir, 0, &d, "f");
+            let want = if skips { kept.clone() } else { "unsupported: compiled".to_string() };
+            assert!(matches!(&c, Compiled::Fallback(r) if *r == want), "{mode:?} lean_link={lean_link}");
+        }
+        fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]

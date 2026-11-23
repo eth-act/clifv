@@ -199,7 +199,7 @@ those bytes too (design (b)).
   alignment.
   Only verified functions enter the
   region: an unverified one keeps cg_clif's code (fallback, reason "unverified (…): cg_clif's
-  code kept under --lean-link"). Self-calls retain the function's original symbol, including
+  code kept"; plain mode too since #1057's follow-up). Self-calls retain the function's original symbol, including
   when it takes its own address; the function-free activation contract needs no alias (#88).
 * At the executable's link (`leanlink.rs`): the work directories of the linked units (own
   objects, rlib members), by object name; `ld -r` of their `lean.o` → one object with section
