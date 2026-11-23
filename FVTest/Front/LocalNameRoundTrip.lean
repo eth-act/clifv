@@ -44,8 +44,12 @@ block2:
 }
 "
 
+/-- The first function of `src`, parsed. -/
+def parsed : Option (Except ParseError Function) :=
+  (parseFile src).funcs.head?.map ParsedFunction.func
+
 /-- The function as parsed. -/
-def f : Function := match (parseFile src).funcs.head?.map (·.func) with
+def f : Function := match parsed with
   | some (.ok g) => g
   | _ => default
 
@@ -56,7 +60,7 @@ def fin (n : String) : String :=
   else if n == "c_Ldata11" then ".Ldata11@b7f1e7e76b13"
   else n
 
-#guard (parseFile src).funcs.head?.map (·.func) matches some (.ok _)
+#guard parsed matches some (.ok _)
 
 -- the renamed function's printed CLIF parses back to it
 #guard (mkInput [] (f.rename fin) "") matches .ok _
