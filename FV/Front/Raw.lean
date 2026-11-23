@@ -284,7 +284,9 @@ itself. -/
 def clifName (sym : String) : String :=
   if sym.startsWith ".Ldata" then "c_Ldata" ++ String.ofList (sym.toList.drop 6) else sym
 
-/-- Expressible as a CLIF name (`%name`, `Parse.lexLine`). -/
+/-- Expressible as a CLIF name in Cranelift's reader (`%name` of identifier characters,
+`Parse.isWordChar`; `Parse.lexLine` also reads `.`, `$`, `@` in a name, for the bundle's linked
+names of local symbols). -/
 def validName (n : String) : Bool := !n.isEmpty && n.all Parse.isWordChar
 
 /-- The unit's declarations: module identity or libcall ↦ the CLIF name of its symbol, from

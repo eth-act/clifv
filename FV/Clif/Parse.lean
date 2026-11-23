@@ -61,6 +61,13 @@ def Tok.show : Tok → String
 def isWordStart (c : Char) : Bool := c.isAlpha || c == '_'
 def isWordChar (c : Char) : Bool := c.isAlphanum || c == '_'
 def isIntChar (c : Char) : Bool := c.isAlphanum || c == '_'
+/-- A character of a `%name`: Cranelift's identifier characters and `.`, `$`, `@`. Cranelift's
+reader stops a name at those three; no text it accepts has one right after a `%name`. They are
+read here because the linked names of the frontend bundle hold them: a unit's local symbol the
+object merge left local is named `sym@tag` (`Front.PCgu.fin`, e.g. `.Ldata10@b7f1e7e76b13`, a
+data object only code removed by `Opt.ConstPhi` used), and the printed renamed function must
+parse back to it (`Front.mkInput`, #1163). -/
+def isNameChar (c : Char) : Bool := isWordChar c || c == '.' || c == '$' || c == '@'
 
 /-- Lex one line of text (no newlines) into tokens and the trailing comment, if any. -/
 partial def lexLine (cs : List Char) (acc : Array Tok) : Array Tok × Option String :=
@@ -80,7 +87,7 @@ partial def lexLine (cs : List Char) (acc : Array Tok) : Array Tok × Option Str
       let (ws, rest') := cs.span isWordChar
       lexLine rest' (acc.push (.word (String.ofList ws)))
     else if c == '%' then
-      let (ws, rest') := rest.span isWordChar
+      let (ws, rest') := rest.span isNameChar
       lexLine rest' (acc.push (.name (String.ofList ws)))
     else lexLine rest (acc.push (.punct c))
 
