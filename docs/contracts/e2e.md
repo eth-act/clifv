@@ -3221,12 +3221,12 @@ comment.
 which the integer validators (`staticChksSemanticNI`) reject. With `--dead-cleanup`, when some
 functions fail them, `link-check` evaluates the typed validators (`staticChksWithT
 DeadCleanup.prune`, those of `okBCleanupT`, which accepts integer functions too) on those
-functions' cleanup results (`pipeCleanupOf`); if any passes, the whole program is checked with
-the typed checker on `I.resultsCleanup` (`chksWithT`: the typed validators, `linkChks`,
-`calleeInt`) and the same binary checks, and it prints `checker: typed (okBCleanupT)`; the
-theorem is `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`
+functions' cleanup results (`pipeCleanupOf`); if any passes, the typed checker on
+`I.resultsCleanup` (`chksWithT`: the typed validators, `linkChks`, `calleeInt`) with the same
+binary checks is a candidate ("Checker choice" below); chosen, it prints `checker: typed
+(okBCleanupT)`; the theorem is `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`
 (`binary_correct_exec_peak_provenT` for functions whose calls reach a call cycle), which `cargo
-fv`'s verdict names. The integer results are dropped before the typed ones are computed. `--lean`
+fv`'s verdict names. `--lean`
 generates integer crate proofs only. fv-demo, `cargo fv test --lean-link --verified --build-std`
 then `link-check --dead-cleanup --prune` on the two test executables' `bin-check` directories:
 both pass (27,936 and 28,584 functions, `binary: ok`; 30 each fail the integer validators and pass
@@ -3241,9 +3241,9 @@ of `okRWithTS`, `FV/E2E/SemanticPipelineCheckT.lean`): per function either the S
 output (`lowersToB`: `lowerFunction g = .ok vc` decided; `lowerCheckT`/`lowerCheckTCF`); an `sret`
 function is in subset E with `lowerCheck`, or every return of its code is in its `retX` register
 (x0.. for the declared returns, x8 for the struct pointer, #587; `retsXB`,
-`RetsX`). It is used when these accept every function the integer validators reject and the
-executable holds `R0I`'s code (`artB`, or `lowersToB` where the Stock lowering fails), and prints
-`checker: typed Stock (okRWithTS)`; the theorem is
+`RetsX`). It is a candidate ("Checker choice" below) when some functions fail the integer
+validators and the executable holds `R0I`'s code (`artB`, or `lowersToB` where the Stock lowering
+fails); chosen, it prints `checker: typed Stock (okRWithTS)`; the theorem is
 `E2E.SemanticExecBytes.binary_correct_exec_provenTS` (`…_peak_provenTS` for functions whose calls
 reach a call cycle; `FV/E2E/SemanticExecTS.lean`), conclusion `ExecBytes.ExecRefinesT`, which
 `cargo fv`'s verdict names. The soundness is `okRWithTS_soundT : PreparedResults → okRWithTS →
@@ -3269,6 +3269,25 @@ route list chosen, and the checks run on its results). Witness on the captured `
 return-pin checker accepts the Stock one and `okRWithTS` rejects it on the lowering check alone,
 `typedRoute?` picks route 0 and `okRWithTS` accepts its results. fv-demo `--build-std`: 1 of 2
 executables before (`black_box::<enums::Shape>` and its 25 callers dropped), 2 of 2 after.
+
+**Checker choice** (#1164). One binary theorem is about one checker's results, so `link-check`
+checks the whole (pruned) program with one checker; when integer validators reject functions it
+decides each candidate completely (the typed Stock checker, the typed checker, the integer
+checker: static checks, link checks, global checks, `--prune` with callers) and takes the one
+whose `--prune` program is the largest (ties in that order), printing each candidate's count
+(`checker candidates:`). A candidate whose validators alone, with their callers, already leave
+fewer functions than the best one found cannot win and is not run (`staticBound`); the typed
+candidate's results (a second pipeline run) are computed only when its probe on the
+integer-rejected functions leaves it room. After the choice, `link-check` prints how many of the
+chosen checker's validator rejections each other candidate's validators accept: what a per-function
+mix would add, which no theorem covers (#1166 is such a case). Without `--prune` the same choice is
+made (the candidate whose program passes whole, if any) and its first round is reported. Until #1164
+the typed checker was taken whenever it accepted one function
+the integer validators rejected, and the typed Stock checker only when it accepted all of them: in
+plain mode the typed checker rejects the functions whose recorded allocation is the Stock route's
+(`regalloc2: allocation count differs`), so blake3's test executable (debug) kept 2,440 of 3,314
+functions (874 dropped); with the choice, the typed Stock checker keeps 3,307 (7 dropped: 2
+`outFits` #1086, 1 `indScope/indSig` #1124, 4 callers).
 
 **Results** (the ten crates of `crate-proofs/`, rebuilt: survey `cargo fv test --keep-temps`,
 `fv-demo` `cargo fv build --keep-temps`; all pass, no difference):
