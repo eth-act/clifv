@@ -1,5 +1,4 @@
 import FV.E2E.LinkIdxT
-import FV.E2E.ReturnPinCheckIdx
 
 /-! # The GOT symbols of a function's call sites, indexed once per function (#1090)
 
@@ -16,9 +15,13 @@ per function at least. num-bigint 0.5.1's `bigint_scalar` test executable (debug
 instructions defining each vreg and the call sites through each vreg (`groupMulti`); `GotIdx.got`
 decides `gotB` only on those (`GotIdx.got_of`: the same answer as `gotOf`), and `GotIdx.tab` keeps
 the vregs it accepts (`GotIdx.tab_get`). The link checks with the table built once per function
-(`linkChksWithIG`, `linkChksWithTIG`, `linkChksWithTSIG`, `returnPinsIdxG`) are equal to
-`linkChksWithI`, `linkChksWithTI`, `linkChksWithTSI`, `returnPinsIdx` (`@[csimp]`
-`linkChksWithI_eq_got`, …), which `link-check` evaluates. No statement changes.
+(`linkChksWithIG`, `linkChksWithTIG`, `linkChksWithTSIG`) are equal to `linkChksWithI`,
+`linkChksWithTI`, `linkChksWithTSI` (`@[csimp]` `linkChksWithI_eq_got`, …), which `link-check`
+evaluates. This module imports only `FV.E2E.LinkIdxT`, so that the indexed checks downstream of it
+take the table too: `lean-link`'s `linkChksWithTSX` (`FV/E2E/LinkIdxSig.lean`,
+`linkChksWithTSX_eq_got`), `linkChksWithIX` (`FV/E2E/LinkIdxSigI.lean`, `linkChksWithIX_eq_got`)
+and the return-pin check `returnPinsIdx` (`FV/E2E/ReturnPinCheckIdx.lean`,
+`returnPinsIdx_eq_got`). No statement changes.
 -/
 
 namespace E2E
@@ -332,23 +335,6 @@ def linkChksWithTSIG (C : LinkCtx) (X : LinkIdx) (P : Clif.Program) (g : Clif.Fu
 @[csimp] theorem linkChksWithTSI_eq_got : @linkChksWithTSI = @linkChksWithTSIG := by
   funext C X P g r
   simp only [linkChksWithTSI, linkChksWithTSIG, siteWithOkC_got, GotIdx.tab_get, GotIdx.got_of]
-
-/-- **`returnPinsIdx` with the function's GOT table built once** (`returnPinsIdx_eq_got`). -/
-def returnPinsIdxG (C : ReturnPinCtx) (Y : ReturnPinIdx) (g : Clif.Function) : Bool :=
-  let Ds := declSet g
-  let ind := indFreeB g
-  let sigs := indSigs g
-  let to := indToWithB C.symbols ind (fun n => Ds.contains n) sigs g
-  let cands := g.externs.flatMap (fun x => Y.byName.getD x.2.name []) ++
-    (if ind then [] else
-      (sigs.map fun s => Clif.AbiParam.tys s.params).eraseDups.flatMap fun k => Y.byTys.getD k [])
-  let vcp := (C.artifact g).vcp
-  let G := (GotIdx.of vcp).tab
-  allInsts vcp (siteB (returnPinSiteIdx C (fun n => Y.byName.getD n []) to cands fun t => G[t]?))
-
-@[csimp] theorem returnPinsIdx_eq_got : @returnPinsIdx = @returnPinsIdxG := by
-  funext C Y g
-  simp only [returnPinsIdx, returnPinsIdxG, GotIdx.tab_get, GotIdx.got_of]
 
 end LinkCheck
 

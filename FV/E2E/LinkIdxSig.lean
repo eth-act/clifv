@@ -1,4 +1,4 @@
-import FV.E2E.LinkIdxT
+import FV.E2E.GotIdx
 
 /-! # The `blr` and indirect-call checks with the signatures indexed (#1108)
 
@@ -21,7 +21,10 @@ the `blr` test at a call through the GOT only the functions of that name. So, pe
 
 `blrFastC_eq`, `indFastC_eq`: equal to `blrOkC`, `indWithBC` over the program;
 `linkChksWithTSX_of`: `linkChksWithTSX C (LinkIdx.of P C.ents) (sigIdx P C.S) P g r =
-linkChksWithTS C P g r`. No statement changes.
+linkChksWithTS C P g r`. `lean-link` evaluates `linkChksWithTSX` as `linkChksWithTSXG`
+(`@[csimp] linkChksWithTSX_eq_got`, #1090): the GOT symbols of `g`'s `blr` sites from
+`GotIdx.of` (`FV/E2E/GotIdx.lean`), built once per function, instead of a scan of `g`'s VCode
+per site (`gotOf`). No statement changes.
 -/
 
 namespace E2E.LinkCheck
@@ -443,6 +446,56 @@ theorem linkChksWithTSX_of (C : LinkCtx) (P : Clif.Program) (g : Clif.Function)
   rw [← linkChksWithTSI_of]
   obtain ⟨hb, hi⟩ := linkChksWithTSX_entries C P g _ _ _ _ _ _ rfl rfl rfl rfl rfl rfl
   simp only [linkChksWithTSX, linkChksWithTSI, hb, hi]
+
+/-- `siteFastC` with the GOT symbols `got` (`siteFastC_got`). -/
+def siteFastCG (F : String → Option Clif.Function) (g : Clif.Function)
+    (byName : String → List Clif.Function) (may : Clif.Function → Bool)
+    (M1 : List Clif.Function) (S2 : List Clif.Signature) (got : Nat → Option String)
+    (info : CallInfo) : Bool :=
+  match info.dest with
+  | .sym n => match F n with
+    | some h => g.externs.any (fun e => e.2.name == n) &&
+        (info.uses.all fun u => u.1.isVirtual = true) &&
+        (info.defs.all fun d => d.2.isVirtual = true) &&
+        decide (info.uses.map (·.2) = regLocs h.sig) && defsOkC h.sig info.defs
+    | none => true
+  | .reg _ => blrFastC byName may M1 S2 got info
+
+theorem siteFastC_got (F : String → Option Clif.Function) (g : Clif.Function)
+    (byName : String → List Clif.Function) (may : Clif.Function → Bool)
+    (M1 : List Clif.Function) (S2 : List Clif.Signature) (vc : VCode) :
+    siteFastC F g byName may M1 S2 vc = siteFastCG F g byName may M1 S2 (gotOf vc) := rfl
+
+/-- **`linkChksWithTSX` with the function's GOT table built once** (`linkChksWithTSX_eq_got`,
+#1090): `GotIdx.of a.vcp` instead of `gotOf a.vcp` at each `blr` site. -/
+def linkChksWithTSXG (C : LinkCtx) (X : LinkIdx)
+    (SI : Std.HashMap (List Clif.Ty) (List Clif.Signature)) (g : Clif.Function)
+    (r : Except String Art) : List (String × Bool) :=
+  let a := getOk r
+  let fr := RAFrame.compute a.vcp a.rf
+  let Ds := declSet g
+  let sigs := indSigs g
+  let ind := indFreeB g
+  let may := indToWithB C.S ind (fun n => Ds.contains n) sigs g
+  let M1 := g.externs.flatMap fun e => X.byName.getD e.2.name []
+  let cs := if ind then [] else sigCands SI sigs
+  let S2 := cs.filter (indMatchSig sigs)
+  let S3 := cs.filter (indSigMatchSig sigs)
+  let G := (GotIdx.of a.vcp).tab
+  [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
+   ("calleeFrame/slotFits",
+     !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
+       ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteFastCG C.F g (fun n => X.byName.getD n []) may
+     M1 S2 fun t => G[t]?))),
+   ("declSig", declSigWithB C.F g),
+   ("raCall/raBlr", raCallIdxB X g a),
+   ("indScope/indSig", indFastC ind (fun h => !mayWithB C.S ind (fun n => Ds.contains n) h.name ||
+     !indSigWithB (fun n => Ds.contains n) sigs h || indSigB8 h.sig) M1 S3)]
+
+@[csimp] theorem linkChksWithTSX_eq_got : @linkChksWithTSX = @linkChksWithTSXG := by
+  funext C X SI g r
+  simp only [linkChksWithTSX, linkChksWithTSXG, siteFastC_got, GotIdx.tab_get, GotIdx.got_of]
 
 /-! ## Scans of the functions `g` may enter, by signature (lean-link's `scopeFails`) -/
 

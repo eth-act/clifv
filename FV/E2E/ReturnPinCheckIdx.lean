@@ -178,4 +178,22 @@ theorem returnPinsIdx_eq (C : ReturnPinCtx) (g : Clif.Function) :
   rw [← returnPinSiteIdx_eq C g]
   rfl
 
+/-- **`returnPinsIdx` with the function's GOT table built once** (`returnPinsIdx_eq_got`,
+`FV/E2E/GotIdx.lean`, #1090). -/
+def returnPinsIdxG (C : ReturnPinCtx) (Y : ReturnPinIdx) (g : Clif.Function) : Bool :=
+  let Ds := declSet g
+  let ind := indFreeB g
+  let sigs := indSigs g
+  let to := indToWithB C.symbols ind (fun n => Ds.contains n) sigs g
+  let cands := g.externs.flatMap (fun x => Y.byName.getD x.2.name []) ++
+    (if ind then [] else
+      (sigs.map fun s => Clif.AbiParam.tys s.params).eraseDups.flatMap fun k => Y.byTys.getD k [])
+  let vcp := (C.artifact g).vcp
+  let G := (GotIdx.of vcp).tab
+  allInsts vcp (siteB (returnPinSiteIdx C (fun n => Y.byName.getD n []) to cands fun t => G[t]?))
+
+@[csimp] theorem returnPinsIdx_eq_got : @returnPinsIdx = @returnPinsIdxG := by
+  funext C Y g
+  simp only [returnPinsIdx, returnPinsIdxG, GotIdx.tab_get, GotIdx.got_of]
+
 end E2E.LinkCheck

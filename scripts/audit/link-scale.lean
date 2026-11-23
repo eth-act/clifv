@@ -194,3 +194,6 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.LinkCheck.linkChksWithTI_eq_got
 #print axioms E2E.LinkCheck.linkChksWithTSI_eq_got
 #print axioms E2E.LinkCheck.returnPinsIdx_eq_got
+-- #1090 (lean-link): the same table in lean-link's indexed checks
+#print axioms E2E.LinkCheck.linkChksWithTSX_eq_got
+#print axioms E2E.LinkCheck.linkChksWithIX_eq_got

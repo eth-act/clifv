@@ -13,7 +13,9 @@ attempt's per-function checks alone took 24,726 s of CPU (#1108).
 for the typed checks: the functions `g` declares (`M1`), the distinct signatures of the others it
 may enter (`sigCands`, `S2`/`S3`), at a call through the GOT symbol `n` the functions named `n`.
 `blrFastI_eq`, `siteFastI_eq`, `linkChksWithIX_of` (equal to `linkChksWith` over the program).
-No statement changes.
+`lean-link` evaluates `linkChksWithIX` as `linkChksWithIXG` (`@[csimp] linkChksWithIX_eq_got`,
+#1090): the GOT symbols of `g`'s `blr` sites from `GotIdx.of` (`FV/E2E/GotIdx.lean`), built once
+per function, instead of a scan of `g`'s VCode per site (`gotOf`). No statement changes.
 -/
 
 namespace E2E.LinkCheck
@@ -177,5 +179,56 @@ theorem linkChksWithIX_of (C : LinkCtx) (P : Clif.Program) (g : Clif.Function)
   dsimp only
   rw [indFastX_eq hM1 hD hS3 hS4,
     siteFastI_eq C.F g _ (fun n h => byName_mem P C.ents n h) hM1 hD hS1 hS2, raCallIdxB_eq]
+
+/-- `siteFastI` with the GOT symbols `got` (`siteFastI_got`). -/
+def siteFastIG (F : String → Option Clif.Function) (g : Clif.Function)
+    (byName : String → List Clif.Function) (may : Clif.Function → Bool)
+    (M1 : List Clif.Function) (S2 : List Clif.Signature) (got : Nat → Option String)
+    (info : CallInfo) : Bool :=
+  match info.dest with
+  | .sym n => match F n with
+    | some h => g.externs.any (fun e => e.2.name == n) &&
+        decide (info.uses = retPairs (decU info.uses)) &&
+        decide (info.defs = callDefs (decD info.defs)) &&
+        decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
+        decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
+          (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x)
+    | none => true
+  | .reg _ => blrFastI byName may M1 S2 got info
+
+theorem siteFastI_got (F : String → Option Clif.Function) (g : Clif.Function)
+    (byName : String → List Clif.Function) (may : Clif.Function → Bool)
+    (M1 : List Clif.Function) (S2 : List Clif.Signature) (vc : VCode) :
+    siteFastI F g byName may M1 S2 vc = siteFastIG F g byName may M1 S2 (gotOf vc) := rfl
+
+/-- **`linkChksWithIX` with the function's GOT table built once** (`linkChksWithIX_eq_got`,
+#1090): `GotIdx.of a.vcp` instead of `gotOf a.vcp` at each `blr` site. -/
+def linkChksWithIXG (C : LinkCtx) (X : LinkIdx)
+    (SI : Std.HashMap (List Clif.Ty) (List Clif.Signature)) (g : Clif.Function)
+    (r : Except String Art) : List (String × Bool) :=
+  let a := getOk r
+  let fr := RAFrame.compute a.vcp a.rf
+  let Ds := declSet g
+  let D := fun n => Ds.contains n
+  let sigs := indSigs g
+  let ind := indFreeB g
+  let may := indToWithB C.S ind D sigs g
+  let M1 := g.externs.flatMap fun e => X.byName.getD e.2.name []
+  let cs := if ind then [] else sigCands SI sigs
+  let G := (GotIdx.of a.vcp).tab
+  [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
+   ("calleeFrame/slotFits",
+     !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
+       ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteFastIG C.F g (fun n => X.byName.getD n []) may
+     M1 (cs.filter (indMatchSig sigs)) fun t => G[t]?))),
+   ("declSig", declSigWithB C.F g),
+   ("raCall/raBlr", raCallIdxB X g a),
+   ("indScope/indSig", indFastX ind (fun h => mayWithB C.S ind D h.name && indSigWithB D sigs h)
+     M1 (cs.filter (indSigMatchSig sigs)) sigs)]
+
+@[csimp] theorem linkChksWithIX_eq_got : @linkChksWithIX = @linkChksWithIXG := by
+  funext C X SI g r
+  simp only [linkChksWithIX, linkChksWithIXG, siteFastI_got, GotIdx.tab_get, GotIdx.got_of]
 
 end E2E.LinkCheck
