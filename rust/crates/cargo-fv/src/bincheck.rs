@@ -119,9 +119,8 @@ fn verdict_in(out: &str, ok: bool, exe: &str) -> Verdict {
             return not(match stop_reason(out, exe) {
                 Some(why) if why.starts_with("link-proof skipped ") => format!(
                     "not verified: link-check stopped before the binary check: {why} (the executable links \
-                     Lean-compiled code that is unverified, so it is not the proven program; `cargo fv report \
-                     --functions` lists the unverified functions, and --lean-link --verified keeps cg_clif's \
-                     code for them)"
+                     Lean-compiled code that is not in the proven program; `cargo fv report --functions` lists \
+                     the unverified functions, which keep cg_clif's code in plain mode and with --lean-link)"
                 ),
                 Some(why) => format!("not verified: link-check stopped before the binary check: {why}"),
                 None => "not verified: link-check stopped before the binary check without a reason".into(),

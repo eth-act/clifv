@@ -3125,6 +3125,18 @@ under `--lean-link`, and the verdict covered fewer functions than the region wit
 (k256 1,162 of 48,673 region functions, ruint 561 of 228,175, deps 4 of 69,393, crypto-bigint 5
 of 68,853: the units of `zerocopy`, `ctutils`, `bit_set`, `cpufeatures`).
 
+**Unverified functions keep cg_clif's code (plain mode, #1169).** A function `lean-backend`
+compiles but names no theorem for (e.g. over the validation budget) is Lean code outside the
+proven program; in the bundle it was listed as skipped, and link-check stopped the whole
+executable (`link-proof skipped N function(s) of the region`): ark-bn254's test executable, 14,739
+functions in debug and 9,131 in release, for 2 functions over the validation budget each, and
+num-bigint's release `bigint_scalar`, 1,223, for 1. In plain mode, as with `--lean-link`, such a
+function keeps cg_clif's code (`cargo fv` passes `--skip-unverified`; the report's fallback
+reason is `unverified (…): cg_clif's code kept`), so it is code outside the program like every
+fallback function and its contract is among the hypotheses below. Measured on main a195586ef's
+tools with the change: ark-bn254 binary check 1 of 1 in debug (14,737 of 14,737 functions) and in
+release (9,129 of 9,129), num-bigint release 9 of 9 (9,130 of 9,130); test outcomes the same.
+
 **`verified: <theorem>` is not unconditional.** The named theorem keeps these hypotheses, which
 are about the code outside the program and about a run, and which no tool decides:
 
