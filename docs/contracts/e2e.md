@@ -3276,9 +3276,13 @@ decides each candidate completely (the typed Stock checker, the typed checker, t
 checker: static checks, link checks, global checks, `--prune` with callers) and takes the one
 whose `--prune` program is the largest (ties in that order), printing each candidate's count
 (`checker candidates:`). A candidate whose validators alone, with their callers, already leave
-fewer functions than the best one found cannot win and is not run (`staticBound`). Without
-`--prune` the same choice is made (the candidate whose program passes whole, if any) and its
-first round is reported. Until #1164 the typed checker was taken whenever it accepted one function
+fewer functions than the best one found cannot win and is not run (`staticBound`); the typed
+candidate's results (a second pipeline run) are computed only when its probe on the
+integer-rejected functions leaves it room. After the choice, `link-check` prints how many of the
+chosen checker's validator rejections each other candidate's validators accept: what a per-function
+mix would add, which no theorem covers (#1166 is such a case). Without `--prune` the same choice is
+made (the candidate whose program passes whole, if any) and its first round is reported. Until #1164
+the typed checker was taken whenever it accepted one function
 the integer validators rejected, and the typed Stock checker only when it accepted all of them: in
 plain mode the typed checker rejects the functions whose recorded allocation is the Stock route's
 (`regalloc2: allocation count differs`), so blake3's test executable (debug) kept 2,440 of 3,314

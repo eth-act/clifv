@@ -358,10 +358,10 @@ def main (args : List String) : IO UInt32 := do
     | _ => do
       IO.println s!"  checker candidates (#1164: the one whose --prune program is the largest; ties: typed Stock, typed, integer):"
       let ranked := (entries.zipIdx.map fun ((ch, b, t), i) =>
-          ((b.getD (staticBound t.get.R0 t.get.stat)), i, ch, t)).mergeSort
+          ((b.getD (staticBound t.get.R0 t.get.stat)), i, ch, b, t)).mergeSort
         fun x y => x.1 > y.1 || (x.1 == y.1 && x.2.1 ≤ y.2.1)
       let mut best : Option (Nat × Nat × Cand × PruneRun) := none
-      for (b, i, ch, t) in ranked do
+      for (b, i, ch, b0, t) in ranked do
         let skip := match best with
           | some (k, j, _, _) => b < k || (b == k && i > j)
           | none => false
@@ -369,6 +369,14 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"    {ch.label}: not run (its validators leave at most {b} of {nF} functions)"
           continue
         let c := t.get
+        -- the typed candidate's bound was its probe's; with its results, its validators' own
+        let b' := if b0.isSome then staticBound c.R0 c.stat else b
+        let skip' := match best with
+          | some (k, j, _, _) => b' < k || (b' == k && i > j)
+          | none => false
+        if skip' then
+          IO.println s!"    {ch.label}: not run (its validators leave at most {b'} of {nF} functions)"
+          continue
         let run ← pruneRun I0 dataSyms c true
         IO.println s!"    {ch.label}: {run.keep.length} of {nF} functions pass ({(c.stat.filter fun e => !(bad e.2).isEmpty).length} fail the validators)"
         let better := match best with
