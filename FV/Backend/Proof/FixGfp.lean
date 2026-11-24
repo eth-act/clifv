@@ -797,12 +797,15 @@ def fixSpN (pars defs : Array (Std.HashSet Nat)) (args : Nat → List Nat)
 def fixSpStep (nv : Nat) (cand : Nat → Nat → Bool) (preds : Array (List Nat))
     (pars defs : Array (Std.HashSet Nat)) (passS : Array (List Nat)) (args : Nat → List Nat)
     (st : Array (Option (Array Nat)) × Bool) (tl : Nat) : Array (Option (Array Nat)) × Bool :=
-  let D := st.1
-  let old := D.getD tl none
-  let N := fixSpN pars defs args old (fixSpB nv cand preds pars defs passS D tl) tl
-  (D.set! tl (some N), st.2 || match old with
-    | some a => a != N
-    | none => true)
+  match st with
+  | (D, ch) =>
+    let old := D.getD tl none
+    let N := fixSpN pars defs args old (fixSpB nv cand preds pars defs passS D tl) tl
+    let ch := ch || match old with
+      | some a => a != N
+      | none => true
+    -- `D` is not shared here (the state is matched, not projected): `set!` updates in place
+    (D.set! tl (some N), ch)
 
 /-- A pass over the blocks `L`. -/
 def fixSpPass (nv : Nat) (cand : Nat → Nat → Bool) (preds : Array (List Nat))
