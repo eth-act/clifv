@@ -793,8 +793,9 @@ checks on the full ones (`seg_lite`, `tseg_lite`, `aliasOf_lite`, `shapeOk_lite`
 `certOk_lite`), so `lowerCheckLite` (`lowerCheck` over `lowBlocksLite`) is `lowerCheck`, and the
 compiler runs it in its place (`lowerCheck_eq_lite`, `@[csimp]`; the typed validators:
 `DriverCheckTy.lean`, `DriverCheckC.lean`, `DriverCheckCF.lean`). `inFix`'s blocks × values
-table is built without the intermediate array of boxed bytes (`inFix_eq_fast`). Every theorem
-about `lowerCheck` and `inFix` keeps its statement and proof. -/
+table is built without the intermediate array of boxed bytes (`inFix_eq_fast`), and the compiler
+computes `inFix` without that table (`inFix_eq_sparse`, #1090: `fixSparse`, `FixGfp.lean`). Every
+theorem about `lowerCheck` and `inFix` keeps its statement and proof. -/
 
 /-! ## Records without class arrays -/
 
