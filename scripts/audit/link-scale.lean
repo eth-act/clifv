@@ -198,3 +198,13 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 -- (inlined ahead of the loops it made them super-linear: `check_sub` 154 s → 0.1 s)
 #print axioms Backend.Proof.Driver.ctxOk_eq_fast
 #print axioms Backend.Proof.Driver.ctxOkT_eq_fast
+
+-- #1090: `inFix` without its blocks × values table (`fixSparse`: per block the sorted array of its
+-- available values, passes until one changes nothing; the dense table's worklist removed 136.7M
+-- of `check_sub`'s 167.6M pairs one by one): both compute the greatest solution of the constraints
+#print axioms Backend.Proof.Driver.inFix_eq_sparse
+#print axioms Backend.Proof.Driver.inFixSp?_eq
+#print axioms Backend.Proof.Driver.Fix.fixSparse_eq
+#print axioms Backend.Proof.Driver.Fix.fixSparse_spec
+#print axioms Backend.Proof.Driver.Fix.dense_sol
+#print axioms Backend.Proof.Driver.Fix.dense_great

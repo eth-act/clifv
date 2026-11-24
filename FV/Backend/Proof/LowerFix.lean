@@ -20,75 +20,7 @@ open Backend Backend.Proof
 
 namespace Fix
 
-/-! ## Generic facts -/
-
-/-- `a[i]!` through `a[i]?`. -/
-theorem bang {α : Type} [Inhabited α] (a : Array α) (i : Nat) : a[i]! = a[i]?.getD default := by
-  simp only [getElem!_def]; split <;> simp_all
-
-/-- Membership in a left fold whose step adds the elements `P a`. -/
-theorem mem_foldl {α β : Type} {H : List β → α → List β} {P : α → β → Prop}
-    (hH : ∀ w a q, q ∈ H w a ↔ q ∈ w ∨ P a q) :
-    ∀ (l : List α) (w : List β) (q : β), q ∈ l.foldl H w ↔ q ∈ w ∨ ∃ a ∈ l, P a q
-  | [], w, q => by simp
-  | a :: l, w, q => by
-    rw [List.foldl_cons, mem_foldl hH l, hH]
-    simp only [List.mem_cons, exists_eq_or_imp, or_assoc]
-
-/-- The length of a left fold whose step adds at most one element. -/
-theorem length_foldl {α β : Type} {H : List β → α → List β}
-    (hH : ∀ w a, (H w a).length ≤ w.length + 1) :
-    ∀ (l : List α) (w : List β), (l.foldl H w).length ≤ w.length + l.length
-  | [], w => by simp
-  | a :: l, w => by
-    have h1 := length_foldl hH l (H w a)
-    have h2 := hH w a
-    simp only [List.foldl_cons, List.length_cons]
-    omega
-
-/-- A conditional push. -/
-theorem mem_push {β : Type} (c : Bool) (b : β) (w : List β) (q : β) :
-    q ∈ (if c = true then b :: w else w) ↔ q ∈ w ∨ (c = true ∧ q = b) := by
-  cases c <;> simp [or_comm]
-
-/-- A conditional push adds at most one element. -/
-theorem length_push {β : Type} (c : Bool) (b : β) (w : List β) :
-    (if c = true then b :: w else w).length ≤ w.length + 1 := by
-  cases c <;> simp
-
-/-- A doubly conditional push (`inFix`'s initial worklist). -/
-theorem mem_push2 {β : Type} (c1 c2 : Bool) (b : β) (w : List β) (q : β) :
-    q ∈ (if c1 = true then (if (!c2) = true then b :: w else w) else w) ↔
-      q ∈ w ∨ ((c1 = true ∧ c2 = false) ∧ q = b) := by
-  cases c1 <;> cases c2 <;> simp [or_comm]
-
-/-- Prepending `v` at the indices of `l`. -/
-theorem modify_fold (v : Nat) : ∀ (l : List Nat) (ps : Array (List Nat)),
-    (l.foldl (fun ps s => ps.modify s (v :: ·)) ps).size = ps.size ∧
-    ∀ t p, p ∈ (l.foldl (fun ps s => ps.modify s (v :: ·)) ps)[t]?.getD [] ↔
-      p ∈ ps[t]?.getD [] ∨ (p = v ∧ t ∈ l ∧ t < ps.size)
-  | [], ps => by simp
-  | s :: l, ps => by
-    obtain ⟨h1, h2⟩ := modify_fold v l (ps.modify s (v :: ·))
-    simp only [List.foldl_cons, Array.size_modify] at h1 h2 ⊢
-    refine ⟨h1, fun t p => ?_⟩
-    rw [h2, Array.getElem?_modify]
-    by_cases e : s = t
-    · subst e
-      rcases Nat.lt_or_ge s ps.size with hs | hs
-      · simp only [Array.getElem?_eq_getElem hs, ite_true, Option.map_some, Option.getD_some,
-          List.mem_cons, true_or, and_true, hs]
-        constructor
-        · rintro ((h | h) | ⟨h, -⟩) <;> simp_all
-        · rintro (h | h) <;> simp_all
-      · simp [Nat.not_lt.2 hs]
-    · simp only [e, ite_false, List.mem_cons]
-      constructor
-      · rintro (h | ⟨h1, h2, h3⟩) <;> simp_all
-      · rintro (h | ⟨h1, (h2 | h2), h3⟩)
-        · exact .inl h
-        · exact absurd h2.symm e
-        · exact .inr ⟨h1, h2, h3⟩
+/-! ## Generic facts (more in `FixGfp.lean`) -/
 
 /-- Setting the indices `g p` of `l`. -/
 theorem set_fold {γ : Type} (g : γ → Nat) : ∀ (l : List γ) (a : Array Bool),
@@ -121,119 +53,7 @@ theorem body_fold : ∀ (body : List Clif.Stmt) (a : Array Bool),
     rw [h4 x (by rw [h1]; exact hx), h2 x hx]
     simp [or_assoc]
 
-/-- An element of an array is at most the fold of the maximum length. -/
-theorem len_le_max (a : Array (List Nat)) (i : Nat) :
-    (a[i]!).length ≤ a.foldl (fun m s => max m s.length) 0 := by
-  rw [bang]
-  rcases Nat.lt_or_ge i a.size with hi | hi
-  · rw [Array.getElem?_eq_getElem hi, Option.getD_some]
-    have := Array.foldl_induction (as := a)
-      (fun n m => ∀ j (hj : j < n) (hj' : j < a.size), a[j].length ≤ m) (init := 0)
-      (f := fun m s => max m s.length) (by intro j hj; omega) (by
-        intro k m ih j hj hj'
-        rcases Nat.lt_or_ge j k with h | h
-        · exact Nat.le_trans (ih j h hj') (Nat.le_max_left _ _)
-        · have : j = k.1 := by omega
-          subst this
-          exact Nat.le_max_right _ _)
-    exact this i hi hi
-  · rw [Array.getElem?_eq_none hi]
-    exact Nat.zero_le _
-
-/-! ## Bytes -/
-
-/-- `fixHas` through the bytes. -/
-theorem has_iff {nv : Nat} {inB : ByteArray} {tl x : Nat} :
-    fixHas nv inB tl x = true ↔ x < nv ∧ inB.data[tl * nv + x]?.getD 0 ≠ 0 := by
-  have : inB.get! (tl * nv + x) = inB.data[tl * nv + x]?.getD 0 := by
-    show inB.data[_]! = _
-    rw [bang]; rfl
-  simp [fixHas, this]
-
-/-- Distinct pairs have distinct byte indices. -/
-theorem idx_inj {nv a b c d : Nat} (hb : b < nv) (hd : d < nv) (h : a * nv + b = c * nv + d) :
-    a = c ∧ b = d := by
-  have hn : 0 < nv := by omega
-  have h1 := congrArg (· / nv) h
-  have h2 := congrArg (· % nv) h
-  simp only [Nat.mul_comm a nv, Nat.mul_comm c nv, Nat.mul_add_div hn, Nat.mul_add_mod,
-    Nat.div_eq_of_lt hb, Nat.div_eq_of_lt hd, Nat.mod_eq_of_lt hb, Nat.mod_eq_of_lt hd,
-    Nat.add_zero] at h1 h2
-  exact ⟨h1, h2⟩
-
-/-- The byte index of a pair of a block. -/
-theorem idx_lt {nb nv tl x : Nat} (ht : tl < nb) (hx : x < nv) : tl * nv + x < nb * nv := by
-  have := Nat.mul_le_mul_right nv (Nat.succ_le_of_lt ht)
-  rw [Nat.succ_mul] at this
-  omega
-
-/-- Removing the pair `(tl, x)`. -/
-theorem has_set {nv : Nat} {inB : ByteArray} {tl x : Nat} (hx : x < nv) (a b : Nat) :
-    fixHas nv (inB.set! (tl * nv + x) 0) a b = true ↔
-      fixHas nv inB a b = true ∧ ¬(a = tl ∧ b = x) := by
-  rw [has_iff, has_iff]
-  show (b < nv ∧ (inB.data.setIfInBounds (tl * nv + x) 0)[a * nv + b]?.getD 0 ≠ 0) ↔ _
-  rw [Array.getElem?_setIfInBounds]
-  by_cases hb : b < nv
-  · by_cases e : a = tl ∧ b = x
-    · obtain ⟨rfl, rfl⟩ := e
-      simp only [ite_true]
-      split <;> simp
-    · have : tl * nv + x ≠ a * nv + b := fun h => e (idx_inj hb hx h.symm)
-      simp [this, e, hb]
-  · simp [hb]
-
-/-- The number of present pairs. -/
-def cnt (inB : ByteArray) : Nat := inB.data.toList.countP (· != 0)
-
-/-- Removing a present pair decreases the count. -/
-theorem cnt_set {nv : Nat} {inB : ByteArray} {tl x : Nat} (h : fixHas nv inB tl x = true) :
-    cnt (inB.set! (tl * nv + x) 0) + 1 = cnt inB := by
-  obtain ⟨-, hne⟩ := has_iff.1 h
-  have hi : tl * nv + x < inB.data.size := by
-    refine Nat.lt_of_not_ge fun hc => hne ?_
-    rw [Array.getElem?_eq_none hc]; rfl
-  rw [Array.getElem?_eq_getElem hi, Option.getD_some] at hne
-  show (inB.data.setIfInBounds (tl * nv + x) 0).toList.countP _ + 1 = inB.data.toList.countP _
-  have hl : tl * nv + x < inB.data.toList.length := by simpa using hi
-  have hpos : 0 < inB.data.toList.countP (· != 0) :=
-    List.countP_pos_iff.2 ⟨inB.data.toList[tl * nv + x], List.getElem_mem hl, by simpa using hne⟩
-  rw [Array.toList_setIfInBounds, List.countP_set hl]
-  have : (inB.data.toList[tl * nv + x] != 0) = true := by simpa using hne
-  simp only [this, ite_true]
-  simp only [bne_self_eq_false, Bool.false_eq_true, ite_false, Nat.add_zero]
-  omega
-
-/-! ## The pieces of `inFix` -/
-
-/-- `inFix`'s block-index map. -/
-def fBim (f : Clif.Function) : Std.HashMap Clif.BlockId Nat :=
-  f.blocks.toArray.zipIdx.foldl (fun m (B, i) => m.insertIfNew B.id i) {}
-
-/-- `inFix`'s successor indices. -/
-def fSuccs (f : Clif.Function) : Array (List Nat) :=
-  f.blocks.toArray.map fun B => (succIds B.term).filterMap ((fBim f)[·]?)
-
-/-- `inFix`'s predecessor indices. -/
-def fPreds (f : Clif.Function) : Array (List Nat) :=
-  (fSuccs f).zipIdx.foldl
-    (fun ps (ss, bi) => ss.foldl (fun ps s => ps.modify s (bi :: ·)) ps)
-    (Array.replicate f.blocks.toArray.size [])
-
-/-- `inFix`'s parameter sets. -/
-def fPars (f : Clif.Function) : Array (Std.HashSet Nat) :=
-  f.blocks.toArray.map fun B => Std.HashSet.ofList (B.params.map (·.1))
-
-/-- `inFix`'s result sets. -/
-def fDefs (f : Clif.Function) : Array (Std.HashSet Nat) :=
-  f.blocks.toArray.map fun B => Std.HashSet.ofList (B.body.flatMap (·.results))
-
-/-- `inFix`'s value marks. -/
-def fIsVal (f : Clif.Function) (nv : Nat) : Array Bool :=
-  f.blocks.toArray.foldl (fun a B =>
-    let a := B.params.foldl (fun a p => a.setIfInBounds p.1 true) a
-    B.body.foldl (fun a s => s.results.foldl (fun a r => a.setIfInBounds r true) a) a)
-    (Array.replicate nv false)
+/-! ## The pieces of `inFix` (`fBim`, ..., `fIsVal`: `DriverCheck.lean`) -/
 
 /-- `inFix`'s users, after the values below `n`. -/
 def usersN (ctx : Ctx) (n : Nat) : Array (List Nat) :=
@@ -478,9 +298,6 @@ theorem has0 (tl x : Nat) : fixHas ctx.valDef.size (fInB0 f ctx gn) tl x = true 
   · simp [hx]
 
 /-! ## The loop -/
-
-/-- The pairs present in `inB`. -/
-def Has (nv : Nat) (inB : ByteArray) (tl x : Nat) : Prop := fixHas nv inB tl x = true
 
 /-- The out-constraint of `FixOk` at `(tl, x)` for the solution `S`. -/
 def OutOk (f : Clif.Function) (S : Nat → Nat → Prop) (tl x : Nat) : Prop :=
