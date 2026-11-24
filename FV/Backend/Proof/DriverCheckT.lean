@@ -56,6 +56,41 @@ def ctxOkT (f : Clif.Function) (ctx : Ctx) : Bool :=
       | none => true
     | none => true)
 
+/-- **`ctxOkT` as the compiler runs it** (`ctxOkT_eq_fast`, `@[csimp]`, #1090): the same checks,
+the function equality behind `funcEqB`, as `ctxOkFast` (`FV/Backend/Proof/DriverCheck.lean`). -/
+def ctxOkTFast (f : Clif.Function) (ctx : Ctx) : Bool :=
+  funcEqB f ctx &&
+  ctx.insts.toList.all (fun info => match info.clif with
+    | some i =>
+      (match instData f i with
+        | .ok d => d == info.data
+        | .error _ => false) &&
+      ctxResTysOk f info i && (intArgs i).all (intPosOk ctx)
+    | none => true) &&
+  (List.range ctx.valReg.size).all (fun x => match ctx.valueReg? x with
+    | some r => decide (r = .vreg x (valClassOf ctx x))
+    | none => true) &&
+  (List.range ctx.valTy.size).all (fun x => match ctx.valueType? x with
+    | some t => decide (ctx.valueReg? x = some (.vreg x t.valClass)) && tyIn mCTys t
+    | none => true) &&
+  (List.range ctx.valDef.size).all (fun x => match ctx.defInst? x with
+    | some d => match ctx.insts[d]? with
+      | some info => decide (x ∈ info.results) && info.clif.isSome
+      | none => false
+    | none => true) &&
+  decide (ctx.slotOff = (slotLayout f.slots).1) &&
+  ctx.insts.toList.all (fun info => info.resTys.all (tyIn mCTys)) &&
+  ctx.insts.toList.all (fun info => match info.clif with
+    | some i => match memAddr? i with
+      | some x => decide (ctx.valueType? x = some (.int 64))
+      | none => true
+    | none => true)
+
+/-- The compiler runs `ctxOkTFast` in place of `ctxOkT`. -/
+@[csimp] theorem ctxOkT_eq_fast : @ctxOkT = @ctxOkTFast := by
+  funext f ctx
+  rfl
+
 theorem intPosOk_sound {ctx : Ctx} {x : Nat} (h : intPosOk ctx x = true) : IntPos ctx x := by
   intro t ht
   simp only [intPosOk, ht] at h
