@@ -15,18 +15,19 @@ agents must follow this discipline.
   conflict in a task/status issue, mention the other contributor, and propose a
   boundary. Pause only conflicting work until resolved.
 - Follow `docs/TO-PROVE.md` §§7–8 for proof-work rules and task claims.
-- Stock parity (output identical to stock Cranelift) has two metrics. Both count.
-  - The filetest comparison: every function of Cranelift's own filetests, under
-    their declared settings. A function that Lean does not compile counts as a
-    miss. CI measures it on every PR and main push and comments on the PR.
-    See `docs/STOCK-COMPILER-COMPARISON.md`.
-  - Crate parity: every function of real Rust crates that cg_clif compiles.
-    The full gate measures it on main (fv-demo, survey). For a PR, run
-    `scripts/stock-crate-parity.py` (`docs/USAGE.md`); the cause analysis is #557.
-  - The daily digest (#46) reports both metrics on main, with lost matches.
-  - A parity PR reports both results: the CI line "gained N, lost M" and the crate
-    counts before and after. It loses no match on either metric. When you choose
-    between parity causes, prefer the ones that move both metrics.
+- Stock parity (output identical to stock Cranelift) is measured two ways. The
+  filetest comparison is the target; crate parity is a holdout.
+  - The filetest comparison (target): every function of Cranelift's own filetests,
+    under their declared settings. A function that Lean does not compile counts as
+    a miss. CI measures it on every PR and main push and comments on the PR.
+    See `docs/STOCK-COMPILER-COMPARISON.md`. Choose and rank parity work by this
+    metric only.
+  - Crate parity (holdout): every function of real Rust crates that cg_clif
+    compiles. The full gate measures it on main (fv-demo, survey); the daily
+    digest (#46) reports it with lost matches. Do not use it to choose, rank or
+    tune parity causes, and do not measure it per PR. A loss on main is
+    investigated as a bug in the change that caused it.
+  - A parity PR reports the CI line "gained N, lost M" and loses no filetest match.
 - All merges must be squash merges (`gh pr merge --squash`). This grants no
   permission to push or merge.
 
