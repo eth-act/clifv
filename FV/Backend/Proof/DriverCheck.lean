@@ -1181,7 +1181,9 @@ when nine passes after the first do not settle. -/
 def inFixSp? (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Option (Array (Option (Array Nat))) :=
   let nb := f.blocks.toArray.size
   let nv := ctx.valDef.size
-  let succs := Fix.fSuccs f
+  -- the block-index map once (`Fix.fSuccs` would rebuild it for every block)
+  let bim := Fix.fBim f
+  let succs : Array (List Nat) := f.blocks.toArray.map fun B => (succIds B.term).filterMap (bim[·]?)
   let pars := Fix.fPars f
   let isVal := Fix.fIsVal f nv
   let argsA : Array (List Nat) := Array.ofFn (n := nv) fun i => defArgs ctx i.1
