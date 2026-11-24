@@ -1,3 +1,4 @@
+import FV.Backend.Proof.FixGfp
 import FV.Backend.Isel
 import FV.Compile.Subset
 import Std.Data.HashMap.Basic
@@ -375,35 +376,6 @@ def defArgs (ctx : Ctx) (x : Clif.ValueId) : List Clif.ValueId :=
       | none => []
     | none => []
   | none => []
-
-/-- `x` is (still) available at the entry of block `tl` in `inB` (`nv` values per block). -/
-def fixHas (nv : Nat) (inB : ByteArray) (tl x : Nat) : Bool := x < nv && inB.get! (tl * nv + x) != 0
-
-/-- The worklist loop of `inFix`: pop a pair `(tl, x)`; if `x` is still available at `tl`'s entry,
-remove it, and if it is neither a parameter nor a result of `tl` (so it also leaves the end of
-`tl`), push the pairs it may now violate: `x` at the entries of `tl`'s successors, and the users
-of `x` (the values whose definition reads it) at `tl`'s entry. Every pushed pair violates a
-constraint when pushed, so each iteration removes a pair or pops one; `fixFuel` bounds the
-iterations (`inFix_spec`). -/
-def fixLoop (nv : Nat) (pars defs : Array (Std.HashSet Nat)) (succs users : Array (List Nat)) :
-    Nat → ByteArray → List (Nat × Nat) → ByteArray
-  | 0, inB, _ => inB
-  | _ + 1, inB, [] => inB
-  | fuel + 1, inB, (tl, x) :: rest =>
-    if fixHas nv inB tl x then
-      let inB := inB.set! (tl * nv + x) 0
-      if !pars[tl]!.contains x && !defs[tl]!.contains x then
-        let rest := succs[tl]!.foldl (fun w s => if fixHas nv inB s x then (s, x) :: w else w) rest
-        let rest := users[x]!.foldl (fun w z => if fixHas nv inB tl z then (tl, z) :: w else w) rest
-        fixLoop nv pars defs succs users fuel inB rest
-      else fixLoop nv pars defs succs users fuel inB rest
-    else fixLoop nv pars defs succs users fuel inB rest
-
-/-- Enough iterations for `fixLoop` from `work` (`nb * nv` pairs, each removed at most once,
-each removal pushing at most `maxPush` pairs). -/
-def fixFuel (nb nv : Nat) (succs users : Array (List Nat)) (work : List (Nat × Nat)) : Nat :=
-  let maxPush := succs.foldl (fun m s => max m s.length) 0 + users.foldl (fun m u => max m u.length) 0
-  work.length + nb * nv * (maxPush + 1) + 1
 
 /-- The values available at the block entries: the greatest solution, below the candidates
 (the values of `f` that are not a parameter of the block and not renamed onto one; nothing at
@@ -1132,11 +1104,130 @@ def inFixFast (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List C
   let inB := fixLoop nv pars defs succs users (fixFuel nb nv succs users work) inB work
   (Array.range nb).map fun tl => (List.range nv).filter (fixHas nv inB tl)
 
-/-- The compiler runs `inFixFast` in place of `inFix`. -/
+/-- `inFix` with its table built byte by byte. The compiler runs `inFixSparse` instead
+(`inFix_eq_sparse`, declared later: of two `@[csimp]` lemmas for `inFix`, the later one is used). -/
 @[csimp] theorem inFix_eq_fast : @inFix = @inFixFast := by
   funext f ctx gn
   unfold inFix inFixFast
   simp only [byteArrayOfFn_eq]
+
+/-! ## The dataflow without the blocks × values table (#1090) -/
+
+namespace Fix
+
+/-- `inFix`'s block-index map. -/
+def fBim (f : Clif.Function) : Std.HashMap Clif.BlockId Nat :=
+  f.blocks.toArray.zipIdx.foldl (fun m (B, i) => m.insertIfNew B.id i) {}
+
+/-- `inFix`'s successor indices. -/
+def fSuccs (f : Clif.Function) : Array (List Nat) :=
+  f.blocks.toArray.map fun B => (succIds B.term).filterMap ((fBim f)[·]?)
+
+/-- `inFix`'s predecessor indices. -/
+def fPreds (f : Clif.Function) : Array (List Nat) :=
+  (fSuccs f).zipIdx.foldl
+    (fun ps (ss, bi) => ss.foldl (fun ps s => ps.modify s (bi :: ·)) ps)
+    (Array.replicate f.blocks.toArray.size [])
+
+/-- `inFix`'s parameter sets. -/
+def fPars (f : Clif.Function) : Array (Std.HashSet Nat) :=
+  f.blocks.toArray.map fun B => Std.HashSet.ofList (B.params.map (·.1))
+
+/-- `inFix`'s result sets. -/
+def fDefs (f : Clif.Function) : Array (Std.HashSet Nat) :=
+  f.blocks.toArray.map fun B => Std.HashSet.ofList (B.body.flatMap (·.results))
+
+/-- `inFix`'s value marks. -/
+def fIsVal (f : Clif.Function) (nv : Nat) : Array Bool :=
+  f.blocks.toArray.foldl (fun a B =>
+    let a := B.params.foldl (fun a p => a.setIfInBounds p.1 true) a
+    B.body.foldl (fun a s => s.results.foldl (fun a r => a.setIfInBounds r true) a) a)
+    (Array.replicate nv false)
+
+/-- Each block's parameters and results, in increasing order (`fixSparse`'s `passS`). -/
+def fPassS (f : Clif.Function) : Array (List Nat) :=
+  f.blocks.toArray.map fun B => (B.params.map (·.1) ++ B.body.flatMap (·.results)).mergeSort
+
+/-- `inFix`'s candidate test (`1 ≤ tl` aside from the bounds): a value of `f`, not a parameter
+of the block nor renamed onto one. -/
+def fCand0 (f : Clif.Function) (nv : Nat) (gn : Nat → Nat) (tl x : Nat) : Bool :=
+  1 ≤ tl && (fIsVal f nv)[x]! && !(fPars f)[tl]!.contains x && !(fPars f)[tl]!.contains (gn x)
+
+/-- `passS` holds the parameters and results, sorted. -/
+theorem passS_spec (f : Clif.Function) (p : Nat) : ((fPassS f)[p]!).Pairwise (· ≤ ·) ∧
+    ∀ x, x ∈ (fPassS f)[p]! ↔ (fPars f)[p]!.contains x = true ∨ (fDefs f)[p]!.contains x = true := by
+  rw [bang, bang (fPars f), bang (fDefs f)]
+  unfold fPassS fPars fDefs
+  rw [Array.getElem?_map, Array.getElem?_map, Array.getElem?_map, List.getElem?_toArray]
+  cases f.blocks[p]? with
+  | none =>
+    refine ⟨List.Pairwise.nil, fun x => ?_⟩
+    have e : (default : Std.HashSet Nat).contains x = false := Std.HashSet.contains_empty
+    simp only [Option.map_none, Option.getD_none, e]
+    exact ⟨fun h => absurd h List.not_mem_nil, fun h => by simp at h⟩
+  | some B =>
+    simp only [Option.map_some, Option.getD_some]
+    refine ⟨?_, fun x => ?_⟩
+    · exact (List.pairwise_mergeSort (le := fun a b => decide (a ≤ b))
+        (fun a b c h1 h2 => by simp only [decide_eq_true_eq] at *; omega)
+        (fun a b => by simp only [Bool.or_eq_true, decide_eq_true_eq]; omega) _).imp
+        fun h => by simpa using h
+    · simp [List.mem_mergeSort, Std.HashSet.contains_ofList]
+
+end Fix
+
+/-- The sparse computation of `inFix` on `f`'s arrays (`fixSparse`, `FixGfp.lean`): `none`
+when nine passes after the first do not settle. -/
+def inFixSp? (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Option (Array (Option (Array Nat))) :=
+  let nb := f.blocks.toArray.size
+  let nv := ctx.valDef.size
+  let succs := Fix.fSuccs f
+  let pars := Fix.fPars f
+  let isVal := Fix.fIsVal f nv
+  let argsA : Array (List Nat) := Array.ofFn (n := nv) fun i => defArgs ctx i.1
+  let cand : Nat → Nat → Bool := fun tl =>
+    let pt := pars[tl]!
+    fun x => 1 ≤ tl && tl < nb && x < nv && isVal[x]! && !pt.contains x && !pt.contains (gn x)
+  fixSparse nb nv cand (Fix.predsOf nb succs) pars (Fix.fDefs f) (Fix.fPassS f)
+    (fun x => argsA.getD x []) (rpo nb succs) 8
+
+/-- **`inFix` without the blocks × values table** (#1090): the sparse computation, whose work
+grows with the size of its result; `inFixFast` when it does not settle. -/
+def inFixSparse (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.ValueId) :=
+  match inFixSp? f ctx gn with
+  | some D => D.map fun o => (o.getD #[]).toList
+  | none => inFixFast f ctx gn
+
+/-- When the sparse computation settles, its arrays are `inFix`'s lists (`Fix.fixSparse_eq`). -/
+theorem inFixSp?_eq {f : Clif.Function} {ctx : Ctx} {gn : Nat → Nat}
+    {D : Array (Option (Array Nat))} (h : inFixSp? f ctx gn = some D) :
+    D.map (fun o => (o.getD #[]).toList) = inFix f ctx gn := by
+  unfold inFixSp? at h
+  dsimp only at h
+  rw [Fix.fixSparse_eq (g := Fix.fCand0 f ctx.valDef.size gn) (args := defArgs ctx) ?_ ?_
+    (Fix.passS_spec f) ?_ h]
+  · rfl
+  · intro tl x hx
+    simp only [Fix.fCand0, Bool.and_eq_true, decide_eq_true_eq] at hx
+    exact hx.1.1.1
+  · intro tl x
+    simp only [Fix.fCand0, Bool.and_eq_true, decide_eq_true_eq]
+    constructor
+    · rintro ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩
+      exact ⟨h2, h3, ⟨⟨⟨h1, h4⟩, h5⟩, h6⟩⟩
+    · rintro ⟨h2, h3, ⟨⟨⟨h1, h4⟩, h5⟩, h6⟩⟩
+      exact ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩
+  · intro x hx
+    simp [Array.getD_eq_getD_getElem?, hx]
+
+/-- The compiler runs `inFixSparse` in place of `inFix`. -/
+@[csimp] theorem inFix_eq_sparse : @inFix = @inFixSparse := by
+  funext f ctx gn
+  unfold inFixSparse
+  split
+  · rename_i D h
+    exact (inFixSp?_eq h).symm
+  · exact congrFun (congrFun (congrFun inFix_eq_fast f) ctx) gn
 
 /-! ## The validator -/
 
