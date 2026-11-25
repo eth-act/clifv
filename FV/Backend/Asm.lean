@@ -978,6 +978,16 @@ def MBuf.boundIn (m : MBuf) (i j : Nat) : List Lbl :=
 emitted code evaluate it, unlike `Array.eraseIdx`'s well-founded loop). -/
 def MBuf.erase (m : MBuf) (k : Nat) : Array Line := (m.out.toList.eraseIdx k).toArray
 
+/-- `MBuf.erase` as the compiler runs it (`MBuf.erase_eq_fast`, `@[csimp]`, #1090): `erase`
+copies all lines to a list and back on every branch `optimize_branches` removes (quadratic in
+the function's lines); `Array.eraseIdxIfInBounds` shifts only the lines after `k` (the label
+lines after the last code line). -/
+def MBuf.eraseFast (m : MBuf) (k : Nat) : Array Line := m.out.eraseIdxIfInBounds k
+
+@[csimp] theorem MBuf.erase_eq_fast : @MBuf.erase = @MBuf.eraseFast := by
+  funext m k
+  rw [MBuf.erase, MBuf.eraseFast, ← Array.toList_eraseIdxIfInBounds, Array.toArray_toList]
+
 /-- One round of `optimize_branches` (`buffer.rs:1016-1262`); `none`: no rule applies.
 `allLabels`: alias every label at a `b`, else only block labels. -/
 def MBuf.step (allLabels : Bool) (m : MBuf) : Option MBuf := do

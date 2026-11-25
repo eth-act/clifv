@@ -86,4 +86,23 @@ def prepCheck (vc vcp : VCode) : Bool :=
       vcp.outgoing == vc.outgoing)
   | _, _ => false
 
+/-- `prepCheck` as the compiler runs it (`prepCheck_eq_fast`, `@[csimp]`, #1090): `liveOf`
+computes `reachable` on every call, once per block and once per successor (quadratic in the
+blocks); here it is computed once. -/
+def prepCheckFast (vc vcp : VCode) : Bool :=
+  match vc.cfg, vcp.cfg with
+  | .ok (ss, _), .ok (ss', _) =>
+    let live := reachable ss
+    let lv := fun b => live[b]?.getD false
+    decide (sigmaOf vc vcp 0 = some 0) && lv 0 &&
+    ((List.range vc.blocks.size).all fun b => !lv b || match sigmaOf vc vcp b with
+      | none => false
+      | some b' => keptOk vc vcp ss ss' b b' &&
+          (ss[b]?.getD #[]).all fun s => decide (s < vc.blocks.size) && lv s) &&
+    (((vc.hasTryCall || !vcp.hasTryCall) && (vc.hasTls || !vcp.hasTls)) &&
+      vcp.outgoing == vc.outgoing)
+  | _, _ => false
+
+@[csimp] theorem prepCheck_eq_fast : @prepCheck = @prepCheckFast := rfl
+
 end Backend.Proof.Driver

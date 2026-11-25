@@ -1,4 +1,5 @@
 import FV.Backend.Asm
+import FV.Backend.Proof.PrepareCheck
 import FV.Opt.Legal
 import FV.Opt.LegalExn
 import FV.Opt.LegalExnT
@@ -16,6 +17,10 @@ replacement equals the original definition (the kernel and every theorem see the
 -- relaxable branch (`emitFuncFast`)
 #print axioms Backend.relaxFar_eq_set
 #print axioms Backend.relaxOf_eq_set
+-- #1090: `MachBuffer`'s branch removal without a list round trip; `prepCheck`'s reachability
+-- computed once, not once per block and successor
+#print axioms Backend.MBuf.erase_eq_fast
+#print axioms Backend.Proof.Driver.prepCheck_eq_fast
 #print axioms Opt.Legal.termOk_eq_F
 #print axioms Opt.Legal.codeOk_eq_F
 #print axioms Opt.Legal.blockOk_eq_F
