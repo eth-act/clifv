@@ -193,7 +193,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | unsigned comparisons with 0 (fold constants) | none (`zeroCmp` in `constEval`) | `zeroCmp_sound`, `constEval_sound`, `foldBr_simU`, `check_soundC` | 114,829 (94.2 %) | not measured on the pairs | 9 crates: see the bullet below |
 | removed block parameters in functions with a `call_indirect` (`checkCertC`, prep requests) | none (`phiPre` with `phiOkM`, inside `foldPre f bs`) | `phiOkM_simU`, `CR.isSimWUM`, `phiPre_simU`, `check_soundC` | 115,674 (94.9 %) | not measured on the pairs | 9 crates: 77.0 % → 77.6 % (93,799 → 94,442 of 121,767) |
 | swapped unit comparisons and parameters kept after the folds (`algStep2`; `checkCertC`, prep requests) | `icmpSwapUnit` in `Norm.alg2`; `foldPreK f bs` as a second copy | `ns_icmpSwapUnit`, `foldPreK_simU`, `check_soundC` | 116,600 (95.7 %) | not measured on the pairs | 9 crates: with the next row |
-| 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: see the bullet below |
+| 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: 77.6 % → 78.1 % (94,442 → 95,064 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -689,6 +689,25 @@ counterfactual.)
     accepted pair re-checks `ok`; by group of the gained pairs: swapped unit comparisons 533,
     parameters kept 388, `addNeg` 185, `mulNeg` 152, `redRed` 114, other 36 (by the blocking
     reason under main's checker; one pair can need two of them).
+    `cargo fv test --release --lean-link --verified` on the 9 crates (2026-11-25, clifv-remote,
+    main 7d58edddc's tools against this one's): binary check 48/48 → 48/48, verified 121,767 →
+    121,767, left out of the region 1 → 1, tests the same as stock's on all 9 both ways, validated
+    114,001 → 115,246 (93.6 → 94.6 %; up on 7 crates, blake2 and num-traits unchanged),
+    byte-identical to stock 94,442 → 95,064 (77.6 → 78.1 %); `cargo fv test` wall summed 4,676 →
+    4,498 s. Per crate (main → this one):
+
+    | crate | validated | byte-identical to stock | functions |
+    |---|---|---|---|
+    | blake2 0.11.0 | 1,072 → 1,072 | 1,031 → 1,031 | 1,298 |
+    | crypto-bigint 0.7.11 | 40,314 → 40,739 | 34,549 → 34,770 | 43,170 |
+    | itoa 1.0.19 | 14,894 → 15,108 | 12,292 → 12,400 | 15,874 |
+    | memchr 2.8.3 | 4,753 → 4,867 | 3,929 → 3,977 | 5,051 |
+    | num-traits 0.2.19 | 1,547 → 1,547 | 1,399 → 1,399 | 1,701 |
+    | ryu 1.0.23 | 16,198 → 16,416 | 13,451 → 13,562 | 17,232 |
+    | semver 1.0.28 | 15,410 → 15,624 | 12,756 → 12,864 | 16,397 |
+    | serde_json 1.0.154 | 18,496 → 18,555 | 13,760 → 13,785 | 19,479 |
+    | sha3 0.12.0 | 1,317 → 1,318 | 1,275 → 1,276 | 1,565 |
+    | **total** | 114,001 → 115,246 | 94,442 → 95,064 | 121,767 |
 * **`symbol_value` placement (`placement:symbol_value`, 1,012 pairs): not decidable per
   function.** Cranelift's loop-invariant code motion moves a `symbol_value` (pure, no operands)
   out of a loop into its preheader, so `g` evaluates it on paths where `f` leaves the loop
