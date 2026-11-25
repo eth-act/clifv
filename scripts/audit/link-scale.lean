@@ -191,6 +191,12 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms E2E.GotIdx.got_of
 #print axioms E2E.GotIdx.tab_get
 #print axioms E2E.gotOf_eq_tab
+#print axioms E2E.LinkCheck.all_filter_may
+#print axioms E2E.LinkCheck.blrOk_may
+#print axioms E2E.LinkCheck.blrOkC_may
+#print axioms E2E.LinkCheck.siteWithOkG_may
+#print axioms E2E.LinkCheck.siteWithOkCG_may
+#print axioms E2E.LinkCheck.siteWithOkTCG_may
 #print axioms E2E.LinkCheck.linkChksWithI_eq_got
 #print axioms E2E.LinkCheck.linkChksWithTI_eq_got
 #print axioms E2E.LinkCheck.linkChksWithTSI_eq_got

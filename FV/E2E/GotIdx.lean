@@ -16,7 +16,8 @@ per function at least. num-bigint 0.5.1's `bigint_scalar` test executable (debug
 instructions defining each vreg and the call sites through each vreg (`groupMulti`); `GotIdx.got`
 decides `gotB` only on those (`GotIdx.got_of`: the same answer as `gotOf`), and `GotIdx.tab` keeps
 the vregs it accepts (`GotIdx.tab_get`). The link checks with the table built once per function
-(`linkChksWithIG`, `linkChksWithTIG`, `linkChksWithTSIG`, `returnPinsIdxG`) are equal to
+(`linkChksWithIG`, `linkChksWithTIG`, `linkChksWithTSIG`, `returnPinsIdxG`), and with the functions
+their `blr` sites may enter filtered once per function (`progMay`), are equal to
 `linkChksWithI`, `linkChksWithTI`, `linkChksWithTSI`, `returnPinsIdx` (`@[csimp]`
 `linkChksWithI_eq_got`, …), which `link-check` evaluates. No statement changes.
 -/
@@ -264,7 +265,95 @@ theorem siteWithOkC_got (F : String → Option Clif.Function) (P : Clif.Program)
     (g : Clif.Function) (may : Clif.Function → Bool) (vc : VCode) :
     siteWithOkC F P g may vc = siteWithOkCG F P g may (gotOf vc) := rfl
 
-/-- **`linkChksWithI` with the function's GOT table built once** (`linkChksWithI_eq_got`). -/
+/-! ## The functions a `blr` site may enter, filtered once per function
+
+At each `blr` site, `blrOk`, `blrOkC` and `siteWithOkTCG` test `may h` for every function `h` of
+the program they are given, although `may` does not depend on the site; `may` (`indToWithB`)
+scans `g`'s externs (`gotDeclB`). num-bigint 0.5.1's `bigint_scalar` (debug), function
+`check_sub`: 1,856 `blr` sites × 3,117 candidates × 3,771 externs, 209-233 s per evaluation of
+its `blr` checks; `may` over the candidates once: 0.115 s (#1090). `progMay P may` keeps the
+functions `may` admits, once per function; the site checks on it with `may := fun _ => true` are
+the checks on `P` with `may` (`blrOk_may`, `blrOkC_may`, `siteWithOkG_may`, `siteWithOkCG_may`,
+`siteWithOkTCG_may`). -/
+
+/-- The functions of `P` that `may` admits. -/
+def progMay (P : Clif.Program) (may : Clif.Function → Bool) : Clif.Program :=
+  { P with funcs := P.funcs.filter may }
+
+theorem all_filter_may {α : Type} (l : List α) (may p : α → Bool) :
+    (l.filter may).all p = l.all fun h => !may h || p h := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    simp only [List.filter_cons, List.all_cons]
+    cases hm : may a <;> simp [ih]
+
+theorem blrOk_may (P : Clif.Program) (may : Clif.Function → Bool) (got : Nat → Option String)
+    (info : CallInfo) : blrOk (progMay P may) (fun _ => true) got info = blrOk P may got info := by
+  obtain ⟨d, us, ds⟩ := info
+  cases d with
+  | sym n => rfl
+  | reg r =>
+    cases r with
+    | vreg t c =>
+      cases c with
+      | float => rfl
+      | int =>
+        simp only [blrOk, progMay, Bool.not_true, Bool.false_or, all_filter_may, Bool.or_assoc]
+    | _ => rfl
+
+theorem blrOkC_may (P : Clif.Program) (may : Clif.Function → Bool) (got : Nat → Option String)
+    (info : CallInfo) :
+    blrOkC (progMay P may) (fun _ => true) got info = blrOkC P may got info := by
+  obtain ⟨d, us, ds⟩ := info
+  cases d with
+  | sym n => rfl
+  | reg r =>
+    cases r with
+    | vreg t c =>
+      cases c with
+      | float => rfl
+      | int =>
+        simp only [blrOkC, progMay, Bool.not_true, Bool.false_or, all_filter_may, Bool.or_assoc]
+    | _ => rfl
+
+theorem siteWithOkG_may (F : String → Option Clif.Function) (P : Clif.Program)
+    (g : Clif.Function) (may : Clif.Function → Bool) (got : Nat → Option String) :
+    siteWithOkG F (progMay P may) g (fun _ => true) got = siteWithOkG F P g may got := by
+  funext info
+  obtain ⟨d, us, ds⟩ := info
+  cases d with
+  | sym n => rfl
+  | reg r => exact blrOk_may P may got _
+
+theorem siteWithOkCG_may (F : String → Option Clif.Function) (P : Clif.Program)
+    (g : Clif.Function) (may : Clif.Function → Bool) (got : Nat → Option String) :
+    siteWithOkCG F (progMay P may) g (fun _ => true) got = siteWithOkCG F P g may got := by
+  funext info
+  obtain ⟨d, us, ds⟩ := info
+  cases d with
+  | sym n => rfl
+  | reg r => exact blrOkC_may P may got _
+
+theorem siteWithOkTCG_may (F : String → Option Clif.Function) (P : Clif.Program)
+    (g : Clif.Function) (may : Clif.Function → Bool) (got : Nat → Option String) :
+    siteWithOkTCG F (progMay P may) g (fun _ => true) got = siteWithOkTCG F P g may got := by
+  funext info
+  simp only [siteWithOkTCG, siteWithOkG_may]
+  congr 1
+  obtain ⟨d, us, ds⟩ := info
+  cases d with
+  | sym n => rfl
+  | reg r =>
+    cases r with
+    | vreg t c =>
+      cases c with
+      | float => rfl
+      | int => simp only [progMay, Bool.not_true, Bool.false_or, all_filter_may]
+    | _ => rfl
+
+/-- **`linkChksWithI` with the function's GOT table built once** (`linkChksWithI_eq_got`), the
+functions its `blr` sites may enter filtered once (`progMay`, `siteWithOkG_may`). -/
 def linkChksWithIG (C : LinkCtx) (X : LinkIdx) (P : Clif.Program) (g : Clif.Function)
     (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
@@ -273,21 +362,24 @@ def linkChksWithIG (C : LinkCtx) (X : LinkIdx) (P : Clif.Program) (g : Clif.Func
   let sigs := indSigs g
   let may := indToWithB C.S (indFreeB g) (fun n => Ds.contains n) sigs g
   let Pg := X.progFor P g sigs
+  let Pm := progMay Pg may
   let G := (GotIdx.of a.vcp).tab
   [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
        ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
-   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkG C.F Pg g may fun t => G[t]?))),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkG C.F Pm g (fun _ => true) fun t => G[t]?))),
    ("declSig", declSigWithB C.F g),
    ("raCall/raBlr", raCallIdxB X g a),
    ("indScope/indSig", indWithB Pg C.S (indFreeB g) (fun n => Ds.contains n) sigs)]
 
 @[csimp] theorem linkChksWithI_eq_got : @linkChksWithI = @linkChksWithIG := by
   funext C X P g r
-  simp only [linkChksWithI, linkChksWithIG, siteWithOk_got, GotIdx.tab_get, GotIdx.got_of]
+  simp only [linkChksWithI, linkChksWithIG, siteWithOkG_may, siteWithOk_got, GotIdx.tab_get,
+    GotIdx.got_of]
 
-/-- **`linkChksWithTI` with the function's GOT table built once** (`linkChksWithTI_eq_got`). -/
+/-- **`linkChksWithTI` with the function's GOT table built once** (`linkChksWithTI_eq_got`), the
+functions its `blr` sites may enter filtered once (`progMay`, `siteWithOkTCG_may`). -/
 def linkChksWithTIG (C : LinkCtx) (X : LinkIdx) (P : Clif.Program) (g : Clif.Function)
     (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
@@ -296,21 +388,24 @@ def linkChksWithTIG (C : LinkCtx) (X : LinkIdx) (P : Clif.Program) (g : Clif.Fun
   let sigs := indSigs g
   let may := indToWithB C.S (indFreeB g) (fun n => Ds.contains n) sigs g
   let Pg := X.progFor P g sigs
+  let Pm := progMay Pg may
   let G := (GotIdx.of a.vcp).tab
   [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
        ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
-   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkTCG C.F Pg g may fun t => G[t]?))),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkTCG C.F Pm g (fun _ => true) fun t => G[t]?))),
    ("declSig", declSigWithB C.F g),
    ("raCall/raBlr", raCallIdxB X g a),
    ("indScope/indSig", indWithB Pg C.S (indFreeB g) (fun n => Ds.contains n) sigs)]
 
 @[csimp] theorem linkChksWithTI_eq_got : @linkChksWithTI = @linkChksWithTIG := by
   funext C X P g r
-  simp only [linkChksWithTI, linkChksWithTIG, siteWithOkTC_got, GotIdx.tab_get, GotIdx.got_of]
+  simp only [linkChksWithTI, linkChksWithTIG, siteWithOkTCG_may, siteWithOkTC_got, GotIdx.tab_get,
+    GotIdx.got_of]
 
-/-- **`linkChksWithTSI` with the function's GOT table built once** (`linkChksWithTSI_eq_got`). -/
+/-- **`linkChksWithTSI` with the function's GOT table built once** (`linkChksWithTSI_eq_got`), the
+functions its `blr` sites may enter filtered once (`progMay`, `siteWithOkCG_may`). -/
 def linkChksWithTSIG (C : LinkCtx) (X : LinkIdx) (P : Clif.Program) (g : Clif.Function)
     (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
@@ -319,19 +414,21 @@ def linkChksWithTSIG (C : LinkCtx) (X : LinkIdx) (P : Clif.Program) (g : Clif.Fu
   let sigs := indSigs g
   let may := indToWithB C.S (indFreeB g) (fun n => Ds.contains n) sigs g
   let Pg := X.progFor P g sigs
+  let Pm := progMay Pg may
   let G := (GotIdx.of a.vcp).tab
   [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
        ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
-   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkCG C.F Pg g may fun t => G[t]?))),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkCG C.F Pm g (fun _ => true) fun t => G[t]?))),
    ("declSig", declSigWithB C.F g),
    ("raCall/raBlr", raCallIdxB X g a),
    ("indScope/indSig", indWithBC Pg C.S (indFreeB g) (fun n => Ds.contains n) sigs)]
 
 @[csimp] theorem linkChksWithTSI_eq_got : @linkChksWithTSI = @linkChksWithTSIG := by
   funext C X P g r
-  simp only [linkChksWithTSI, linkChksWithTSIG, siteWithOkC_got, GotIdx.tab_get, GotIdx.got_of]
+  simp only [linkChksWithTSI, linkChksWithTSIG, siteWithOkCG_may, siteWithOkC_got, GotIdx.tab_get,
+    GotIdx.got_of]
 
 /-- **`returnPinsIdx` with the function's GOT table built once** (`returnPinsIdx_eq_got`). -/
 def returnPinsIdxG (C : ReturnPinCtx) (Y : ReturnPinIdx) (g : Clif.Function) : Bool :=
