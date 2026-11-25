@@ -192,6 +192,8 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | removed block parameters (`checkCertC`, prep requests) | none (`phiPre` inside `foldPre f bs`) | `phiOk_simU`, `phiPre_simU`, `foldPre_simU`, `check_soundC` | 114,082 (93.6 %) | not measured on the pairs | 9 crates: with the next row |
 | unsigned comparisons with 0 (fold constants) | none (`zeroCmp` in `constEval`) | `zeroCmp_sound`, `constEval_sound`, `foldBr_simU`, `check_soundC` | 114,829 (94.2 %) | not measured on the pairs | 9 crates: see the bullet below |
 | removed block parameters in functions with a `call_indirect` (`checkCertC`, prep requests) | none (`phiPre` with `phiOkM`, inside `foldPre f bs`) | `phiOkM_simU`, `CR.isSimWUM`, `phiPre_simU`, `check_soundC` | 115,674 (94.9 %) | not measured on the pairs | 9 crates: 77.0 % → 77.6 % (93,799 → 94,442 of 121,767) |
+| swapped unit comparisons and parameters kept after the folds (`algStep2`; `checkCertC`, prep requests) | `icmpSwapUnit` in `Norm.alg2`; `foldPreK f bs` as a second copy | `ns_icmpSwapUnit`, `foldPreK_simU`, `check_soundC` | 116,600 (95.7 %) | not measured on the pairs | 9 crates: with the next row |
+| 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: see the bullet below |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -634,6 +636,59 @@ counterfactual.)
     left out of the region 1 → 1, tests the same as stock's on all 9 both ways, validated
     113,187 → 114,001 (93.0 → 93.6 %; up on 8 crates, num-traits unchanged), byte-identical to
     stock 93,799 → 94,442 (77.0 → 77.6 %).
+* **The `rewrite:operand` tail: swapped unit comparisons, parameters kept after the folds,
+  family 5** (agent MidendNext3; classification of the 3,662 blocking `rewrite:operand`
+  failures: #1119 issuecomment-7165335641). Two of the largest groups were mismatches in the
+  validator itself, not new rewrites:
+  - **Swapped unit comparisons** (542 pairs). The normaliser applies one rule per node: `f`'s
+    `icmp ult 0, x` became `icmp ugt x, 0` (`icmpSwap`), while the branch condition that
+    `condPrep` rebuilds on `g` (`icmp ugt c, 0`, family 3) became `icmp ne c, 0` (`icmpUnit`), so
+    the re-check with the hints failed. `icmpSwapUnit` (tried first in `algStep2`): `icmp cc ty
+    k x` with `k` a constant whose swap is one of `icmpUnit`'s forms (`icmp ult 0, x`, `uge 0,
+    x`, `ugt 1, x`, `ule 1, x`) is `icmpUnit`'s result for the swap. Proof `ns_icmpSwapUnit`
+    (`ns_icmpUnit` and `intcc_swap`), `ruleSound_algStep2` (same statement).
+  - **Parameters kept after the folds** (418 pairs). `foldPre f bs` ends with `ConstPhi.run`,
+    which also removes a block parameter that receives one value only once a folded edge is gone;
+    Cranelift removes constant phis only before its mid-end and keeps it (`jump` arity,
+    `param ≠ iconst`). `foldPreK f bs` is `foldPre` with `Opt.removeUnreachable` (under
+    `freshOkB`, as in `ConstPhi.runCore`) in place of that `ConstPhi.run`; `checkCertC` with fold
+    requests accepts `checkCert (foldPre f bs) … || checkCert (foldPreK f bs) …`, and `checkC`/
+    `emitC` try `foldPreK` when `foldPre`'s copy is rejected (verdicts on `foldPre` unchanged).
+    Proof `foldPreK_simU : FunSimU f (foldPreK f bs)` (`phiPre_simU`, `divPre_simU`,
+    `foldBr_simU`, `removeUnreachable_simU`); `check_soundC_norm`/`check_soundC_normT` take
+    either copy, `check_soundC` and everything built on it keep their statements.
+  - **Family 5** (`fam5Step`, the last step of `Norm.base`; `FV/Opt/Proof/MidValNormFam5.lean`),
+    after Cranelift 0.135.0's `opts/arithmetic.isle` and `opts/extends.isle`: `addNeg`, `iadd ty
+    a (ineg ty y)` (either order) is `isub ty a y` (188 pairs); `mulNeg`, `imul ty (ineg ty x) k`
+    with `k` a constant is `imul ty x (-k)`, the constant interned first (`fam5Aux`; 152 pairs);
+    `redRed` (typed), `ireduce ty (ireduce ty2 x)` with `x` of static type `xt`, `ty` narrower
+    than `ty2` narrower than `xt`, is `ireduce ty x` (74 pairs). None drops an operand, so a side
+    has a value exactly when the other has one. Proofs `ns_addNeg`, `ns_mulNeg`,
+    `ruleSoundT_redRed`, `ruleSoundT_fam5Step`; `normSoundT_base`, `normSoundT_narrowN` and
+    `normSoundT_stdT` keep their statements and move to that file.
+  - Not covered, with the reason: `(x + y) - x = y`, `(x + k) - x = k` (309 pairs) and `x * 0 = 0`
+    (74) drop an operand, and `NormSoundT` quantifies over frames where that operand has no value
+    (then the node has none, the result has one): they need a definedness premise next to
+    `NormSoundT`, which does not exist yet (prototype: +499 pairs). `icmp eq/ne (x + k), c = icmp
+    eq/ne x, c - k` (155) turns family 3's `icmp ne (x + k), 0` wrappers into `icmp ne x, -k`,
+    which `condChain` does not recognise (prototype: +115, 5 pairs lost). Shifts (311), masks and
+    bit tricks (426), `select` to `umin`/`umax` (42) and the rest: smaller shapes each.
+  - Witnesses (`FVTest/Opt/MidValFam5Witness.lean`): `x + (-y)` against `x - y`, `(-x) * 3`
+    against `x * (-3)`, `ireduce.i16 (ireduce.i32 x)` against `ireduce.i16 x`, `brif (icmp ult 0,
+    x)` against `brif x`, and a `block3(v3)` whose second incoming value goes with the folded
+    branch against Cranelift's `g` keeping the parameter, each accepted and rejected by main's
+    checker (`normPrev`: main's normaliser; `checkC0` on `foldPre`'s copy); negative: `x + (-y)`
+    against `y - x`, `(-x) * 3` against `x * 3`, the inner truncation dropped, `icmp ult 1, x`
+    against `brif x`, and `g` passing the folded-away value, each rejected and no simulation, so
+    every certificate (with every hint list) is rejected; `redRed` is no normaliser sound in every
+    frame (`redRed_not_normSound`: a parameter declared `i64` holding an `i32`); five real pairs
+    of crypto-bigint's test build (criterion_plot, criterion ×3, crossbeam_utils), each rejected
+    by main's checker, `checkCertC` decided, simulation and program refinement.
+  - Measured (2026-11-25, the shared corpus, `midval-check --cert --cond`, main 7d58edddc's
+    checker against this one's): 115,674 → 117,082 (+1,408, 94.9 % → 96.1 %), 0 lost, every
+    accepted pair re-checks `ok`; by group of the gained pairs: swapped unit comparisons 533,
+    parameters kept 388, `addNeg` 185, `mulNeg` 152, `redRed` 114, other 36 (by the blocking
+    reason under main's checker; one pair can need two of them).
 * **`symbol_value` placement (`placement:symbol_value`, 1,012 pairs): not decidable per
   function.** Cranelift's loop-invariant code motion moves a `symbol_value` (pure, no operands)
   out of a loop into its preheader, so `g` evaluates it on paths where `f` leaves the loop
