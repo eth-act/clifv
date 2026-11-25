@@ -1,0 +1,107 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC9criterion12HanQREEPIKDl
+function u0:3820(i64 sret, i64) system_v {
+; symbol _RNxC9criterion12HanQREEPIKDl
+; instance Instance { def: Item(DefId(1:447 ~ std[2c12]::thread::local::{impl#4}::with)), args: [std::cell::RefCell<oorandom::Rand64>, Closure(DefId(0:1655 ~ criterion[ed8a]::stats::rand_util::new_rng::{closure#0}), [i32, Binder { value: extern "RustCall" fn((&'^0 std::cell::RefCell<oorandom::Rand64>,)) -> oorandom::Rand64, bound_vars: [Region(BrAnon)] }, ()]), oorandom::Rand64] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &std::thread::LocalKey<std::cell::RefCell<oorandom::Rand64>>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: {closure@/home/devops/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/criterion-0.7.0/src/stats/rand_util.rs:16:20: 16:23}, layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }], ret: ArgAbi { layout: TyAndLayout { ty: oorandom::Rand64, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(16 bytes) }, backend_repr: ScalarPair { a: u128 is .., b: u128 is .., b_offset: Size(16 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(16 bytes)], in_memory_order: [0, 1] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(16 bytes), randomization_seed: 10222115890996952172 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(16 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(16 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } oorandom::Rand64
+; arg   _1      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} std::thread::LocalKey<std::cell::RefCell<oorandom::Rand64>>
+; arg   _2      -          Ignore                               Closure(DefId(0:1655 ~ criterion[ed8a]::stats::rand_util::new_rng::{closure#0}), [i32, Binder { value: extern "RustCall" fn((&'^0 std::cell::RefCell<oorandom::Rand64>,)) -> oorandom::Rand64, bound_vars: [Region(BrAnon)] }, ()])
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} std::thread::LocalKey<std::cell::RefCell<oorandom::Rand64>>    8b 8                var=1
+; zst   _2    Closure(DefId(0:1655 ~ criterion[ed8a]::stats::rand_util::new_rng::{closure#0}), [i32, Binder { value: extern "RustCall" fn((&'^0 std::cell::RefCell<oorandom::Rand64>,)) -> oorandom::Rand64, bound_vars: [Region(BrAnon)] }, ()])    0b 1                align=1,offset=
+; stack _3    std::result::Result<oorandom::Rand64, std::thread::AccessError>   48b 16                storage=ss0
+; ssa   _4    isize                             8b 8                var=2
+; zst   _5    !                                 0b 1                align=1,offset=
+
+    ss0 = explicit_slot 48, align = 16
+    gv0 = symbol colocated userextname1 ; alloc6823
+    sig0 = (i64 sret, i64) system_v
+    sig1 = (i64) system_v
+    fn0 = colocated u0:4784 sig0 ; Instance { def: Item(DefId(1:450 ~ std[2c12]::thread::local::{impl#4}::try_with)), args: [std::cell::RefCell<oorandom::Rand64>, Closure(DefId(0:1655 ~ criterion[ed8a]::stats::rand_util::new_rng::{closure#0}), [i32, Binder { value: extern "RustCall" fn((&'^0 std::cell::RefCell<oorandom::Rand64>,)) -> oorandom::Rand64, bound_vars: [Region(BrAnon)] }, ()]), oorandom::Rand64] }
+    fn1 = u0:7559 sig1 ; Instance { def: Item(DefId(1:443 ~ std[2c12]::thread::local::panic_access_error)), args: [] }
+
+block0(v0: i64, v1: i64):
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} std::thread::LocalKey<std::cell::RefCell<oorandom::Rand64>> <- ByVal(v1): &'{erased} std::thread::LocalKey<std::cell::RefCell<oorandom::Rand64>>
+    jump block1
+
+block1:
+    v3 = stack_addr.i64 ss0
+    call fn0(v3, v1)
+    jump block2
+
+block2:
+    v5 = load.i128 notrap v3
+    v6 = ireduce.i64 v5
+; write_cvalue: Var(_4, var2): isize <- ByVal(v6): isize
+; 
+; switchInt(move _4)
+    v7 = iconst.i64 0xffff_ffff
+    v8 = icmp ugt v6, v7  ; v7 = 0xffff_ffff
+    brif v8, block3, block6
+
+block6:
+    v15 = ireduce.i32 v5
+    br_table v15, block3, [block5, block4]
+
+block3 cold:
+    trap user1
+
+block4 cold:
+    v10 = symbol_value.i64 gv0
+    call fn1(v10)
+    trap user1
+
+block5:
+    v11 = stack_addr.i64 ss0+16
+    v12 = load.i128 notrap v11
+    v13 = stack_addr.i64 ss0+32
+    v14 = load.i128 notrap v13
+    store notrap v12, v0
+    store notrap v14, v0+16
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u0:4784
+; userextname1 = u1:2820
+; userextname2 = u0:7559
+; decl u0:3820 func local "_RNxC9criterion12HanQREEPIKDl"
+; decl u0:4784 func local "_RNxC9criterion12HdlUcK1GJhLu"
+; decl u0:7559 func import "_RNvNtNtCs3MAM2mGmp5g_3std6thread5local18panic_access_error"
+; decl u1:2820 data local ro notls ".Ldatab04"
+; end clifv-extnames

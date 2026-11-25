@@ -1,0 +1,167 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC15crossbeam_utils12Hhguywabqfqx
+function u0:153(i64) -> i64 system_v {
+; symbol _RNxC15crossbeam_utils12Hhguywabqfqx
+; instance Instance { def: Item(DefId(3:8403 ~ alloc[e0b3]::sync::{impl#25}::from_raw_in)), args: [sync::parker::Inner, std::alloc::Global] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: *const sync::parker::Inner, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: std::alloc::Global, layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 9666072164855095652 } }, mode: Ignore }], ret: ArgAbi { layout: TyAndLayout { ty: std::sync::Arc<sync::parker::Inner>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes), Size(8 bytes)], in_memory_order: [0, 1, 2] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4648536870764948573 } }, mode: Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; stack _0    std::sync::Arc<sync::parker::Inner, std::alloc::Global>    8b 8                storage=ss0
+; ret   _0      -          Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) std::sync::Arc<sync::parker::Inner, std::alloc::Global>
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const sync::parker::Inner
+; arg   _2      -          Ignore                               std::alloc::Global
+
+; kind  local ty                              size align (abi)
+; ssa   _1    *const sync::parker::Inner        8b 8                var=1
+; zst   _2    std::alloc::Global                0b 1                align=1,offset=
+; ssa   _3    usize                             8b 8                var=2
+; ssa   _4    *mut alloc::sync::ArcInner<sync::parker::Inner>    8b 8                var=3
+; ssa   _5    *const sync::parker::Inner        8b 8                var=4
+; zst   _6    std::alloc::Global                0b 1                align=1,offset=
+; ssa   _7    *const u8                         8b 8                var=5
+; ssa   _8    *const u8                         8b 8                var=6
+; ssa   _9    isize                             8b 8                var=7
+; ssa   _10   isize                             8b 8                var=8
+; zst   _11   ()                                0b 1                align=1,offset=
+; stack _12   core::ptr::NonNull<alloc::sync::ArcInner<sync::parker::Inner>>    8b 8                storage=ss1
+; zst   _13   ()                                0b 1                align=1,offset=
+; ssa   _14   *mut ()                           8b 8                var=9
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    sig0 = (i64) -> i64 system_v
+    sig1 = (i64) system_v
+    fn0 = colocated u0:133 sig0 ; Instance { def: Item(DefId(3:8706 ~ alloc[e0b3]::sync::data_offset)), args: [sync::parker::Inner] }
+    fn1 = u0:210 sig1 ; "_Unwind_Resume"
+
+block0(v0: i64):
+    v1 -> v0
+    v4 -> v0
+    nop 
+; write_cvalue: Var(_1, var1): *const sync::parker::Inner <- ByVal(v0): *const sync::parker::Inner
+    jump block1
+
+block1:
+    nop 
+; 
+; _3 = alloc::sync::data_offset::<T>(copy _1)
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: *const sync::parker::Inner, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+    try_call fn0(v1), sig0, block8(ret0), [ tag0: block9(exn0) ]
+
+block9(v2: i64) cold:
+    v20 -> v2
+    v12 -> v20
+    jump block4
+
+block8(v3: i64):
+    v5 -> v3
+    nop 
+; write_cvalue: Var(_3, var2): usize <- ByVal(v3): usize
+    jump block2
+
+block2:
+    nop 
+; _8 = copy _1 as *const u8 (PtrToPtr)
+; write_cvalue: Var(_8, var6): *const u8 <- ByVal(v4): *const u8
+; _10 = copy _3 as isize (IntToInt)
+; write_cvalue: Var(_10, var8): isize <- ByVal(v5): isize
+; _9 = SubUnchecked(const 0_isize, move _10)
+    v6 = iconst.i64 0
+    v7 = isub v6, v5  ; v6 = 0
+; write_cvalue: Var(_9, var7): isize <- ByVal(v7): isize
+; _7 = Offset(copy _8, move _9)
+    v8 = iconst.i64 1
+    v9 = imul v7, v8  ; v8 = 1
+    v10 = iadd.i64 v4, v9
+    v13 -> v10
+; write_cvalue: Var(_7, var5): *const u8 <- ByVal(v10): *const u8
+; _11 = PtrMetadata(copy _1)
+; write_cvalue: Addr(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): () <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): ()
+; _5 = *const T from (copy _7, copy _11)
+; write_cvalue: Var(_5, var4): *const sync::parker::Inner <- ByVal(v10): *const sync::parker::Inner
+; _4 = copy _5 as *mut alloc::sync::ArcInner<T> (PtrToPtr)
+; write_cvalue: Var(_4, var3): *mut alloc::sync::ArcInner<sync::parker::Inner> <- ByVal(v10): *mut alloc::sync::ArcInner<sync::parker::Inner>
+; _6 = move _2
+; write_cvalue: Addr(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): std::alloc::Global <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): std::alloc::Global
+; 
+; switchInt(UbChecks)
+    v11 = iconst.i8 0
+    jump block7
+
+block3 cold:
+    nop 
+; 
+; resume
+; lib_call _Unwind_Resume
+    call fn1(v12)
+    trap user1
+
+block4 cold:
+    nop 
+; 
+; drop(_2)
+    jump block3
+
+block5:
+    trap user1
+
+block6:
+    trap user1
+
+block7:
+    nop 
+; _12 = copy _5 as core::ptr::NonNull<alloc::sync::ArcInner<T>> (Transmute)
+; write_cvalue_transmute: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): core::ptr::NonNull<alloc::sync::ArcInner<sync::parker::Inner>> <- ByVal(v13): *const sync::parker::Inner
+    v14 = stack_addr.i64 ss1
+    store.i64 notrap v13, v14
+; _0 = std::sync::Arc::<T, A> { ptr: copy _12, phantom: const ZeroSized: core::marker::PhantomData<alloc::sync::ArcInner<T>>, alloc: copy _6 }
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): core::ptr::NonNull<alloc::sync::ArcInner<sync::parker::Inner>> <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): core::ptr::NonNull<alloc::sync::ArcInner<sync::parker::Inner>>
+    v15 = stack_addr.i64 ss1
+    v16 = load.i64 notrap v15
+    v17 = stack_addr.i64 ss0
+    store notrap v16, v17
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(8) }, None): core::marker::PhantomData<alloc::sync::ArcInner<sync::parker::Inner>> <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): core::marker::PhantomData<alloc::sync::ArcInner<sync::parker::Inner>>
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(8) }, None): std::alloc::Global <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): std::alloc::Global
+; 
+; return
+    v18 = stack_addr.i64 ss0
+    v19 = load.i64 notrap v18
+    return v19
+}
+
+; clifv-extnames 1
+; userextname0 = u0:133
+; userextname1 = u0:210
+; decl u0:133 func local "_RNxC15crossbeam_utils12HeRluc2hrcwq"
+; decl u0:153 func local "_RNxC15crossbeam_utils12Hhguywabqfqx"
+; decl u0:210 func import "_Unwind_Resume"
+; end clifv-extnames

@@ -974,4 +974,16 @@ folded, constant-phi removal). -/
 theorem foldPre_simU (f : Function) (bs : List BlockId) : FunSimU f (foldPre f bs) :=
   (phiPre_simU f).trans ((divPre_simU _ bs).trans ((foldBr_simU _ bs).trans (ConstPhi.run_simU _)))
 
+/-- **The folded function without its unreachable blocks, parameters kept, is simulated by its
+input** (`foldPreK`: as `foldPre`, with `removeUnreachable` in place of the constant-phi removal
+after the folds). -/
+theorem foldPreK_simU (f : Function) (bs : List BlockId) : FunSimU f (foldPreK f bs) := by
+  have h1 := (phiPre_simU f).trans ((divPre_simU _ bs).trans (foldBr_simU _ bs))
+  unfold foldPreK
+  dsimp only
+  split
+  · rename_i hC
+    exact h1.trans (removeUnreachable_simU _ hC)
+  · exact h1
+
 end Opt.MidVal

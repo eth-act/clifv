@@ -22,12 +22,14 @@ The compiled function stays `g`: the copy only exists inside the check.
   request, `foldBlocks`, `FV/Opt/MidValFold.lean`), `checkCert (foldPre f bs) (condPrep g hints)
   cert` with the default normaliser of `foldPre f bs`: the block parameters `ConstPhi.run` kept
   removed (`phiPre`), divisions by constants rewritten, `f`'s constant-condition branches in the
-  requested blocks folded and the blocks that became unreachable removed (`rewrite:blocks`).
+  requested blocks folded and the blocks that became unreachable removed (`rewrite:blocks`), or
+  the same with `foldPreK f bs` (no constant-phi removal after the folds, as in Cranelift).
   `checkCertSymsC`: the hoisting mode (no folding).
 * `checkC`/`emitC` (untrusted): the check without hints, else with the hints the relaxed check
   (`checkRun … (cond := true)`) records, else (not in the hoisting mode) the same on `foldPre f
-  bs` for the blocks `bs` whose branch is a `jump` in `g` or that divide (`foldCands`; the entry
-  block alone when there is none), with `bs` as fold requests appended to the hints.
+  bs`, then on `foldPreK f bs`, for the blocks `bs` whose branch is a `jump` in `g` or that divide
+  (`foldCands`; the entry block alone when there is none), with `bs` as fold requests appended to
+  the hints.
 -/
 
 namespace Opt.MidVal
@@ -86,7 +88,8 @@ def checkCertC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wra
     (norm : Norm := Norm.stdT f) : Bool :=
   if hints.isEmpty then checkCert f g cert norm
   else if (foldBlocks hints).isEmpty then refsOk g && checkCert f (condPrep g hints) cert norm
-  else refsOk g && checkCert (foldPre f (foldBlocks hints)) (condPrep g hints) cert
+  else refsOk g && (checkCert (foldPre f (foldBlocks hints)) (condPrep g hints) cert ||
+    checkCert (foldPreK f (foldBlocks hints)) (condPrep g hints) cert)
 
 /-- The hoisting mode of `checkCertC`. -/
 def checkCertSymsC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap))
@@ -114,12 +117,12 @@ def checkC0 (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false
     | .error _ => .error e
 
 /-- The hints of the relaxed check (`checkC0`); when it rejects (not in the hoisting mode), the
-same on `foldPre f bs` for the blocks `bs` whose branch is a `jump` in `g` or that divide
-(`foldCands`), or, when there is none, the entry block alone (a request for `foldPre`'s
-constant-phi removal `phiPre`), with the fold requests `(b, [])` of `bs` appended. The folded
-check is skipped when `foldPre f bs` has `f`'s blocks or its blocks are not `g`'s. A pair rejected
-for `rewrite:blocks`, a division or a block parameter that the prep does not rescue reports the
-folded check's rejection, marked `[prep]`. -/
+same on `foldPre f bs`, then on `foldPreK f bs`, for the blocks `bs` whose branch is a `jump` in
+`g` or that divide (`foldCands`), or, when there is none, the entry block alone (a request for
+`foldPre`'s constant-phi removal `phiPre`), with the fold requests `(b, [])` of `bs` appended. A
+copy is skipped when it has `f`'s blocks or its blocks are not `g`'s. A pair rejected for
+`rewrite:blocks`, a division or a block parameter that the prep does not rescue reports the
+rejection of the `foldPreK` copy, marked `[prep]`. -/
 def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
     Except Reject (List (BlockId × List Wrap)) :=
   match checkC0 f g norm hoist with
@@ -132,23 +135,27 @@ def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false)
       .error (if e == "rewrite:blocks" || e.startsWith "rewrite:skeleton-removed div" ||
           e.startsWith "shape:params" || (e.splitOn " arity").length > 1 then
         s!"{e'} [prep]" else e)
-    if hoist || bs.isEmpty then .error e
-    else
-      let f' := foldPre f bs
+    let prep (f' : Function) : Except Reject (List (BlockId × List Wrap)) :=
       if f'.blocks == f.blocks then fail e
       else if f'.blocks.map (·.id) != g.blocks.map (·.id) then fail "rewrite:blocks"
       else match checkC0 f' g with
         | .ok h => .ok (h ++ bs.map fun b => (b, []))
         | .error e' => fail e'
+    if hoist || bs.isEmpty then .error e
+    else match prep (foldPre f bs) with
+      | .ok h => .ok h
+      | .error _ => prep (foldPreK f bs)
 
 /-- The certificate and hints of an accepted pair (`checkC`, then `emit` against the copy, from
-`foldPre f bs` for fold requests `bs`). -/
+`foldPre f bs`, or else `foldPreK f bs`, for fold requests `bs`). -/
 def emitC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
     Except Reject (Cert × List (BlockId × List Wrap)) := do
   let h ← checkC f g norm hoist
   let bs := foldBlocks h
   let cert ← if bs.isEmpty then emit f (if h.isEmpty then g else condPrep g h) norm hoist
-    else emit (foldPre f bs) (condPrep g h)
+    else match emit (foldPre f bs) (condPrep g h) with
+      | .ok c => pure c
+      | .error _ => emit (foldPreK f bs) (condPrep g h)
   pure (cert, h)
 
 end Opt.MidVal
