@@ -400,6 +400,7 @@ None of these weaken what is proven: every compiler theorem still prints only `p
   - k256 0.14.0 debug: total 2,042 → 1,681 s; binary check 1,412 → 1,056 s (link-check: lib test 849.1 → 609.4 s, `projective` 560.7 → 443.7 s).
   - num-bigint 0.5.1 debug: total 593 → 419 s; `bigint_scalar` link-check 297.5 → 114.8 s (416 → 230 user-s).
   - Identity: all 107,905 and 11,681 object, `ra.json` and executable hashes, `fv-report.json`, the verdict and test lines, and the stdout, stderr and exit status of all 11 link-check calls (timings normalised) were identical. Of the files in `.lake/build/bin`, only `link-check`'s differ from main's.
+  - The gate's fv-demo, survey and deps lines (`--lean-link --verified`), on the gated head merged with main 6ebe814b0: main's link-check ran on each of the 24 bundles before this change's link-check. Their stdout, stderr and exit status were identical. On deps' 4 bundles, link-check took 850.5 → 621.0 s in total.
 
 ## Verification tooling (anything that decides what counts as proved)
 
