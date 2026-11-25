@@ -2,6 +2,7 @@ import FV.E2E.DeadCleanupBinCheck
 import FV.E2E.DeadCleanupStackBound
 import FV.E2E.BinCheck
 import FV.E2E.StackBound
+import FV.E2E.LinkScopeFast
 
 /-!
 # `lake exe link-check <dir> [--lean FILE --module NAME] [--entries a,b,…] [--prune]`
@@ -79,6 +80,67 @@ def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (che
       (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true)))).map
       (fun h => s!"indSig: program function {h.name} one of its indirect calls may enter (matching signature, or declared with matching parameter types) has a stack-passed parameter, or an sret pointer where an indirect call of its parameter types has none (or the reverse)")
   else []
+
+/-- `detail` with the CLIF image's symbols `S`, `g`'s facts `ind` (`indFreeB g`), `D`
+(`declB g`) and `sigs` (`indSigs g`), and the test `may` (`indToB S g`) given (`detail_eq_with`). -/
+def detailWith (P : Clif.Program) (S : String → Option Nat) (ind : Bool) (D : String → Bool)
+    (sigs : List Clif.Signature) (may : Clif.Function → Bool) (g : Clif.Function) (a : Art)
+    (check : String) : List String :=
+  if check == "callRegs/blrRegs" then
+    a.vcp.blocks.toList.flatMap fun vb => vb.insts.toList.filterMap fun i => match i with
+      | .call info | .tryCall info _ =>
+        if siteOk P g may a.vcp info then none else some (match info.dest with
+          | .sym n => s!"bl {n}: arguments/results not in the callee's ABI registers"
+          | .reg r =>
+            let nu := (decU info.uses).length
+            let got := match r with
+              | .vreg t .int => gotOf a.vcp t
+              | _ => none
+            let hs := P.funcs.filter fun h => may h && (got.all (· == h.name)) &&
+              (regLocs h.sig).length == nu &&
+              !(decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
+                decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
+                  (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x))
+            s!"blr with {nu} register argument(s), {info.defs.length} def(s): not the ABI registers of the program function(s) it may enter (BlrTo) with {nu} register parameter(s): {hs.map (·.name)}")
+      | _ => none
+  else if check == "indScope/indSig" then
+    (P.funcs.filter (fun h => mayWithB S ind D h.name && indSigWithB D sigs h &&
+      (!indRetsWithB sigs h ||
+      (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true)))).map
+      (fun h => s!"indSig: program function {h.name} one of its indirect calls may enter (matching signature, or declared with matching parameter types) has a stack-passed parameter, or an sret pointer where an indirect call of its parameter types has none (or the reverse)")
+  else []
+
+theorem detail_eq_with (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art)
+    (check : String) :
+    detail I P g a check = detailWith P (fun n => I.syms.lookup n) (indFreeB g) (declB g)
+      (indSigs g) (indToB (fun n => I.syms.lookup n) g) g a check := rfl
+
+/-- `detail` as link-check runs it (`detail_eq_fast`, `@[csimp]`, #1090): the CLIF image's
+symbols in a hash map (`assocMap_fun`) and `g`'s facts (`indFreeB g`, `declB g` as a hash set,
+`indSigs g`) computed once, not once for every program function each call site of `g` is tested
+against (a list lookup among the symbols and a scan of `g`'s body per program function, per
+site). -/
+def detailFast (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (check : String) :
+    List String :=
+  if check == "callRegs/blrRegs" || check == "indScope/indSig" then
+    let SM := assocMap I.syms
+    let S := fun n => SM[n]?
+    let Ds := declSet g
+    let D := fun n => Ds.contains n
+    let ind := indFreeB g
+    let sigs := indSigs g
+    detailWith P S ind D sigs (indToWithB S ind D sigs g) g a check
+  else []
+
+@[csimp] theorem detail_eq_fast : @detail = @detailFast := by
+  funext I P g a check
+  rw [detail_eq_with]
+  unfold detailFast
+  split
+  · simp only [assocMap_fun, declSet_contains, indToWithB_eq]
+  · rename_i h
+    simp only [Bool.or_eq_true, not_or] at h
+    simp [detailWith, h.1, h.2]
 
 /-! ## The binary checks (`FV/E2E/BinCheck.lean`) on the executable -/
 
