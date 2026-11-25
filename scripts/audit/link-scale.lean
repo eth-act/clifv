@@ -28,6 +28,7 @@ import FV.Link.Ld.DataFast
 import FV.E2E.BinCheckFast
 import FV.E2E.GotTab
 import FV.E2E.GotIdx
+import FVTest.E2E.LinkProof
 
 /-! #1062, #1071, #1076: `lean-link` and `link-check` at real-crate scale. Each `@[csimp]` lemma
 states that the compiled replacement equals the original definition (the kernel and every theorem
@@ -208,3 +209,10 @@ see the original); the `…_of` lemmas state that the indexed checks equal the c
 #print axioms Backend.Proof.Driver.Fix.fixSparse_spec
 #print axioms Backend.Proof.Driver.Fix.dense_sol
 #print axioms Backend.Proof.Driver.Fix.dense_great
+
+-- #1090: link-check's FAIL details (`detail`) with the CLIF image's symbols in a hash map and the
+-- failing function's facts computed once (per call site it tested every program function with a
+-- list lookup among the symbols and a scan of the function's body: k256's projective test
+-- executable, 19 functions, 972 s → 12.7 s)
+#print axioms detail_eq_with
+#print axioms detail_eq_fast
