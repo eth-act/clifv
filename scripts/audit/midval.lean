@@ -24,6 +24,8 @@ import FV.Opt.Proof.MidValPhi
 import FVTest.Opt.MidValPhiWitness
 import FVTest.Opt.MidValPhiMWitness
 import FVTest.Opt.MidValZeroWitness
+import FV.Opt.Proof.MidValNormFam5
+import FVTest.Opt.MidValFam5Witness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -1070,3 +1072,76 @@ import FVTest.Opt.MidValZeroWitness
 #print axioms Opt.MidVal.ZeroWitness.real_serde_c0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.ZeroWitness.real_serde_checked -- witness: native_decide
 #print axioms Opt.MidVal.ZeroWitness.real_serde_sim -- witness: native_decide
+
+-- #1119 family 5 (FV/Opt/Proof/MidValNormFam5.lean; normSoundT_base / normSoundT_narrowN /
+-- normSoundT_stdT above moved there, same statements), swapped unit comparisons
+-- (MidValNormAlg2.lean), parameters kept after the folds (MidValDiv.lean foldPreK_simU, used by
+-- check_soundC_norm / check_soundC_normT)
+#print axioms Opt.MidVal.ns_icmpSwapUnit
+#print axioms Opt.MidVal.regs_ineg
+#print axioms Opt.MidVal.addNeg_spec
+#print axioms Opt.MidVal.ns_addNeg
+#print axioms Opt.MidVal.mulNegPlan_spec
+#print axioms Opt.MidVal.ns_mulNeg
+#print axioms Opt.MidVal.redRed_spec
+#print axioms Opt.MidVal.ruleSoundT_redRed
+#print axioms Opt.MidVal.ruleSoundT_fam5Step
+#print axioms Opt.MidVal.foldPreK_simU
+-- witnesses (FVTest/Opt/MidValFam5Witness.lean)
+#print axioms Opt.MidVal.Fam5Witness.pos_addNeg -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_addNeg_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.neg_addNeg -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_mulNeg -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_mulNeg_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.neg_mulNeg -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_redRed -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_redRed_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.neg_redRed -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.addNegF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.addNegWrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.addNeg_not_sim
+#print axioms Opt.MidVal.Fam5Witness.addNeg_rejected
+#print axioms Opt.MidVal.Fam5Witness.mulNegF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.mulNegWrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.mulNeg_not_sim
+#print axioms Opt.MidVal.Fam5Witness.mulNeg_rejected
+#print axioms Opt.MidVal.Fam5Witness.redDropF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.redDropG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.redDrop_not_sim
+#print axioms Opt.MidVal.Fam5Witness.redDrop_rejected
+#print axioms Opt.MidVal.Fam5Witness.redRed_fires -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.redRed_frame -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.redRed_not_normSound -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_swapU -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_swapU_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.pos_swapU_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.neg_swapU -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.swapU1F_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.swapUG_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.swapU1_not_sim
+#print axioms Opt.MidVal.Fam5Witness.swapU1_rejected
+#print axioms Opt.MidVal.Fam5Witness.pos_keep -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.keep_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.keep_foldPre_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.keep_foldPreK_accepts -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.neg_keep -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.keepF_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.keep7G_text -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.keep7_not_sim
+#print axioms Opt.MidVal.Fam5Witness.keep7_rejected
+#print axioms Opt.MidVal.Fam5Witness.real_swapu_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_swapu_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_swapu_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_keep_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_keep_foldPre_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_keep_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_keep_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_addneg_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_addneg_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_addneg_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_mulneg_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_mulneg_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_mulneg_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_redred_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_redred_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam5Witness.real_redred_sim -- witness: native_decide

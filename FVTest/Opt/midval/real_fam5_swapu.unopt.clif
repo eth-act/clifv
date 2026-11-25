@@ -1,0 +1,164 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC14criterion_plot12HlvmxBvKJBcj
+function u0:284(i64, i64, i64) -> i16 system_v {
+; symbol _RNxC14criterion_plot12HlvmxBvKJBcj
+; instance Instance { def: Item(DefId(0:697 ~ criterion_plot[f2c0]::parse_version_utf16::{closure#0})), args: [i16, Binder { value: extern "RustCall" fn((&'{erased} [u8],)) -> u16, bound_vars: [] }, ()] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut {closure@/home/devops/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/criterion-plot-0.6.0/src/lib.rs:1013:14: 1013:21}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &[u8], layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u64 is .., b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16 } }, mode: Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: u16, layout: Layout { size: Size(2 bytes), align: AbiAlign { abi: Align(2 bytes) }, backend_repr: Scalar(u16 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(2 bytes), randomization_seed: 18446462607322775554 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    u16                               2b 2                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u16
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} mut Closure(DefId(0:697 ~ criterion_plot[f2c0]::parse_version_utf16::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} [u8],)) -> u16, bound_vars: [] }, ()])
+; arg   _2      = v1,v2    Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} [u8]
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut Closure(DefId(0:697 ~ criterion_plot[f2c0]::parse_version_utf16::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} [u8],)) -> u16, bound_vars: [] }, ()])    8b 8                var=2
+; ssa   _2    &'{erased} [u8]                  16b 8                var=(3, 4)
+; stack _3    [u8; 2_usize]                     2b 1                storage=ss0
+; ssa   _4    u8                                1b 1                var=5
+; ssa   _5    usize                             8b 8                var=6
+; ssa   _6    bool                              1b 1                var=7
+; ssa   _7    u8                                1b 1                var=8
+; ssa   _8    bool                              1b 1                var=9
+
+    ss0 = explicit_slot 2
+    gv0 = symbol colocated userextname0 ; alloc569
+    gv1 = symbol colocated userextname2 ; alloc570
+    sig0 = (i64, i64, i64) system_v
+    sig1 = (i64, i64, i64) system_v
+    fn0 = u0:299 sig0 ; "_RNvNtCsazjiGSRkgVH_4core9panicking18panic_bounds_check"
+    fn1 = u0:299 sig1 ; "_RNvNtCsazjiGSRkgVH_4core9panicking18panic_bounds_check"
+
+block0(v0: i64, v1: i64, v2: i64):
+    v3 -> v1
+    v10 -> v1
+    v23 -> v1
+    v4 -> v2
+    v7 -> v2
+    v11 -> v2
+    v18 -> v2
+    v20 -> v2
+    v24 -> v2
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} mut Closure(DefId(0:697 ~ criterion_plot[f2c0]::parse_version_utf16::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} [u8],)) -> u16, bound_vars: [] }, ()]) <- ByVal(v0): &'{erased} mut Closure(DefId(0:697 ~ criterion_plot[f2c0]::parse_version_utf16::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} [u8],)) -> u16, bound_vars: [] }, ()])
+; write_cvalue: VarPair(_2, var3, var4): &'{erased} [u8] <- ByValPair(v1, v2): &'{erased} [u8]
+    jump block1
+
+block1:
+    nop 
+; _5 = PtrMetadata(copy _2)
+; write_cvalue: Var(_5, var6): usize <- ByVal(v4): usize
+; _6 = Lt(const 0_usize, copy _5)
+    v5 = iconst.i64 0
+    v6 = icmp ult v5, v4  ; v5 = 0
+; write_cvalue: Var(_6, var7): bool <- ByVal(v6): bool
+; 
+; assert(move _6, "index out of bounds: the length is {} but the index is {}", copy _5, const 0_usize)
+    brif v6, block2, block4
+
+block4 cold:
+    nop 
+    v8 = iconst.i64 0
+    v9 = symbol_value.i64 gv0
+; panic _RNvNtCsazjiGSRkgVH_4core9panicking18panic_bounds_check
+    nop 
+    call fn0(v8, v7, v9)  ; v8 = 0
+    trap user1
+
+block2:
+    nop 
+; _4 = copy (*_2)[0 of 1]
+    v12 = iconst.i64 0
+    v13 = iconst.i64 1
+    v14 = imul v12, v13  ; v12 = 0, v13 = 1
+    v15 = iadd.i64 v10, v14
+; write_cvalue: Var(_4, var5): u8 <- ByRef(Pointer { base: Addr(v15), offset: Offset32(0) }, None): u8
+    v16 = load.i8 notrap v15
+    v30 -> v16
+; _8 = Lt(const 1_usize, copy _5)
+    v17 = iconst.i64 1
+    v19 = icmp ult v17, v18  ; v17 = 1
+; write_cvalue: Var(_8, var9): bool <- ByVal(v19): bool
+; 
+; assert(move _8, "index out of bounds: the length is {} but the index is {}", copy _5, const 1_usize)
+    brif v19, block3, block5
+
+block5 cold:
+    nop 
+    v21 = iconst.i64 1
+    v22 = symbol_value.i64 gv1
+; panic _RNvNtCsazjiGSRkgVH_4core9panicking18panic_bounds_check
+    nop 
+    call fn1(v21, v20, v22)  ; v21 = 1
+    trap user1
+
+block3:
+    nop 
+; _7 = copy (*_2)[1 of 2]
+    v25 = iconst.i64 1
+    v26 = iconst.i64 1
+    v27 = imul v25, v26  ; v25 = 1, v26 = 1
+    v28 = iadd.i64 v23, v27
+; write_cvalue: Var(_7, var8): u8 <- ByRef(Pointer { base: Addr(v28), offset: Offset32(0) }, None): u8
+    v29 = load.i8 notrap v28
+; _3 = [move _4, move _7]
+    v31 = iconst.i64 0
+    v32 = iconst.i64 1
+    v33 = imul v31, v32  ; v31 = 0, v32 = 1
+    v34 = stack_addr.i64 ss0
+    v35 = iadd v34, v33
+; write_cvalue: Addr(Pointer { base: Addr(v35), offset: Offset32(0) }, None): u8 <- ByVal(v30): u8
+    store.i8 notrap v30, v35
+    v36 = iconst.i64 1
+    v37 = iconst.i64 1
+    v38 = imul v36, v37  ; v36 = 1, v37 = 1
+    v39 = stack_addr.i64 ss0
+    v40 = iadd v39, v38
+; write_cvalue: Addr(Pointer { base: Addr(v40), offset: Offset32(0) }, None): u8 <- ByVal(v29): u8
+    store notrap v29, v40
+; _0 = copy _3 as u16 (Transmute)
+; write_cvalue_transmute: Var(_0, var1): u16 <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): [u8; 2_usize]
+    v41 = stack_addr.i64 ss0
+    v42 = load.i16 notrap v41
+; 
+; return
+    return v42
+}
+
+; clifv-extnames 1
+; userextname0 = u1:334
+; userextname1 = u0:299
+; userextname2 = u1:335
+; decl u0:284 func local "_RNxC14criterion_plot12HlvmxBvKJBcj"
+; decl u0:299 func import "_RNvNtCsazjiGSRkgVH_4core9panicking18panic_bounds_check"
+; decl u1:334 data local ro notls ".Ldata14e"
+; decl u1:335 data local ro notls ".Ldata14f"
+; end clifv-extnames

@@ -766,6 +766,16 @@ validator now removes those parameters also where `Opt.check` rejects the functi
 `symbol_value` that Cranelift hoists out of a loop stays rejected (`placement:symbol_value`):
 whether it is sound depends on the executable's symbol table, which `lean-backend` does not see.
 
+Swapped unit comparisons, parameters kept after the folds and family 5 (`x + (-y)`, `(-x) * k`,
+`ireduce` of `ireduce`; docs/contracts/midval.md; measured 2026-11-25 on clifv-remote, main
+7d58edddc's tools against this one's, the same 9 crates and command): binary check 48 of 48 both
+ways, 121,767 verified both ways, left out 1 → 1, test outcomes the same as stock's on all 9 both
+ways; validated 114,001 → 115,246 (93.6 % → 94.6 %; up on 7 crates, blake2 and num-traits
+unchanged); byte-identical to stock 94,442 → 95,064 of 121,767 (77.6 % → 78.1 %); `cargo fv test`
+wall summed 4,676 → 4,498 s. The validator now normalises `icmp ult 0, x` as the unit comparison
+`condPrep` rebuilds on `g`, accepts Cranelift's code that keeps a block parameter left with one
+incoming value only after a folded branch, and rewrites the three family-5 forms as Cranelift does.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of

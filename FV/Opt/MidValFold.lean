@@ -35,14 +35,19 @@ input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
   toward zero, the `-1` trap) and the magic-number divisions are left alone
   (`Opt.MidVal.divPre_simU`, `FV/Opt/Proof/MidValDiv.lean`).
 * `phiPre f` (removed block parameters, `shape:params`/`jump arity`): `ConstPhi`'s solution
-  applied when `phiOk` accepts it, which is `ConstPhi.cpOk` without two conditions the backend
-  needs for the function it compiles (`ConstPhi.run f`: in a function with a `try_call`, an
-  unchanged fresh value; the result's well-formedness); Cranelift removes those parameters
-  (`Opt.MidVal.phiPre_simU`, `FV/Opt/Proof/MidValPhi.lean`).
+  applied when `phiOk` or `phiOkM` accepts it; `phiOk` is `ConstPhi.cpOk` without two conditions
+  the backend needs for the function it compiles (`ConstPhi.run f`: in a function with a
+  `try_call`, an unchanged fresh value; the result's well-formedness), `phiOkM` the same with the
+  validator's `wfCheck` (a `call_indirect` typed by its signature declaration); Cranelift removes
+  those parameters (`Opt.MidVal.phiPre_simU`, `FV/Opt/Proof/MidValPhi.lean`).
 * `foldPre f bs = ConstPhi.run (foldBr (divPre (phiPre f) bs) bs)`: the parameters removed (before
   the folds, as Cranelift's `remove_constant_phis` runs before its mid-end), the divisions
   rewritten and the branches folded, without the blocks that became unreachable
   (`Opt.removeUnreachable`, and constant-phi removal, inside `ConstPhi.run`).
+* `foldPreK f bs`: the same without the constant-phi removal after the folds (only
+  `Opt.removeUnreachable`): a parameter that receives one value once a folded edge is gone stays,
+  as in Cranelift, which removes constant phis only before its mid-end. `checkCertC` accepts the
+  copy against either (`Opt.MidVal.foldPreK_simU`).
 * `foldBlocks hints`: the prep requests (fold, division, and the entry block alone for
   `phiPre`) among the hints of `checkCertC` (`FV/Opt/MidValCond.lean`): a hinted block with an
   empty wrapper chain, which `condPrep` leaves unchanged.
@@ -285,6 +290,13 @@ divisions by constants rewritten (`divPre`), constant-condition branches folded 
 then constant-phi removal. -/
 def foldPre (f : Function) (bs : List BlockId) : Function :=
   ConstPhi.run (foldBr (divPre (phiPre f) bs) bs)
+
+/-- **The folded function without its unreachable blocks, parameters kept** (module doc): as
+`foldPre`, with `Opt.removeUnreachable` (when `freshOkB` allows it, as in `ConstPhi.runCore`) in
+place of the final `ConstPhi.run`. -/
+def foldPreK (f : Function) (bs : List BlockId) : Function :=
+  let f1 := foldBr (divPre (phiPre f) bs) bs
+  if freshOkB f1 then removeUnreachable f1 else f1
 
 /-- The fold requests among `checkCertC`'s hints: the blocks hinted with an empty wrapper
 chain. -/

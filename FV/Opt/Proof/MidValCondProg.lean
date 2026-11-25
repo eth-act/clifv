@@ -7,11 +7,12 @@ import FV.Opt.Proof.MidValDiv
 
 `checkCertC f g cert hints` (`FV/Opt/MidValCond.lean`) is `checkCert f g cert` without hints,
 and otherwise `refsOk g` and `checkCert f (condPrep g hints) cert`, or, with fold requests `bs`
-(`foldBlocks hints`), `checkCert (foldPre f bs) (condPrep g hints) cert`. Its soundness composes
-the re-check's (`check_sound_norm`: `FunSimMU f (condPrep g hints)`, or `check_sound`:
-`FunSimMU (foldPre f bs) (condPrep g hints)`) with `condPrep_simU` (`FunSimU (condPrep g hints)
-g`) by `FunSimMU.trans`, and with fold requests first with `foldPre_simU` (`FunSimU f (foldPre f
-bs)`, `FV/Opt/Proof/MidValFold.lean`); the compiled function is `g` itself.
+(`foldBlocks hints`), `checkCert (foldPre f bs) (condPrep g hints) cert` or the same with
+`foldPreK f bs`. Its soundness composes the re-check's (`check_sound_norm`: `FunSimMU f (condPrep
+g hints)`, or `check_sound`: `FunSimMU (foldPre f bs) (condPrep g hints)`) with `condPrep_simU`
+(`FunSimU (condPrep g hints) g`) by `FunSimMU.trans`, and with fold requests first with
+`foldPre_simU` (`FunSimU f (foldPre f bs)`, `FV/Opt/Proof/MidValDiv.lean`) or `foldPreK_simU`;
+the compiled function is `g` itself.
 
 * **`check_soundC_norm`**, **`check_soundC_normT`** (a normaliser sound under typing),
   **`check_soundC`** (default normaliser `Norm.stdT f`), **`check_soundSymsC`**
@@ -38,8 +39,10 @@ theorem check_soundC_norm {f g : Function} {cert : Cert} {hints : List (BlockId 
   · split at h
     · simp only [Bool.and_eq_true] at h
       exact (check_sound_norm h.2 hN).trans (condPrep_simU h.1).toMU
-    · simp only [Bool.and_eq_true] at h
-      exact (foldPre_simU f _).toMU.trans ((check_sound h.2).trans (condPrep_simU h.1).toMU)
+    · simp only [Bool.and_eq_true, Bool.or_eq_true] at h
+      rcases h.2 with h2 | h2
+      · exact (foldPre_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
+      · exact (foldPreK_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
 
 theorem check_soundC_normT {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
     {norm : Norm} (h : checkCertC f g cert hints norm = true) (hN : NormSoundT f norm) :
@@ -50,8 +53,10 @@ theorem check_soundC_normT {f g : Function} {cert : Cert} {hints : List (BlockId
   · split at h
     · simp only [Bool.and_eq_true] at h
       exact (check_sound_normT h.2 hN).trans (condPrep_simU h.1).toMU
-    · simp only [Bool.and_eq_true] at h
-      exact (foldPre_simU f _).toMU.trans ((check_sound h.2).trans (condPrep_simU h.1).toMU)
+    · simp only [Bool.and_eq_true, Bool.or_eq_true] at h
+      rcases h.2 with h2 | h2
+      · exact (foldPre_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
+      · exact (foldPreK_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
 
 /-- **Soundness of the re-check with branch-condition hints** (default normaliser). -/
 theorem check_soundC {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
