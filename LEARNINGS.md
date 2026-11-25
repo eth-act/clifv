@@ -383,6 +383,15 @@ None of these weaken what is proven: every compiler theorem still prints only `p
   - Still super-linear on `check_sub` after this change (per call): `shape` 13.7 s, `lowerCheckFor` 12.0 s, `unwCheck` 11.8 s, `skipDead` 11.5 s, `raAnswerRoundTrip` 8.0 s.
   - Files: `FV/Backend/Asm.lean`, `FV/Backend/Proof/PrepareCheck.lean`.
 
+### A fast path that assumes the input's order: check the order the other build modes give it
+- **Problem:** after #1175, plain `cargo fv test` on k256 0.14.0 debug took 1,938 s, of which link-check took 918 + 606 s (#1090). Ticks between link-check's phases (scratch copy of `main`, stderr only, never pushed) put 190.9 s and 148.7 s of it in the code map check, on one core. `codeMapLinB` (#1109) decides `codeMapB`'s pair condition with one pass when each function's code ends before the next one's base in the table's order. lean-link's placement lays the table out that way, so every gate line took the fast path. In plain mode the table is in bundle order and the system linker placed the functions, so the check fell back to the scan over all pairs: 25,031² and 21,853².
+- **Trick:** `codeMapLinB` also tries the chain on the table sorted by load address (`byBase`, a stable `mergeSort`) before the pair scan. Sorting keeps the members (`List.mem_mergeSort`), so `rangesChainB_pairs` gives the pair condition as before (`byBase_chain_codePairsB`; `FV/E2E/CodeMapFast.lean`). `codeMapLinB_eq` and `@[csimp] codeMapB_eq_lin` keep their text. A scratch check on both tables first showed that the sorted chain holds (no shared base, no overlap): sort 22 ms, chain 3 ms.
+- **Numbers:** before = main 7d58edddc, after = this change, same source path, back to back. Plain `cargo fv test` (binary check on, `FV_JOBS=32`, load 100-117 from other projects):
+  - k256 0.14.0 debug: total 1,933.5 → 1,661.9 s; binary check 1,431.1 → 1,131.4 s (link-check: lib test 850.4 → 692.2 s, `projective` 578.0 → 435.4 s).
+  - num-bigint 0.5.1 debug: total 598.5 → 609.8 s. Its tables have at most 2,345 functions, so no gain was expected there; the 11 s difference was not investigated (the after run had the higher load).
+  - Identity: all 107,905 and 11,681 object, `ra.json` and executable hashes, `fv-report.json`, the verdict and test lines, and the stdout and stderr of all 11 link-check calls (timings normalised) were identical.
+  - Still slow in k256's link-check (measured in the scratch ticks): the link checks of sha512's `compress` (`callRegs/blrRegs` 62 s per call, in each of 4 + 2 `pruneRun` rounds), and the typed candidate's results (`okBCleanupT`), computed for every function and then not run (147.5 + 117.0 s).
+
 ## Verification tooling (anything that decides what counts as proved)
 
 Axiom audits, statement diffs, caches of proof results, gates, agent check loops. Each rule below is a hole an automated review found in turbo-lean's integration of our changes (Th0rgal/turbo-lean#275, reviewing #273). Every one would have reported "verified" for something that was not. Before merging a change to such tooling, check it against these rules and get an independent review, with a regression test for each finding.

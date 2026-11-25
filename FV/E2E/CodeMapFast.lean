@@ -15,9 +15,12 @@ and, since #1109, `link-check` evaluate it):
   names the functions declare (`groupMulti`, `noBlrFastB_eq`) and a hash map of the CLIF image's
   symbols;
 * the pairs: when every function's code ends at or before the next function's base in the
-  table's order (`rangesChainB`; a placement lays them out so), any two entries of the table are
-  one entry or have disjoint code ranges (`rangesChainB_pairs`), so the scan over pairs holds;
-  otherwise the scan over pairs as before.
+  table's order (`rangesChainB`; a placement lays them out so), or in the order of the load
+  addresses (`byBase`: the table sorted by base; the system linker's layout in plain mode, where the
+  table's order is the bundle's), any two entries of the table are one entry or have disjoint code
+  ranges (`rangesChainB_pairs`, `byBase_chain_codePairsB`), so the scan over pairs holds; otherwise
+  the scan over pairs as before (#1090: on k256's plain-mode tables of 21,853-25,031 functions the
+  scan took 129-203 s).
 
 No statement changes.
 -/
@@ -116,6 +119,27 @@ theorem chain_codePairsB (T : List (Clif.Function × Art)) :
     · simp [hd]
     · simp [hd]
 
+/-- The table sorted by load address (stable). -/
+def byBase (T : List (Clif.Function × Art)) : List (Clif.Function × Art) :=
+  T.mergeSort fun e e' => decide (e.2.base.toNat ≤ e'.2.base.toNat)
+
+/-- A chain in the order of the load addresses decides the pairs too: sorting keeps the members. -/
+theorem byBase_chain_codePairsB (T : List (Clif.Function × Art)) :
+    (rangesChainB (byBase T) || codePairsB T) = codePairsB T := by
+  cases h : rangesChainB (byBase T)
+  · rfl
+  · rw [Bool.true_or, eq_comm]
+    unfold codePairsB
+    rw [List.all_eq_true]
+    intro e he
+    rw [List.all_eq_true]
+    intro e' he'
+    rcases rangesChainB_pairs (byBase T) h e (List.mem_mergeSort.2 he) e'
+        (List.mem_mergeSort.2 he') with rfl | hd | hd
+    · simp
+    · simp [hd]
+    · simp [hd]
+
 /-- `codeMapB`'s first conjunct for `e`, its link-map address through the hash map `A`. -/
 def addrIsBaseB (A : Std.HashMap String Nat) (e : Clif.Function × Art) : Bool :=
   BitVec.ofNat 64 ((A[e.1.name]?).getD 0) + BitVec.ofInt 64 0 == e.2.base
@@ -138,14 +162,15 @@ theorem all_and_eq {α : Type} (l : List α) (p q : α → Bool) :
     cases p x <;> cases q x <;> simp
 
 /-- **`codeMapB` in linear time** on a table whose code ranges follow each other and whose
-link-map addresses are the load addresses (`codeMapLinB_eq`). -/
+link-map addresses are the load addresses (`codeMapLinB_eq`); a table whose ranges follow each
+other once sorted by load address (`byBase`) takes the sort's `n log n` more. -/
 def codeMapLinB (I : LinkInput) (T : List (Clif.Function × Art)) : Bool :=
   let A := assocMap I.addrs
   (T.all (addrIsBaseB A) ||
     (let Sm := assocMap I.syms
      let G := groupMulti declKeys T
      T.all fun e => addrIsBaseB A e || noBlrFastB Sm G e.1.name)) &&
-  (rangesChainB T || codePairsB T)
+  (rangesChainB T || (rangesChainB (byBase T) || codePairsB T))
 
 theorem codeMapLinB_eq (I : LinkInput) (T : List (Clif.Function × Art)) :
     codeMapLinB I T = codeMapB I T := by
@@ -157,7 +182,7 @@ theorem codeMapLinB_eq (I : LinkInput) (T : List (Clif.Function × Art)) :
       (I.symAddr e.1.name 0 == e.2.base) := funext hA
   unfold codeMapLinB
   dsimp only
-  rw [all_or_all, chain_codePairsB, codeMapB, all_and_eq, codePairsB]
+  rw [all_or_all, byBase_chain_codePairsB, chain_codePairsB, codeMapB, all_and_eq, codePairsB]
   simp only [hA, hA', noBlrFastB_eq]
 
 @[csimp] theorem codeMapB_eq_lin : @codeMapB = @codeMapLinB := by
