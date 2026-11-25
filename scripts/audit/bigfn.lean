@@ -12,6 +12,10 @@ replacement equals the original definition (the kernel and every theorem see the
 #print axioms Backend.repAt_eq_repChain
 #print axioms Backend.repAt_eq_chain
 #print axioms Backend.emitFunc_eq_fast
+-- #1090: the branch relaxation's far labels computed once (`relaxFarSet`), not once per
+-- relaxable branch (`emitFuncFast`)
+#print axioms Backend.relaxFar_eq_set
+#print axioms Backend.relaxOf_eq_set
 #print axioms Opt.Legal.termOk_eq_F
 #print axioms Opt.Legal.codeOk_eq_F
 #print axioms Opt.Legal.blockOk_eq_F
