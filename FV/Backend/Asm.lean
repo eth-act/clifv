@@ -1578,6 +1578,30 @@ def relaxFar (pre : List Line) : Nat → Std.HashSet Lbl → Lbl → Bool
 
 def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
 
+/-- The far labels `relaxFar` iterates to, as a set computed once (`none`: the fuel ran out, so
+every label is far). The compiled `relaxOf pre` takes the label as a second argument and redoes
+the whole iteration (layout of every line) for every relaxable branch it is asked about:
+`emitFuncFast` computes this set once instead (#1090). -/
+def relaxFarSet (pre : List Line) : Nat → Std.HashSet Lbl → Option (Std.HashSet Lbl)
+  | 0, _ => none
+  | n + 1, far =>
+    match farTargets (relaxLines (far.contains ·) pre) with
+    | [] => some far
+    | ts => relaxFarSet pre n (far.insertMany ts)
+
+theorem relaxFar_eq_set (pre : List Line) :
+    ∀ n far, relaxFar pre n far = fun l => (relaxFarSet pre n far).elim true (·.contains l)
+  | 0, _ => rfl
+  | n + 1, far => by
+    simp only [relaxFar, relaxFarSet]
+    split
+    · rfl
+    · exact relaxFar_eq_set pre n _
+
+theorem relaxOf_eq_set (pre : List Line) :
+    relaxOf pre = fun l => (relaxFarSet pre (pre.length + 1) {}).elim true (·.contains l) :=
+  relaxFar_eq_set pre _ _
+
 /-- One line of `poolUses`: a literal load of entry `n` appends `n` unless it is already used. -/
 def poolStep (acc : List Nat) : Line → List Nat
   | .ins (.fpuLoadLit _ _ (.const n)) _ => if acc.contains n then acc else acc ++ [n]
@@ -1614,11 +1638,13 @@ def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
 
 /-- `emitFunc` as the compiler runs it (`emitFunc_eq_fast`, `@[csimp]`, #1074): `emitPre` and
 `emitAlias` each compute `emitPlan` (the `MachBuffer` simulation and its branch check); here it
-is computed once. -/
+is computed once. The far labels of the branch relaxation are computed once too (`relaxFarSet`,
+`relaxOf_eq_set`), not once per relaxable branch (#1090). -/
 def emitFuncFast (k : Nat) (af : AFunc) : Except String FnAsm := do
   let p ← emitPlan k af
   let pre := p.lines.toArray.toList
-  let body := relaxLines (relaxOf pre) pre
+  let far := relaxFarSet pre (pre.length + 1) {}
+  let body := relaxLines (fun l => far.elim true (·.contains l)) pre
   let pool := poolLines (poolUses body) (body.foldl (· + ·.size) 0)
   let lines := (body ++ pool).toArray
   let mut off := 0
@@ -1631,7 +1657,7 @@ def emitFuncFast (k : Nat) (af : AFunc) : Except String FnAsm := do
 @[csimp] theorem emitFunc_eq_fast : @emitFunc = @emitFuncFast := by
   funext k af
   unfold emitFunc emitFuncFast emitPre emitAlias
-  cases emitPlan k af <;> rfl
+  cases emitPlan k af <;> simp only [relaxOf_eq_set] <;> rfl
 
 /-! ## Assembly text (GNU/LLVM syntax) -/
 
