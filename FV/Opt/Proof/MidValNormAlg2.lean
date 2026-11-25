@@ -13,6 +13,8 @@ under `Clif.evalInst` in every frame, ill-typed operands included (no typing pre
   `icmp eq u 1 = icmp ne u 0` is that `icmp` and `icmp eq u 0 = icmp ne u 1` its inversion;
 * `icmpUnit` — `icmp ult x 1 = icmp eq x 0`, `icmp uge x 1 = icmp ne x 0` (types have a positive
   width, `Ty.width_pos`), `icmp ugt x 0 = icmp ne x 0`, `icmp ule x 0 = icmp eq x 0`;
+  `icmpSwapUnit` — `icmpUnit` of the swapped comparison of `icmp cc ty k x` with `k` a constant
+  (`ns_icmpUnit` and `intcc_swap`);
 * `subNeg` — `isub 0 x = ineg x`; `mulTwo` — `imul x 2 = iadd x x` (either order); `shlOne` —
   `ishl x c = iadd x x` for a constant amount `c` that is `1` modulo the width;
   `xorNot` — `bxor x -1 = bnot x` (either order);
@@ -245,6 +247,17 @@ theorem ns_icmpUnit {tms : Array Tm} {cc : IntCC} {ty : Ty} {x k : Nat} :
       · cases h
   · cases h
 
+theorem ns_icmpSwapUnit {tms : Array Tm} {cc : IntCC} {ty : Ty} {a b : Nat} :
+    NodeSound tms (.icmp cc ty a b) (icmpSwapUnit tms cc ty a b) := by
+  intro x' h hord f fr mem t ht
+  unfold icmpSwapUnit at h
+  split at h
+  · rw [ns_icmpUnit x' h hord f fr mem t ht, evalNode_icmp, evalNode_icmp]
+    rcases (tmFrame f tms fr mem).regs a |>.bind (·.as? ty) with _ | A <;>
+      rcases (tmFrame f tms fr mem).regs b |>.bind (·.as? ty) with _ | B <;>
+      simp [Sem.icmp, intcc_swap]
+  · cases h
+
 /-! ## `subNeg`, `mulTwo`, `xorNot`, `bmaskBool` -/
 
 theorem add_self_eq_mul_two {w : Nat} (A : BitVec w) : A + A = A * 2 ∧ A + A = 2 * A :=
@@ -382,8 +395,8 @@ theorem ruleSound_algStep2 : RuleSound algStep2 := by
   intro tms i x' h hord f fr mem t ht
   cases i with
   | icmp cc ty a b =>
-    exact nodeSound_orElse ns_icmpSwap (nodeSound_orElse ns_icmpBool ns_icmpUnit)
-      x' h hord f fr mem t ht
+    exact nodeSound_orElse ns_icmpSwapUnit (nodeSound_orElse ns_icmpSwap
+      (nodeSound_orElse ns_icmpBool ns_icmpUnit)) x' h hord f fr mem t ht
   | binary op ty x y =>
     cases op
     case isub => exact ns_subNeg x' h hord f fr mem t ht

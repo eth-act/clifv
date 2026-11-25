@@ -24,8 +24,9 @@ steps, each proved here against `Clif.evalInst`:
   node.
 
 Main results: `ruleSoundT_idStep`, `ruleSound_affStep`, `ruleSound_swapStep`,
-`ruleSoundT_narrowStep`, `normSoundT_base`, `normSoundT_narrowN` and
-**`normSoundT_stdT : NormSoundT f (Norm.stdT f)`** (the validator's default normaliser).
+`ruleSoundT_narrowStep`. `normSoundT_base`, `normSoundT_narrowN` and `normSoundT_stdT` (the
+validator's default normaliser, which now ends with family 5) are in
+`FV/Opt/Proof/MidValNormFam5.lean`.
 -/
 
 namespace Opt.MidVal
@@ -444,24 +445,5 @@ theorem ruleSoundT_narrowStep {f : Function} {n : Norm} (hn : NormSoundT f n) :
       · cases h
     · cases h
   | _ => simp [narrowStep] at h
-
-/-! ## The default normaliser -/
-
-/-- **`Norm.base` is sound under typing.** -/
-theorem normSoundT_base {f : Function} : NormSoundT f (Norm.base f) :=
-  normSoundT_orElse (normSoundT_orElse normSound_std.toT normSoundT_typed)
-    (normSoundT_orElse (normSoundT_guard ruleSoundT_idStep)
-      (normSoundT_orElse (normSound_guard ruleSound_affStep).toT
-        (normSound_guard ruleSound_swapStep).toT))
-
-/-- **Every nesting depth of the narrowing is sound under typing.** -/
-theorem normSoundT_narrowN {f : Function} : ∀ k, NormSoundT f (Norm.narrowN f k)
-  | 0 => normSoundT_base
-  | k + 1 => normSoundT_orElse normSoundT_base
-      (normSoundT_guard (ruleSoundT_narrowStep (normSoundT_narrowN k)))
-
-/-- **The validator's default normaliser is sound under typing.** -/
-theorem normSoundT_stdT {f : Function} : NormSoundT f (Norm.stdT f) :=
-  normSoundT_narrowN 3
 
 end Opt.MidVal

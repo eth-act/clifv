@@ -52,7 +52,9 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   an atom), which read an atom's static type in `f` (`atomTy`), then family 4 (`Norm.base`,
   `Norm.narrowN`: a neutral constant is dropped, `x+0`, `x*1`, …, typed; constants added to `x`
   are added up, `isub x k` is `iadd x (-k)`; a constant moves to the right of a commutative
-  operation; `ireduce` of a ring operation is the operation on the narrowed operands, typed).
+  operation; `ireduce` of a ring operation is the operation on the narrowed operands, typed),
+  then family 5 (`x + (-y)` is `x - y`, `(-x) * k` is `x * (-k)`, `ireduce` of an `ireduce` of
+  a wider typed term is one `ireduce`).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -714,6 +716,16 @@ def icmpUnit (tms : Array Tm) (cc : IntCC) (ty : Ty) (x k : Nat) : Option Tm :=
     else none
   | none => none
 
+/-- `icmp cc ty a b` with `a` a constant and `b` not whose swap `icmp (swap cc) ty b a` is one of
+`icmpUnit`'s forms (`icmp ult 0, x`, `icmp uge 0, x`, `icmp ugt 1, x`, `icmp ule 1, x`):
+`icmpUnit`'s result for the swap. One normaliser step then reaches the form `icmpUnit` gives
+`g`'s comparison with 0 (`icmpSwap` alone stops at `icmp ugt x, 0`, while the branch-condition
+copy of `g`, `condPrep`, rebuilds `icmp ugt c, 0`, which `icmpUnit` makes `icmp ne c, 0`). -/
+def icmpSwapUnit (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) : Option Tm :=
+  match constOf tms a, constOf tms b with
+  | some _, none => icmpUnit tms (IntCC.swap cc) ty b a
+  | _, _ => none
+
 /-- `isub ty z x` with `z` the constant `0`: `ineg ty x`. -/
 def subNeg (tms : Array Tm) (ty : Ty) (z x : Nat) : Option Tm :=
   match constAt tms ty z with
@@ -748,8 +760,8 @@ def xorNot (tms : Array Tm) (ty : Ty) (x m : Nat) : Option Tm :=
 /-- The second set of single-node rules (unguarded; `Norm.alg2` guards them). -/
 def algStep2 (tms : Array Tm) : Inst → Option Tm
   | .icmp cc ty a b =>
-    (icmpSwap tms cc ty a b).orElse fun _ => (icmpBool tms cc ty a b).orElse fun _ =>
-      icmpUnit tms cc ty a b
+    (icmpSwapUnit tms cc ty a b).orElse fun _ => (icmpSwap tms cc ty a b).orElse fun _ =>
+      (icmpBool tms cc ty a b).orElse fun _ => icmpUnit tms cc ty a b
   | .binary .isub ty z x => subNeg tms ty z x
   | .binary .imul ty x y => (mulTwo tms ty x y).orElse fun _ => mulTwo tms ty y x
   | .binary .ishl ty x c => shlOne tms ty x c
@@ -766,8 +778,10 @@ def auxTms (tms : Array Tm) : Inst → List Tm
   | .binary .imul ty x y =>
     [x, y].filterMap fun o => (constAt tms ty o).bind fun b =>
       (pow2Log b.toNat).map fun k => .node (.iconst ty (BitVec.ofNat ty.width k))
-  | .icmp cc ty _ k =>
-    if (cc == .ult || cc == .uge) && constAt tms ty k == some 1 then [.node (.iconst ty 0)] else []
+  | .icmp cc ty a k =>
+    if ((cc == .ult || cc == .uge) && constAt tms ty k == some 1) ||
+        ((cc == .ugt || cc == .ule) && constAt tms ty a == some 1) then [.node (.iconst ty 0)]
+    else []
   | _ => []
 
 /-- The algebraic rules, guarded. -/
@@ -972,12 +986,65 @@ def narrowAux (tms : Array Tm) : Inst → List Tm
     | _ => []
   | _ => []
 
+/-! ### Family 5: negations and nested truncations
+
+Three more shapes of the `rewrite:operand` tail (#1119 issuecomment-7165335641, agent
+MidendNext3), after Cranelift 0.135.0's `opts/arithmetic.isle` (`x + (-y)`, `(-x) * k`) and
+`opts/extends.isle` (`ireduce` of `ireduce`); each keeps the operands of the node, so it holds in
+every frame where they are typed (`FV/Opt/Proof/MidValNormFam5.lean`). -/
+
+/-- `iadd ty a (ineg ty y)`, or `iadd ty (ineg ty y) b`: `isub ty a y` (`isub ty b y`). -/
+def addNeg (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  match nodeAt tms b with
+  | some (.unary .ineg ty' y) => if ty' == ty then some (.node (.binary .isub ty a y)) else none
+  | _ =>
+    match nodeAt tms a with
+    | some (.unary .ineg ty' y) => if ty' == ty then some (.node (.binary .isub ty b y)) else none
+    | _ => none
+
+/-- `imul ty a k` with `a` an `ineg ty x` and `k` a constant of type `ty`: `(x, -k)`. -/
+def mulNegPlan (tms : Array Tm) (ty : Ty) (a b : Nat) : Option (Nat × BitVec ty.width) :=
+  match nodeAt tms a, constAt tms ty b with
+  | some (.unary .ineg ty' x), some k => if ty' == ty then some (x, -k) else none
+  | _, _ => none
+
+/-- `imul ty (ineg ty x) k`: `imul ty x (-k)` (`mulNegPlan`; the constant `-k` looked up, the
+checker interns it first, `fam5Aux`). -/
+def mulNeg (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  (mulNegPlan tms ty a b).bind fun (x, k) =>
+    (findTm tms (.node (.iconst ty k))).map fun kc => .node (.binary .imul ty x kc)
+
+/-- `ireduce ty (ireduce ty2 x)` with `x` of static type `xt` (`tyAt`), `ty` narrower than `ty2`
+and `ty2` narrower than `xt`: `ireduce ty x`. Without the typing the rewrite is false: for an
+`x` of a width between `ty`'s and `ty2`'s the inner `ireduce` has no value, the result has one. -/
+def redRed (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (u : Nat) : Option Tm :=
+  match nodeAt tms u with
+  | some (.ireduce ty2 x) =>
+    match tyAt aty tms x with
+    | some xt =>
+      if ty.width < ty2.width && ty2.width < xt.width then some (.node (.ireduce ty x)) else none
+    | none => none
+  | _ => none
+
+/-- **Family 5** (typed through `redRed`): `addNeg`, `mulNeg`, `redRed`. -/
+def fam5Step (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .binary .iadd ty a b => addNeg tms ty a b
+  | .binary .imul ty a b => mulNeg tms ty a b
+  | .ireduce ty u => redRed aty tms ty u
+  | _ => none
+
+/-- The constant `fam5Step` looks up (`mulNeg`'s `-k`). -/
+def fam5Aux (tms : Array Tm) : Inst → List Tm
+  | .binary .imul ty a b => (mulNegPlan tms ty a b).toList.map fun (_, k) => .node (.iconst ty k)
+  | _ => []
+
 /-- Everything but the narrowing: `Norm.std`, the typed rules, then family 4's neutral
-constants, affine constants and constants on the right. -/
+constants, affine constants and constants on the right, then family 5. -/
 def Norm.base (f : Function) : Norm :=
   Norm.orElse (Norm.orElse Norm.std (Norm.guard (typedStep (atomTy f))))
     (Norm.orElse (Norm.guard (idStep (atomTy f)))
-      (Norm.orElse (Norm.guard affStep) (Norm.guard swapStep)))
+      (Norm.orElse (Norm.guard affStep)
+        (Norm.orElse (Norm.guard swapStep) (Norm.guard (fam5Step (atomTy f))))))
 
 /-- `Norm.base`, then the narrowing with the operands' terms under `Norm.narrowN f k`
 (`k` nested narrowings). -/
@@ -1039,12 +1106,14 @@ def internD : Nat → Tm → M Nat
     if let .node i := t then
       for a in auxTms (← get).tms i do discard (intern1 a)
       if let .select ty c x y := i then internSelAux ty c x y
+      for a in fam5Aux (← get).tms i do discard (intern1 a)
     intern1 t
   | d + 1, t => do
     if let .node i := t then
       for a in auxTms (← get).tms i do discard (intern1 a)
       if let .select ty c x y := i then internSelAux ty c x y
       for a in affAux (← get).tms i do discard (intern1 a)
+      for a in fam5Aux (← get).tms i do discard (intern1 a)
       for a in narrowAux (← get).tms i do discard (internD d a)
       let s ← get
       if let some j := narrowNode s.norm s.tms i then
