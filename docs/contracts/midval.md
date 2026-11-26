@@ -762,5 +762,7 @@ counterfactual.)
   - Measured (2026-11-26, the shared corpus, main b525cc3db's `midval-check --cert --cond`
     against this one's `--cert --cond --hoist`): 117,082 → 118,210 (+1,128, 96.1 % → 97.0 %), 0
     lost, every accepted pair re-checks; by main's reason: `placement:symbol_value` 1,001,
-    `rewrite:operand` 63, `placement:func_addr` 56, `rewrite:domtree` 8. All 1,128 resolve their
-    global values at the table of the names `g` itself references.
+    `rewrite:operand` 63, `placement:func_addr` 56, `rewrite:domtree` 8 (sum 1,128). Every one of
+    the 1,128, in each of the four groups (the 71 `rewrite:operand`/`rewrite:domtree` pairs
+    included), has an accepted copy whose global values resolve at the table of only the names `g`
+    itself references (`midval-check`'s `resolves` column, checked per pair).
