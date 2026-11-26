@@ -5,6 +5,7 @@ import FV.E2E.DeadCleanupExecProvenT
 import FV.E2E.DeadCleanupExecPeakT
 import FV.E2E.GotTab
 import FV.E2E.MidValExecProven
+import FV.E2E.MidValExecProvenSyms
 
 /-! # Tests of `link-check`'s verdict (#1092, #1093)
 
@@ -53,6 +54,22 @@ run_cmd do
   "theorem: E2E.ReturnPinExecBytes.binary_correct_exec_proven_mid (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation)"
 #guard binVerdictMid .integer false true true true true false = "theorem: none (Link.midValidatedB fails)"
 #guard binVerdictMid .typed false true true false true true = "theorem: none (codeMapB fails)"
+
+-- #1119 hoisting mode: every `_midS` theorem `binTheoremMidS` names is a declared theorem; a
+-- failing `midValidatedSymsB` names none
+run_cmd do
+  let env ← getEnv
+  for c in [Checker.integer, .typedStock, .typed] do
+    let (t, p) := theoremsMidS c
+    for n in [t, p] do
+      match env.find? n.toName with
+      | some (.thmInfo _) => pure ()
+      | some _ => throwError "{n} is not a theorem"
+      | none => throwError "{n} does not exist"
+#guard binVerdictMidS .typedStock false true true true true true =
+  "theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS_midS (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation; the hoisting mode decided at the image's symbol table)"
+#guard binVerdictMidS .integer false true true true true false =
+  "theorem: none (Link.midValidatedSymsB fails at the image's symbol table)"
 
 -- the GOT decider's soundness and the `ldr` form it keys on
 example : E2E.GotTab.ldrFormB (E2E.BinCheck.ldrW 3 3 5) = true := E2E.GotTab.ldrFormB_ldrW (by decide) (by decide)

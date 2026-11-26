@@ -10,7 +10,8 @@ and if every state the source run reaches (`Clif.ReachesX`) has at most `d` call
 state the target run reaches. Related states have callers of the same length
 (`CallersRelMU.length`) and the target's stuttering steps keep the callers (`Stut.callers`).
 
-* **`runLoopX_refinesSRMU_depth`**;
+* **`runLoopX_refinesSRMU_depth`**; **`runLoopX_refinesSRMUAt_depth`**: the same from pointwise
+  `FunsSimMUAt syms` (the simulations at the run's symbol table only, #1119 hoisting mode);
 * `reachesX_toX_of_reaches`, `reaches_of_reachesX_toX`: for an environment of `Clif.run`
   (`Env.toX`, never unwinding), reachability with unwinding is plain reachability
   (`Clif.Reaches`, the one of `Clif.DepthLe`).
@@ -38,12 +39,12 @@ theorem Stut.reachesX_split {env : XEnv} {q : Program} {s s2 : State} (h : Stut 
       · exact .inl (h.trans hc)
       · exact .inr h
 
-/-- **`runLoopX_refinesSRMU` keeping the call depth**: from `SRMU`-related states the runs with
-unwinding refine, and when the source run ends (neither `stuck` nor out of fuel) with every state
-it reaches having at most `d` callers, every state the target run reaches has at most `d`
-callers. -/
-theorem runLoopX_refinesSRMU_depth {syms : String → Option Nat} {env : XEnv}
-    (hE : EnvKeepsSymbolsX env) {p q : Program} (hP : FunsSimMU p.funcs q.funcs) :
+/-- **`runLoopX_refinesSRMU_depth` at the run's symbol table**: from pointwise `FunsSimMUAt syms`
+(`SRMU syms`-related states), the runs with unwinding refine, and when the source run ends
+(neither `stuck` nor out of fuel) with every state it reaches having at most `d` callers, every
+state the target run reaches has at most `d` callers. -/
+theorem runLoopX_refinesSRMUAt_depth {syms : String → Option Nat} {env : XEnv}
+    (hE : EnvKeepsSymbolsX env) {p q : Program} (hP : FunsSimMUAt syms p.funcs q.funcs) :
     ∀ n (xs xs' : XState), SRMU syms xs xs' →
       ∃ n', XOutcomeRefines (Clif.runLoopX env p n xs) (Clif.runLoopX env q n' xs') ∧
         ((∀ msg, Clif.runLoopX env p n xs ≠ .stuck msg) → Clif.runLoopX env p n xs ≠ .outOfFuel →
@@ -62,7 +63,7 @@ theorem runLoopX_refinesSRMU_depth {syms : String → Option Nat} {env : XEnv}
     have hb0 : ∀ d, (∀ ys, ReachesX env p xs ys → ys.s.callers.length ≤ d) →
         s'.callers.length ≤ d := fun d hdd => by
       have := hdd xs (.refl _); omega
-    rcases sim_stepMU hE hP h with ⟨xs1, s1', hst, hstut, hr⟩ | ⟨s2, hstut, hr⟩
+    rcases sim_stepMUAt hE hP h with ⟨xs1, s1', hst, hstut, hr⟩ | ⟨s2, hstut, hr⟩
     · obtain ⟨n1, hn1, hd1⟩ := ih xs1 _ hr
       obtain ⟨k, hk⟩ := hstut.runLoopX ts'
       refine ⟨n1 + k, ?_, fun hns hof d hdd ys' hy => ?_⟩
@@ -120,6 +121,19 @@ theorem runLoopX_refinesSRMU_depth {syms : String → Option Nat} {env : XEnv}
       | stuck m =>
         exact ⟨0, ⟨fun _ _ h => (by cases h), fun _ h => (by cases h), fun _ _ h => (by cases h)⟩,
           fun hns _ => (hns m rfl).elim⟩
+
+/-- **`runLoopX_refinesSRMU` keeping the call depth**: from `SRMU`-related states the runs with
+unwinding refine, and when the source run ends (neither `stuck` nor out of fuel) with every state
+it reaches having at most `d` callers, every state the target run reaches has at most `d`
+callers. -/
+theorem runLoopX_refinesSRMU_depth {syms : String → Option Nat} {env : XEnv}
+    (hE : EnvKeepsSymbolsX env) {p q : Program} (hP : FunsSimMU p.funcs q.funcs) :
+    ∀ n (xs xs' : XState), SRMU syms xs xs' →
+      ∃ n', XOutcomeRefines (Clif.runLoopX env p n xs) (Clif.runLoopX env q n' xs') ∧
+        ((∀ msg, Clif.runLoopX env p n xs ≠ .stuck msg) → Clif.runLoopX env p n xs ≠ .outOfFuel →
+          ∀ d, (∀ ys, ReachesX env p xs ys → ys.s.callers.length ≤ d) →
+          ∀ ys', ReachesX env q xs' ys' → ys'.s.callers.length ≤ d) :=
+  runLoopX_refinesSRMUAt_depth hE (hP.at syms)
 
 /-- For an environment of `Clif.run`, a plain step that continues is a step with unwinding. -/
 theorem stepX_toX_of_next {env : Env} {q : Program} {s s' : State} (h : step env q s = .next s')

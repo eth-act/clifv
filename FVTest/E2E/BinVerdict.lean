@@ -87,4 +87,35 @@ def binVerdictMid (c : Checker) (recursive ok binOk codeOk gotOk midOk : Bool) :
   else if !midOk then "theorem: none (Link.midValidatedB fails)"
   else s!"theorem: {binTheoremMid c recursive} (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation)"
 
+/-! ### Through the mid-end validator's hoisting mode (#1119, `symbol_value` hoisting)
+
+When a function of the pruned program is validated only by the hoisting mode (`Link.hoistCopy`:
+Cranelift hoisted a `symbol_value` out of a loop), the theorem is the `_midS` sibling
+(`FV/E2E/MidValExecProvenSyms.lean`): the premise `Opt.FunsSimMUAt (fun n => I.syms.lookup n)
+P0.funcs (prog I).funcs`, which `link-check` decides by `Link.midValidatedSymsB` at the image's
+symbol table on the pruned program (`Link.midValidatedSymsB_sound`). -/
+
+/-- The `_midS` siblings of `theorems`. -/
+def theoremsMidS (c : Checker) : String × String :=
+  let (t, p) := theorems c
+  (t ++ "_midS", p ++ "_midS")
+
+/-- **The theorem the checks instantiate through the hoisting mode**, about the program of the
+unoptimised dumps. -/
+def binTheoremMidS (c : Checker) (recursive : Bool) : String :=
+  let (t, p) := theoremsMidS c
+  if recursive then
+    s!"{t} ({p} for the functions whose calls reach a call cycle: their stack stays a premise)"
+  else t
+
+/-- **The verdict through the hoisting mode**: as `binVerdict`, also requiring `midOk`
+(`Link.midValidatedSymsB` at the image's symbol table on the pruned program). -/
+def binVerdictMidS (c : Checker) (recursive ok binOk codeOk gotOk midOk : Bool) : String :=
+  if !ok then s!"theorem: none (the checker {c.label} fails)"
+  else if !binOk then "theorem: none (the binary checks fail)"
+  else if !codeOk then "theorem: none (codeMapB fails)"
+  else if !gotOk then "theorem: none (GotOk fails)"
+  else if !midOk then "theorem: none (Link.midValidatedSymsB fails at the image's symbol table)"
+  else s!"theorem: {binTheoremMidS c recursive} (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation; the hoisting mode decided at the image's symbol table)"
+
 end FVTest.E2E.BinVerdict

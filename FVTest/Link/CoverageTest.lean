@@ -21,7 +21,9 @@ import FV.Link.ExeSourceCp
 import FV.Link.ExeUnwind
 import FV.Link.Ld.Spec
 import FV.Link.MidSourceRoutes
+import FV.Link.MidSourceRoutesSyms
 import FV.Link.MidSourceTB
+import FV.Link.MidSourceTBSyms
 import FV.Link.OptExe
 import FV.Link.OptExeSourceCp
 import FV.Link.OptExeUnwind
@@ -85,6 +87,8 @@ run_cmd do
 #guard (Route.totalClaim false .opt).names = "Link.compileExeOpt_total_reach_input"
 #guard midName "X.attempt_correct_sourceCp, X.attempt_correct_source_peakCp" =
   "X.attempt_correct_sourceMid, X.attempt_correct_source_peakMid"
+#guard midNameS "X.attempt_correct_sourceCp, X.attempt_correct_source_peakCp" =
+  "X.attempt_correct_sourceMidS, X.attempt_correct_source_peakMidS"
 #guard shortName totalLdInThm = "compileExe_total_ldIn"
 
 end FVTest.Link.CoverageTest
