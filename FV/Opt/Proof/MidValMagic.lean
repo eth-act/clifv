@@ -5,14 +5,19 @@ import FV.Opt.Proof.RuleSkeleton5
 /-!
 # Division by a constant with magic numbers is simulated by its input (#1119)
 
-Cranelift's mid-end (0.136.1, `opts/arithmetic.isle`, `prelude_opt.isle`, `opts/div_const.rs`)
-replaces an unsigned division or remainder by a constant `d` that is neither 0, 1 nor a power of
-two, at width 32 or 64, with a multiply-high and shifts (Granlund–Montgomery, Hacker's Delight
-10-8). `Opt.MidVal.magicPre f bs` (`FV/Opt/MidValFold.lean`) does the same to `f`'s `udiv`/`urem`
-whose divisor has a constant in `K = kLook f.freshValue (kTable f)` (checked by `kOk`), in the
-blocks `bs`, with Cranelift's magic numbers (`Isle.Opt.Rust.magicU`, the port of
-`magic_u32`/`magic_u64` the ISLE interpreter runs); the new values are numbered from
-`f.freshValue` on (`f` reads only values below it, `refsOk`); `skeleton-removed div`. Here:
+Cranelift's mid-end (0.136.1, `opts/arithmetic.isle`, `prelude_opt.isle`, `opts/div_const.rs`;
+0.135.0, the version cg_clif links and the corpus dumps come from, has the same text in
+`div_const.rs`, in the division rules of `arithmetic.isle` and in `prelude_opt.isle`'s
+`apply_div_const_magic_*`, so the sequences are the same) replaces an unsigned division or
+remainder by a constant `d` that is neither 0, 1 nor a power of two, at width 32 or 64, with a
+multiply-high and shifts (Granlund–Montgomery, Hacker's Delight 10-8), and a signed one whose
+`|d|` is neither 0, 1 nor a power of two with a signed multiply-high, a sign correction and
+shifts. `Opt.MidVal.magicPre f bs` (`FV/Opt/MidValFold.lean`) does the
+same to `f`'s `udiv`/`urem`/`sdiv`/`srem` whose divisor has a constant in
+`K = kLook f.freshValue (kTable f)` (checked by `kOk`), in the blocks `bs`, with Cranelift's magic
+numbers (`Isle.Opt.Rust.magicU`/`magicS`, the ports of `magic_u32`/`magic_u64`/`magic_s32`/
+`magic_s64` the ISLE interpreter runs); the new values are numbered from `f.freshValue` on (`f`
+reads only values below it, `refsOk`); `skeleton-removed div`. Here:
 **`magicPre_simU : FunSimU f (magicPre f bs)`**, and **`foldPre_simU`** / **`foldPreK_simU`** for
 the whole preparation (`foldPre f bs = ConstPhi.run (foldBr (magicPre (divPre (phiPre f) bs) bs)
 bs)`; `divPre_simU`: `FV/Opt/Proof/MidValDiv.lean`).
