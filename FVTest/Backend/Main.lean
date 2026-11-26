@@ -852,9 +852,10 @@ the function's name, `g` and `false` when `Opt.MidVal.checkCertC (Opt.ConstPhi.r
 hints` holds for the certificate and branch-condition hints `Opt.MidVal.emitC` gives, and
 `Link.midPairB` holds on the pair as `link-check` re-decides it on the bundle (each function's
 input after constant-phi removal and the `i128` legalisation, `FnInput.cp`/`FnInput.func`: the
-program its binary theorem is about); `true` instead when one of those fails but the hoisting
-mode accepts that pair (`Link.hoistCopy`, which `link-check` and `lean-link` complete at the
-executable's symbol table, `Link.midPairSymsB`); in both cases link-check's `outFits` input
+program its binary theorem is about); `true` instead when one of those fails but each of the two
+pairs the tools re-decide, link-check's (`FnInput.cp`) and lean-link's (the raw dumps, `f` and `g`),
+passes `Link.midPairB` or the hoisting mode (`Link.hoistCopy`, which `link-check` and `lean-link`
+complete at the executable's symbol table, `Link.midPairSymsB`); in both cases link-check's `outFits` input
 condition must be no worse for `g` than for `f` after constant-phi removal (`outScopeLeB`;
 otherwise compiling `g` could leave the function out of the executable's region where `f` stays
 in it, #1152); else why not (the function's name when there is one). -/
@@ -885,11 +886,15 @@ def midvalDecide (src srcOpt : String) :
       else if !Link.midPairB fi0.cp.func fi1.cp.func then
         .error "Link.midPairB rejects the pair after constant-phi removal and the i128 legalisation (link-check's pair)"
       else .ok ()
-  -- the hoisting mode on link-check's pair (`Link.hoistCopy`; `…_midS`, `…MidS` at link level)
+  -- the hoisting mode (`Link.hoistCopy`; `…_midS`, `…MidS` at link level) on both pairs the tools
+  -- re-decide: link-check's (after the `i128` legalisation, `FnInput.cp`) and lean-link's (the raw
+  -- dumps, `FnInput.src` = `f`, `g`): each must pass `midPairB` or `hoistCopy`, else `lean-link
+  -- --verified` would leave the function out of the region where `f` stays in it
+  let pairOk := fun (a b : Clif.Function) => Link.midPairB a b || (Link.hoistCopy a b).isSome
   let hoisted ← match reg with
     | .ok () => pure false
     | .error why =>
-      if (Link.hoistCopy fi0.cp.func fi1.cp.func).isSome then pure true
+      if pairOk fi0.cp.func fi1.cp.func && pairOk f g then pure true
       else throw (some p.name, why)
   -- link-check's `outFits` input condition: never trade a function in the region for one out
   -- of it (#1152: a fold can drop `g`'s only call of a stack-argument extern it still declares)
