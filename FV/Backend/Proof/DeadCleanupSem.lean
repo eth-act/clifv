@@ -99,7 +99,6 @@ theorem mspec_flagFree_pstate {sb : Nat} {i : MInst} {us : List CV} (hf : flagFr
     case const v =>
       rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> rcases us with _ | ⟨a, us⟩ <;>
         simp [mspec, ispec, ispecFP, amodeAddr]
-      by_cases hsz : sz = .size32 ∨ sz = .size64 <;> simp [hsz]
     all_goals simp [flagFree, pureForm] at hf
   unfold mspec
   split <;> try { simp_all [flagFree, pureForm, pureAlu, spOf_write_pstate] }

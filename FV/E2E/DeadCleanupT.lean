@@ -180,13 +180,17 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
-/-- The float loads/stores of the value semantics are `csem`'s (they are not pure forms). -/
+/-- The addressed float loads/stores of the value semantics are `csem`'s (they are not pure
+forms; the literal-pool load, a pure form since #1181, has no address: `amodeAddr` is `none`). -/
 theorem memRefinesFP_valueSem (Rd F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) {sb : Nat}
     (hsb : ctx.slotBase = sb) : MemRefinesFP Rd F sb (valueSem F ctx X) := by
   obtain ⟨h1, h2⟩ := memRefinesFP_csem Rd F ctx X hsb
   refine ⟨fun sz d am fl us w a hsz ha hav hrd => ?_, fun sz d am fl v us w a hsz ha hav => ?_⟩
   · obtain ⟨w', e, hw⟩ := h1 sz d am fl us w a hsz ha hav hrd
-    exact ⟨w', by simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e, hw⟩
+    refine ⟨w', ?_, hw⟩
+    cases am
+    case const v => simp [amodeAddr] at ha
+    all_goals (simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e)
   · obtain ⟨w', e, hw⟩ := h2 sz d am fl v us w a hsz ha hav
     exact ⟨w', by simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e, hw⟩
 
