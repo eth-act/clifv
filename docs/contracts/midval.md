@@ -195,7 +195,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | swapped unit comparisons and parameters kept after the folds (`algStep2`; `checkCertC`, prep requests) | `icmpSwapUnit` in `Norm.alg2`; `foldPreK f bs` as a second copy | `ns_icmpSwapUnit`, `foldPreK_simU`, `check_soundC` | 116,600 (95.7 %) | not measured on the pairs | 9 crates: with the next row |
 | 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: 77.6 % → 78.1 % (94,442 → 95,064 of 121,767) |
 | hoisting mode at link level (`placement:symbol_value`/`func_addr`; `symsCopy`, `Link.hoistCopy`, premise `globalsResolve` at the executable's symbol table) | none (`checkCertSyms` on `f`, `foldPre f bs` or `foldPreK f bs`) | `symsCopy_sound`, `checkCertSymsAt_sound`, `midValidatedSymsB_sound` | 118,210 (97.0 %) | not measured on the pairs | 9 crates: 78.1 % → 78.1 % (95,064 → 95,137 of 121,767) |
-| division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: see the bullet below |
+| division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: 78.1 % → 78.4 % (95,137 → 95,499 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -853,3 +853,18 @@ counterfactual.)
     semver 84, serde_json 76, memchr 5. `skeleton-removed div` pairs 504 → 30 (`sdiv` by `2^k`,
     unsigned powers of two `divPre` has no gap values for, divisors that are no direct `iconst`,
     and pairs with another rejection after the division).
+    `cargo fv test --release` on the 9 crates (2026-11-26, clifv-remote, main b63bf2f98's tools
+    against this one's), in plain mode and with `--lean-link --verified`: binary check 48/48 →
+    48/48 both ways, verified 121,767 → 121,767, left out of the region 0 → 0 (plain) and 1 → 1
+    (`--lean-link --verified`), tests the same as stock's on all 9 both ways, validated 116,352 →
+    116,928 (95.6 → 96.0 %; per function 115,246 → 115,820, at link level 1,106 → 1,108; up on 6
+    crates, blake2, num-traits and sha3 unchanged), byte-identical to stock 95,137 → 95,499
+    (78.1 → 78.4 %, the same in both modes); `cargo fv test` wall summed 3,700 → 3,670 s (plain)
+    and 4,500 → 3,998 s (`--lean-link --verified`; main's runs overlapped this one's full gate,
+    this one's ran alone). link-check names the same theorems as on main (a `_midS` one for 29
+    executables in plain mode and 35 with `--lean-link --verified`), lean-link `…MidS` source
+    theorems for 29 executables as on main; no `globalsResolve` or `midValidatedSymsB` failure.
+    Why the validated functions still differ from stock (ParityGap1's classification, #1119
+    issuecomment-7199047886): per function 17,285 of 20,424 differ only by the 0.135.0 → 0.136.1
+    gap and 2,779 by our backend; at link level 678 of 1,035 and 357 (225 of them #550 frame
+    layout first, 28 a dead `f64const` we load from the literal pool, #1181).

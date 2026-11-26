@@ -799,7 +799,13 @@ Division by a constant with magic numbers (`skeleton-removed div`; docs/contract
 validator rewrites `f`'s `udiv`/`urem`/`sdiv`/`srem` by a constant other than 0, 1 and the powers
 of two, at width 32 or 64, into Cranelift's multiply-high sequence (0.136.1's; 0.135.0, which the
 pinned nightly's cg_clif links, has the same rules and magic numbers). Pairs of the shared corpus
-accepted: 118,210 → 118,813 of 121,879 (measured 2026-11-26 on clifv-remote, 0 lost).
+accepted: 118,210 → 118,813 of 121,879 (measured 2026-11-26 on clifv-remote, 0 lost). The same 9
+crates and commands (main b63bf2f98's tools against this one's, plain mode and `--lean-link
+--verified`): binary check 48 of 48 both ways, 121,767 verified both ways, left out 0 → 0 (plain)
+and 1 → 1, test outcomes the same as stock's on all 9 both ways; validated 116,352 → 116,928
+(95.6 % → 96.0 %; 1,106 → 1,108 of them `validated-link`; up on 6 crates); byte-identical to stock
+95,137 → 95,499 of 121,767 (78.1 % → 78.4 %); `cargo fv test` wall summed 3,700 → 3,670 s (plain)
+and 4,500 → 3,998 s (main's runs overlapped a full gate).
 
 ### The executable compiler (`--lean-link`, L1)
 
