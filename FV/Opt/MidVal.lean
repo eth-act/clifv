@@ -42,19 +42,22 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   different versions a new version (`merge b`) starts. Explicit traps keep the version. Removed
   stores of `f` are idempotent (memory unchanged), so `g`'s versions are `f`'s memory states.
 
-* **Normalisation** (stage 2, the default normaliser `Norm.stdT f`), on both sides: constant
-  evaluation (`evalConst`: a pure node whose operands are all constants is the constant
-  `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg2`: `icmp` canonical
-  forms, `isub 0 x`, `imul x 2`/`ishl x 1`, `bmask` of an `icmp`, `bxor x -1`; `Norm.alg`:
-  `select` of an `icmp` with constant arms 1/0, `imul` by a power of two, `iadd` of a
+* **Normalisation** (stage 2, the default normaliser `Norm.stdT f`), on both sides: first a
+  multiplication by `2^s` (or `x + x`) of a shift by a constant as one shift or mask (family 6,
+  `fam6Mul`), then constant evaluation (`evalConst`: a pure node whose operands are all constants
+  is the constant `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg2`: `icmp`
+  canonical forms, `isub 0 x`, `imul x 2`/`ishl x 1`, `bmask` of an `icmp`, `bxor x -1`;
+  `Norm.alg`: `select` of an `icmp` with constant arms 1/0, `imul` by a power of two, `iadd` of a
   `stack_addr` and a constant, `ireduce` of an extension of a typed node), then the typed rules
   (`typedStep`: `select` of an integer term with constant arms 1/0, `ireduce` of an extension of
   an atom), which read an atom's static type in `f` (`atomTy`), then family 4 (`Norm.base`,
   `Norm.narrowN`: a neutral constant is dropped, `x+0`, `x*1`, …, typed; constants added to `x`
   are added up, `isub x k` is `iadd x (-k)`; a constant moves to the right of a commutative
-  operation; `ireduce` of a ring operation is the operation on the narrowed operands, typed),
-  then family 5 (`x + (-y)` is `x - y`, `(-x) * k` is `x * (-k)`, `ireduce` of an `ireduce` of
-  a wider typed term is one `ireduce`).
+  operation; `ireduce` of a ring operation is the operation on the narrowed operands, typed, a
+  neutral constant it leaves dropped), then family 5 (`x + (-y)` is `x - y`, `(-x) * k` is
+  `x * (-k)`, `ireduce` of an `ireduce` of a wider typed term is one `ireduce`), then family 6
+  (a shift amount's extension or truncation dropped, typed; constants of `band`, `bor`, `bxor`,
+  `imul` reassociated, `imul (ishl x k) c` is `imul x (c << k)`).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -959,10 +962,21 @@ else the node itself (`findTm`). -/
 def redOf (n : Norm) (tms : Array Tm) (ty : Ty) (a : Nat) : Option Nat :=
   findTm tms ((n tms (.ireduce ty a)).getD (.node (.ireduce ty a)))
 
+/-- `op ty a' b'` with `b'` a neutral constant of `op` at type `ty` (`rNeutral`), or `a'` one and
+`op` commutative: the other term. In `narrowStep` both terms stand for an `ireduce ty`, so the
+other one has type `ty` whenever it has a value, and needs no static type (family 6). -/
+def narrowId (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a' b' : Nat) : Option Tm :=
+  match constAt tms ty b' with
+  | some kv => if rNeutral op kv then tms[a']? else none
+  | none =>
+    match constAt tms ty a' with
+    | some kv => if commOp op && rNeutral op kv then tms[b']? else none
+    | none => none
+
 /-- **Narrowed `ireduce`** (typed): `ireduce ty (op wty a b)` with `op` a ring operation and `a`,
 `b` of static type `wty` wider than `ty`: `op ty a' b'` with `a'`, `b'` the terms of
 `ireduce ty a`, `ireduce ty b` under `n` (`redOf`; the checker interns them first,
-`narrowAux`), then `affStep` or `swapStep` on that node. -/
+`narrowAux`), then `narrowId`, `affStep` or `swapStep` on that node. -/
 def narrowStep (n : Norm) (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
   | .ireduce ty u =>
     match nodeAt tms u with
@@ -971,7 +985,8 @@ def narrowStep (n : Norm) (aty : Tm → Option Ty) (tms : Array Tm) : Inst → O
           tyAt aty tms b == some wty then
         (redOf n tms ty a).bind fun a' => (redOf n tms ty b).map fun b' =>
           let j := Inst.binary op ty a' b'
-          ((affStep tms j).orElse fun _ => swapStep tms j).getD (.node j)
+          ((narrowId tms op ty a' b').orElse fun _ =>
+            (affStep tms j).orElse fun _ => swapStep tms j).getD (.node j)
       else none
     | _ => none
   | _ => none
@@ -1038,13 +1053,139 @@ def fam5Aux (tms : Array Tm) : Inst → List Tm
   | .binary .imul ty a b => (mulNegPlan tms ty a b).toList.map fun (_, k) => .node (.iconst ty k)
   | _ => []
 
-/-- Everything but the narrowing: `Norm.std`, the typed rules, then family 4's neutral
-constants, affine constants and constants on the right, then family 5. -/
+/-! ### Family 6: shifts and bitwise constants
+
+The shapes around shifts and masks in the `rewrite:operand` tail (#1119
+issuecomment-7200665739, agent MidendNext5), after Cranelift 0.135.0's `opts/shifts.isle` and
+`opts/cprop.isle`. Each keeps the operands of the node, so it holds in every frame where they are
+typed (`FV/Opt/Proof/MidValNormFam6.lean`):
+
+* `fam6Mul` (first in `Norm.base`: `Norm.alg` turns `imul x 2^s` into `ishl x s` and the result
+  is not normalised again): `imul ty a 2^s` and `iadd ty a a` (`s = 1`) with `a` a shift by a
+  constant are the shift of `a` by `s` (`shlPlan`): `(y << k) << s` is `y << (k mod w + s)` below
+  the width `w`, `(y >> s) << s` (`ushr` or `sshr`) is `y & (-1 << s)` at a width of at most 64;
+* `shAmt` (typed): a shift or rotation amount given as an `uextend`/`sextend` of a narrower term
+  or an `ireduce` of a wider term of at most 64 bits is that term (the amount counts modulo the
+  width, which divides `2^8`, and the low 8 bits are kept);
+* `reStep`: `op (op x k1) k2` is `op x (k1 op k2)` for `band`, `bor`, `bxor`, `imul`, and
+  `imul (ishl x k) c` is `imul x (c << (k mod w))`;
+* `narrowId` (in `narrowStep`): a neutral constant the narrowing of `ireduce` leaves. -/
+
+/-- `imul ty a c` with `c` the constant `2^s` of type `ty`, `0 < s < width`, or `iadd ty a a`
+(`s = 1`): `(a, s)`, the node being `a << s`. -/
+def mulShAmt (tms : Array Tm) (ty : Ty) : BinaryOp → Nat → Nat → Option (Nat × Nat)
+  | .imul, a, c =>
+    match constAt tms ty c with
+    | some k =>
+      if 2 ^ k.toNat.log2 == k.toNat && 0 < k.toNat.log2 && k.toNat.log2 < ty.width then
+        some (a, k.toNat.log2)
+      else none
+    | none => none
+  | .iadd, a, b => if a == b then some (a, 1) else none
+  | _, _, _ => none
+
+/-- `a << s` for `a` a shift of `y` of type `ty` by a constant `K`: `ishl ty y K'` with `K' = K mod
+w + s` (a constant of `K`'s type) when that is below the width `w`; `band ty y M` with `M = -1 <<
+s` when `a` is an `ushr`/`sshr` by `s` at a width of at most 64 (`shifts.isle`). The node's
+operator, `y` and its constant. -/
+def shlPlan (tms : Array Tm) (ty : Ty) (a s : Nat) : Option (BinaryOp × Nat × Val) :=
+  match nodeAt tms a with
+  | some (.binary op ty' y k) =>
+    match constOf tms k with
+    | some K =>
+      if ty' != ty then none
+      else if op == .ishl then
+        if K.bits.toNat % ty.width + s < ty.width then
+          some (.ishl, y, ⟨K.ty, BitVec.ofNat K.ty.width (K.bits.toNat % ty.width + s)⟩)
+        else none
+      else if (op == .ushr || op == .sshr) && K.bits.toNat == s && ty.width ≤ 64 then
+        some (.band, y, ⟨ty, BitVec.allOnes ty.width <<< s⟩)
+      else none
+    | none => none
+  | _ => none
+
+/-- **Shifts written as multiplications** (module doc of family 6): the node `shlPlan` gives for
+`mulShAmt`'s `(a, s)`, its constant looked up (the checker interns it first, `fam6Aux`). -/
+def fam6Mul (tms : Array Tm) : Inst → Option Tm
+  | .binary op ty a b =>
+    (mulShAmt tms ty op a b).bind fun (a', s) => (shlPlan tms ty a' s).bind fun (op', y, K) =>
+      (findTm tms (.node (.iconst K.ty K.bits))).map fun kc => .node (.binary op' ty y kc)
+  | _ => none
+
+/-- **Shift amounts** (typed; `shifts.isle`): `op ty x b` with `op` a shift or rotation and `b` an
+`uextend`/`sextend` of a term `y` of a narrower static type, or an `ireduce` of a term `y` of a
+wider static type of at most 64 bits: `op ty x y`. Without the typing the rewrite is false: an
+extension of a `y` that is not narrower has no value, `op ty x y` may have one. -/
+def shAmt (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .binary op ty x b =>
+    if op.isShift then
+      match nodeAt tms b with
+      | some (.extend _ ety y) =>
+        match tyAt aty tms y with
+        | some yt => if yt.width < ety.width then some (.node (.binary op ty x y)) else none
+        | none => none
+      | some (.ireduce rty y) =>
+        match tyAt aty tms y with
+        | some yt =>
+          if rty.width < yt.width && yt.width ≤ 64 then some (.node (.binary op ty x y)) else none
+        | none => none
+      | _ => none
+    else none
+  | _ => none
+
+/-- The constant `k1 op k2` for the associative `band`, `bor`, `bxor`, `imul`. -/
+def reOp {w : Nat} (op : BinaryOp) (k1 k2 : BitVec w) : Option (BitVec w) :=
+  match op with
+  | .band => some (k1 &&& k2)
+  | .bor => some (k1 ||| k2)
+  | .bxor => some (k1 ^^^ k2)
+  | .imul => some (k1 * k2)
+  | _ => none
+
+/-- `op ty (op ty x k1) k2` with `op` one of `band`, `bor`, `bxor`, `imul` and `k1`, `k2`
+constants of type `ty`: `(x, k1 op k2)` (`cprop.isle`); `imul ty (ishl ty x k) k2` with `k` a
+constant: `(x, k2 << (k mod w))`. -/
+def rePlan (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) :
+    Option (Nat × BitVec ty.width) :=
+  match constAt tms ty b, nodeAt tms a with
+  | some k2, some (.binary op' ty' x k) =>
+    if ty' != ty then none
+    else if op' == op then (constAt tms ty k).bind fun k1 => (reOp op k1 k2).map fun c => (x, c)
+    else if op == .imul && op' == .ishl then
+      (constOf tms k).map fun K => (x, k2 <<< (K.bits.toNat % ty.width))
+    else none
+  | _, _ => none
+
+/-- **Constants reassociated** (module doc of family 6): `op ty x c` for `rePlan`'s `(x, c)`, the
+constant looked up (the checker interns it first, `fam6Aux`). -/
+def reStep (tms : Array Tm) : Inst → Option Tm
+  | .binary op ty a b =>
+    (rePlan tms op ty a b).bind fun (x, c) =>
+      (findTm tms (.node (.iconst ty c))).map fun kc => .node (.binary op ty x kc)
+  | _ => none
+
+/-- **Family 6** after family 5 (typed through `shAmt`): `shAmt`, then `reStep`. -/
+def fam6Step (aty : Tm → Option Ty) (tms : Array Tm) (i : Inst) : Option Tm :=
+  (shAmt aty tms i).orElse fun _ => reStep tms i
+
+/-- The constants family 6 looks up (`shlPlan`'s and `rePlan`'s). -/
+def fam6Aux (tms : Array Tm) : Inst → List Tm
+  | .binary op ty a b =>
+    (((mulShAmt tms ty op a b).bind fun (a', s) => shlPlan tms ty a' s).toList.map
+      fun (_, _, K) => .node (.iconst K.ty K.bits)) ++
+    (rePlan tms op ty a b).toList.map fun (_, c) => .node (.iconst ty c)
+  | _ => []
+
+/-- Everything but the narrowing: family 6's shifts written as multiplications (`fam6Mul`), then
+`Norm.std`, the typed rules, then family 4's neutral constants, affine constants and constants on
+the right, then families 5 and 6. -/
 def Norm.base (f : Function) : Norm :=
-  Norm.orElse (Norm.orElse Norm.std (Norm.guard (typedStep (atomTy f))))
+  Norm.orElse
+    (Norm.orElse (Norm.orElse (Norm.guard fam6Mul) Norm.std) (Norm.guard (typedStep (atomTy f))))
     (Norm.orElse (Norm.guard (idStep (atomTy f)))
       (Norm.orElse (Norm.guard affStep)
-        (Norm.orElse (Norm.guard swapStep) (Norm.guard (fam5Step (atomTy f))))))
+        (Norm.orElse (Norm.guard swapStep)
+          (Norm.orElse (Norm.guard (fam5Step (atomTy f))) (Norm.guard (fam6Step (atomTy f)))))))
 
 /-- `Norm.base`, then the narrowing with the operands' terms under `Norm.narrowN f k`
 (`k` nested narrowings). -/
@@ -1099,14 +1240,15 @@ def narrowNode (n : Norm) (tms : Array Tm) : Inst → Option Inst
   | _ => none
 
 /-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`,
-`affAux`; `narrowAux` interned the same way, `d` levels deep, then the constant `affStep` looks
-up for the narrowed node). -/
+`affAux`, `fam5Aux`, `fam6Aux`; `narrowAux` interned the same way, `d` levels deep, then the
+constant `affStep` looks up for the narrowed node). -/
 def internD : Nat → Tm → M Nat
   | 0, t => do
     if let .node i := t then
       for a in auxTms (← get).tms i do discard (intern1 a)
       if let .select ty c x y := i then internSelAux ty c x y
       for a in fam5Aux (← get).tms i do discard (intern1 a)
+      for a in fam6Aux (← get).tms i do discard (intern1 a)
     intern1 t
   | d + 1, t => do
     if let .node i := t then
@@ -1114,6 +1256,7 @@ def internD : Nat → Tm → M Nat
       if let .select ty c x y := i then internSelAux ty c x y
       for a in affAux (← get).tms i do discard (intern1 a)
       for a in fam5Aux (← get).tms i do discard (intern1 a)
+      for a in fam6Aux (← get).tms i do discard (intern1 a)
       for a in narrowAux (← get).tms i do discard (internD d a)
       let s ← get
       if let some j := narrowNode s.norm s.tms i then

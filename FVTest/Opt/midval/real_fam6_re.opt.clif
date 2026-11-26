@@ -1,0 +1,71 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC13crypto_bigint12HbNJTzqO4MZX
+function u0:3522(i64) -> i8 system_v {
+; symbol _RNxC13crypto_bigint12HbNJTzqO4MZX
+; instance Instance { def: Item(DefId(0:3888 ~ crypto_bigint[7523]::limb::{impl#0}::lsb_to_choice)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: limb::Limb, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14793551795106266118 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: ctutils::Choice, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is ..), fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 8375714107996500882 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; stack _0    ctutils::Choice                   1b 1                storage=ss0
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) ctutils::Choice
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) limb::Limb
+
+; kind  local ty                              size align (abi)
+; stack _1    limb::Limb                        8b 8                storage=ss1
+; ssa   _2    u64                               8b 8                var=1
+; ssa   _3    u8                                1b 1                var=2
+; ssa   _4    u64                               8b 8                var=3
+; ssa   _5    u8                                1b 1                var=4
+
+    ss0 = explicit_slot 1
+    ss1 = explicit_slot 8, align = 8
+
+block0(v0: i64):
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): limb::Limb <- ByVal(v0): limb::Limb
+    v1 = stack_addr.i64 ss1
+    store notrap v0, v1
+    jump block1
+
+block1:
+    v12 = ireduce.i8 v0
+    v14 = iconst.i8 1
+    v15 = band v12, v14  ; v14 = 1
+    v9 = stack_addr.i64 ss0
+    store notrap v15, v9
+; 
+; return
+    return v15
+}
+
+; clifv-extnames 1
+; decl u0:3522 func local "_RNxC13crypto_bigint12HbNJTzqO4MZX"
+; end clifv-extnames

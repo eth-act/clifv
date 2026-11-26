@@ -1,0 +1,120 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC14regex_automata12Ha6ZGqiSITse
+function u0:1272(i64) system_v {
+; symbol _RNxC14regex_automata12Ha6ZGqiSITse
+; instance Instance { def: Item(DefId(1:14336 ~ core[7b1c]::slice::sort::stable::merge::{impl#1}::drop)), args: [regex_syntax::hir::literal::Literal] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>    8b 8                var=1
+; ssa   _2    usize                             8b 8                var=2
+; ssa   _3    *mut regex_syntax::hir::literal::Literal    8b 8                var=3
+; ssa   _4    *const regex_syntax::hir::literal::Literal    8b 8                var=4
+; ssa   _5    *mut regex_syntax::hir::literal::Literal    8b 8                var=5
+; ssa   _6    *const regex_syntax::hir::literal::Literal    8b 8                var=6
+; ssa   _7    *mut regex_syntax::hir::literal::Literal    8b 8                var=7
+; ssa   _8    *mut regex_syntax::hir::literal::Literal    8b 8                var=8
+; ssa   _9    *const regex_syntax::hir::literal::Literal    8b 8                var=9
+; zst   _10   ()                                0b 1                align=1,offset=
+; ssa   _11   *const ()                         8b 8                var=10
+; ssa   _12   *const ()                         8b 8                var=11
+; ssa   _13   bool                              1b 1                var=12
+; ssa   _14   bool                              1b 1                var=13
+; zst   _15   !                                 0b 1                align=1,offset=
+; zst   _16   ()                                0b 1                align=1,offset=
+; ssa   _17   *const ()                         8b 8                var=14
+; ssa   _18   *mut ()                           8b 8                var=15
+
+    gv0 = symbol colocated userextname0 ; alloc847
+    gv1 = symbol colocated userextname1 ; alloc3904
+    sig0 = (i64, i64, i64) system_v
+    sig1 = (i64, i64, i64) -> i64 system_v
+    fn0 = u0:2611 sig0 ; Instance { def: Item(DefId(1:12378 ~ core[7b1c]::panicking::panic)), args: [] }
+    fn1 = %Memcpy sig1
+
+block0(v0: i64):
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal> <- ByVal(v0): &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>
+    jump block1
+
+block1:
+    v2 = load.i64 notrap v0+8
+; _5 = copy ((*_1).0: *mut T)
+; write_cvalue: Var(_5, var5): *mut regex_syntax::hir::literal::Literal <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): *mut regex_syntax::hir::literal::Literal
+    v3 = load.i64 notrap v0
+; _4 = copy _5 as *const T (PtrToPtr)
+; write_cvalue: Var(_4, var4): *const regex_syntax::hir::literal::Literal <- ByVal(v3): *const regex_syntax::hir::literal::Literal
+; _9 = copy _3 as *const T (PtrToPtr)
+; write_cvalue: Var(_9, var9): *const regex_syntax::hir::literal::Literal <- ByVal(v2): *const regex_syntax::hir::literal::Literal
+; 
+; switchInt(UbChecks)
+    jump block5
+
+block2:
+    v7 = load.i64 notrap v0+16
+; 
+; switchInt(UbChecks)
+    jump block11
+
+block5:
+    jump block6
+
+block6:
+    jump block7
+
+block7:
+    jump block2
+
+block11:
+    v17 = isub.i64 v2, v3
+    v48 = iconst.i64 -32
+    v49 = band v17, v48  ; v48 = -32
+    v28 = call fn1(v7, v3, v49)
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u1:1198
+; userextname1 = u1:1199
+; userextname2 = u0:2611
+; decl u0:1272 func local "_RNxC14regex_automata12Ha6ZGqiSITse"
+; decl u0:2611 func import "_RNvNtCsazjiGSRkgVH_4core9panicking5panic"
+; decl u1:1198 data local ro notls ".Ldata4ae"
+; decl u1:1199 data local ro notls ".Ldata4af"
+; libcall %Memcpy "memcpy"
+; end clifv-extnames
