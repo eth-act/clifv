@@ -8,12 +8,13 @@ BUNDLE_DIR is a `cargo fv link-proof` directory (`target/fv/<mode>/bin-check/<ta
 optimised dump (`src_dump` in `bundle.json`).
 
 1. `link-check BUNDLE_DIR --dead-cleanup --prune` as cargo fv's binary check runs it: every pair
-   holds (`Link.midPairB fails for 0`), N of N functions pass, and the theorem named is a `_mid`
+   holds (`the pair fails for 0`: `Link.midPairB`, or the hoisting mode's `Link.hoistCopy` at the
+   image's symbol table), N of N functions pass, and the theorem named is a `_mid` (or `_midS`)
    one.
 2. A copy whose `bundle.json` points one such function A's `src_dump` at another function B's
    unoptimised dump of the same codegen unit, renamed to A (its own `u0:` identity, `; decl` and
    `; symbol` lines): the bundle now says that A's optimised code came from B's source. `link-check`
-   must reject exactly A's pair (`Link.midPairB fails for 1`, A's `FAIL` lines name
+   must reject exactly A's pair (`the pair fails for 1`, A's `FAIL` lines name
    `Link.midPairB`), prune A and its callers (fewer than N pass), so cargo fv's binary check
    does not count the executable verified (`cargo-fv/src/bincheck.rs`: `pass < total`).
 
@@ -40,7 +41,8 @@ def prune_counts(out):
 
 
 def mid_fails(out):
-    m = re.search(r"Link\.midPairB fails for (\d+)", out)
+    # the pairs link-check rejects: `Link.midPairB` and the hoisting mode's `Link.hoistCopy` both
+    m = re.search(r"the pair fails for (\d+)", out)
     return int(m.group(1)) if m else None
 
 
@@ -77,7 +79,7 @@ def main():
     rc, out = run_check(a.link_check, a.bundle_dir)
     pc = prune_counts(out)
     theorem = next((l.strip() for l in out.splitlines() if l.strip().startswith("theorem: ")), "")
-    print(f"as written: rc={rc}, Link.midPairB fails for {mid_fails(out)}, --prune {pc}, {theorem[:120]}")
+    print(f"as written: rc={rc}, the pair fails for {mid_fails(out)}, --prune {pc}, {theorem[:120]}")
     ok1 = mid_fails(out) == 0 and pc is not None and pc[0] == pc[1] and "_mid" in theorem
     if not ok1:
         print(out[-3000:])
@@ -128,7 +130,7 @@ def main():
     fail_a = [i for i, l in enumerate(lines) if l.strip() in a_names]
     a_mid = any("Link.midPairB" in lines[j] for i in fail_a for j in range(i + 1, min(i + 8, len(lines))) if lines[j].startswith("      "))
     theorem = next((l.strip() for l in lines if l.strip().startswith("theorem: ")), "")
-    print(f"tampered: rc={rc}, Link.midPairB fails for {mid_fails(out)}, {fa['name']} fails Link.midPairB: {a_mid}, --prune {pc2}, {theorem[:120]}")
+    print(f"tampered: rc={rc}, the pair fails for {mid_fails(out)}, {fa['name']} fails Link.midPairB: {a_mid}, --prune {pc2}, {theorem[:120]}")
     ok2 = mid_fails(out) == 1 and a_mid and pc2 is not None and pc2[1] == pc[1] and pc2[0] < pc2[1]
     if not ok2:
         print(out[-3000:])

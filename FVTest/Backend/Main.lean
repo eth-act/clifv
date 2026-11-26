@@ -19,6 +19,7 @@ import FVTest.Backend.FnVerdict
 import FV.Opt.MidValCond
 import FV.Link.ConstPhiCompile
 import FV.Link.MidPair
+import FV.Link.MidPairSyms
 import FV.E2E.SrcScopeDefs
 import FV.E2E.LinkOwnFramesDefs
 
@@ -127,8 +128,16 @@ compiled in place of `f`, and when `g`'s verdict is a theorem that composes with
 (`FVTest.Backend.FnVerdict.midvalVerdict`; with a `try_call`, also its unwinding theorem) the
 function is reported verified by the theorem through the validator
 (`E2E.backend_correct_midval_*`, `FV/E2E/MidValPass.lean`, `MidValPassLegacy.lean`), about the
-source function (`.unopt.clif`). Otherwise `f` is compiled exactly as without the option (same
-objects, same lines). One more line says which: `%name: midval: validated (…)`, or
+source function (`.unopt.clif`). When the checks reject the pair but the validator's hoisting mode
+accepts it (`Link.hoistCopy` on the same pair as `Link.midPairB`: Cranelift hoisted a
+`symbol_value`, `tls_value` or `func_addr` out of a loop, so the simulation holds only at a symbol
+table where the compared copy's global values resolve), `g` is compiled as well, under the same
+conditions, and reported verified by its own theorem, about the optimised function
+(`FVTest.Backend.FnVerdict.midvalSymsVerdict`): `link-check` (`…_midS`) and `lean-link`
+(`…MidS`) decide the premise at the executable's symbol table and carry it to the source
+function. Otherwise `f` is compiled exactly as without the option (same
+objects, same lines). One more line says which: `%name: midval: validated (…)`, `%name: midval:
+validated at link level (…)`, or
 `%name: midval: rejected (…)` / `validated, not composed (…)`, `…; compiled from the .unopt.clif as
 without --midval-opt`. Only in the default mode (dead cleanup; no `--opt`, `--stock-config`,
 `--settings` or `--pipeline-t`). The effects of a compilation are deferred (`Act`) so that the one
@@ -423,13 +432,15 @@ def typedRecheck (f : Clif.Function) (cleanup : Bool) (rec : AllocRecord) (fa : 
               else some "lowerFunction's pipeline does not reproduce the emitted code (a Stock route lowered it)"
 
 /-- One compilation of the input `src` (`run`), its effects deferred to `acts`. `mid = some (n, g)`
-(`--midval-opt`, `n` the file's one function, `checkCertC` decided): `g` is compiled in place of the
+(`--midval-opt`, `n` the file's one function, `checkCertC` decided, or with `midSyms` the hoisting
+mode's `Link.hoistCopy`): `g` is compiled in place of the
 source function `n`; the second component is `none` when `g`'s verdict is a theorem through the
 validator (`FVTest.Backend.FnVerdict.midvalVerdict`, and the unwinding theorem through it for a
-`try_call` function), else why not (`run` then drops this compilation and compiles `f`). Without
+`try_call` function; with `midSyms` `g`'s own, `midvalSymsVerdict`), else why not (`run` then drops
+this compilation and compiles `f`). Without
 `mid` the compilation is `lean-backend`'s as before the option (#1119). -/
 def runCore (input output : String) (o : Opts) (src : String)
-    (mid : Option (String × Clif.Function)) (acts : IO.Ref (Array Act)) :
+    (mid : Option (String × Clif.Function)) (acts : IO.Ref (Array Act)) (midSyms : Bool := false) :
     IO (UInt32 × Option String) := do
   let say (s : String) : IO Unit := acts.modify (·.push (.err s))
   let wfile (p : System.FilePath) (c : String) : IO Unit := acts.modify (·.push (.file p c))
@@ -634,10 +645,12 @@ def runCore (input output : String) (o : Opts) (src : String)
             covered, typed })
     | _, _ => none
   -- `--midval-opt` (#1119): the compiled `g`'s verdict through the validator, or why none applies
+  -- (the hoisting mode: `g`'s own verdict, `midvalSymsVerdict`)
   let midRes : Option (Except String FVTest.Backend.FnVerdict.Verdict) := mid.map fun (n, _) =>
     let why (p : List (String × String)) := p.lookup n
     match facts.lookup n with
-    | some x => FVTest.Backend.FnVerdict.midvalVerdict x
+    | some x => if midSyms then FVTest.Backend.FnVerdict.midvalSymsVerdict x
+      else FVTest.Backend.FnVerdict.midvalVerdict x
     | none =>
       if let some r := why fa.unsupported then .error s!"the optimised function is not compiled ({r})"
       else if let some (_, _, r) := skipped.find? (·.1 == n) then
@@ -801,10 +814,12 @@ def runCore (input output : String) (o : Opts) (src : String)
             (unwindCheckFailure? f rec? fa? (tc := true)).isNone then
           .error "try_call with float values: the exceptional-edge conditions hold on the typed lowering (unwCheckTC, loweringUTC_of_check), no unwinding theorem covers typed try_calls yet"
         else .error why
-    -- through the validator: the unwinding theorem through it, or `f` is compiled (#1119)
+    -- through the validator: the unwinding theorem through it, or `f` is compiled (#1119); the
+    -- hoisting mode: `g`'s own unwinding theorem (about the optimised function, as its verdict)
     let isMid := mid.any (·.1 == name)
     let unw : Except String String := match unw0 with
-      | .ok _ => if isMid then .ok (FVTest.Backend.FnVerdict.unwindMidThm legal (cpOn name) passT)
+      | .ok _ => if isMid && !midSyms then
+          .ok (FVTest.Backend.FnVerdict.unwindMidThm legal (cpOn name) passT)
         else unw0
       | .error why => .error why
     if isMid then
@@ -833,15 +848,19 @@ theorem outScopeB_of_le {f g : Clif.Function} (h : outScopeLeB f g = true)
   cases hp : (P.func? e.2.name).isSome <;> simp_all
 
 /-- The decision of `--midval-opt` for the source text `src` and the optimised text `srcOpt`:
-the function's name and `g` when `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert hints` holds
-for the certificate and branch-condition hints `Opt.MidVal.emitC` gives, and `Link.midPairB` holds
-on the pair as `link-check` re-decides it on the bundle (each function's input after constant-phi
-removal and the `i128` legalisation, `FnInput.cp`/`FnInput.func`: the program its binary theorem
-is about), and link-check's `outFits` input condition is no worse for `g` than for `f` after
-constant-phi removal (`outScopeLeB`; otherwise compiling `g` could leave the function out of the
-executable's region where `f` stays in it, #1152), else why not (the function's name when there
-is one). -/
-def midvalDecide (src srcOpt : String) : Except (Option String × String) (String × Clif.Function) := do
+the function's name, `g` and `false` when `Opt.MidVal.checkCertC (Opt.ConstPhi.run f) g cert
+hints` holds for the certificate and branch-condition hints `Opt.MidVal.emitC` gives, and
+`Link.midPairB` holds on the pair as `link-check` re-decides it on the bundle (each function's
+input after constant-phi removal and the `i128` legalisation, `FnInput.cp`/`FnInput.func`: the
+program its binary theorem is about); `true` instead when one of those fails but each of the two
+pairs the tools re-decide, link-check's (`FnInput.cp`) and lean-link's (the raw dumps, `f` and `g`),
+passes `Link.midPairB` or the hoisting mode (`Link.hoistCopy`, which `link-check` and `lean-link`
+complete at the executable's symbol table, `Link.midPairSymsB`); in both cases link-check's `outFits` input
+condition must be no worse for `g` than for `f` after constant-phi removal (`outScopeLeB`;
+otherwise compiling `g` could leave the function out of the executable's region where `f` stays
+in it, #1152); else why not (the function's name when there is one). -/
+def midvalDecide (src srcOpt : String) :
+    Except (Option String × String) (String × Clif.Function × Bool) := do
   let fs := (Clif.parseFile src).funcs
   let some p := fs.head? | throw (none, "the input has no function")
   if fs.length != 1 then throw (none, s!"the input has {fs.length} functions (only single-function files)")
@@ -856,35 +875,49 @@ def midvalDecide (src srcOpt : String) : Except (Option String × String) (Strin
     | .ok g => pure g
     | .error _ => throw (some p.name, "the optimised function does not parse")
   let f' := Opt.ConstPhi.run f
-  let (cert, hints) ← match Opt.MidVal.emitC f' g with
-    | .ok c => pure c
-    | .error e => throw (some p.name, s!"Opt.MidVal.check rejects: {e}")
-  if !Opt.MidVal.checkCertC f' g cert hints then
-    throw (some p.name, "Opt.MidVal.checkCertC rejects the emitted certificate")
+  -- #1119 layer 2: the pair `link-check` decides for the binary theorem (`…_mid`)
+  let fi0 : E2E.LinkCheck.FnInput := { clif := src, ra := "" }
+  let fi1 : E2E.LinkCheck.FnInput := { clif := srcOpt, ra := "", k }
+  let reg : Except String Unit := match Opt.MidVal.emitC f' g with
+    | .error e => .error s!"Opt.MidVal.check rejects: {e}"
+    | .ok (cert, hints) =>
+      if !Opt.MidVal.checkCertC f' g cert hints then
+        .error "Opt.MidVal.checkCertC rejects the emitted certificate"
+      else if !Link.midPairB fi0.cp.func fi1.cp.func then
+        .error "Link.midPairB rejects the pair after constant-phi removal and the i128 legalisation (link-check's pair)"
+      else .ok ()
+  -- the hoisting mode (`Link.hoistCopy`; `…_midS`, `…MidS` at link level) on both pairs the tools
+  -- re-decide: link-check's (after the `i128` legalisation, `FnInput.cp`) and lean-link's (the raw
+  -- dumps, `FnInput.src` = `f`, `g`): each must pass `midPairB` or `hoistCopy`, else `lean-link
+  -- --verified` would leave the function out of the region where `f` stays in it
+  let pairOk := fun (a b : Clif.Function) => Link.midPairB a b || (Link.hoistCopy a b).isSome
+  let hoisted ← match reg with
+    | .ok () => pure false
+    | .error why =>
+      if pairOk fi0.cp.func fi1.cp.func && pairOk f g then pure true
+      else throw (some p.name, why)
   -- link-check's `outFits` input condition: never trade a function in the region for one out
   -- of it (#1152: a fold can drop `g`'s only call of a stack-argument extern it still declares)
   if !outScopeLeB f' g then
     throw (some p.name, "g fails link-check's outFits input condition for an extern f meets it for (outScopeLeB: a stack-argument extern g declares but no longer calls, #1152)")
-  -- #1119 layer 2: the pair `link-check` decides for the binary theorem (`…_mid`), and `g`'s
-  -- printed CLIF parsing back to it (`Front.mkInput`: else `link-check` cannot assemble the bundle)
-  let fi0 : E2E.LinkCheck.FnInput := { clif := src, ra := "" }
-  let fi1 : E2E.LinkCheck.FnInput := { clif := srcOpt, ra := "", k }
-  if !Link.midPairB fi0.cp.func fi1.cp.func then
-    throw (some p.name, "Link.midPairB rejects the pair after constant-phi removal and the i128 legalisation (link-check's pair)")
+  -- `g`'s printed CLIF parsing back to it (`Front.mkInput`: else `link-check` cannot assemble the
+  -- bundle)
   let fiP : E2E.LinkCheck.FnInput := { clif := Link.clifHeader srcOpt ++ g.print, ra := "" }
   if !decide (fiP.src = g) then
     throw (some p.name, "the optimised function's printed CLIF does not parse back to it (link-check's bundle, Front.mkInput)")
-  pure (p.name, g)
+  pure (p.name, g, hoisted)
 
 /-- `lean-backend`: one compilation (`runCore`), its effects replayed. With `--midval-opt` (#1119)
 in the default mode: the optimised function `g` when `checkCertC` holds and its theorem composes
-with the validator, else the source function `f`, compiled exactly as without the option; an
+with the validator, or when the hoisting mode accepts the pair and `g` is verified (`validated at
+link level`), else the source function `f`, compiled exactly as without the option; an
 info line `midval: …` says which and why. -/
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
-  let once (mid : Option (String × Clif.Function)) : IO (UInt32 × Option String × Array Act) := do
+  let once (mid : Option (String × Clif.Function)) (midSyms : Bool := false) :
+      IO (UInt32 × Option String × Array Act) := do
     let acts ← IO.mkRef #[]
-    let (rc, why) ← runCore input output o src mid acts
+    let (rc, why) ← runCore input output o src mid acts midSyms
     pure (rc, why, ← acts.get)
   let replay (acts : Array Act) : IO Unit := acts.forM Act.run
   let some optPath := o.midvalOpt | do
@@ -903,12 +936,15 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     return ← plain none "not attempted (only in the default mode: dead cleanup, no --opt, --stock-config, --settings or --pipeline-t)"
   match midvalDecide src (← IO.FS.readFile optPath) with
   | .error (n, why) => plain n s!"rejected ({why})"
-  | .ok (n, g) =>
-    let (rc, why, acts) ← once (some (n, g))
+  | .ok (n, g, hoisted) =>
+    let (rc, why, acts) ← once (some (n, g)) hoisted
     match rc, why with
     | 0, none =>
       replay acts
-      note (some n) s!"validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump {optPath}"
+      if hoisted then
+        note (some n) s!"validated at link level (Link.hoistCopy decided: the hoisting mode of Opt.MidVal; the theorem named here is about the optimised function; the claim about the source function is made only by link-check and lean-link, which decide the mode's premise, the global values of the compared copy resolving at the executable's symbol table), compiled from the optimised dump {optPath}"
+      else
+        note (some n) s!"validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump {optPath}"
       return 0
     | _, some why => plain (some n) s!"validated, not composed ({why})"
     | rc, none => plain (some n) s!"validated, not composed (lean-backend exits with {rc} on the optimised function)"

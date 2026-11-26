@@ -20,6 +20,7 @@ import FV.E2E.StaticShare
 import FV.Front.BundleFast
 import FV.E2E.ReturnPinCheckIdx
 import FV.Link.MidPair
+import FV.Link.MidPairSyms
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -82,8 +83,11 @@ structure PruneRun where
 
 /-- The checks of the checker `c` on its results, all of them (`staticChks…` from `c.stat`, the
 link checks, the global checks), with `--prune` (`prune`) repeated after dropping the failing
-functions and their callers until none fails. -/
-def pruneRun (I0 : LinkInput) (dataSyms : List String) (c : Cand) (prune : Bool) : IO PruneRun := do
+functions and their callers until none fails. `hoist` (#1119): the functions validated only by
+the hoisting mode, with the copy of their unoptimised dump it compared (`Link.hoistCopy`), whose
+global values must resolve at each round's symbol table. -/
+def pruneRun (I0 : LinkInput) (dataSyms : List String) (c : Cand) (prune : Bool)
+    (hoist : Std.HashMap String Clif.Function) : IO PruneRun := do
   let typed := c.checker != .integer
   let typedS := c.checker == .typedStock
   let mut keep := c.R0
@@ -102,6 +106,14 @@ def pruneRun (I0 : LinkInput) (dataSyms : List String) (c : Cand) (prune : Bool)
     let syms := names.filterMap fun n => addrs0[n]?.map (n, ·)
     let D := (keep.map fun e => frameDrop (getOk e.2).af).foldl max 0
     I := { I0 with syms, D }
+    -- #1119: a function validated only by the hoisting mode needs its copy's global values to
+    -- resolve at this round's symbol table (`Link.midPairSymsB`; else it is dropped with its
+    -- callers, as any failing function)
+    let symsM := assocMap syms
+    let hoistChk := fun (g : Clif.Function) => match hoist[g.name]? with
+      | some cp => [("Opt.MidVal.globalsResolve (the hoisting mode's copy of the unoptimised function, at the image's symbol table)",
+          Opt.MidVal.globalsResolve cp (fun n => symsM[n]?))]
+      | none => []
     let P := progOf keep
     let T := tabOf keep
     let C := LinkCtx.of I P T
@@ -124,7 +136,7 @@ def pruneRun (I0 : LinkInput) (dataSyms : List String) (c : Cand) (prune : Bool)
     let lc := fun (e : Clif.Function × Except String Art) =>
       if typedS then linkChksWithTSI C X P e.1 e.2
       else if typed then linkChksWithTI C X P e.1 e.2 else linkChksWithI C X P e.1 e.2 ++ [("returnPins", returnPinsIdx returnPins returnPinsY e.1)]
-    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
+    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1 ++ hoistChk e.1)) keep)).filterMap fun (e, b) =>
       match b with
       | [] => none
       | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))
@@ -164,7 +176,11 @@ def main (args : List String) : IO UInt32 := do
   -- from the source dumps). Each pair is re-decided here (`Link.midPairB`), nothing cargo fv or
   -- lean-backend said is trusted; a failing pair fails that function's checks (`--prune` drops
   -- it and its callers), and the theorem is named through the validator (`_mid`) only when
-  -- `Link.midValidatedB` holds on the (pruned) program.
+  -- `Link.midValidatedB` holds on the (pruned) program. A pair `midPairB` rejects but the
+  -- hoisting mode accepts (`Link.hoistCopy`: Cranelift hoisted a `symbol_value` out of a loop)
+  -- passes when its copy's global values resolve at the image's symbol table (`pruneRun`'s
+  -- `hoist`), and then the theorem is the `_midS` one, whose premise `Link.midValidatedSymsB`
+  -- at that table decides.
   let b0 ← try Front.readSrcBundle dir
     catch e => do IO.eprintln s!"link-check: {exe}: {e}"; return 1
   let src0 : Option (Std.HashMap String Clif.Function) ← match b0 with
@@ -176,12 +192,16 @@ def main (args : List String) : IO UInt32 := do
   if src0.isSome && (o.lean.isSome || o.inputOnly.isSome) then
     IO.eprintln s!"link-check: {exe}: --lean / --input-only: not for a bundle with functions compiled from optimised dumps (#1119)"
     return 1
-  let midStat : Std.HashMap String Bool := match src0 with
-    | none => {}
-    | some m => (Link.parMap (fun (fi : FnInput) =>
+  let midRes : List (String × Bool × Option Clif.Function) := match src0 with
+    | none => []
+    | some m => Link.parMap (fun (fi : FnInput) =>
         (fi.func.name, match m[fi.func.name]? with
-          | some f0 => Link.midPairB f0 fi.func
-          | none => false)) fis.toList).foldl (fun s p => s.insert p.1 p.2) {}
+          | some f0 => if Link.midPairB f0 fi.func then (true, none) else (false, Link.hoistCopy f0 fi.func)
+          | none => (false, none))) fis.toList
+  let midStat : Std.HashMap String Bool :=
+    midRes.foldl (fun s p => s.insert p.1 (p.2.1 || p.2.2.isSome)) {}
+  let hoistM : Std.HashMap String Clif.Function :=
+    midRes.foldl (fun s p => match p.2.2 with | some c => s.insert p.1 c | none => s) {}
   -- the executable and the data objects the functions reach (renamed to the linked symbols)
   let file ← IO.FS.readBinFile exe
   let dataLines : List String := A.data.map Clif.dataObject
@@ -314,7 +334,7 @@ def main (args : List String) : IO UInt32 := do
     (bad (staticChksWithT cleanupStage { I0 with D := max D0 (frameDrop (getOk r).af) }
       fi.func r)).isEmpty
   -- #1119: the mid-end validator's pair is one more check of each function
-  let midChk := "Link.midPairB (the compiled function validated against the unoptimised one)"
+  let midChk := "Link.midPairB or Link.hoistCopy (the compiled function validated against the unoptimised one; the hoisting mode's copy checked at the image's symbol table below)"
   let withMid := fun (c : Cand) => if src0.isNone then c else
     { c with stat := c.stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)]) }
   -- the candidate's results are computed only when it is run; its bound: the functions left when
@@ -340,7 +360,7 @@ def main (args : List String) : IO UInt32 := do
         s!"  typed checks: {fixedS} of the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's){if nRe == 0 then "" else s!", {nRe} function(s) on the typed route with the same bytes (#1040)"}{if bytesS then "" else "; the executable does not hold those results' code (artB), so this checker is not a candidate"}")
     | none => (none, "")
   if src0.isSome then
-    IO.println s!"  mid-end validator: {nSrc} function(s) compiled from Cranelift's optimised dumps (src_dump: the unoptimised one); Link.midPairB fails for {(midStat.toList.filter (!·.2)).length}"
+    IO.println s!"  mid-end validator: {nSrc} function(s) compiled from Cranelift's optimised dumps (src_dump: the unoptimised one); the pair fails for {(midStat.toList.filter (!·.2)).length} (Link.midPairB and the hoisting mode's Link.hoistCopy reject it); Link.hoistCopy accepts {hoistM.size} that Link.midPairB rejects (their copy's global values checked at the image's symbol table)"
   for n in [noteS, noteT] do
     if !n.isEmpty then IO.println n
   -- #1164: the checker is the candidate whose `--prune` program is the largest (ties: typed Stock,
@@ -355,7 +375,7 @@ def main (args : List String) : IO UInt32 := do
   let nF := I0.funcs.length
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
   let (cand, run) ← match entries with
-    | [(_, _, t)] => do pure (t.get, ← pruneRun I0 dataSyms t.get o.prune)
+    | [(_, _, t)] => do pure (t.get, ← pruneRun I0 dataSyms t.get o.prune hoistM)
     | _ => do
       IO.println s!"  checker candidates (#1164: the one whose --prune program is the largest; ties: typed Stock, typed, integer):"
       let ranked := (entries.zipIdx.map fun ((ch, b, t), i) =>
@@ -378,7 +398,7 @@ def main (args : List String) : IO UInt32 := do
         if skip' then
           IO.println s!"    {ch.label}: not run (its validators leave at most {b'} of {nF} functions)"
           continue
-        let run ← pruneRun I0 dataSyms c true
+        let run ← pruneRun I0 dataSyms c true hoistM
         IO.println s!"    {ch.label}: {run.keep.length} of {nF} functions pass ({(c.stat.filter fun e => !(bad e.2).isEmpty).length} fail the validators)"
         let better := match best with
           | some (k, j, _, _) => run.keep.length > k || (run.keep.length == k && i < j)
@@ -386,7 +406,7 @@ def main (args : List String) : IO UInt32 := do
         if better then best := some (run.keep.length, i, c, run)
       match best with
       | some (_, _, c, run) => pure (c, run)
-      | none => do pure (cI, ← pruneRun I0 dataSyms cI o.prune)
+      | none => do pure (cI, ← pruneRun I0 dataSyms cI o.prune hoistM)
   let typed := cand.checker != .integer
   let typedS := cand.checker == .typedStock
   let R0 := cand.R0
@@ -594,13 +614,24 @@ def main (args : List String) : IO UInt32 := do
   let checker : FVTest.E2E.BinVerdict.Checker := cand.checker
   -- #1119: with source dumps, the theorem through the validator (`…_mid`), about the program of
   -- the unoptimised dumps; its premise `Opt.MidVal.ValidatedC P0.funcs (prog I).funcs` decided
-  -- here on the (pruned) program (`Link.midValidatedB_sound`)
+  -- here on the (pruned) program (`Link.midValidatedB_sound`). When a function of it is validated
+  -- only by the hoisting mode, the `…_midS` theorem: its premise `Opt.FunsSimMUAt (fun n =>
+  -- I.syms.lookup n) P0.funcs (prog I).funcs` decided at the image's symbol table
+  -- (`Link.midValidatedSymsB_sound`)
+  let midS := Pk.funcs.any fun g => hoistM.contains g.name
   let midOk : Bool := match src0 with
     | none => true
-    | some m => Link.midValidatedB (Pk.funcs.map fun g => (m[g.name]?).getD default) Pk.funcs
+    | some m =>
+      let P0 := Pk.funcs.map fun g => (m[g.name]?).getD default
+      if midS then Link.midValidatedSymsB (fun n => I.syms.lookup n) P0 Pk.funcs
+      else Link.midValidatedB P0 Pk.funcs
   if src0.isSome then
-    IO.println s!"  mid-end validator: midValidatedB {if midOk then "holds" else "FAILS"} on the (pruned) program ({Pk.funcs.length} functions)"
-    IO.println s!"  {FVTest.E2E.BinVerdict.binVerdictMid checker (!bad.isEmpty) ok binOk codeOk gotOk midOk}"
+    if midS then
+      IO.println s!"  mid-end validator: midValidatedSymsB {if midOk then "holds" else "FAILS"} at the image's symbol table on the (pruned) program ({Pk.funcs.length} functions, {(Pk.funcs.filter fun g => hoistM.contains g.name).length} validated by the hoisting mode)"
+      IO.println s!"  {FVTest.E2E.BinVerdict.binVerdictMidS checker (!bad.isEmpty) ok binOk codeOk gotOk midOk}"
+    else
+      IO.println s!"  mid-end validator: midValidatedB {if midOk then "holds" else "FAILS"} on the (pruned) program ({Pk.funcs.length} functions)"
+      IO.println s!"  {FVTest.E2E.BinVerdict.binVerdictMid checker (!bad.isEmpty) ok binOk codeOk gotOk midOk}"
   else
     IO.println s!"  {FVTest.E2E.BinVerdict.binVerdict checker (!bad.isEmpty) ok binOk codeOk gotOk}"
   -- no caller: no function declares it, and no indirect call can enter it (`edgeB`)

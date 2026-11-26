@@ -1,0 +1,173 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC8proptest12HcH766IvbJwx
+function u0:2297(i64, i64) -> i64 system_v {
+; symbol _RNxC8proptest12HcH766IvbJwx
+; instance Instance { def: Item(DefId(1:13622 ~ core[7b1c]::fmt::builders::{impl#7}::entries)), args: ['{erased}, '{erased}, &'{erased} test_runner::failure_persistence::PersistedSeed, std::collections::btree_set::Iter<'{erased}, test_runner::failure_persistence::PersistedSeed>] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut core::fmt::DebugSet<'_, '_>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: std::collections::btree_set::Iter<'_, test_runner::failure_persistence::PersistedSeed>, layout: Layout { size: Size(72 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4358351322344313128 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(72 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }], ret: ArgAbi { layout: TyAndLayout { ty: &mut core::fmt::DebugSet<'_, '_>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    &'{erased} mut core::fmt::DebugSet<'{erased}, '{erased}>    8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NonNull | NoUndef, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut core::fmt::DebugSet<'{erased}, '{erased}>
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut core::fmt::DebugSet<'{erased}, '{erased}>
+; arg   _2      = v1       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(72 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } std::collections::btree_set::Iter<'{erased}, test_runner::failure_persistence::PersistedSeed>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut core::fmt::DebugSet<'{erased}, '{erased}>    8b 8                var=2
+; reuse _2    std::collections::btree_set::Iter<'{erased}, test_runner::failure_persistence::PersistedSeed>   72b 8                storage=v1
+; stack _3    std::collections::btree_set::Iter<'{erased}, test_runner::failure_persistence::PersistedSeed>   72b 8                storage=ss0
+; stack _4    std::collections::btree_set::Iter<'{erased}, test_runner::failure_persistence::PersistedSeed>   72b 8                storage=ss1
+; stack _5    core::option::Option<&'{erased} test_runner::failure_persistence::PersistedSeed>    8b 8                storage=ss2
+; ssa   _6    &'{erased} mut std::collections::btree_set::Iter<'{erased}, test_runner::failure_persistence::PersistedSeed>    8b 8                var=3
+; ssa   _7    isize                             8b 8                var=4
+; stack _8    &'{erased} test_runner::failure_persistence::PersistedSeed    8b 8                storage=ss3
+; ssa   _9    &'{erased} mut core::fmt::DebugSet<'{erased}, '{erased}>    8b 8                var=5
+; ssa   _10   &'{erased} dyn [Binder { value: Trait(core::fmt::Debug), bound_vars: [] }] + '{erased}   16b 8                var=(6, 7)
+; ssa   _11   &'{erased} &'{erased} test_runner::failure_persistence::PersistedSeed    8b 8                var=8
+
+    ss0 = explicit_slot 72, align = 8
+    ss1 = explicit_slot 72, align = 8
+    ss2 = explicit_slot 8, align = 8
+    ss3 = explicit_slot 8, align = 8
+    gv0 = symbol colocated userextname2 ; vtable
+    sig0 = (i64 sret, i64) system_v
+    sig1 = (i64, i64, i64) -> i64 system_v
+    sig2 = (i64) -> i64 system_v
+    sig3 = (i64, i64, i64) -> i64 system_v
+    sig4 = (i64) system_v
+    fn0 = colocated u0:2691 sig0 ; Instance { def: Item(DefId(1:10943 ~ core[7b1c]::iter::traits::collect::{impl#0}::into_iter)), args: [std::collections::btree_set::Iter<'{erased}, test_runner::failure_persistence::PersistedSeed>] }
+    fn1 = %Memcpy sig1
+    fn2 = colocated u0:1890 sig2 ; Instance { def: Item(DefId(3:4110 ~ alloc[e0b3]::collections::btree::set::{impl#32}::next)), args: ['{erased}, test_runner::failure_persistence::PersistedSeed] }
+    fn3 = u0:4087 sig3 ; Instance { def: Item(DefId(1:13619 ~ core[7b1c]::fmt::builders::{impl#7}::entry)), args: ['{erased}, '{erased}] }
+    fn4 = u0:3948 sig4 ; "_Unwind_Resume"
+
+block0(v0: i64, v1: i64):
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} mut core::fmt::DebugSet<'{erased}, '{erased}> <- ByVal(v0): &'{erased} mut core::fmt::DebugSet<'{erased}, '{erased}>
+    jump block1
+
+block1:
+    v2 = stack_addr.i64 ss0
+    call fn0(v2, v1)
+    jump block2
+
+block2:
+    v4 = stack_addr.i64 ss1
+    v5 = iconst.i64 72
+    v6 = call fn1(v4, v2, v5)  ; v5 = 72
+; 
+; goto
+    v10 = stack_addr.i64 ss2
+    v16 = iconst.i64 1
+    v13 = iconst.i64 0
+    v18 = iconst.i64 0xffff_ffff
+    v23 = stack_addr.i64 ss3
+    v25 = symbol_value.i64 gv0
+; write_cvalue: VarPair(_10, var6, var7): &'{erased} dyn [Binder { value: Trait(core::fmt::Debug), bound_vars: [] }] + '{erased} <- ByValPair(v24, v25): &'{erased} dyn [Binder { value: Trait(core::fmt::Debug), bound_vars: [] }] + '{erased}
+; 
+; _9 = core::fmt::DebugSet::<'_, '_>::entry(copy _1, move _10)
+    jump block3
+
+block3:
+    try_call fn2(v4), sig2, block14(ret0), [ tag0: block15(exn0) ]
+
+block15(v8: i64) cold:
+    jump block12(v8)
+
+block14(v9: i64):
+    store notrap v9, v10
+    jump block4
+
+block4:
+    v43 = iconst.i64 1
+    v44 = iconst.i64 0
+    v45 = select v9, v43, v44  ; v43 = 1, v44 = 0
+    v46 = iconst.i64 0xffff_ffff
+    v47 = icmp ugt v45, v46  ; v46 = 0xffff_ffff
+    brif v47, block5, block16
+
+block16:
+    v48 = iconst.i64 0
+    v49 = icmp.i64 ne v9, v48  ; v48 = 0
+    v41 = uextend.i32 v49
+    br_table v41, block5, [block7, block6]
+
+block5 cold:
+    trap user1
+
+block6:
+    store.i64 notrap v9, v23
+; _11 = &_8
+    try_call fn3(v0, v23, v25), sig3, block17(ret0), [ tag0: block18(exn0) ]
+
+block18(v27: i64) cold:
+    jump block11
+
+block17(v28: i64):
+    jump block8
+
+block7:
+    jump block10
+
+block8:
+    jump block9
+
+block9:
+    jump block3
+
+block10:
+    return v0
+
+block11 cold:
+    jump block12(v27)
+
+block12(v33: i64) cold:
+    jump block13
+
+block13 cold:
+; lib_call _Unwind_Resume
+    call fn4(v33)
+    trap user1
+}
+
+; clifv-extnames 1
+; userextname0 = u0:2691
+; userextname1 = u0:1890
+; userextname2 = u1:1688
+; userextname3 = u0:4087
+; userextname4 = u0:3948
+; decl u0:1890 func local "_RNxC8proptest12H9s0FGcUVvY7"
+; decl u0:2297 func local "_RNxC8proptest12HcH766IvbJwx"
+; decl u0:2691 func local "_RNxC8proptest12HebaqZHnZAnZ"
+; decl u0:3948 func import "_Unwind_Resume"
+; decl u0:4087 func import "_RNvMs5_NtNtCsazjiGSRkgVH_4core3fmt8buildersNtB5_8DebugSet5entry"
+; decl u1:1688 data local ro notls ".Ldata698"
+; libcall %Memcpy "memcpy"
+; end clifv-extnames

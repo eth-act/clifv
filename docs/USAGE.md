@@ -657,7 +657,14 @@ unwinding theorem for `g`) the function is compiled from its `.unopt.clif` exact
 the validator: the same object bytes and the same verdict. A function cg_clif did not optimise, and
 every function of a build whose `opt_level` is `none` (the default debug profiles), is compiled
 as with `--no-midval`. `fv-report.json` gives each such function `midval: {outcome, reason,
-opt_level}` and `counts.midval_validated`; `cargo fv report` lists the outcomes by reason.
+opt_level}` and `counts.midval_validated`; `cargo fv report` lists the outcomes by reason. The
+outcome `validated-link` (counter `counts.midval_validated_link`) is a function `checkCertC`
+rejects but the validator's hoisting mode accepts (`lean-backend` line `midval: validated at link
+level (…)`; Cranelift hoisted a `symbol_value`, `tls_value` or `func_addr` out of a loop): it is
+compiled from the optimised dump too and bundled with its `src_dump`, but its per-function
+theorem is `g`'s own, about the optimised function (the report marks it `about the compiled
+function`); only `link-check`'s `…_midS` and `lean-link`'s `…MidS` theorems, where named, are
+about the unoptimised function, at the executable's symbol table (below).
 
 **Executables** (#1119 layer 2): the binary check stays. `cargo fv` writes, for a function
 compiled from its optimised dump, its `.unopt.clif` as `src_dump` into the bundle; `link-check`
@@ -763,8 +770,8 @@ same as stock's on all 9 both ways; validated 113,187 → 114,001 (93.0 % → 93
 num-traits unchanged); byte-identical to stock 93,799 → 94,442 of 121,767 (77.0 % → 77.6 %). The
 validator now removes those parameters also where `Opt.check` rejects the function because of a
 `call_indirect` (its well-formedness check `wfCheck` reads the signature declarations). A
-`symbol_value` that Cranelift hoists out of a loop stays rejected (`placement:symbol_value`):
-whether it is sound depends on the executable's symbol table, which `lean-backend` does not see.
+`symbol_value` that Cranelift hoists out of a loop stayed rejected (`placement:symbol_value`)
+until the hoisting mode at link level below.
 
 Swapped unit comparisons, parameters kept after the folds and family 5 (`x + (-y)`, `(-x) * k`,
 `ireduce` of `ireduce`; docs/contracts/midval.md; measured 2026-11-25 on clifv-remote, main
@@ -775,6 +782,18 @@ unchanged); byte-identical to stock 94,442 → 95,064 of 121,767 (77.6 % → 78.
 wall summed 4,676 → 4,498 s. The validator now normalises `icmp ult 0, x` as the unit comparison
 `condPrep` rebuilds on `g`, accepts Cranelift's code that keeps a block parameter left with one
 incoming value only after a folded branch, and rewrites the three family-5 forms as Cranelift does.
+
+The hoisting mode at link level (`symbol_value`, `tls_value` or `func_addr` hoisted out of a
+loop: outcome `validated-link`; docs/contracts/midval.md; measured 2026-11-26 on clifv-remote,
+main b525cc3db's tools against this one's, the same 9 crates, in plain mode and with `--lean-link
+--verified`): binary check 48 of 48 both ways, 121,767 verified both ways, left out 0 → 0 (plain)
+and 1 → 1, test outcomes the same as stock's on all 9 both ways; validated 115,246 → 116,352
+(94.6 % → 95.6 %; 1,106 of them `validated-link`; up on 8 crates, num-traits unchanged);
+byte-identical to stock 95,064 → 95,137 of 121,767 (78.1 % both); `cargo fv test` wall summed
+3,541 → 3,517 s (plain) and 4,065 → 4,118 s. Of the 48 executables, link-check names a `…_midS`
+theorem for 29 (plain) and 35 (`--lean-link --verified`); lean-link names `…MidS` source theorems
+for 29, `…Mid` for 13 and none for 6 (as before); no executable lost its theorem about the
+unoptimised dumps.
 
 ### The executable compiler (`--lean-link`, L1)
 

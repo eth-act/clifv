@@ -742,6 +742,8 @@ pub(crate) fn verdict_of(line: &str) -> Option<(Verdict, bool)> {
 
 /// lean-backend's `--midval-opt` line (#1119, `FVTest/Backend/Main.lean`), as (outcome, reason):
 /// `…: midval: validated (…), compiled from the optimised dump …` → `validated`;
+/// `…: midval: validated at link level (…), compiled from the optimised dump …` →
+/// `validated-link` (the hoisting mode: its premise is decided by link-check and lean-link);
 /// `…: midval: rejected (<why>); compiled from the .unopt.clif as without --midval-opt` →
 /// `rejected`, likewise `validated, not composed (<why>)` → `not composed` and
 /// `not attempted (<why>)` → `not attempted`.
@@ -749,6 +751,9 @@ pub(crate) fn midval_of(line: &str) -> Option<(String, Option<String>)> {
     let rest = line.split_once(": midval: ")?.1;
     if rest.starts_with("validated (") {
         return Some(("validated".into(), None));
+    }
+    if rest.starts_with("validated at link level (") {
+        return Some(("validated-link".into(), None));
     }
     let rest = rest.strip_suffix("; compiled from the .unopt.clif as without --midval-opt").unwrap_or(rest);
     let (outcome, why) = rest.split_once(" (").unwrap_or((rest, ""));
@@ -1108,7 +1113,10 @@ fn process_in(
             Compiled::Fallback(why) => report(Status::Fallback, Some(why), false, None, false, None),
             Compiled::TimedOut => return Err(CguFail::Fatal(time_limit_error(cfg.fn_time_limit, sym, &d.instance))),
             Compiled::Ok { obj: o, unverified, normal_returns, theorem, clif, midval } => {
-                let validated = midval.as_ref().is_some_and(|(o, _)| o == "validated");
+                // `validated-link` (#1119, the hoisting mode): compiled from the optimised dump
+                // as well, with its unoptimised one in the bundle (link-check and lean-link
+                // decide the mode's premise at the executable's symbol table)
+                let validated = midval.as_ref().is_some_and(|(o, _)| o == "validated" || o == "validated-link");
                 let from_unopt = clif.ends_with(format!("{}.unopt.clif", d.stem)) && !validated;
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
@@ -1495,6 +1503,8 @@ mod tests {
     fn midval_lines() {
         let v = midval_of("lean-backend: x.unopt.clif: %f: midval: validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump x.opt.clif");
         assert_eq!(v, Some(("validated".into(), None)));
+        let h = midval_of("lean-backend: x.unopt.clif: %f: midval: validated at link level (Link.hoistCopy decided: the hoisting mode of Opt.MidVal; the theorem named here is about the optimised function; the claim about the source function is made only by link-check and lean-link, which decide the mode's premise, the global values of the compared copy resolving at the executable's symbol table), compiled from the optimised dump x.opt.clif");
+        assert_eq!(h, Some(("validated-link".into(), None)));
         let r = midval_of("lean-backend: x.unopt.clif: %f: midval: rejected (Opt.MidVal.check rejects: rewrite:operand (iadd)); compiled from the .unopt.clif as without --midval-opt");
         assert_eq!(r, Some(("rejected".into(), Some("Opt.MidVal.check rejects: rewrite:operand (iadd)".into()))));
         let n = midval_of("lean-backend: x.unopt.clif: %f: midval: validated, not composed (the compiled g is unverified (x: unsupported: y)); compiled from the .unopt.clif as without --midval-opt");

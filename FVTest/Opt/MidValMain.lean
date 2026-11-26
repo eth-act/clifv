@@ -1,6 +1,6 @@
 import FV.Front.Raw
 import FV.Opt.ConstPhi
-import FV.Opt.MidValCond
+import FV.Opt.MidValSyms
 
 /-! # `lake exe midval-check DIR...`: the mid-end validator on cg_clif's dump pairs (#1119)
 
@@ -20,7 +20,10 @@ single-node algebraic rules, the typed rules with `f`'s atom types, then family 
 affine constants, constants on the right, narrowed `ireduce`); with `--norm-std`, the
 untyped `Norm.std`; with `--norm-id`, stage 1's identity; with `--norm-const`, constant
 evaluation alone. With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by
-`checkCertSyms`, whose theorem assumes the function's global values resolve). With `--cond`,
+`checkCertSyms`, whose theorem assumes the function's global values resolve; with `--cond`, by
+`Opt.MidVal.symsCopy`, and one more column: `resolves` when the accepted copy's global values
+resolve in the table of the names `g` itself references (`globalsResolve`; every image linking `g`
+defines them), else `unresolved`). With `--cond`,
 family 3 (branch conditions): `Opt.MidVal.checkC`, re-checked by `checkCertC` with the hints
 `emitC` gives (the `hints` column after the re-check: the number of hinted blocks).
 
@@ -65,26 +68,39 @@ def normOf (normId normConst normStd : Bool) (f : Clif.Function) : Opt.MidVal.No
     else (Opt.MidVal.emit f g (nm f) hoist).map fun c => (c, []))
 
 /-- The re-check (`Opt.MidVal.checkCert`, or `checkCertSyms` in the hoisting mode; with hints
-`checkCertC`/`checkCertSymsC`), evaluated inside the call (timing). -/
-@[noinline] def runRecheck (nm : Clif.Function → Opt.MidVal.Norm) (hoist : Bool)
+`checkCertC`/`symsCopy`), evaluated inside the call (timing): the verdict and, in the hoisting
+mode with hints, the copy of `f` accepted against. -/
+@[noinline] def runRecheck (nm : Clif.Function → Opt.MidVal.Norm) (hoist cond : Bool)
     (f g : Clif.Function) (cert : Opt.MidVal.Cert)
-    (h : List (Clif.BlockId × List Opt.MidVal.Wrap)) : IO Bool :=
-  pure (if hoist then Opt.MidVal.checkCertSymsC f g cert h (nm f)
-    else Opt.MidVal.checkCertC f g cert h (nm f))
+    (h : List (Clif.BlockId × List Opt.MidVal.Wrap)) : IO (Bool × Option Clif.Function) :=
+  pure (if hoist && cond then
+      let c := Opt.MidVal.symsCopy f g cert h (nm f)
+      (c.isSome, c)
+    else if hoist then (Opt.MidVal.checkCertSymsC f g cert h (nm f), none)
+    else (Opt.MidVal.checkCertC f g cert h (nm f), none))
+
+/-- The symbol table of the names `g` references (its symbol globals and externs). -/
+def ownSyms (g : Clif.Function) (n : String) : Option Nat :=
+  if g.globals.any (fun p => match p.2 with
+      | .symbol s _ _ | .tlsSymbol s _ _ => s == n
+      | _ => false) || g.externs.any (·.2.name == n) then some 0 else none
 
 /-- `ok`/`MISMATCH`/`-`, the microseconds of the re-check (`f` after constant-phi removal) and,
-with `cond`, the number of hinted blocks. -/
+with `cond`, the number of hinted blocks (in the hoisting mode also `resolves`/`unresolved`). -/
 def recheck (nm : Clif.Function → Opt.MidVal.Norm) (hoist cond : Bool) (f g : Clif.Function)
     (accepted : Bool) : IO String := do
-  let sfx := if cond then "\t0" else ""
+  let sfx := if cond then (if hoist then "\t0\t-" else "\t0") else ""
   if !accepted then return s!"-\t0{sfx}"
   match ← runEmit nm hoist cond f g with
   | .error e => return s!"MISMATCH(emit {e})\t0{sfx}"
   | .ok (cert, h) =>
     let t0 ← IO.monoNanosNow
-    let ok ← runRecheck nm hoist f g cert h
+    let (ok, c) ← runRecheck nm hoist cond f g cert h
     let t1 ← IO.monoNanosNow
-    return s!"{if ok then "ok" else "MISMATCH"}\t{(t1 - t0) / 1000}{if cond then s!"\t{h.length}" else ""}"
+    let res := if hoist && cond then
+        s!"\t{if c.any (Opt.MidVal.globalsResolve · (ownSyms g)) then "resolves" else "unresolved"}"
+      else ""
+    return s!"{if ok then "ok" else "MISMATCH"}\t{(t1 - t0) / 1000}{if cond then s!"\t{h.length}" else ""}{res}"
 
 /-- `--pair F G`: the first function of each plain CLIF file (`Clif.parseFile`; tests). -/
 def pairMode (fp gp : String) : IO UInt32 := do
@@ -113,7 +129,7 @@ def main (args : List String) : IO UInt32 := do
   let hoist := args.contains "--hoist"
   -- `--cond`: family 3, branch conditions (`Opt.MidVal.checkC`, `checkCertC`)
   let cond := args.contains "--cond"
-  let noRc := if cert then (if cond then "\t-\t0\t0" else "\t-\t0") else ""
+  let noRc := if cert then (if cond then (if hoist then "\t-\t0\t0\t-" else "\t-\t0\t0") else "\t-\t0") else ""
   let out ← IO.getStdout
   for dir in args.filter (fun a => !a.startsWith "--") do
     let mut stems : Array String := #[]

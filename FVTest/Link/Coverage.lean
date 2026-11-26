@@ -142,6 +142,12 @@ composition of a `…Cp` source theorem, about the unoptimised dumps. -/
 def midName (n : String) : String :=
   (n.replace "_sourceCp" "_sourceMid").replace "_source_peakCp" "_source_peakMid"
 
+/-- Through the mid-end validator's hoisting mode (#1119, `FV/Link/MidSourceRoutesSyms.lean`): the
+`…MidS` composition of a `…Cp` source theorem, about the unoptimised dumps, its premise decided at
+the route input's symbol table (`Link.midValidatedSymsB`). -/
+def midNameS (n : String) : String :=
+  (n.replace "_sourceCp" "_sourceMidS").replace "_source_peakCp" "_source_peakMidS"
+
 /-- The typed compiler's theorems through the frontend, about cg_clif's program (#1088). -/
 def frontClaim : Claim := ⟨["Front.bundle_correct_rawTCp", "Front.bundle_correct_raw_peakTCp"], []⟩
 
@@ -188,9 +194,14 @@ def legalTBThm : String := "E2E.LegalProgram.legalProg_refinesT"
 
 /-- The typed Stock route's source theorems on a bundle only in `SrcScopeTB` (premise:
 `SrcScopeTB` of the route's input); through the mid-end validator the `…TBMid` ones (premise:
-`Link.midValidatedB`, decided on the route's input before writing). -/
-def sourceTBClaim (scopeTB mid : Bool) : Claim :=
-  if mid then ⟨["Link.SemanticCompilerWith.attemptT_correct_sourceTBMid",
+`Link.midValidatedB`, decided on the route's input before writing), through its hoisting mode
+(`midS`) the `…TBMidS` ones (premise: `Link.midValidatedSymsB` at the route input's symbol
+table). -/
+def sourceTBClaim (scopeTB mid : Bool) (midS : Bool := false) : Claim :=
+  if mid && midS then ⟨["Link.SemanticCompilerWith.attemptT_correct_sourceTBMidS",
+      "Link.SemanticCompilerWith.attemptT_correct_source_peakTBMidS"],
+      [("SrcScopeTB of the route's input", scopeTB)]⟩
+  else if mid then ⟨["Link.SemanticCompilerWith.attemptT_correct_sourceTBMid",
       "Link.SemanticCompilerWith.attemptT_correct_source_peakTBMid"],
       [("SrcScopeTB of the route's input", scopeTB)]⟩
   else ⟨["Link.SemanticCompilerWith.attemptT_correct_sourceTB",
@@ -210,8 +221,9 @@ def routeClaims : List (String × List String) :=
   allRoutes.flatMap (fun r =>
     [(s!"{repr r} coverage", r.claim.thms), (s!"{repr r} written", r.writtenClaim.thms),
       (s!"{repr r} source", r.sourceThms),
-      -- through the mid-end validator (`midCov`)
-      (s!"{repr r} source (mid-end validator)", r.sourceThms.map midName)]) ++
+      -- through the mid-end validator (`midCov`), and its hoisting mode
+      (s!"{repr r} source (mid-end validator)", r.sourceThms.map midName),
+      (s!"{repr r} source (mid-end validator, hoisting mode)", r.sourceThms.map midNameS)]) ++
   ([true, false].flatMap fun c => [ExeKind.plain, .opt, .tail].filterMap fun k =>
     if !c && k == .tail then none else
       some (s!"{exeNs c}{k.name} totality", (Route.totalClaim c k).thms ++
@@ -219,6 +231,7 @@ def routeClaims : List (String × List String) :=
   [("unwinding", (unwindClaim false true).thms), ("unwinding --opt", (unwindClaim true true).thms),
     ("frontend", frontClaim.thms), ("compileExeT totality (not covering)", [exeTTotal]),
     ("lean-ld", [file0LdThm, totalLdInThm]), ("Stock legacy acceptance", [stockLegacyThm]),
-    ("SrcScopeTB", [legalTBThm] ++ (sourceTBClaim true false).thms ++ (sourceTBClaim true true).thms)]
+    ("SrcScopeTB", [legalTBThm] ++ (sourceTBClaim true false).thms ++ (sourceTBClaim true true).thms ++
+      (sourceTBClaim true true true).thms)]
 
 end FVTest.Link.Coverage

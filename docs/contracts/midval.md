@@ -194,6 +194,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | removed block parameters in functions with a `call_indirect` (`checkCertC`, prep requests) | none (`phiPre` with `phiOkM`, inside `foldPre f bs`) | `phiOkM_simU`, `CR.isSimWUM`, `phiPre_simU`, `check_soundC` | 115,674 (94.9 %) | not measured on the pairs | 9 crates: 77.0 % → 77.6 % (93,799 → 94,442 of 121,767) |
 | swapped unit comparisons and parameters kept after the folds (`algStep2`; `checkCertC`, prep requests) | `icmpSwapUnit` in `Norm.alg2`; `foldPreK f bs` as a second copy | `ns_icmpSwapUnit`, `foldPreK_simU`, `check_soundC` | 116,600 (95.7 %) | not measured on the pairs | 9 crates: with the next row |
 | 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: 77.6 % → 78.1 % (94,442 → 95,064 of 121,767) |
+| hoisting mode at link level (`placement:symbol_value`/`func_addr`; `symsCopy`, `Link.hoistCopy`, premise `globalsResolve` at the executable's symbol table) | none (`checkCertSyms` on `f`, `foldPre f bs` or `foldPreK f bs`) | `symsCopy_sound`, `checkCertSymsAt_sound`, `midValidatedSymsB_sound` | 118,210 (97.0 %) | not measured on the pairs | 9 crates: 78.1 % → 78.1 % (95,064 → 95,137 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -708,13 +709,91 @@ counterfactual.)
     | serde_json 1.0.154 | 18,496 → 18,555 | 13,760 → 13,785 | 19,479 |
     | sha3 0.12.0 | 1,317 → 1,318 | 1,275 → 1,276 | 1,565 |
     | **total** | 114,001 → 115,246 | 94,442 → 95,064 | 121,767 |
-* **`symbol_value` placement (`placement:symbol_value`, 1,012 pairs): not decidable per
-  function.** Cranelift's loop-invariant code motion moves a `symbol_value` (pure, no operands)
-  out of a loop into its preheader, so `g` evaluates it on paths where `f` leaves the loop
-  first. `Clif.run` is `stuck` on a symbol the image lacks (`mem.symbols`), so for such pairs
+* **`symbol_value` placement (`placement:symbol_value`, `placement:func_addr`): the hoisting mode
+  at link level** (agents SymHoist1, SymHoist2; plan #1119 issuecomment-7178693360). Cranelift's
+  loop-invariant code motion moves a `symbol_value` (also `tls_value`, `func_addr`: pure, no
+  operands) out of a loop into its preheader, so `g` evaluates it on paths where `f` leaves the
+  loop first. `Clif.run` is `stuck` on a symbol the image lacks (`mem.symbols`), so for such pairs
   `FunSimMU f g`, which holds for every symbol table, is false: `neg_symhoist`
-  (`FVTest/Opt/MidValNegWitness.lean`, `sh_not_sim`, `sh_rejected`). The hoisting mode
-  (`checkCertSymsC`, `check_soundSyms`: `FunSimMUAt syms` under `globalsResolve f syms`) covers
-  them (889 of the 1,012 accepted with `--hoist`, folds off) but needs the image's symbol table,
-  which only `link-check`/`lean-link` hold (`cm.symbols = I.syms.lookup`); the plumbing is a
-  layer-2 change (#1119 design comment).
+  (`FVTest/Opt/MidValNegWitness.lean`, `sh_not_sim`, `sh_rejected`), and `checkCertC` keeps
+  rejecting them. The hoisting mode relates them at every symbol table where the compared copy of
+  `f`'s global values resolve; only `link-check` and `lean-link` hold the executable's table, so
+  the decision is split:
+  - **Per function, no table** (`FV/Opt/MidValSyms.lean`, compiler side): `checkC`/`emitC` with
+    `hoist := true` also try the fold, division and block-parameter prep; `symsCopy f g cert
+    hints` is the hoisting mode of `checkCertC`, the copy of `f` (`f`, `foldPre f bs` or `foldPreK
+    f bs`) that `checkCertSyms` accepts `g` against; `checkCertSymsAt syms …` adds that copy's
+    `globalsResolve` at `syms`. `checkCertSymsC` and `check_soundSyms` are unchanged.
+  - **Soundness** (`FV/Opt/Proof/MidValSymsSim.lean`): `symsCopy_sound : symsCopy f g cert hints =
+    some f' → globalsResolve f' syms = true → FunSimMUAt syms f g`, then `checkCertSymsAt_sound`,
+    `checkedSymsAt_simMUAt` (through `ConstPhi.run`); `runLoopX_refinesSRMUAt_depth`
+    (`FV/Opt/Proof/SemSimMUDepth.lean`, from pointwise `FunsSimMUAt syms`), of which
+    `runLoopX_refinesSRMU_depth` is now a corollary (proof-only change; its text is unchanged).
+  - **The link-level decision** (`FV/Link/MidPairSyms.lean`): `Link.hoistCopy f g` (`emitC
+    (hoist := true)` and `symsCopy` on the pair `Link.midPairB` takes), `Link.midPairSymsB syms f
+    g` (`midPairB f g`, or `hoistCopy f g = some f'` with `globalsResolve f' syms`),
+    `Link.midValidatedSymsB syms fs gs` (pointwise), and `midPairSymsB_sound`,
+    `midValidatedSymsB_sound` (then `Opt.FunsSimMUAt syms fs gs`). Program level:
+    `Link.midProgAt`, `midProgAt_depth`, `midProgAt_sim`, `midEntry_srMUAt`
+    (`FV/Link/MidProgSyms.lean`, `FunsSimMUAt` and `cs.mem.symbols = syms`); per function
+    `E2E.midval_entrySyms`.
+  - **Tools**: when the pair fails `checkCertC`/`midPairB`, `lean-backend --midval-opt` requires
+    `midPairB || (Link.hoistCopy …).isSome` on both pairs the tools re-decide (link-check's, after
+    the `i128` legalisation, and lean-link's raw dumps; with link-check's pair alone, 3
+    crypto-bigint functions whose raw pair the hoisting mode rejects were left out of lean-link's
+    region), compiles `g` under the same conditions and prints `midval:
+    validated at link level (…)`; the theorem it names is `g`'s own, about the optimised function
+    (`FVTest.Backend.FnVerdict.midvalSymsVerdict`): it makes no claim about the unoptimised
+    function, which only `link-check` (`…_midS`) and `lean-link` (`…MidS`) make. `cargo fv`
+    reports the outcome `validated-link` (bundled like `validated`, with `src_dump`; counter
+    `midval_validated_link`). `link-check` takes `midPairB || hoistCopy` as the per-function
+    check, checks the copy's `globalsResolve` at each pruning round's symbol table (a failing
+    function is pruned with its callers), and when the pruned program has a hoisted function
+    decides `Link.midValidatedSymsB (fun n => I.syms.lookup n)` and names the `_midS` siblings of
+    the six `_mid` binary theorems (`FV/E2E/MidValExecProvenSyms.lean`). `lean-link --verified`
+    keeps hoisted pairs in the region, decides `midValidatedSymsB` at the route input's symbol
+    table and names the `…MidS` siblings of the 18 `…Mid` route theorems
+    (`FV/Link/MidSourceRoutesSyms.lean`) and of the 2 `…TBMid` theorems
+    (`FV/Link/MidSourceTBSyms.lean`); when that decision fails it names no theorem about the
+    unoptimised dumps.
+  - **Witnesses**: `FVTest/Link/MidSymsWitness.lean` (a real proptest pair of crypto-bigint and a
+    sha3 pair accepted only through the fold prep: `real_simAt`, `real_midProgAt`; at a table
+    without their names `midPairSymsB` rejects both; `neg_symhoist` rejected by
+    `checkCertSymsAt` at the empty memory's table for every certificate, `sh_symsAt_rejected`),
+    `FVTest/Link/MidSourceSymsWitness.lean` (`Link.MidSourceWitness.correct_sourceMidS_applies`,
+    `E2E.MidSourceTBWitness.correct_sourceTBMidS_applies`); audit `scripts/audit/midsource.lean`.
+  - Measured (2026-11-26, the shared corpus, main b525cc3db's `midval-check --cert --cond`
+    against this one's `--cert --cond --hoist`): 117,082 → 118,210 (+1,128, 96.1 % → 97.0 %), 0
+    lost, every accepted pair re-checks; by main's reason: `placement:symbol_value` 1,001,
+    `rewrite:operand` 63, `placement:func_addr` 56, `rewrite:domtree` 8 (sum 1,128). Every one of
+    the 1,128, in each of the four groups (the 71 `rewrite:operand`/`rewrite:domtree` pairs
+    included), has an accepted copy whose global values resolve at the table of only the names `g`
+    itself references (`midval-check`'s `resolves` column, checked per pair).
+    `cargo fv test --release` on the 9 crates (2026-11-26, clifv-remote, main b525cc3db's tools
+    against this one's), in plain mode and with `--lean-link --verified`: binary check 48/48 →
+    48/48 both ways, verified 121,767 → 121,767, left out of the region 0 → 0 (plain) and 1 → 1
+    (`--lean-link --verified`), tests the same as stock's on all 9 both ways, validated 115,246 →
+    116,352 (94.6 → 95.6 %: 115,246 per function, `validated`, and 1,106 at link level,
+    `validated-link`; up on 8 crates, num-traits unchanged), byte-identical to stock 95,064 →
+    95,137 (78.1 % both); `cargo fv test` wall summed 3,541 → 3,517 s (plain) and 4,065 →
+    4,118 s (`--lean-link --verified`). Of the 48 executables, link-check names a `_midS`
+    theorem for 29 (plain) and 35 (`--lean-link --verified`), the `_mid` one for the others;
+    lean-link names `…MidS` source theorems for 29 (13 `Link.ReturnPinCompilerWith.attempt_correct_source{,_peak}MidS`,
+    16 `Link.SemanticCompilerWith.attemptT_correct_source{,_peak}MidS`), `…Mid` for 13, and no
+    source theorem for 6 (as on main). No premise failed: no function failed `globalsResolve` at
+    a pruning round, `midValidatedSymsB` held wherever it was decided, and lean-link named a
+    theorem about the unoptimised dumps for every executable it did on main. Per crate
+    (validated, of which at link level; byte-identical to stock):
+
+    | crate | validated (main → this one; link level) | byte-identical to stock | functions |
+    |---|---|---|---|
+    | blake2 0.11.0 | 1,072 → 1,282 (210) | 1,031 → 1,031 | 1,298 |
+    | crypto-bigint 0.7.11 | 40,739 → 40,970 (231) | 34,770 → 34,787 | 43,170 |
+    | itoa 1.0.19 | 15,108 → 15,193 (85) | 12,400 → 12,412 | 15,874 |
+    | memchr 2.8.3 | 4,867 → 4,877 (10) | 3,977 → 3,977 | 5,051 |
+    | num-traits 0.2.19 | 1,547 → 1,547 (0) | 1,399 → 1,399 | 1,701 |
+    | ryu 1.0.23 | 16,416 → 16,505 (89) | 13,562 → 13,572 | 17,232 |
+    | semver 1.0.28 | 15,624 → 15,712 (88) | 12,864 → 12,874 | 16,397 |
+    | serde_json 1.0.154 | 18,555 → 18,726 (171) | 13,785 → 13,809 | 19,479 |
+    | sha3 0.12.0 | 1,318 → 1,540 (222) | 1,276 → 1,276 | 1,565 |
+    | **total** | 115,246 → 116,352 (1,106) | 95,064 → 95,137 | 121,767 |
