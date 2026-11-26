@@ -20,8 +20,9 @@ than `(bi, k)`. `MR` (some position) is the frame relation of `FunSimMU`.
 Basic facts: the hypotheses `Hyp` give both functions' `WfM` and equal dominator trees;
 values and facts whose sites are no later than `(bi, k)` do not change when `f` binds results
 that are not available at `(bi, k)` (`TV_stable`, `FactHolds.stable`). `HypT` is `Hyp` with the
-typed normaliser obligation `NormSoundT f norm` (`Hyp.toT`); the lemmas taking `Hyp` here and in
-the simulation modules are corollaries of their `…T` versions, which take `HypT`.
+typed normaliser obligation `NormSoundT f norm` (`Hyp.toT`), `HypD` the same with
+`NormSoundD f norm` (`HypT.toD`); the lemmas taking `Hyp` here and in the simulation modules are
+corollaries of their `…T` versions, and these of their `…D` versions, which take `HypD`.
 -/
 
 namespace Opt.MidVal
@@ -64,6 +65,18 @@ structure HypT (f g : Function) (fi gi : Info) (cert : Cert) (norm : Norm) : Pro
 theorem Hyp.toT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
     (H : Hyp f g fi gi cert norm) : HypT f g fi gi cert norm :=
   ⟨H.hf, H.hg, H.ok, H.norm.toT⟩
+
+/-- The hypotheses of the simulation with a normaliser sound where the operands have values
+(`NormSoundD`). -/
+structure HypD (f g : Function) (fi gi : Info) (cert : Cert) (norm : Norm) : Prop where
+  hf : wfCheck f = .ok fi
+  hg : wfCheck g = .ok gi
+  ok : CertOk f g fi gi cert norm
+  norm : NormSoundD f norm
+
+theorem HypT.toD {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : HypT f g fi gi cert norm) : HypD f g fi gi cert norm :=
+  ⟨H.hf, H.hg, H.ok, H.norm.toD⟩
 
 /-- The relation (module doc). -/
 structure Rel (f g : Function) (fi gi : Info) (cert : Cert) (norm : Norm)
@@ -206,10 +219,56 @@ theorem atomsTyped (H : HypT f g fi gi cert norm) {fr : Frame} {mem : Mem} {bi k
 
 end HypT
 
+namespace HypD
+
+variable {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+
+theorem wff (H : HypD f g fi gi cert norm) : WfM f (wfData f fi) := wfM_of_wfCheck H.hf
+theorem wfg (H : HypD f g fi gi cert norm) : WfM g (wfData g gi) := wfM_of_wfCheck H.hg
+
+theorem idomF (_H : HypD f g fi gi cert norm) : (wfData f fi).idom = fi.cfg.idom := rfl
+theorem idomG (H : HypD f g fi gi cert norm) : (wfData g gi).idom = fi.cfg.idom := H.ok.idom
+theorem idomC (_H : HypD f g fi gi cert norm) : (ccOf fi gi cert norm).idom = fi.cfg.idom := rfl
+
+theorem rankF (H : HypD f g fi gi cert norm) :
+    ∀ b c, fi.cfg.idom[b]?.join = some c → (wfData f fi).rank c < (wfData f fi).rank b :=
+  H.wff.rank
+
+theorem le_sound (_H : HypD f g fi gi cert norm) {a b : Nat × Nat}
+    (h : (ccOf fi gi cert norm).le a b = true) : LeP fi.cfg.idom a b :=
+  CC.le_sound h
+
+theorem leP_trans (H : HypD f g fi gi cert norm) {a b c : Nat × Nat} (h1 : LeP fi.cfg.idom a b)
+    (h2 : LeP fi.cfg.idom b c) : LeP fi.cfg.idom a c :=
+  h1.trans H.rankF h2
+
+theorem siteF (H : HypD f g fi gi cert norm) {i k : Nat} {x : ValueId}
+    (hx : Avail (wfData f fi) i k x) :
+    LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf ((ccOf fi gi cert norm).ef x)) (i, k) := by
+  obtain ⟨s, hs, hle⟩ := leP_of_avail hx
+  have hd := H.wff.sitesRev x s hs
+  exact H.leP_trans (H.le_sound (H.ok.sitesF x s hd)) hle
+
+theorem TV_stable (H : HypD f g fi gi cert norm) {syms : String → Option Nat} {fr1 fr2 : Frame}
+    (hg : fr2.func.globals = fr1.func.globals) (hx : fr2.func.externs = fr1.func.externs)
+    (hs : fr2.slots = fr1.slots) {i k : Nat}
+    (hr : ∀ v, Avail (wfData f fi) i k v → fr2.regs v = fr1.regs v) {t : Nat}
+    (ht : LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf t) (i, k)) :
+    TV f cert syms fr2 t = TV f cert syms fr1 t :=
+  tmVal_congr_of H.wff.rank H.wff.sites (c := ccOf fi gi cert norm) rfl H.ok.tms hg hx hs hr t ht
+
+theorem atomsTyped (H : HypD f g fi gi cert norm) {fr : Frame} {mem : Mem} {bi k : Nat}
+    (hregs : ∀ v, Avail (wfData f fi) bi k v → ∃ a, fr.regs v = some a ∧ (wfData f fi).tm v = some a.ty)
+    {i : Inst} (hops : ∀ o ∈ operands i, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf o) (bi, k)) :
+    AtomsTyped f cert.tms fr mem i :=
+  atomsTyped_of (c := ccOf fi gi cert norm) H.wff rfl H.ok.tms hregs hops
+
+end HypD
+
 /-- Facts whose terms have sites no later than `(i, k)` keep holding in a frame that agrees on
 the values available there; memory facts in the same memory, the others in any. -/
-theorem FactHolds.stableT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
-    (H : HypT f g fi gi cert norm) {syms : String → Option Nat} {fr1 fr2 : Frame} {m1 m2 : Mem}
+theorem FactHolds.stableD {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : HypD f g fi gi cert norm) {syms : String → Option Nat} {fr1 fr2 : Frame} {m1 m2 : Mem}
     (hg : fr2.func.globals = fr1.func.globals) (hx : fr2.func.externs = fr1.func.externs)
     (hs : fr2.slots = fr1.slots) {i k : Nat}
     (hr : ∀ v, Avail (wfData f fi) i k v → fr2.regs v = fr1.regs v) {F : Fact}
@@ -245,6 +304,18 @@ theorem FactHolds.stableT {f g : Function} {fi gi : Info} {cert : Cert} {norm : 
     simp only [FactHolds] at h ⊢
     rw [hTV t (by simp [Fact.terms])]
     exact h
+
+/-- Facts whose terms have sites no later than `(i, k)` keep holding in a frame that agrees on
+the values available there; memory facts in the same memory, the others in any. -/
+theorem FactHolds.stableT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : HypT f g fi gi cert norm) {syms : String → Option Nat} {fr1 fr2 : Frame} {m1 m2 : Mem}
+    (hg : fr2.func.globals = fr1.func.globals) (hx : fr2.func.externs = fr1.func.externs)
+    (hs : fr2.slots = fr1.slots) {i k : Nat}
+    (hr : ∀ v, Avail (wfData f fi) i k v → fr2.regs v = fr1.regs v) {F : Fact}
+    (hF : ∀ t ∈ F.terms, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf t) (i, k))
+    (hm : F.isMem = true → m2 = m1) (h : FactHolds f cert syms fr1 m1 F) :
+    FactHolds f cert syms fr2 m2 F :=
+  FactHolds.stableD H.toD hg hx hs hr hF hm h
 
 /-- Facts whose terms have sites no later than `(i, k)` keep holding in a frame that agrees on
 the values available there; memory facts in the same memory, the others in any. -/

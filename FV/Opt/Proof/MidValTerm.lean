@@ -18,8 +18,9 @@ a term whose site is no later than a point has the same value in two frames that
 values available there (`tmVal_congr`): this is why values computed earlier stay valid; a node
 term built from operands' terms has the value of the instruction it names (`tmVal_mapOperands`,
 `tmVal_mapOperands_inst` for any instruction); and the normaliser seam `NormSound` with its
-identity instance `normSound_id`, and its typed form `NormSoundT f` (equality in the frames where
-the atoms below the node hold values of their static types, `AtomsTyped`; `NormSound.toT`).
+identity instance `normSound_id`, its typed form `NormSoundT f` (equality in the frames where
+the atoms below the node hold values of their static types, `AtomsTyped`; `NormSound.toT`), and
+`NormSoundD f` (where moreover the node's operands have values; `NormSoundT.toD`).
 -/
 
 namespace Opt.MidVal
@@ -294,5 +295,22 @@ def NormSoundT (f : Function) (norm : Norm) : Prop :=
 /-- A normaliser sound in every frame is sound under typing. -/
 theorem NormSound.toT {norm : Norm} {f : Function} (h : NormSound norm) : NormSoundT f norm :=
   fun tms i x hx fr mem t ht _ => h tms i x hx f fr mem t ht
+
+/-! ## The normaliser seam with defined operands -/
+
+/-- A normaliser is sound for `f` where the operands have values when the term it gives for a
+node has the node's value in every frame of `f` where the atoms below the node are typed
+(`AtomsTyped`) and the node's operands have values. Rules that drop an operand (`(x + y) - x =
+y`, `x * 0 = 0`) meet it and not `NormSoundT`; the simulation evaluates a node only where its
+operands, the terms of available values, have values. -/
+def NormSoundD (f : Function) (norm : Norm) : Prop :=
+  ∀ (tms : Array Tm) (i : Inst) (x : Tm), norm tms i = some x →
+    ∀ (fr : Frame) (mem : Mem) (t : Nat), tms[t]? = some x → AtomsTyped f tms fr mem i →
+      (∀ o ∈ operands i, (tmVal f tms fr mem o).isSome) →
+      tmVal f tms fr mem t = evalNode (tmFrame f tms fr mem) mem i
+
+/-- A normaliser sound under typing is sound where the operands have values. -/
+theorem NormSoundT.toD {norm : Norm} {f : Function} (h : NormSoundT f norm) : NormSoundD f norm :=
+  fun tms i x hx fr mem t ht hA _ => h tms i x hx fr mem t ht hA
 
 end Opt.MidVal

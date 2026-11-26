@@ -42,7 +42,7 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   different versions a new version (`merge b`) starts. Explicit traps keep the version. Removed
   stores of `f` are idempotent (memory unchanged), so `g`'s versions are `f`'s memory states.
 
-* **Normalisation** (stage 2, the default normaliser `Norm.stdT f`), on both sides: first a
+* **Normalisation** (stage 2, the default normaliser `Norm.stdD f`), on both sides: first a
   multiplication by `2^s` (or `x + x`) of a shift by a constant as one shift or mask (family 6,
   `fam6Mul`), then constant evaluation (`evalConst`: a pure node whose operands are all constants
   is the constant `Clif.evalInst` gives it), then single-node algebraic rules (`Norm.alg2`: `icmp`
@@ -57,7 +57,9 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   neutral constant it leaves dropped), then family 5 (`x + (-y)` is `x - y`, `(-x) * k` is
   `x * (-k)`, `ireduce` of an `ireduce` of a wider typed term is one `ireduce`), then family 6
   (a shift amount's extension or truncation dropped, typed; constants of `band`, `bor`, `bxor`,
-  `imul` reassociated, `imul (ishl x k) c` is `imul x (c << k)`).
+  `imul` reassociated, `imul (ishl x k) c` is `imul x (c << k)`), then family 7, where no other
+  rule applies (`Norm.stdD`: `(x + y) - x` is `y`, `x - y + y` is `x`, `x * 0`, `x & 0`, `x | -1`
+  are the constant, typed; sound where the node's operands have values).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -1193,11 +1195,78 @@ def Norm.narrowN (f : Function) : Nat → Norm
   | 0 => Norm.base f
   | k + 1 => Norm.orElse (Norm.base f) (Norm.guard (narrowStep (Norm.narrowN f k) (atomTy f)))
 
-/-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
-`checkCert`, `checkCertSyms`): `Norm.std`, the typed rules with `f`'s atom types, family 4
-(`Norm.base`, then up to three nested narrowings, `Norm.narrowN`); proved sound under typing
-(`normSoundT_stdT`). -/
+/-- **The typed normaliser** for `f` (`Norm.base`, then up to three nested narrowings,
+`Norm.narrowN`): `Norm.std`, the typed rules with `f`'s atom types, families 4 to 6; proved sound
+under typing (`normSoundT_stdT`). -/
 def Norm.stdT (f : Function) : Norm := Norm.narrowN f 3
+
+/-! ### Family 7: operand-dropping rewrites
+
+The largest family of the `rewrite:operand` tail after family 6 (#1119, agent MidendNext7),
+after Cranelift 0.135.0's `opts/arithmetic.isle` (`(x + y) - x`, `x - y + y`) and `cprop.isle`
+(`x * 0`, `x & 0`, `x | -1`). Each drops an operand of the node: where that operand has no value
+the node has none and the result has one, so they are false as `NormSoundT` rules. They hold in
+every frame where the node's operands have values (`NormSoundD`,
+`FV/Opt/Proof/MidValNormDrop.lean`), which is where the simulation evaluates a node: its operands
+are the terms of available values.
+
+* `subAdd`: `isub ty (iadd ty x y) x` is `y`, `isub ty (iadd ty x y) y` is `x` (no typing: the
+  `iadd` has a value only when `x` and `y` hold values of type `ty`);
+* `addSub`: `iadd ty (isub ty x y) y` and `iadd ty y (isub ty x y)` are `x` (the same);
+* `absTyped` (typed): `op ty x k` with `k` an absorbing constant of type `ty` (`x * 0`, `x & 0`,
+  `x | -1`, `rAbsorb`) and `x` of static type `ty`, or the commuted form, is `k`. -/
+
+/-- `isub ty a z` with `a` the node `iadd ty x y`: `y` if `z` is `x`, else `x` if `z` is `y`. -/
+def subAdd (tms : Array Tm) (ty : Ty) (a z : Nat) : Option Tm :=
+  match nodeAt tms a with
+  | some (.binary .iadd ty' x y) =>
+    if ty' == ty then (if z == x then tms[y]? else if z == y then tms[x]? else none) else none
+  | _ => none
+
+/-- `iadd ty a b` with `a` the node `isub ty x b`: `x`. -/
+def addSubPick (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  match nodeAt tms a with
+  | some (.binary .isub ty' x y) => if ty' == ty && y == b then tms[x]? else none
+  | _ => none
+
+/-- `iadd ty a b` with `a` the node `isub ty x b`, or `b` the node `isub ty x a`: `x`. -/
+def addSub (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  (addSubPick tms ty a b).orElse fun _ => addSubPick tms ty b a
+
+/-- `k` absorbs `op`: `Sem.binary op x k = k` for every `x`. -/
+def rAbsorb {w : Nat} (op : BinaryOp) (k : BitVec w) : Bool :=
+  match op with
+  | .imul | .band => k == 0
+  | .bor => k == BitVec.allOnes w
+  | _ => false
+
+/-- `op ty x k` with `k` an absorbing constant of type `ty` (`rAbsorb`) and `x` a term of static
+type `ty` (`tyAt`): `k`. -/
+def absPick (aty : Tm → Option Ty) (tms : Array Tm) (op : BinaryOp) (ty : Ty) (x k : Nat) :
+    Option Tm :=
+  match constAt tms ty k with
+  | some kv => if rAbsorb op kv && tyAt aty tms x == some ty then tms[k]? else none
+  | none => none
+
+/-- `op ty a b` with `b` an absorbing constant, or `a` one (`op` is commutative, `absPick`). -/
+def absTyped (aty : Tm → Option Ty) (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) :
+    Option Tm :=
+  (absPick aty tms op ty a b).orElse fun _ => absPick aty tms op ty b a
+
+/-- **Family 7** (module doc above; typed through `absTyped`). -/
+def dropStep (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .binary op ty a b =>
+    if op == .isub then subAdd tms ty a b
+    else if op == .iadd then addSub tms ty a b
+    else absTyped aty tms op ty a b
+  | _ => none
+
+/-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
+`checkCert`, `checkCertSyms`): the typed normaliser `Norm.stdT f`, then family 7's
+operand-dropping rules; proved sound where the node's operands have values
+(`normSoundD_stdD`). -/
+def Norm.stdD (f : Function) : Norm :=
+  Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))
 
 /-- Intern a term (normalised, if a node), without auxiliary terms. -/
 def intern1 (t : Tm) : M Nat := do
@@ -1511,7 +1580,7 @@ def checkBlock (c : Ctx) (bi : Nat) (fb gb : Block) : M Unit := do
 (certificate emission, `Opt.MidVal.emit`). `hoist`: the hoisting mode (`place`). `cond`: a
 `brif` condition of `f` that is `g`'s under wrappers is recorded instead of rejected (family 3:
 `St.conds`, the hints of `condPrep`; such a state is not a certificate's). -/
-def checkRun (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false)
+def checkRun (f g : Function) (norm : Norm := Norm.stdD f) (hoist : Bool := false)
     (cond : Bool := false) : Except Reject (St × Ctx × Info) := do
   if !(sameHeader f g && g.sigDecls == f.sigDecls) then throw "shape:header"
   let fi ← (wfCheck f).mapError (s!"wf:f {·}")
@@ -1537,7 +1606,7 @@ def checkRun (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := fals
 /-- **The validator** (module doc): `f` is the unoptimised function after `Opt.ConstPhi.run`,
 `g` cg_clif's optimised one. `.ok ()` accepts `g` for `f`. `hoist`: also accept `g` evaluating
 a `symbol_value`/`func_addr`/`tls_value` of `f` earlier than `f` does (`place`). -/
-def check (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) : Except Reject Unit :=
+def check (f g : Function) (norm : Norm := Norm.stdD f) (hoist : Bool := false) : Except Reject Unit :=
   (checkRun f g norm hoist).map fun _ => ()
 
 end Opt.MidVal

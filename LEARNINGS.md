@@ -143,6 +143,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** the proofs never read the call facts (only `CtxT.inv`/`.scope`/`.toW`), so the `CtxTW` form of each theorem is the same proof term with the `CtxT` constants replaced. `ctxW_transport src => dst` (`FV/Backend/Proof/CtxTWTransport.lean`, ~150 lines, like Mathlib's `to_additive`) rewrites the constants (and `CtxT`/`TypedRules` projections), transports every used theorem whose statement mentions one first (`<name>.ctxW`), and `addDecl`s the result: the kernel re-checks each term, so a proof that does read a call fact fails instead of producing a wrong theorem.
 - **Numbers:** `FV/E2E/TypedRulesW.lean` transports `typedRules_program`, `lowerRulesCorrectTI_program` (≈100 per-rule lemmas behind it), `memRulesCorrectRTI_program` and two dispatchers in 60 s at 6.3 GB; no source module changed besides the hand-written `…W` definitions.
 
+### A weaker premise for a whole simulation: make the weak form primary, keep the strong one as corollaries
+- **Problem (#1119 family 7):** the operand-dropping rules (`(x + y) - x = y`, `x * 0 = 0`) hold only where the node's operands have values (`NormSoundD`), not in every frame where its atoms are typed (`NormSoundT`). `HypT` (with `NormSoundT`) is threaded through ~50 simulation lemmas in 7 modules, and the statement rule forbids changing `HypT` or any of their statements.
+- **Trick:** only two lemmas read the obligation (`TV_pureOkT`, `gStmtT`), and both evaluate a node whose operands are available values, so the extra premise is free there. Add `HypD` (the weaker field) and `HypT.toD`; move each `fooT` body unchanged to `fooD (H : HypD …)` (calls renamed `…T` → `…D`), and prove `fooT` as `fooD H.toD …` with its statement untouched. With the lemmas in a few modules this is a mechanical edit; no proof-term transport (`ctxW_transport` above) is needed.
+- **Numbers:** 50 `…D` lemmas, the `…T` statements restated once each; the 7 modules still rebuild in 2–5 s each on clifv-remote (MidValTermin 3 s, MidValMatch 3 s). Used in `FV/Opt/Proof/MidVal{Rel,FStep,Prefix,Match,Entry,Termin,Sim}.lean`.
+
 ## Build infrastructure
 
 ### Threads per Lean process don't help us

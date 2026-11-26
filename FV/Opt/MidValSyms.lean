@@ -30,7 +30,7 @@ open Clif
 
 /-- **The copy of `f` the hoisting-mode re-check with hints accepts `g` against** (module doc). -/
 def symsCopy (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap))
-    (norm : Norm := Norm.stdT f) : Option Function :=
+    (norm : Norm := Norm.stdD f) : Option Function :=
   if hints.isEmpty then (if checkCertSyms f g cert norm then some f else none)
   else if (foldBlocks hints).isEmpty then
     (if refsOk g && checkCertSyms f (condPrep g hints) cert norm then some f else none)
@@ -42,7 +42,7 @@ def symsCopy (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap)
 
 /-- **The hoisting-mode re-check at the symbol table `syms`** (module doc). -/
 def checkCertSymsAt (syms : String → Option Nat) (f g : Function) (cert : Cert)
-    (hints : List (BlockId × List Wrap)) (norm : Norm := Norm.stdT f) : Bool :=
+    (hints : List (BlockId × List Wrap)) (norm : Norm := Norm.stdD f) : Bool :=
   match symsCopy f g cert hints norm with
   | some f' => globalsResolve f' syms
   | none => false

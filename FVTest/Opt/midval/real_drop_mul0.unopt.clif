@@ -1,0 +1,203 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC9criterion12HhMPOIRGWCsV
+function u0:3895(i64, i64, i64) system_v {
+; symbol _RNxC9criterion12HhMPOIRGWCsV
+; instance Instance { def: Item(DefId(3:3604 ~ alloc[e0b3]::collections::btree::node::slice_insert)), args: [alloc::collections::btree::set_val::SetValZST] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>], layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u64 is .., b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16 } }, mode: Pair(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: alloc::collections::btree::set_val::SetValZST, layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 15214924502183610147 } }, mode: Ignore }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 3, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0,v1    Pair(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>]
+; arg   _2      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+; arg   _3      -          Ignore                               alloc::collections::btree::set_val::SetValZST
+
+; kind  local ty                              size align (abi)
+; stack _1    &'{erased} mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>]   16b 8                storage=ss0
+; ssa   _2    usize                             8b 8                var=1
+; zst   _3    alloc::collections::btree::set_val::SetValZST    0b 1                align=1,offset=
+; ssa   _4    usize                             8b 8                var=2
+; ssa   _5    *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>    8b 8                var=3
+; ssa   _6    bool                              1b 1                var=4
+; ssa   _7    usize                             8b 8                var=5
+; zst   _8    ()                                0b 1                align=1,offset=
+; ssa   _9    *const std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>    8b 8                var=6
+; ssa   _10   *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>    8b 8                var=7
+; ssa   _11   *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>    8b 8                var=8
+; ssa   _12   usize                             8b 8                var=9
+; ssa   _13   usize                             8b 8                var=10
+; ssa   _14   *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>    8b 8                var=11
+; ssa   _15   *mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>]   16b 8                var=(12, 13)
+; zst   _16   ()                                0b 1                align=1,offset=
+; ssa   _17   *const ()                         8b 8                var=14
+; ssa   _18   *mut ()                           8b 8                var=15
+; ssa   _19   bool                              1b 1                var=16
+; zst   _20   std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>    0b 1                align=1,offset=
+; zst   _21   std::mem::ManuallyDrop<alloc::collections::btree::set_val::SetValZST>    0b 1                align=1,offset=
+; zst   _22   ()                                0b 1                align=1,offset=
+
+    ss0 = explicit_slot 16, align = 8
+    sig0 = (i64, i64, i64) -> i64 system_v
+    fn0 = %Memmove sig0
+
+block0(v0: i64, v1: i64, v2: i64):
+    v13 -> v2
+    v18 -> v2
+    v45 -> v2
+    v43 -> v45
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): &'{erased} mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>] <- ByValPair(v0, v1): &'{erased} mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>]
+    v3 = stack_addr.i64 ss0
+    store notrap v0, v3
+    v4 = stack_addr.i64 ss0+8
+    store notrap v1, v4
+; write_cvalue: Var(_2, var1): usize <- ByVal(v2): usize
+    jump block1
+
+block1:
+    nop 
+; _4 = PtrMetadata(copy _1)
+    v5 = stack_addr.i64 ss0
+    v6 = load.i64 notrap v5
+    v7 = stack_addr.i64 ss0+8
+    v8 = load.i64 notrap v7
+    v26 -> v8
+; write_cvalue: Var(_4, var2): usize <- ByVal(v8): usize
+; _15 = &raw mut (*_1)
+    v9 = stack_addr.i64 ss0
+    v10 = load.i64 notrap v9
+    v17 -> v10
+    v44 -> v10
+    v42 -> v44
+    v11 = stack_addr.i64 ss0+8
+    v12 = load.i64 notrap v11
+; write_cvalue: VarPair(_15, var12, var13): *mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>] <- ByValPair(v10, v12): *mut [std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>]
+; _5 = copy _15 as *mut std::mem::MaybeUninit<T> (PtrToPtr)
+; write_cvalue: Var(_5, var3): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST> <- ByVal(v10): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>
+; _7 = Add(copy _2, const 1_usize)
+    v14 = iconst.i64 1
+    v15 = iadd.i64 v13, v14  ; v14 = 1
+    v22 -> v15
+; write_cvalue: Var(_7, var5): usize <- ByVal(v15): usize
+; _6 = Gt(copy _4, copy _7)
+    v16 = icmp ugt v8, v15
+; write_cvalue: Var(_6, var4): bool <- ByVal(v16): bool
+; 
+; switchInt(move _6)
+    brif v16, block2, block3(v10, v13)
+
+block2:
+    nop 
+; _10 = Offset(copy _5, copy _2)
+    v19 = iconst.i64 0
+    v20 = imul.i64 v18, v19  ; v19 = 0
+    v21 = iadd.i64 v17, v20
+    v36 -> v21
+; write_cvalue: Var(_10, var7): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST> <- ByVal(v21): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>
+; _9 = copy _10 as *const std::mem::MaybeUninit<T> (PtrToPtr)
+; write_cvalue: Var(_9, var6): *const std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST> <- ByVal(v21): *const std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>
+; _11 = Offset(copy _5, copy _7)
+    v23 = iconst.i64 0
+    v24 = imul.i64 v22, v23  ; v23 = 0
+    v25 = iadd.i64 v17, v24
+    v37 -> v25
+; write_cvalue: Var(_11, var8): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST> <- ByVal(v25): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>
+; _13 = Sub(copy _4, copy _2)
+    v27 = isub.i64 v26, v18
+; write_cvalue: Var(_13, var10): usize <- ByVal(v27): usize
+; _12 = Sub(move _13, const 1_usize)
+    v28 = iconst.i64 1
+    v29 = isub v27, v28  ; v28 = 1
+    v38 -> v29
+; write_cvalue: Var(_12, var9): usize <- ByVal(v29): usize
+; 
+; switchInt(UbChecks)
+    v30 = iconst.i8 0
+    jump block10
+
+block3(v31: i64, v32: i64):
+    nop 
+; _14 = Offset(copy _5, copy _2)
+    v33 = iconst.i64 0
+    v34 = imul v32, v33  ; v33 = 0
+    v35 = iadd v31, v34
+; write_cvalue: Var(_14, var11): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST> <- ByVal(v35): *mut std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>
+; _21 = std::mem::ManuallyDrop::<T> { value: copy _3 }
+; write_cvalue: Addr(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): alloc::collections::btree::set_val::SetValZST <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): alloc::collections::btree::set_val::SetValZST
+; _20 = std::mem::MaybeUninit::<T> { uninit: move _21 }
+; write_cvalue: Addr(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): std::mem::ManuallyDrop<alloc::collections::btree::set_val::SetValZST> <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): std::mem::ManuallyDrop<alloc::collections::btree::set_val::SetValZST>
+; (*_14) = move _20
+; write_cvalue: Addr(Pointer { base: Addr(v35), offset: Offset32(0) }, None): std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST> <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): std::mem::MaybeUninit<alloc::collections::btree::set_val::SetValZST>
+; 
+; _22 = std::intrinsics::assert_inhabited::<T>()
+    jump block11
+
+block4:
+    nop 
+; 
+; goto
+    jump block3(v42, v43)
+
+block5:
+    trap user1
+
+block6:
+    trap user1
+
+block7:
+    trap user1
+
+block8:
+    trap user1
+
+block9:
+    trap user1
+
+block10:
+    nop 
+; 
+; _8 = std::intrinsics::copy::<std::mem::MaybeUninit<T>>(move _9, move _11, move _12)
+    v39 = iconst.i64 0
+    v40 = imul.i64 v38, v39  ; v39 = 0
+    v41 = call fn0(v37, v36, v40)
+    jump block4
+
+block11:
+    nop 
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; decl u0:3895 func local "_RNxC9criterion12HhMPOIRGWCsV"
+; libcall %Memmove "memmove"
+; end clifv-extnames

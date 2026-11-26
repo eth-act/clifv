@@ -61,11 +61,13 @@ moved `can_move` loads, the two checker gaps below.
   quantified away at every step. With `FunSimU.toMU`, `FunSimMU.trans` and the program-level
   lifting `runLoopX_refinesMU`, whose conclusion is that of `Opt.runLoopX_refinesU`.
 * `Opt.MidVal.check_sound : checkCert f g cert = true → FunSimMU f g` (with the default
-  normaliser `Norm.stdT f`; for any normaliser: `check_sound_norm : checkCert f g cert norm = true →
-  NormSound norm → FunSimMU f g`), where `checkCert` re-checks the certificate the executable
-  checker emits (`Opt.MidVal.emit`: the term table with a dominance site per term, the term of
-  every value of `f` and `g`, the facts at each block's entry) and `NormSound` says the
-  normaliser preserves values (`normSound_id`, `normSound_std`).
+  normaliser `Norm.stdD f`; for any normaliser: `check_sound_norm : checkCert f g cert norm = true →
+  NormSound norm → FunSimMU f g`, `check_sound_normT` under `NormSoundT f norm`,
+  `check_sound_normD` under `NormSoundD f norm`), where `checkCert` re-checks the certificate the
+  executable checker emits (`Opt.MidVal.emit`: the term table with a dominance site per term, the
+  term of every value of `f` and `g`, the facts at each block's entry) and `NormSound` says the
+  normaliser preserves values (`normSound_id`, `normSound_std`); `NormSoundT` in the frames where
+  the atoms below the node are typed, `NormSoundD` where moreover the node's operands have values.
 * Programs: `Opt.MidVal.validated_refines` — if every function of `q` is the one of `p` or a `g`
   with `checkCert (ConstPhi.run f) g cert = true` (`Validated`), then `∀ n xs xs', SRU syms xs xs'
   → ∃ n', XOutcomeRefines (runLoopX env p n xs) (runLoopX env q n' xs')` (same return values and
@@ -197,6 +199,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | hoisting mode at link level (`placement:symbol_value`/`func_addr`; `symsCopy`, `Link.hoistCopy`, premise `globalsResolve` at the executable's symbol table) | none (`checkCertSyms` on `f`, `foldPre f bs` or `foldPreK f bs`) | `symsCopy_sound`, `checkCertSymsAt_sound`, `midValidatedSymsB_sound` | 118,210 (97.0 %) | not measured on the pairs | 9 crates: 78.1 % → 78.1 % (95,064 → 95,137 of 121,767) |
 | division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: 78.1 % → 78.4 % (95,137 → 95,499 of 121,767) |
 | 6: shifts and bitwise constants (`Norm.base`: `fam6Mul` first, `fam6Step` after family 5; `narrowId` in `narrowStep`) | `fam6Mul`, `shAmt` (typed), `reStep`, `narrowId` | `ruleSound_fam6Mul`, `ruleSoundT_shAmt`, `ruleSound_reStep`, `ruleSoundT_fam6Step`, `narrowId_val`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 119,273 (97.9 %) | not measured on the pairs | 9 crates: 78.4 % → 78.7 % (95,499 → 95,871 of 121,767) |
+| 7: operand-dropping rewrites (`Norm.stdD f`: `dropStep` after `Norm.stdT f`) | `subAdd`, `addSub`, `absTyped` (typed) | `ruleSoundD_subAdd`, `ruleSoundD_addSub`, `ruleSoundD_absTyped`, `ruleSoundD_dropStep`, `normSoundD_stdD`, `check_sound_normD` | 119,833 (98.3 %) | not measured on the pairs | CRATES_ROW |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -928,3 +931,50 @@ counterfactual.)
     to stock 95,499 → 95,871 (78.4 → 78.7 %, the same in both modes); `cargo fv test` wall summed
     3,670 → 3,759 s (plain) and 3,998 → 4,377 s (`--lean-link --verified`; this one's plain runs
     overlapped its full gate, so the wall times are no comparison).
+* **Family 7: operand-dropping rewrites** (agent MidendNext7; recount and choice #1119
+  issuecomment-7204786044). On main 6e0245fcb 2,606 pairs were rejected; by first blocking family
+  (MidendNext5's explain build with family 6, the same verdicts as main): the operand long tail
+  (979), operand-dropping `(x + y) - x` (502), branches folded on conditions `foldPre` cannot
+  evaluate (434; 424 where the prep gets no further, the condition's leaves a load and constants
+  in 354), masks and bit tricks (141), and smaller ones. This family takes the rewrites that drop
+  an operand, after Cranelift 0.135.0's `opts/arithmetic.isle` and `opts/cprop.isle`:
+  - Compiler side (`FV/Opt/MidVal.lean`): `dropStep`, the last step of the new default normaliser
+    `Norm.stdD f = Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))` (only where no
+    other rule applies; the defaults of `check`, `checkRun`, `emit`, `checkCert`,
+    `checkCertSyms`, `checkCertC`, `checkCertSymsC`, `checkC0`, `checkC`, `emitC`, `symsCopy`,
+    `checkCertSymsAt` move from `Norm.stdT f` to it): `subAdd`, `isub ty (iadd ty x y) x` is `y`
+    and `isub ty (iadd ty x y) y` is `x`; `addSub`, `iadd ty (isub ty x y) y` and its commuted
+    form are `x`; `absTyped`, `op ty x k` with `k` an absorbing constant of type `ty` (`x * 0`,
+    `x & 0`, `x | -1`, `rAbsorb`) and `x` of static type `ty`, or the commuted form, is `k`.
+    `midval-check --norm-t` runs the typed normaliser without family 7.
+  - Proof: each rule drops an operand, so it is false as a `NormSoundT` rule: where the dropped
+    operand has no value the node has none and the result has one (`dropStep_not_normSoundT`).
+    New obligation `NormSoundD f norm` (`FV/Opt/Proof/MidValTerm.lean`): `NormSoundT`'s equation
+    in the frames where moreover the node's operands have values; `NormSoundT.toD`. The
+    simulation evaluates a normalised node only there: `f`'s pure statement (`TV_pureOkD`) and
+    `g`'s pure prefix (`gStmtD`) have their operands among the available values, which hold
+    values (`Inv`). `HypD` (`MidValRel.lean`) is `HypT` with `NormSoundD`, `HypT.toD`; every
+    simulation lemma taking `HypT` is now proved under `HypD` (`…D`: `rel_pureD`, `gPre_runD`,
+    `isSimMUD`, `entry_relD`, …), its `…T` form a corollary with the same statement;
+    `check_sound_normD`, `check_soundSyms_normD`, `check_soundC_normD`, `symsCopy_soundD`. The rules
+    (`FV/Opt/Proof/MidValNormDrop.lean`): `ruleSoundD_subAdd`, `ruleSoundD_addSub` (the operand
+    `x + y` (`x - y`) has a value only when `x` and `y` hold values of type `ty`,
+    `tmVal_bin_ops`; then `BitVec.add_sub_cancel`, `BitVec.sub_add_cancel`; no typing),
+    `ruleSoundD_absTyped` (`x` has a value, of type `ty` by `tyAt_val`; `rAbsorb_spec`),
+    `ruleSoundD_dropStep`, `normSoundD_stdD`. `check_sound`, `check_soundSyms`, `check_soundC`,
+    `checkCertSymsAt_sound` and `Link.hoistCopy_sound` keep their statements (now about
+    `Norm.stdD`) and are proved with `normSoundD_stdD`. No theorem statement changes.
+  - Witnesses (`FVTest/Opt/MidValDropWitness.lean`): `(x + y) - x` against `y`, `(x - y) + y`
+    against `x`, `x * 0` against `0`, `x | -1` against `-1`, each accepted and rejected with
+    `Norm.stdT` (`*_prev_rejects`); negative: `x` for `y`, `y` for `x`, `x` for `0`, `0` for `-1`,
+    each rejected and no simulation, so every certificate is rejected;
+    `dropStep_not_normSoundT`; three real pairs of the corpus (serde_json's dissimilar, semver's
+    criterion and memchr), each rejected by main's `checkC` (`checkCPrev`), `checkCertC` decided,
+    and the simulation. Audit: `scripts/audit/midval.lean` (1,368 theorems, standard axioms,
+    `native_decide` only in the marked witnesses).
+  - Measured (2026-11-26, the shared corpus, main 6e0245fcb's `midval-check --cert --cond --hoist`
+    against this one's): 119,273 → 119,833 (+560, 97.9 % → 98.3 %), 0 lost, every accepted pair
+    re-checks `ok`; by main's first blocking family: operand-dropping 403, the operand tail 157
+    (mostly `x + y * 0`). The folds on forwarded constants (434) are the largest family left; they
+    need a prep pass with a memory invariant and its own simulation.
+    CRATES_BULLET

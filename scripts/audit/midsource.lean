@@ -72,6 +72,7 @@ import FVTest.Link.MidSourceSymsWitness
 #print axioms FVTest.Link.MidPairWitness.keep_empty
 #print axioms Opt.runLoopX_refinesSRMUAt_depth
 #print axioms Opt.MidVal.symsCopy_sound
+#print axioms Opt.MidVal.symsCopy_soundD
 #print axioms Opt.MidVal.checkCertSymsAt_sound
 #print axioms Opt.MidVal.checkedSymsAt_simMUAt
 #print axioms Link.hoistCopy_sound

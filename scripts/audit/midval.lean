@@ -30,6 +30,8 @@ import FV.Opt.Proof.MidValMagic
 import FVTest.Opt.MidValMagicWitness
 import FV.Opt.Proof.MidValNormFam6
 import FVTest.Opt.MidValFam6Witness
+import FV.Opt.Proof.MidValNormDrop
+import FVTest.Opt.MidValDropWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -734,6 +736,87 @@ import FVTest.Opt.MidValFam6Witness
 #print axioms Opt.MidVal.check_sound_normT
 #print axioms Opt.MidVal.check_soundSyms_normT
 #print axioms Opt.MidVal.check_soundC_normT
+-- #1119 family 7, the normaliser seam with defined operands (FV/Opt/Proof/MidValTerm.lean,
+-- MidValRel.lean; the `…D` versions of the simulation lemmas take `HypD`, the `…T` ones are
+-- their corollaries)
+#print axioms Opt.MidVal.NormSoundT.toD
+#print axioms Opt.MidVal.HypT.toD
+#print axioms Opt.MidVal.HypD.wff
+#print axioms Opt.MidVal.HypD.wfg
+#print axioms Opt.MidVal.HypD.idomF
+#print axioms Opt.MidVal.HypD.idomG
+#print axioms Opt.MidVal.HypD.idomC
+#print axioms Opt.MidVal.HypD.rankF
+#print axioms Opt.MidVal.HypD.le_sound
+#print axioms Opt.MidVal.HypD.leP_trans
+#print axioms Opt.MidVal.HypD.siteF
+#print axioms Opt.MidVal.HypD.TV_stable
+#print axioms Opt.MidVal.HypD.atomsTyped
+#print axioms Opt.MidVal.FactHolds.stableD
+#print axioms Opt.MidVal.rel_entryD
+#print axioms Opt.MidVal.entry_facts_holdD
+#print axioms Opt.MidVal.FStep.regs_afterD
+#print axioms Opt.MidVal.FStep.TV_afterD
+#print axioms Opt.MidVal.FStep.rel_afterD
+#print axioms Opt.MidVal.FStep.TV_pureOkD
+#print axioms Opt.MidVal.rel_nopD
+#print axioms Opt.MidVal.rel_pureD
+#print axioms Opt.MidVal.rel_removeD
+#print axioms Opt.MidVal.MCtx.evalD
+#print axioms Opt.MidVal.MCtx.callD
+#print axioms Opt.MidVal.rel_bindD
+#print axioms Opt.MidVal.facts_nextD
+#print axioms Opt.MidVal.matched_nextD
+#print axioms Opt.MidVal.matched_trapD
+#print axioms Opt.MidVal.matched_callD
+#print axioms Opt.MidVal.matched_ciD
+#print axioms Opt.MidVal.rel_matchedD
+#print axioms Opt.MidVal.results_lenD
+#print axioms Opt.MidVal.gStepD
+#print axioms Opt.MidVal.gStmtD
+#print axioms Opt.MidVal.gPre_run_listD
+#print axioms Opt.MidVal.gPre_runD
+#print axioms Opt.MidVal.Tn.id_eqD
+#print axioms Opt.MidVal.Tn.block?_gD
+#print axioms Opt.MidVal.Tn.strict_of_leD
+#print axioms Opt.MidVal.Tn.strict_of_ancD
+#print axioms Opt.MidVal.Tn.TV_enterD
+#print axioms Opt.MidVal.AtEnd.opsD
+#print axioms Opt.MidVal.AtEnd.regs_congrD
+#print axioms Opt.MidVal.AtEnd.of_relD
+#print axioms Opt.MidVal.rel_enterD
+#print axioms Opt.MidVal.end_stepD
+#print axioms Opt.MidVal.rel_termD
+#print axioms Opt.MidVal.pair_regsD
+#print axioms Opt.MidVal.tcontD
+#print axioms Opt.MidVal.hcontD
+#print axioms Opt.MidVal.rel_tryD
+#print axioms Opt.MidVal.step_consD
+#print axioms Opt.MidVal.isSimMUD
+#print axioms Opt.MidVal.entry_relD
+#print axioms Opt.MidVal.check_sound_normD
+#print axioms Opt.MidVal.check_soundSyms_normD
+#print axioms Opt.MidVal.check_soundC_normD
+-- #1119 family 7, operand-dropping rewrites (FV/Opt/Proof/MidValNormDrop.lean)
+#print axioms Opt.MidVal.normSoundD_guard
+#print axioms Opt.MidVal.normSoundD_orElse
+#print axioms Opt.MidVal.evalNode_bin_of
+#print axioms Opt.MidVal.tmVal_bin_ops
+#print axioms Opt.MidVal.add_sub_left
+#print axioms Opt.MidVal.add_sub_right
+#print axioms Opt.MidVal.sub_add_right
+#print axioms Opt.MidVal.sub_add_left
+#print axioms Opt.MidVal.subAdd_spec
+#print axioms Opt.MidVal.addSubPick_spec
+#print axioms Opt.MidVal.ruleSoundD_subAdd
+#print axioms Opt.MidVal.ruleSoundD_addSub
+#print axioms Opt.MidVal.rAbsorb_spec
+#print axioms Opt.MidVal.rAbsorb_comm
+#print axioms Opt.MidVal.rAbsorb_nonShift
+#print axioms Opt.MidVal.absPick_spec
+#print axioms Opt.MidVal.ruleSoundD_absTyped
+#print axioms Opt.MidVal.ruleSoundD_dropStep
+#print axioms Opt.MidVal.normSoundD_stdD
 #print axioms Opt.MidVal.normSoundT_guard
 #print axioms Opt.MidVal.normSoundT_orElse
 #print axioms Opt.MidVal.tyAt_val
@@ -1348,3 +1431,48 @@ import FVTest.Opt.MidValFam6Witness
 #print axioms Opt.MidVal.Fam6Witness.real_mulshl_prev_rejects -- witness: native_decide
 #print axioms Opt.MidVal.Fam6Witness.real_mulshl_checked -- witness: native_decide
 #print axioms Opt.MidVal.Fam6Witness.real_mulshl_sim -- witness: native_decide
+-- witnesses of family 7 (FVTest/Opt/MidValDropWitness.lean)
+#print axioms Opt.MidVal.DropWitness.pos_subAdd -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.pos_subAdd_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.neg_subAdd -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.pos_addSub -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.pos_addSub_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.neg_addSub -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.pos_mul0 -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.pos_mul0_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.neg_mul0 -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.pos_orOnes -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.pos_orOnes_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.neg_orOnes -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.subAddF_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.subAddWrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.subAdd_not_sim
+#print axioms Opt.MidVal.DropWitness.subAdd_rejected
+#print axioms Opt.MidVal.DropWitness.addSubF_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.addSubWrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.addSub_not_sim
+#print axioms Opt.MidVal.DropWitness.addSub_rejected
+#print axioms Opt.MidVal.DropWitness.mul0F_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.mul0WrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.mul0_not_sim
+#print axioms Opt.MidVal.DropWitness.mul0_rejected
+#print axioms Opt.MidVal.DropWitness.orOnesF_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.orOnesWrongG_text -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.orOnes_not_sim
+#print axioms Opt.MidVal.DropWitness.orOnes_rejected
+#print axioms Opt.MidVal.DropWitness.dropStep_fires -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.drop_frame -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.drop_val0 -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.drop_val1 -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.drop_ty1 -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.drop_atomsTyped -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.dropStep_not_normSoundT -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_sub_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_sub_checked -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_sub_sim -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_mul0_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_mul0_checked -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_mul0_sim -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_addsub_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_addsub_checked -- witness: native_decide
+#print axioms Opt.MidVal.DropWitness.real_addsub_sim -- witness: native_decide
