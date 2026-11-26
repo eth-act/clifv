@@ -53,7 +53,8 @@ theorem spec_mspec_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
   by_cases hfl : ∃ sz rd am fl, i = .fpuLoad sz rd am fl
   · obtain ⟨sz, rd, am, fl, rfl⟩ := hfl
     cases am
-    case const v => exact ⟨w', by rw [csem_pool_mspec]; exact h, SameWorld.refl F w'⟩
+    case const v =>
+      exact ⟨w', (csem_pool_mspec F ctx X sz rd v fl us w).trans h, SameWorld.refl F w'⟩
     all_goals simp [specForm, pureForm, cmpForm] at hp
   unfold mspec at h
   split at h <;> try { simp_all [specForm, cmpForm, pureForm, pureAlu] }

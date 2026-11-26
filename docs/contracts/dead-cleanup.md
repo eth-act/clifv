@@ -22,7 +22,13 @@ saturating `fcvt_to_{u,s}int_sat` and the `fcmp` of its `select`; a conversion w
 unused also goes, as Cranelift does not lower an unused saturating conversion; for the trapping
 `fcvt_to_{u,s}int`, which cg_clif never emits (`src/cast.rs` uses the saturating forms), stock
 would keep an unused one's `fcvtzu`/`fcvtzs` after its checks; witnesses
-`FVTest/Backend/DeadFcmpCvtWitness.lean`), and `cset` (it
+`FVTest/Backend/DeadFcmpCvtWitness.lean`), the literal-pool load of a float constant
+(`ldr s/d/q, <entry>`, `fpuLoad … (.const v)`; #1181: the third shape of
+`constant_f32`/`constant_f64` beside `movi` and `fmov #imm`, for an `f32const`/`f64const` that
+nothing uses, e.g. one that LICM leaves behind in cg_clif's optimised CLIF; it reads only the
+function's own code, and its pool entry goes with it because the pool is built from the emitted
+lines; addressed float loads stay; its value semantics is `mspec`'s, which `csem` equals there,
+`csem_pool_mspec`; witnesses `FVTest/Backend/DeadPoolConstWitness.lean`), and `cset` (it
 reads the flags but writes only its definition; #552: the boolean of an `icmp` that the
 `brif`/`select` rule re-compares, which Cranelift does not lower because no lowered instruction
 uses it, `machinst/lower.rs` `lower_clif_block`). Other forms remain in place.
