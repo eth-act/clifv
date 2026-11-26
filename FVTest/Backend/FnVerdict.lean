@@ -342,7 +342,7 @@ executable's symbol table, per function `E2E.midval_entrySyms`. -/
 
 /-- What the theorem of a function validated by the hoisting mode is about. -/
 def midSymsAbout : String :=
-  "Cranelift's optimised function (.opt.clif); about the source function (.unopt.clif) only at link level, where link-check (…_midS) and lean-link (…MidS) decide the hoisting mode's premise at the executable's symbol table (E2E.midval_entrySyms)"
+  "Cranelift's optimised function (.opt.clif); lean-backend makes no claim about the source function (.unopt.clif): only link-check (…_midS) and lean-link (…MidS) make that claim, after deciding the hoisting mode's premise at the executable's symbol table (E2E.midval_entrySyms)"
 
 /-- The check `lean-backend --midval-opt` decides for the hoisting mode. -/
 def midSymsCheck : String :=

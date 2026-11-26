@@ -1503,7 +1503,7 @@ mod tests {
     fn midval_lines() {
         let v = midval_of("lean-backend: x.unopt.clif: %f: midval: validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump x.opt.clif");
         assert_eq!(v, Some(("validated".into(), None)));
-        let h = midval_of("lean-backend: x.unopt.clif: %f: midval: validated at link level (Link.hoistCopy decided: the hoisting mode of Opt.MidVal, whose premise, the global values of the compared copy resolving at the executable's symbol table, link-check and lean-link decide), compiled from the optimised dump x.opt.clif");
+        let h = midval_of("lean-backend: x.unopt.clif: %f: midval: validated at link level (Link.hoistCopy decided: the hoisting mode of Opt.MidVal; the theorem named here is about the optimised function; the claim about the source function is made only by link-check and lean-link, which decide the mode's premise, the global values of the compared copy resolving at the executable's symbol table), compiled from the optimised dump x.opt.clif");
         assert_eq!(h, Some(("validated-link".into(), None)));
         let r = midval_of("lean-backend: x.unopt.clif: %f: midval: rejected (Opt.MidVal.check rejects: rewrite:operand (iadd)); compiled from the .unopt.clif as without --midval-opt");
         assert_eq!(r, Some(("rejected".into(), Some("Opt.MidVal.check rejects: rewrite:operand (iadd)".into()))));

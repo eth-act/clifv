@@ -937,7 +937,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | 0, none =>
       replay acts
       if hoisted then
-        note (some n) s!"validated at link level (Link.hoistCopy decided: the hoisting mode of Opt.MidVal, whose premise, the global values of the compared copy resolving at the executable's symbol table, link-check and lean-link decide), compiled from the optimised dump {optPath}"
+        note (some n) s!"validated at link level (Link.hoistCopy decided: the hoisting mode of Opt.MidVal; the theorem named here is about the optimised function; the claim about the source function is made only by link-check and lean-link, which decide the mode's premise, the global values of the compared copy resolving at the executable's symbol table), compiled from the optimised dump {optPath}"
       else
         note (some n) s!"validated (Opt.MidVal.checkCertC decided), compiled from the optimised dump {optPath}"
       return 0
