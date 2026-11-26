@@ -783,6 +783,18 @@ wall summed 4,676 → 4,498 s. The validator now normalises `icmp ult 0, x` as t
 `condPrep` rebuilds on `g`, accepts Cranelift's code that keeps a block parameter left with one
 incoming value only after a folded branch, and rewrites the three family-5 forms as Cranelift does.
 
+The hoisting mode at link level (`symbol_value`, `tls_value` or `func_addr` hoisted out of a
+loop: outcome `validated-link`; docs/contracts/midval.md; measured 2026-11-26 on clifv-remote,
+main b525cc3db's tools against this one's, the same 9 crates, in plain mode and with `--lean-link
+--verified`): binary check 48 of 48 both ways, 121,767 verified both ways, left out 0 → 0 (plain)
+and 1 → 1, test outcomes the same as stock's on all 9 both ways; validated 115,246 → 116,352
+(94.6 % → 95.6 %; 1,106 of them `validated-link`; up on 8 crates, num-traits unchanged);
+byte-identical to stock 95,064 → 95,137 of 121,767 (78.1 % both); `cargo fv test` wall summed
+3,541 → 3,517 s (plain) and 4,065 → 4,118 s. Of the 48 executables, link-check names a `…_midS`
+theorem for 29 (plain) and 35 (`--lean-link --verified`); lean-link names `…MidS` source theorems
+for 29, `…Mid` for 13 and none for 6 (as before); no executable lost its theorem about the
+unoptimised dumps.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
