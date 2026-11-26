@@ -307,6 +307,27 @@ on the bundle's two texts, and `Link.midValidatedB_sound` turns the per-pair dec
   the executable holding the optimised function's code, every premise `lean-link` decides
   discharged), `E2E.MidSourceTBWitness.correct_sourceTBMid_applies`, and
   `FVTest.Link.MidPairWitness.midProg_applies`.
+* **The hoisting mode** (#1119, `symbol_value`/`tls_value`/`func_addr` hoisted out of a loop;
+  `FV/Link/MidPairSyms.lean`, `MidProgSyms.lean`, `MidSourceRoutesSyms.lean`, `MidSourceTBSyms.lean`,
+  `FV/E2E/MidValExecProvenSyms.lean`; docs/contracts/midval.md). A pair `Link.midPairB` rejects
+  but `Link.hoistCopy` accepts is simulated only at a symbol table where the compared copy's global
+  values resolve. `link-check` takes `midPairB || hoistCopy` per function, checks that copy's
+  `Opt.MidVal.globalsResolve` at each pruning round's symbol table (a failing function is pruned
+  with its callers), and, when the pruned program has such a function, decides
+  `Link.midValidatedSymsB (fun n => I.syms.lookup n) P0.funcs (prog I).funcs` and names the `_midS`
+  sibling of the `_mid` theorem (`E2E.ReturnPinExecBytes.binary_correct_exec_proven_midS`,
+  `…_peak_proven_midS`, `E2E.SemanticExecBytes.binary_correct_exec_provenTS_midS`,
+  `…_peak_provenTS_midS`, `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT_midS`,
+  `…_peak_provenT_midS`: premise `Opt.FunsSimMUAt (fun n => I.syms.lookup n) P0.funcs (prog
+  I).funcs` in place of `ValidatedC`, through `Link.midProgAt{,_depth}`). `lean-link --verified`
+  keeps such pairs in the region, decides `Link.midValidatedSymsB` at the symbol table of the
+  route's input, and names the `…_sourceMidS`/`…_source_peakMidS` siblings of the 18 route
+  theorems and `Link.SemanticCompilerWith.attemptT_correct_source{,_peak}TBMidS`; when that
+  decision fails it names no theorem about the unoptimised dumps. `lean-backend` names `g`'s own
+  theorem for such a function (about the optimised function) and says that only `link-check` and
+  `lean-link` make the claim about the unoptimised one. Witnesses:
+  `Link.MidSourceWitness.correct_sourceMidS_applies`,
+  `E2E.MidSourceTBWitness.correct_sourceTBMidS_applies`, `FVTest.Link.MidSymsWitness.real_midProgAt`.
 
 **About the source function or the compiled function.** `about the source function`: the
 theorem's CLIF function is the one `lean-backend` read (cg_clif's dump, decoded by `cargo fv`),
