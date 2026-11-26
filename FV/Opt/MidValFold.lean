@@ -306,10 +306,45 @@ def magicStmts (op : DivOp) (ty : Ty) (v x y : ValueId) (M : Nat) (add : Bool) (
     (q.1 ++ [⟨[n + 1 + q.2], .binary .imul ty n y⟩, ⟨[v], .binary .isub ty x (n + 1 + q.2)⟩],
       q.2 + 2)
 
+/-- The signed sequence's fix-up of `q1 = smulhi x, m` (value `n + 1`): `q1 + x` when `d > 0` and
+`m < 0`, `q1 - x` when `d < 0` and `m > 0` (into `n + 2`), else `q1`; the value holding `q2`. -/
+def sFix (ty : Ty) (x : ValueId) (d m : Int) (n : ValueId) : List Stmt × ValueId :=
+  if 0 < d ∧ m < 0 then ([⟨[n + 2], .binary .iadd ty (n + 1) x⟩], n + 2)
+  else if d < 0 ∧ 0 < m then ([⟨[n + 2], .binary .isub ty (n + 1) x⟩], n + 2)
+  else ([], n + 1)
+
+/-- The signed sequence's `q3 = q2 >>ₛ s` (into `n + 4`; for `s = 0` `q2` itself, as Cranelift's
+rules remove a shift by 0); the value holding `q3`. -/
+def sShift (ty : Ty) (s : Nat) (q2 n : ValueId) : List Stmt × ValueId :=
+  if s = 0 then ([], q2)
+  else ([⟨[n + 3], .iconst ty (BitVec.ofNat _ s)⟩, ⟨[n + 4], .binary .sshr ty q2 (n + 3)⟩], n + 4)
+
+/-- The signed quotient by the magic numbers `m`, `s` (`Isle.Opt.Rust.magicS`) of `x` by `d` into
+`dst`, the temporaries numbered from `n` on (Cranelift's `apply_div_const_magic_s32`/`_s64`:
+`q1 = smulhi x, m`, the fix-up `sFix`, `q3 = q2 >>ₛ s` `sShift`, then `q3 + (q3 >> (w - 1))`);
+the number of temporaries. -/
+def sQuot (ty : Ty) (x : ValueId) (d m : Int) (s : Nat) (n dst : ValueId) : List Stmt × Nat :=
+  let f := sFix ty x d m n
+  let h := sShift ty s f.2 n
+  ([⟨[n], .iconst ty (BitVec.ofInt _ m)⟩, ⟨[n + 1], .binary .smulhi ty x n⟩] ++ f.1 ++ h.1 ++
+    [⟨[n + 5], .iconst ty (BitVec.ofNat _ (ty.width - 1))⟩, ⟨[n + 6], .binary .ushr ty h.2 (n + 5)⟩,
+      ⟨[dst], .binary .iadd ty h.2 (n + 6)⟩], 7)
+
+/-- `magicStmts` for `sdiv` (`sQuot`) and otherwise `srem` (the quotient into `n`, then
+`t = imul n, y; v = isub x, t`, `apply_div_const_magic_s*_finish`). -/
+def magicStmtsS (op : DivOp) (ty : Ty) (v x y : ValueId) (d m : Int) (s n : Nat) :
+    List Stmt × Nat :=
+  if op = .sdiv then sQuot ty x d m s n v
+  else
+    let q := sQuot ty x d m s (n + 1) n
+    (q.1 ++ [⟨[n + 1 + q.2], .binary .imul ty n y⟩, ⟨[v], .binary .isub ty x (n + 1 + q.2)⟩],
+      q.2 + 2)
+
 /-- The statements that replace `v = op ty x y` when `y` has a constant `d` in `K` that Cranelift
-divides by with magic numbers (`udiv`/`urem` at width 32 or 64, `d` neither 0, 1 nor a power of
-two): `magicStmts` with `Isle.Opt.Rust.magicU`'s numbers, values from `n` on, and how many.
-`none`: the statement is left alone. -/
+divides by with magic numbers: `udiv`/`urem` at width 32 or 64, `d` neither 0, 1 nor a power of
+two, `magicStmts` with `Isle.Opt.Rust.magicU`'s numbers; `sdiv`/`srem` at width 32 or 64, `|d|`
+(signed) neither 0, 1 nor a power of two, `magicStmtsS` with `Isle.Opt.Rust.magicS`'s numbers;
+values from `n` on, and how many. `none`: the statement is left alone. -/
 def magicRw (K : ValueId → Option Val) (n : ValueId) (st : Stmt) : Option (List Stmt × Nat) :=
   match st.results, st.inst with
   | [v], .div op ty x y =>
@@ -317,10 +352,15 @@ def magicRw (K : ValueId → Option Val) (n : ValueId) (st : Stmt) : Option (Lis
     | some c =>
       let w := ty.width
       let d := c.bits.toNat
+      let ds := c.bits.toInt
       if c.ty = ty ∧ (op = .udiv ∨ op = .urem) ∧ (w = 32 ∨ w = 64) ∧ 2 ≤ d ∧
           log2Exact d = none then
         let mg := Isle.Opt.Rust.magicU w d
         some (magicStmts op ty v x y mg.1 mg.2.1 mg.2.2.toNat n)
+      else if c.ty = ty ∧ (op = .sdiv ∨ op = .srem) ∧ (w = 32 ∨ w = 64) ∧ 2 ≤ ds.natAbs ∧
+          log2Exact ds.natAbs = none then
+        let mg := Isle.Opt.Rust.magicS w ds
+        some (magicStmtsS op ty v x y ds mg.1 mg.2.toNat n)
       else none
     | none => none
   | _, _ => none

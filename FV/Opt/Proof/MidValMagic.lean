@@ -1,5 +1,6 @@
 import FV.Opt.Proof.MidValDiv
 import FV.Opt.Proof.RuleInfraDivConst
+import FV.Opt.Proof.RuleSkeleton5
 
 /-!
 # Division by a constant with magic numbers is simulated by its input (#1119)
@@ -352,14 +353,277 @@ theorem magicStmts_mem_v (op : DivOp) (ty : Ty) (v x y : ValueId) (M : Nat) (add
   · exact uQuot_mem_dst ty x M add s n v
   · exact ⟨⟨[v], .binary .isub ty x (n + 1 + (uQuot ty x M add s (n + 1) n).2)⟩, by simp, by simp⟩
 
+/-! ## The signed sequence -/
+
+/-- The signed sequence's `q2` (`Opt.Proof.DivConst.magicS_spec`): the high half of `x·m`, with
+the fix-up. -/
+abbrev qS (w : Nat) (d m x : Int) : Int :=
+  if 0 < d ∧ m < 0 then x * m / 2 ^ w + x
+  else if d < 0 ∧ 0 < m then x * m / 2 ^ w - x else x * m / 2 ^ w
+
+/-- The facts of Cranelift's signed magic numbers the rewrite relies on
+(`Opt.Proof.DivConst.magicS_spec`): `m` a signed `w`-bit value, `s < w`, and for every signed
+`w`-bit `x` the fix-up `qS` stays in range and the shift and sign correction give `x.tdiv d`. -/
+def MagicFactsS (w : Nat) (d m : Int) (s : Nat) : Prop :=
+  -2 ^ (w - 1) ≤ m ∧ m < 2 ^ (w - 1) ∧ s < w ∧
+    ∀ x : Int, -2 ^ (w - 1) ≤ x → x < 2 ^ (w - 1) →
+      -2 ^ (w - 1) ≤ qS w d m x ∧ qS w d m x < 2 ^ (w - 1) ∧
+      qS w d m x / 2 ^ s + (if qS w d m x / 2 ^ s < 0 then 1 else 0) = x.tdiv d
+
+/-- `Isle.Opt.Rust.magicS`'s numbers have the facts, for every signed `w`-bit divisor whose
+absolute value is at least 2 and not a power of two. -/
+theorem magicS_facts {w : Nat} {d : Int} (hw : 3 ≤ w) (hd0 : d ≠ 0) (hdlo : -2 ^ (w - 1) ≤ d)
+    (hdhi : d < 2 ^ (w - 1)) (hpow : ∀ k, d.natAbs ≠ 2 ^ k) :
+    MagicFactsS w d (Isle.Opt.Rust.magicS w d).1 (Isle.Opt.Rust.magicS w d).2.toNat := by
+  obtain ⟨m, s, he, h1, h2, h3, h4⟩ := Opt.Proof.DivConst.magicS_spec hw hd0 hdlo hdhi hpow
+  rw [he]
+  simp only [Int.toNat_natCast]
+  exact ⟨h1, h2, h3, h4⟩
+
+theorem ofNat_toInt_small {w k : Nat} (hw : 1 ≤ w) (hk : k < w) :
+    (BitVec.ofNat w k).toInt = k := by
+  rw [BitVec.toInt_ofNat']
+  have h1 : k < 2 ^ (w - 1) := Nat.lt_of_le_of_lt (by omega) (Nat.lt_two_pow_self (n := w - 1))
+  apply Opt.Proof.sdc_bmod_of_range hw <;> rw [Opt.Proof.sdc_two_pow_int] <;> omega
+
+theorem sshr_ofNat_zero {w : Nat} (q : BitVec w) : Sem.sshr q (BitVec.ofNat w 0) = q := by
+  unfold Sem.sshr Sem.shiftAmt
+  simp
+
+theorem eval_sshr {Y : Frame} {m : Mem} {ty : Ty} {x s : ValueId} {a : BitVec ty.width}
+    {vs : Val} (hx : Y.regs x = some ⟨ty, a⟩) (hs : Y.regs s = some vs) :
+    evalInst Y m (.binary .sshr ty x s) = .ok ([⟨ty, Sem.sshr a vs.bits⟩], m) := by
+  simp only [evalInst, getAs_of_regs hx, Res.ok_bind]
+  simp [Frame.get, hs, Res.ofOption, BinaryOp.isShift, Sem.shift]
+  try rfl
+
+theorem RunS.sshr {T : Frame} {r r2 : Regs} {v x y : ValueId} {ty : Ty} {a : BitVec ty.width}
+    {vs : Val} {ss : List Stmt} (hx : r x = some ⟨ty, a⟩) (hy : r y = some vs)
+    (h : RunS T (r.set v ⟨ty, Sem.sshr a vs.bits⟩) ss r2) :
+    RunS T r (⟨[v], .binary .sshr ty x y⟩ :: ss) r2 :=
+  .cons (fun _ => eval_sshr (Y := { T with regs := r }) hx hy) rfl h
+
+theorem sFix_noCall (ty : Ty) (x : ValueId) (d m : Int) (n : ValueId) :
+    ∀ st ∈ (sFix ty x d m n).1, ∀ fn args, st.inst ≠ .call fn args := by
+  unfold sFix
+  split <;> (try split) <;> simp
+
+theorem sShift_noCall (ty : Ty) (s : Nat) (q2 n : ValueId) :
+    ∀ st ∈ (sShift ty s q2 n).1, ∀ fn args, st.inst ≠ .call fn args := by
+  unfold sShift
+  split <;> simp
+
+theorem sQuot_noCall (ty : Ty) (x : ValueId) (d m : Int) (s : Nat) (n dst : ValueId) :
+    ∀ st ∈ (sQuot ty x d m s n dst).1, ∀ fn args, st.inst ≠ .call fn args := by
+  have hf := sFix_noCall ty x d m n
+  have hs := sShift_noCall ty s (sFix ty x d m n).2 n
+  intro st hst
+  simp only [sQuot, List.mem_append] at hst
+  rcases hst with ((h | h) | h) | h
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl <;> simp
+  · exact hf st h
+  · exact hs st h
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl <;> simp
+
+/-- `q1 = smulhi x, m` and the fix-up run to `q2 = qS w d m x` in `(sFix …).2`. -/
+theorem sFix_run (T : Frame) {r : Regs} {ty : Ty} {x n : Nat} {a : BitVec ty.width}
+    {d m : Int} (hx : r x = some ⟨ty, a⟩) (hxn : x < n)
+    (hm1 : -2 ^ (ty.width - 1) ≤ m) (hm2 : m < 2 ^ (ty.width - 1))
+    (h1 : -2 ^ (ty.width - 1) ≤ qS ty.width d m a.toInt)
+    (h2 : qS ty.width d m a.toInt < 2 ^ (ty.width - 1)) :
+    ∃ r1 q2, RunS T r ([⟨[n], .iconst ty (BitVec.ofInt _ m)⟩, ⟨[n + 1], .binary .smulhi ty x n⟩] ++
+        (sFix ty x d m n).1) r1 ∧ r1 (sFix ty x d m n).2 = some ⟨ty, q2⟩ ∧
+      q2.toInt = qS ty.width d m a.toInt ∧ n ≤ (sFix ty x d m n).2 ∧ (sFix ty x d m n).2 < n + 3 ∧
+      ∀ w, w < n → r1 w = r w := by
+  have hw := ty_width_ge ty
+  have hM : (BitVec.ofInt ty.width m).toInt = m := by
+    rw [BitVec.toInt_ofInt]; exact Opt.Proof.sdc_bmod_of_range (by omega) hm1 hm2
+  have hx0 : x ≠ n := by omega
+  have hx1 : x ≠ n + 1 := by omega
+  unfold sFix
+  unfold qS at h1 h2 ⊢
+  by_cases hA : 0 < d ∧ m < 0
+  · simp only [if_pos hA] at h1 h2 ⊢
+    refine ⟨_, _, RunS.iconst (RunS.bin (a := a) (c := BitVec.ofInt ty.width m) rfl ?_ ?_
+      (RunS.bin (a := Sem.binary .smulhi a (BitVec.ofInt ty.width m)) (c := a) rfl ?_ ?_ (.nil _))),
+      by simp [Regs.set], Opt.Proof.sdc_q2_add (w := ty.width) (by omega) hM h1 h2, by simp, by simp, ?_⟩
+    · simp [Regs.set, hx0, hx]
+    · simp [Regs.set]
+    · simp [Regs.set]
+    · simp [Regs.set, hx0, hx1, hx]
+    · intro w hw'
+      have h0 : w ≠ n := by omega
+      have h1' : w ≠ n + 1 := by omega
+      have h2' : w ≠ n + 2 := by omega
+      simp [Regs.set, h0, h1', h2']
+  · by_cases hB : d < 0 ∧ 0 < m
+    · simp only [if_neg hA, if_pos hB] at h1 h2 ⊢
+      refine ⟨_, _, RunS.iconst (RunS.bin (a := a) (c := BitVec.ofInt ty.width m) rfl ?_ ?_
+        (RunS.bin (a := Sem.binary .smulhi a (BitVec.ofInt ty.width m)) (c := a) rfl ?_ ?_
+        (.nil _))), by simp [Regs.set], Opt.Proof.sdc_q2_sub (w := ty.width) (by omega) hM h1 h2, by simp,
+        by simp, ?_⟩
+      · simp [Regs.set, hx0, hx]
+      · simp [Regs.set]
+      · simp [Regs.set]
+      · simp [Regs.set, hx0, hx1, hx]
+      · intro w hw'
+        have h0 : w ≠ n := by omega
+        have h1' : w ≠ n + 1 := by omega
+        have h2' : w ≠ n + 2 := by omega
+        simp [Regs.set, h0, h1', h2']
+    · simp only [if_neg hA, if_neg hB] at h1 h2 ⊢
+      refine ⟨_, _, RunS.iconst (RunS.bin (a := a) (c := BitVec.ofInt ty.width m) rfl ?_ ?_
+        (.nil _)), by simp [Regs.set], Opt.Proof.sdc_q2_none (w := ty.width) (by omega) hM, by simp, by simp, ?_⟩
+      · simp [Regs.set, hx0, hx]
+      · simp [Regs.set]
+      · intro w hw'
+        have h0 : w ≠ n := by omega
+        have h1' : w ≠ n + 1 := by omega
+        simp [Regs.set, h0, h1']
+
+/-- `q3 = q2 >>ₛ s` runs (or is `q2` for `s = 0`). -/
+theorem sShift_run (T : Frame) {r1 : Regs} {ty : Ty} {s q2v n : Nat} {q2 : BitVec ty.width}
+    (hq : r1 q2v = some ⟨ty, q2⟩) (hqn : q2v < n + 3) :
+    ∃ r2, RunS T r1 (sShift ty s q2v n).1 r2 ∧
+      r2 (sShift ty s q2v n).2 = some ⟨ty, Sem.sshr q2 (BitVec.ofNat ty.width s)⟩ ∧
+      (sShift ty s q2v n).2 < n + 5 ∧ ∀ w, w < n + 3 → r2 w = r1 w := by
+  by_cases hs : s = 0
+  · subst hs
+    simp only [sShift]
+    exact ⟨r1, .nil _, by rw [sshr_ofNat_zero]; exact hq, Nat.lt_of_lt_of_le hqn (by omega),
+      fun _ _ => rfl⟩
+  · simp only [sShift, if_neg hs]
+    have hq3 : q2v ≠ n + 3 := by omega
+    refine ⟨_, RunS.iconst (RunS.sshr (a := q2) (vs := ⟨ty, BitVec.ofNat ty.width s⟩) ?_ ?_
+      (.nil _)), by simp [Regs.set], Nat.lt_succ_self _, ?_⟩
+    · simp [Regs.set, hq3, hq]
+    · simp [Regs.set]
+    · intro w hw
+      have h3 : w ≠ n + 3 := by omega
+      have h4 : w ≠ n + 4 := by omega
+      simp [Regs.set, h3, h4]
+
+/-- **The signed quotient by the magic numbers runs** to `a sdiv b` in `dst`, its temporaries
+(from `n` on) the only other registers written. -/
+theorem sQuot_run (T : Frame) {r : Regs} {ty : Ty} {x : Nat} {a b : BitVec ty.width} {d m : Int}
+    {s n dst : Nat} (hx : r x = some ⟨ty, a⟩) (hxn : x < n) (hf : MagicFactsS ty.width d m s)
+    (hd : b.toInt = d) (hb : b ≠ -1#ty.width) :
+    ∃ r2, RunS T r (sQuot ty x d m s n dst).1 r2 ∧ r2 dst = some ⟨ty, a.sdiv b⟩ ∧
+      ∀ w, w < n → w ≠ dst → r2 w = r w := by
+  have hw := ty_width_ge ty
+  obtain ⟨hm1, hm2, hs, hq⟩ := hf
+  obtain ⟨ha1, ha2⟩ := Opt.Proof.sdc_toInt_range (by omega) a
+  obtain ⟨hq1, hq2, hqd⟩ := hq a.toInt ha1 ha2
+  show ∃ r2, RunS T r ((([⟨[n], .iconst ty (BitVec.ofInt _ m)⟩, ⟨[n + 1], .binary .smulhi ty x n⟩] ++
+      (sFix ty x d m n).1) ++ (sShift ty s (sFix ty x d m n).2 n).1) ++
+      [⟨[n + 5], .iconst ty (BitVec.ofNat _ (ty.width - 1))⟩,
+        ⟨[n + 6], .binary .ushr ty (sShift ty s (sFix ty x d m n).2 n).2 (n + 5)⟩,
+        ⟨[dst], .binary .iadd ty (sShift ty s (sFix ty x d m n).2 n).2 (n + 6)⟩]) r2 ∧
+      r2 dst = some ⟨ty, a.sdiv b⟩ ∧ ∀ w, w < n → w ≠ dst → r2 w = r w
+  obtain ⟨r1, q2, hr1, hq2v, hq2i, hn1, hn2, hfr1⟩ :=
+    sFix_run T (n := n) (d := d) hx hxn hm1 hm2 hq1 hq2
+  obtain ⟨r2, hr2, hq3v, hn3, hfr2⟩ := sShift_run T (s := s) hq2v hn2
+  generalize hq3 : Sem.sshr q2 (BitVec.ofNat ty.width s) = q3 at hq3v
+  have hdst : Sem.binary .iadd q3 (Sem.ushr q3 (BitVec.ofNat ty.width (ty.width - 1))) =
+      a.sdiv b := by
+    rw [← hq3]
+    exact (Opt.Proof.sdc_sdiv_seq (w := ty.width) (by omega)
+      (ofNat_toInt_small (w := ty.width) (by omega) hs) hs
+      (ofNat_toInt_small (w := ty.width) (by omega) (by omega)) hb hq2i
+      (by rw [hd]; exact hqd)).symm
+  generalize sShift ty s (sFix ty x d m n).2 n = H at hr2 hq3v hn3 ⊢
+  have h5 : H.2 ≠ n + 5 := Nat.ne_of_lt hn3
+  have h6 : H.2 ≠ n + 6 := Nat.ne_of_lt (Nat.lt_trans hn3 (Nat.lt_succ_self _))
+  refine ⟨_, (hr1.app hr2).app (RunS.iconst (RunS.ushr (a := q3)
+    (vs := ⟨ty, BitVec.ofNat ty.width (ty.width - 1)⟩) ?_ ?_ (RunS.bin (a := q3)
+    (c := Sem.ushr q3 (BitVec.ofNat ty.width (ty.width - 1))) rfl ?_ ?_ (.nil _)))), ?_, ?_⟩
+  · simp [Regs.set, h5, hq3v]
+  · simp [Regs.set]
+  · simp [Regs.set, h5, h6, hq3v]
+  · simp [Regs.set]
+  · simp only [Regs.set_same]; exact congrArg (fun z => (some (Val.mk ty z) : Option Val)) hdst
+  · intro w hw' hwd
+    have h0 : w ≠ n + 5 := by omega
+    have h1' : w ≠ n + 6 := by omega
+    simp only [Regs.set, hwd, h0, h1', if_false]
+    rw [hfr2 w (by omega), hfr1 w hw']
+
+theorem magicStmtsS_noCall (op : DivOp) (ty : Ty) (v x y : ValueId) (d m : Int) (s n : Nat) :
+    ∀ st ∈ (magicStmtsS op ty v x y d m s n).1, ∀ fn args, st.inst ≠ .call fn args := by
+  intro st hst fn args h
+  unfold magicStmtsS at hst
+  split at hst
+  · exact sQuot_noCall ty x d m s n v st hst fn args h
+  · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hst
+    rcases hst with hst | hst | hst
+    · exact sQuot_noCall ty x d m s (n + 1) n st hst fn args h
+    · subst hst; cases h
+    · subst hst; cases h
+
+theorem magicStmtsS_mem_v (op : DivOp) (ty : Ty) (v x y : ValueId) (d m : Int) (s n : Nat) :
+    ∃ st ∈ (magicStmtsS op ty v x y d m s n).1, v ∈ st.results := by
+  unfold magicStmtsS
+  split
+  · exact ⟨⟨[v], .binary .iadd ty (sShift ty s (sFix ty x d m n).2 n).2 (n + 6)⟩, by simp [sQuot],
+      by simp⟩
+  · exact ⟨⟨[v], .binary .isub ty x (n + 1 + (sQuot ty x d m s (n + 1) n).2)⟩, by simp, by simp⟩
+
+/-- **The statements of a signed division by magic numbers run** to the division's value in `v`,
+the values from `n` on the only other registers written. -/
+theorem magicStmtsS_run (T : Frame) {r : Regs} {op : DivOp} {ty : Ty} {v x y : Nat}
+    {a b : BitVec ty.width} {d m : Int} {s n : Nat} (hop : op = .sdiv ∨ op = .srem)
+    (hx : r x = some ⟨ty, a⟩) (hy : r y = some ⟨ty, b⟩) (hxn : x < n) (hyn : y < n)
+    (hd : b.toInt = d) (hd2 : 2 ≤ d.natAbs) (hf : MagicFactsS ty.width d m s)
+    {res : BitVec ty.width} (hres : Sem.div op a b = .ok res) :
+    ∃ r2, RunS T r (magicStmtsS op ty v x y d m s n).1 r2 ∧ r2 v = some ⟨ty, res⟩ ∧
+      ∀ w, w < n → w ≠ v → r2 w = r w := by
+  have hw := ty_width_ge ty
+  have hb1 : b ≠ -1#ty.width := Opt.Proof.sdc_ne_neg_one (by omega) (by omega)
+  have hb0 : b ≠ 0 := by intro h; rw [h] at hd; simp at hd; omega
+  have hbo : b ≠ BitVec.allOnes ty.width := by rw [← BitVec.neg_one_eq_allOnes]; exact hb1
+  unfold magicStmtsS
+  cases op <;> simp only [reduceCtorEq, or_self, or_false, false_or] at hop
+  · simp only [ite_true]
+    have hr : res = a.sdiv b := by
+      simp only [Sem.div, Sem.sdiv, if_neg hb0, hbo, and_false, if_false, Except.ok.injEq] at hres
+      exact hres.symm
+    subst hr
+    exact sQuot_run T hx hxn hf hd hb1
+  · simp only [reduceCtorEq, ite_false]
+    have hr : res = a.srem b := by
+      simp only [Sem.div, Sem.srem, if_neg hb0, Except.ok.injEq] at hres; exact hres.symm
+    subst hr
+    obtain ⟨r1, h1, hq, hfr⟩ := sQuot_run T (n := n + 1) (dst := n) hx (by omega) hf hd hb1
+    have hx1 : r1 x = some ⟨ty, a⟩ := by rw [hfr x (by omega) (by omega), hx]
+    have hy1 : r1 y = some ⟨ty, b⟩ := by rw [hfr y (by omega) (by omega), hy]
+    generalize hk : (sQuot ty x d m s (n + 1) n).2 = k
+    have hxk : x ≠ n + 1 + k := by omega
+    refine ⟨_, h1.app (RunS.bin rfl hq hy1
+      (RunS.bin (a := a) (c := Sem.binary .imul (a.sdiv b) b) rfl ?_ ?_ (.nil _))), ?_, ?_⟩
+    · simp [Regs.set, hxk, hx1]
+    · simp [Regs.set]
+    · simp only [Regs.set_same]
+      rw [Opt.Proof.sdc_srem_of_sdiv (by omega) a b hb1]
+      rfl
+    · intro w hw hwv
+      have h0 : w ≠ n + 1 + k := by omega
+      simp only [Regs.set, hwv, h0, if_false]
+      exact hfr w (by omega) (by omega)
+
 /-- What `magicRw` does with a statement it rewrites. -/
 theorem magicRw_spec {K : ValueId → Option Val} {n : ValueId} {st : Stmt} {xs : List Stmt}
     {k : Nat} (h : magicRw K n st = some (xs, k)) :
     ∃ v op ty x y c, st = ⟨[v], .div op ty x y⟩ ∧ K y = some c ∧ c.ty = ty ∧
-      (op = .udiv ∨ op = .urem) ∧ 2 ≤ c.bits.toNat ∧ log2Exact c.bits.toNat = none ∧
-      (xs, k) = magicStmts op ty v x y (Isle.Opt.Rust.magicU ty.width c.bits.toNat).1
-        (Isle.Opt.Rust.magicU ty.width c.bits.toNat).2.1
-        (Isle.Opt.Rust.magicU ty.width c.bits.toNat).2.2.toNat n := by
+      (((op = .udiv ∨ op = .urem) ∧ 2 ≤ c.bits.toNat ∧ log2Exact c.bits.toNat = none ∧
+        (xs, k) = magicStmts op ty v x y (Isle.Opt.Rust.magicU ty.width c.bits.toNat).1
+          (Isle.Opt.Rust.magicU ty.width c.bits.toNat).2.1
+          (Isle.Opt.Rust.magicU ty.width c.bits.toNat).2.2.toNat n) ∨
+       ((op = .sdiv ∨ op = .srem) ∧ 2 ≤ c.bits.toInt.natAbs ∧
+        log2Exact c.bits.toInt.natAbs = none ∧
+        (xs, k) = magicStmtsS op ty v x y c.bits.toInt (Isle.Opt.Rust.magicS ty.width c.bits.toInt).1
+          (Isle.Opt.Rust.magicS ty.width c.bits.toInt).2.toNat n)) := by
   obtain ⟨rs, i⟩ := st
   unfold magicRw at h
   dsimp only at h
@@ -371,8 +635,13 @@ theorem magicRw_spec {K : ValueId → Option Val} {n : ValueId} {st : Stmt} {xs 
       · rename_i hcond
         obtain ⟨hty, hop, -, hd2, hlog⟩ := hcond
         simp only [Option.some.injEq] at h
-        exact ⟨v, op, ty, x, y, c, rfl, hc, hty, hop, hd2, hlog, h.symm⟩
-      · cases h
+        exact ⟨v, op, ty, x, y, c, rfl, hc, hty, .inl ⟨hop, hd2, hlog, h.symm⟩⟩
+      · split at h
+        · rename_i _ hcond
+          obtain ⟨hty, hop, -, hd2, hlog⟩ := hcond
+          simp only [Option.some.injEq] at h
+          exact ⟨v, op, ty, x, y, c, rfl, hc, hty, .inr ⟨hop, hd2, hlog, h.symm⟩⟩
+        · cases h
     · cases h
   · cases h
 
@@ -428,13 +697,19 @@ theorem magicBody_results {K : ValueId → Option Val} :
     split
     · rename_i xs k hw
       rcases List.mem_cons.1 hst with rfl | hst
-      · obtain ⟨v, op, ty, x, y, c, rfl, -, -, -, -, -, hxs⟩ := magicRw_spec hw
+      · obtain ⟨v, op, ty, x, y, c, rfl, -, -, hcase⟩ := magicRw_spec hw
         simp only [List.mem_singleton] at hr
         subst hr
-        generalize Isle.Opt.Rust.magicU ty.width c.bits.toNat = mg at hxs
-        have hx1 : xs = (magicStmts op ty r x y mg.1 mg.2.1 mg.2.2.toNat n).1 := by rw [← hxs]
-        obtain ⟨st', h1, h2⟩ := magicStmts_mem_v op ty r x y mg.1 mg.2.1 mg.2.2.toNat n
-        exact ⟨st', List.mem_append_left _ (hx1 ▸ h1), h2⟩
+        rcases hcase with ⟨-, -, -, hxs⟩ | ⟨-, -, -, hxs⟩
+        · generalize Isle.Opt.Rust.magicU ty.width c.bits.toNat = mg at hxs
+          have hx1 : xs = (magicStmts op ty r x y mg.1 mg.2.1 mg.2.2.toNat n).1 := by rw [← hxs]
+          obtain ⟨st', h1, h2⟩ := magicStmts_mem_v op ty r x y mg.1 mg.2.1 mg.2.2.toNat n
+          exact ⟨st', List.mem_append_left _ (hx1 ▸ h1), h2⟩
+        · generalize Isle.Opt.Rust.magicS ty.width c.bits.toInt = mg at hxs
+          have hx1 : xs = (magicStmtsS op ty r x y c.bits.toInt mg.1 mg.2.toNat n).1 := by
+            rw [← hxs]
+          obtain ⟨st', h1, h2⟩ := magicStmtsS_mem_v op ty r x y c.bits.toInt mg.1 mg.2.toNat n
+          exact ⟨st', List.mem_append_left _ (hx1 ▸ h1), h2⟩
       · obtain ⟨st', h1, h2⟩ := magicBody_results ss _ st hst r hr
         exact ⟨st', List.mem_append_right _ h1, h2⟩
     · rcases List.mem_cons.1 hst with rfl | hst
@@ -587,7 +862,7 @@ theorem magic_step {F : Nat} {X Y : Frame} {m : Mem} {st : Stmt} {ss yr xs : Lis
     {X1 : Frame} {m1 : Mem} (hl : lstep X m = .next X1 m1) :
     ∃ Y1, LStar Y m Y1 m1 ∧ X1 = { X with regs := X1.regs, body := ss } ∧
       Y1 = { Y with regs := Y1.regs, body := yr } ∧ Agree (· < F) X1.regs Y1.regs := by
-  obtain ⟨v, op, ty, x, y, c, rfl, hc, -, hop, hd2, hlog, hxs⟩ := magicRw_spec hw
+  obtain ⟨v, op, ty, x, y, c, rfl, hc, -, hcase⟩ := magicRw_spec hw
   have hnc : ∀ fn args, Inst.div op ty x y ≠ .call fn args := fun _ _ h => by cases h
   rw [lstep_inst hXb hnc] at hl
   cases he : evalInst X m (.div op ty x y) with
@@ -610,23 +885,41 @@ theorem magic_step {F : Nat} {X Y : Frame} {m : Mem} {st : Stmt} {ss yr xs : Lis
       have hyb := getAs_regs hb
       have hcb : c = ⟨ty, b⟩ := (hI y c ⟨ty, b⟩ hc hyb).symm
       subst hcb
+      dsimp only at hcase
       have hxF : x < F := hops x (by simp [operands])
       have hyF : y < F := hops y (by simp [operands])
       have hvF : v < F := hres v (by simp)
       have hYx : Y.regs x = some ⟨ty, a⟩ := (hag x hxF).trans hxa
       have hYy : Y.regs y = some ⟨ty, b⟩ := (hag y hyF).trans hyb
+      have hxn := Nat.lt_of_lt_of_le hxF hFn
+      have hyn := Nat.lt_of_lt_of_le hyF hFn
       have hr1 : r1 = X.regs.set v ⟨ty, r⟩ := by
         simp only [Regs.setMany, Option.some.injEq] at hs
         exact hs.symm
       subst hr1
-      have hf := magicU_facts (by have := ty_width_ge ty; omega) hd2 b.isLt (log2Exact_none hlog)
-      generalize Isle.Opt.Rust.magicU ty.width b.toNat = mg at hf hxs
-      obtain ⟨r2, hrun, hv, hfr⟩ := magicStmts_run Y (v := v) (n := n) hop hYx hYy
-        (Nat.lt_of_lt_of_le hxF hFn) (Nat.lt_of_lt_of_le hyF hFn) hd2 hf (ofExcept_ok hr)
-      have hxs' : xs = (magicStmts op ty v x y mg.1 mg.2.1 mg.2.2.toNat n).1 := by rw [← hxs]
+      have hw8 := ty_width_ge ty
       have hYeq : ({ Y with regs := Y.regs, body := xs ++ yr } : Frame) = Y := by rw [← hYb]
-      have hstar := hrun.lstar (magicStmts_noCall op ty v x y mg.1 mg.2.1 mg.2.2.toNat n) yr m
-      rw [← hxs', hYeq] at hstar
+      obtain ⟨r2, hstar, hv, hfr⟩ : ∃ r2, LStar Y m { Y with regs := r2, body := yr } m ∧
+          r2 v = some ⟨ty, r⟩ ∧ ∀ w, w < n → w ≠ v → r2 w = Y.regs w := by
+        rcases hcase with ⟨hop, hd2, hlog, hxs⟩ | ⟨hop, hd2, hlog, hxs⟩
+        · have hf := magicU_facts (by omega) hd2 b.isLt (log2Exact_none hlog)
+          generalize Isle.Opt.Rust.magicU ty.width b.toNat = mg at hf hxs
+          obtain ⟨r2, hrun, hv, hfr⟩ :=
+            magicStmts_run Y (v := v) (n := n) hop hYx hYy hxn hyn hd2 hf (ofExcept_ok hr)
+          have hxs' : xs = (magicStmts op ty v x y mg.1 mg.2.1 mg.2.2.toNat n).1 := by rw [← hxs]
+          have hstar := hrun.lstar (magicStmts_noCall op ty v x y mg.1 mg.2.1 mg.2.2.toNat n) yr m
+          rw [← hxs', hYeq] at hstar
+          exact ⟨r2, hstar, hv, hfr⟩
+        · obtain ⟨hlo, hhi⟩ := Opt.Proof.sdc_toInt_range (by omega) b
+          have hf := magicS_facts (d := b.toInt) (by omega) (by omega) hlo hhi (log2Exact_none hlog)
+          generalize Isle.Opt.Rust.magicS ty.width b.toInt = mg at hf hxs
+          obtain ⟨r2, hrun, hv, hfr⟩ :=
+            magicStmtsS_run Y (v := v) (n := n) hop hYx hYy hxn hyn rfl hd2 hf (ofExcept_ok hr)
+          have hxs' : xs = (magicStmtsS op ty v x y b.toInt mg.1 mg.2.toNat n).1 := by
+            rw [← hxs]
+          have hstar := hrun.lstar (magicStmtsS_noCall op ty v x y b.toInt mg.1 mg.2.toNat n) yr m
+          rw [← hxs', hYeq] at hstar
+          exact ⟨r2, hstar, hv, hfr⟩
       refine ⟨_, hstar, rfl, rfl, fun w hw => ?_⟩
       dsimp only
       by_cases hwv : w = v
@@ -640,7 +933,7 @@ theorem magic_only_next {X : Frame} {m : Mem} {st : Stmt} {ss xs : List Stmt} {n
     {r : LRes} (hn : ∀ X1 m1, r ≠ .next X1 m1) (hs : ∀ msg, r ≠ .stuck msg) :
     lstep X m ≠ r := by
   intro hl
-  obtain ⟨v, op, ty, x, y, c, rfl, hc, -, hop, hd2, -, -⟩ := magicRw_spec hw
+  obtain ⟨v, op, ty, x, y, c, rfl, hc, -, hcase⟩ := magicRw_spec hw
   have hnc : ∀ fn args, Inst.div op ty x y ≠ .call fn args := fun _ _ h => by cases h
   rw [lstep_inst hXb hnc] at hl
   cases he : evalInst X m (.div op ty x y) with
@@ -661,11 +954,21 @@ theorem magic_only_next {X : Frame} {m : Mem} {st : Stmt} {ss xs : List Stmt} {n
     have hyb := getAs_regs hb
     have hcb : c = ⟨ty, b⟩ := (hI y c ⟨ty, b⟩ hc hyb).symm
     subst hcb
-    have hb0 : b ≠ 0 := by intro h; rw [h] at hd2; simp at hd2
+    dsimp only at hcase
+    have hw8 := ty_width_ge ty
     have hok' : ∃ r, Sem.div op a b = .ok r := by
-      rcases hop with rfl | rfl
-      · exact ⟨a / b, by simp only [Sem.div, Sem.udiv, if_neg hb0]⟩
-      · exact ⟨a % b, by simp only [Sem.div, Sem.urem, if_neg hb0]⟩
+      rcases hcase with ⟨hop, hd2, -, -⟩ | ⟨hop, hd2, -, -⟩
+      · have hb0 : b ≠ 0 := by intro h; rw [h] at hd2; simp at hd2
+        rcases hop with rfl | rfl
+        · exact ⟨a / b, by simp only [Sem.div, Sem.udiv, if_neg hb0]⟩
+        · exact ⟨a % b, by simp only [Sem.div, Sem.urem, if_neg hb0]⟩
+      · have hb0 : b ≠ 0 := by intro h; rw [h] at hd2; simp at hd2
+        have hbo : b ≠ BitVec.allOnes ty.width := by
+          rw [← BitVec.neg_one_eq_allOnes]
+          exact Opt.Proof.sdc_ne_neg_one (by omega) (by omega)
+        rcases hop with rfl | rfl
+        · exact ⟨a.sdiv b, by simp only [Sem.div, Sem.sdiv, if_neg hb0, hbo, and_false, if_false]⟩
+        · exact ⟨a.srem b, by simp only [Sem.div, Sem.srem, if_neg hb0]⟩
     obtain ⟨r, hr⟩ := hok'
     rcases h3 with h3 | ⟨r', -, h4⟩
     · rw [hr] at h3; simp [Res.ofExcept] at h3

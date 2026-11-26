@@ -5,27 +5,33 @@ import FV.Opt.Proof.MidValMagic
 
 `magicPre` (`FV/Opt/MidValFold.lean`, inside `foldPre`) rewrites `f`'s `udiv`/`urem` at width 32
 or 64 whose divisor is a constant other than 0, 1 and the powers of two into Cranelift's
-multiply-high sequence (`Isle.Opt.Rust.magicU`, the port of `magic_u32`/`magic_u64`);
-`check_soundC` composes the check with `foldPre_simU` (`magicPre_simU`,
-`FV/Opt/Proof/MidValMagic.lean`).
+multiply-high sequence (`Isle.Opt.Rust.magicU`, the port of `magic_u32`/`magic_u64`), and its
+`sdiv`/`srem` whose divisor's absolute value is not 0, 1 or a power of two into the signed one
+(`Isle.Opt.Rust.magicS`, `magic_s32`/`magic_s64`); `check_soundC` composes the check with
+`foldPre_simU` (`magicPre_simU`, `FV/Opt/Proof/MidValMagic.lean`).
 
 * The magic numbers: `Isle.Opt.Rust.magicU` gives Cranelift's own test vectors
   (`opts/div_const.rs`: `magic_u32(7) = (0x24924925, true, 3)`, `magic_u32(10)`, `magic_u64(7)`,
-  `magic_u64(10)`).
+  `magic_u64(10)`), `Isle.Opt.Rust.magicS` its `magic_s32(7)` and `magic_s64(7)`.
 * Hand-made: `udiv x, 3` against `umulhi x, 0xAAAA…AB; ushr 1`, `urem x, 3` against the same
-  quotient times 3 subtracted from `x`, `udiv x, 7` against the add sequence; each accepted and
-  rejected without the rewrite (`*_check_rejects`, `*_c0_rejects`).
+  quotient times 3 subtracted from `x`, `udiv x, 7` against the add sequence, `sdiv x, 7` and
+  `srem x, 7` (64 bits: `smulhi`, `sshr 1`, the sign correction), `sdiv x, 3` (shift 0: no
+  `sshr`), `sdiv.i32 x, 7` (the fix-up `q1 + x`); each accepted and rejected without the
+  rewrite (`*_check_rejects`, `*_c0_rejects`).
 * Negative: a multiplier one too small (`udiv x, 3` against `umulhi x, 0xAAAA…AA; ushr 1`) is no
-  simulation (`x = 3`: 1 against 0), so every certificate with every hint list is rejected
-  (`low_rejected`); `sdiv` by 7, `udiv` by 0, by a power of two (left to `divPre`) and at width 8
-  are left alone (`*_not_rewritten`).
+  simulation (`x = 3`: 1 against 0), nor is the signed sequence without its sign correction
+  (`sdiv x, 7`, `x = -1`: 0 against -1), so every certificate with every hint list is rejected
+  (`low_rejected`, `nofix_rejected`); `sdiv` by 8 (Cranelift's signed power-of-two sequence),
+  `udiv` by 0, by a power of two (left to `divPre`) and at width 8 are left alone
+  (`*_not_rewritten`).
 * Real pairs (semver 1.0.28, serde_json 1.0.154 and crypto-bigint 0.7.11 builds, the #1119
   corpus, `FVTest/Opt/midval/real_magic_*.clif`), each rejected before (`checkC0`) and accepted by
   `checkCertC` with the requests `emitC` gives (decided), with the simulation and the program
   refinement: `udiv10` (semver, `udiv.i64` by 10), `udiv24` (dissimilar, `udiv` by 24, the most
   frequent divisor), `add32` (`core::time::Duration::new`, `udiv.i32`/`urem.i32` by 10^9, the add
   step), `urem192` (crypto_bigint, `urem.i32` by 192), `add64` (`core::num::int_log10::u64_impl`,
-  `udiv` by 10^5 and 10^10, the add step at width 64).
+  `udiv` by 10^5 and 10^10, the add step at width 64), `srem100` (ryu, `sdiv`/`srem.i64` by 100, the
+  fix-up `q1 + x`), `sdiv72` (criterion, `sdiv.i64` by 72).
 -/
 
 namespace Opt.MidVal.MagicWitness
@@ -40,6 +46,8 @@ theorem magicU_u64_7 : Isle.Opt.Rust.magicU 64 7 = (0x2492492492492493, true, 3)
   native_decide
 theorem magicU_u64_10 : Isle.Opt.Rust.magicU 64 10 = (0xcccccccccccccccd, false, 3) := by
   native_decide
+theorem magicS_s32_7 : Isle.Opt.Rust.magicS 32 7 = (-1840700269, 2) := by native_decide
+theorem magicS_s64_7 : Isle.Opt.Rust.magicS 64 7 = (5270498306774157605, 1) := by native_decide
 
 /-! ## Hand-made pairs -/
 
@@ -83,6 +91,50 @@ theorem pos_udiv7_check_rejects : accepts (divText "udiv" "7") udiv7G = some fal
 theorem pos_udiv7_c0_rejects : acceptsC0 (divText "udiv" "7") udiv7G = some false := by
   native_decide
 
+/-- Cranelift's `sdiv x, 7`: `q1 = smulhi x, m`, `q3 = q1 >>ₛ 1`, `q3 + (q3 >> 63)`. -/
+def sdiv7G : String :=
+  gText ("    v3 = iconst.i64 5270498306774157605\n    v4 = smulhi v0, v3\n    v5 = iconst.i64 1\n" ++
+    "    v6 = sshr v4, v5\n    v7 = iconst.i64 63\n    v8 = ushr v6, v7\n    v9 = iadd v6, v8\n") "v9"
+
+/-- Cranelift's `srem x, 7`: the quotient, times 7, subtracted from `x`. -/
+def srem7G : String :=
+  gText ("    v3 = iconst.i64 5270498306774157605\n    v4 = smulhi v0, v3\n    v5 = iconst.i64 1\n" ++
+    "    v6 = sshr v4, v5\n    v7 = iconst.i64 63\n    v8 = ushr v6, v7\n    v9 = iadd v6, v8\n" ++
+    "    v10 = iconst.i64 7\n    v11 = imul v9, v10\n    v12 = isub v0, v11\n") "v12"
+
+/-- Cranelift's `sdiv x, 3` (shift 0, no `sshr`). -/
+def sdiv3G : String :=
+  gText ("    v3 = iconst.i64 6148914691236517206\n    v4 = smulhi v0, v3\n    v7 = iconst.i64 63\n" ++
+    "    v8 = ushr v4, v7\n    v9 = iadd v4, v8\n") "v9"
+
+def sdiv7F32 : String :=
+  "function %f(i32) -> i32 {\nblock0(v0: i32):\n    v5 = iconst.i32 7\n    v6 = sdiv v0, v5\n    return v6\n}"
+
+/-- Cranelift's `sdiv.i32 x, 7`: a negative multiplier, so the fix-up `q1 + x`, then `sshr 2`. -/
+def sdiv7G32 : String :=
+  "function %f(i32) -> i32 {\nblock0(v0: i32):\n    v3 = iconst.i32 -1840700269\n" ++
+    "    v4 = smulhi v0, v3\n    v5 = iadd v4, v0\n    v6 = iconst.i32 2\n    v7 = sshr v5, v6\n" ++
+    "    v8 = iconst.i32 31\n    v9 = ushr v7, v8\n    v10 = iadd v7, v9\n    return v10\n}"
+
+theorem pos_sdiv7 : acceptsC (divText "sdiv" "7") sdiv7G = some true := by native_decide
+theorem pos_sdiv7_check_rejects : accepts (divText "sdiv" "7") sdiv7G = some false := by
+  native_decide
+theorem pos_sdiv7_c0_rejects : acceptsC0 (divText "sdiv" "7") sdiv7G = some false := by
+  native_decide
+
+theorem pos_srem7 : acceptsC (divText "srem" "7") srem7G = some true := by native_decide
+theorem pos_srem7_check_rejects : accepts (divText "srem" "7") srem7G = some false := by
+  native_decide
+theorem pos_srem7_c0_rejects : acceptsC0 (divText "srem" "7") srem7G = some false := by
+  native_decide
+
+theorem pos_sdiv3 : acceptsC (divText "sdiv" "3") sdiv3G = some true := by native_decide
+theorem pos_sdiv3_c0_rejects : acceptsC0 (divText "sdiv" "3") sdiv3G = some false := by
+  native_decide
+
+theorem pos_sdiv7_32 : acceptsC sdiv7F32 sdiv7G32 = some true := by native_decide
+theorem pos_sdiv7_32_c0_rejects : acceptsC0 sdiv7F32 sdiv7G32 = some false := by native_decide
+
 /-! ## Negative pairs -/
 
 /-- `g`: a multiplier one too small, then `ushr 1`. -/
@@ -116,10 +168,46 @@ theorem low_rejected (cert : Cert) (hints : List (BlockId × List Wrap)) :
   · rfl
   · exact absurd (checkedC_simMU h) low_not_sim
 
-/-- `sdiv` (rounding toward zero; Cranelift's signed sequence is a different one), a divisor 0
-(the division traps), a power of two (`divPre`'s) and width 8 (Cranelift's rules are for 32 and 64
+/-- The signed sequence without its sign correction. -/
+def sdiv7NoFixG : String :=
+  gText "    v3 = iconst.i64 5270498306774157605\n    v4 = smulhi v0, v3\n    v5 = iconst.i64 1\n    v6 = sshr v4, v5\n" "v6"
+
+/-- `g`: `smulhi x, m`, then `sshr 1`, no sign correction. -/
+def fnNoFix : Function :=
+  { name := "f", sig := { params := [ap .i64], returns := [ap .i64], callConv := none },
+    blocks := [
+      { id := 0, params := [(0, .i64)], cold := false,
+        body := [{ results := [3], inst := .iconst .i64 5270498306774157605 },
+          { results := [4], inst := .binary .smulhi .i64 0 3 },
+          { results := [5], inst := .iconst .i64 1 },
+          { results := [6], inst := .binary .sshr .i64 4 5 }],
+        term := .ret [6] }] }
+
+theorem sdiv7_text : fn? (divText "sdiv" "7") = some (fnDiv .sdiv 7) := by native_decide
+theorem nofix_text : fn? sdiv7NoFixG = some fnNoFix := by native_decide
+
+/-- Not a simulation: for `x = -1`, `sdiv x, 7 = 0` (toward zero) and the sequence without the
+sign correction gives -1. -/
+theorem nofix_not_sim : ¬ FunSimMU (fnDiv .sdiv 7) fnNoFix :=
+  not_funSimMU_ret_ne (b := (fnDiv .sdiv 7).blocks.head!) (b' := fnNoFix.blocks.head!)
+    (args := [⟨.i64, -1⟩]) (regs := Regs.empty.set 0 ⟨.i64, -1⟩) (m := Mem.empty)
+    (vals := [⟨.i64, 0⟩]) (vals' := [⟨.i64, -1⟩]) rfl rfl rfl rfl rfl
+    (.step rfl (.step rfl (.refl _ _))) rfl
+    (.step rfl (.step rfl (.step rfl (.step rfl (.refl _ _))))) rfl
+    (by intro h; cases h)
+
+theorem neg_nofix : acceptsC (divText "sdiv" "7") sdiv7NoFixG = some false := by native_decide
+
+theorem nofix_rejected (cert : Cert) (hints : List (BlockId × List Wrap)) :
+    checkCertC (ConstPhi.run (fnDiv .sdiv 7)) fnNoFix cert hints = false := by
+  cases h : checkCertC (ConstPhi.run (fnDiv .sdiv 7)) fnNoFix cert hints
+  · rfl
+  · exact absurd (checkedC_simMU h) nofix_not_sim
+
+/-- `sdiv` by 8 (Cranelift's signed power-of-two sequence, not this one), a divisor 0 (the
+division traps), a power of two (`divPre`'s) and width 8 (Cranelift's rules are for 32 and 64
 bits) are left alone. -/
-theorem sdiv7_not_rewritten : magicPre (fnDiv .sdiv 7) [0] = fnDiv .sdiv 7 := by native_decide
+theorem sdiv8_not_rewritten : magicPre (fnDiv .sdiv 8) [0] = fnDiv .sdiv 8 := by native_decide
 theorem div0_not_rewritten : magicPre (fnDiv .udiv 0) [0] = fnDiv .udiv 0 := by native_decide
 theorem pow2_not_rewritten : magicPre (fnDiv .udiv 8) [0] = fnDiv .udiv 8 := by native_decide
 
@@ -146,6 +234,10 @@ def urem192F : String := include_str "midval/real_magic_urem192.unopt.clif"
 def urem192G : String := include_str "midval/real_magic_urem192.opt.clif"
 def add64F : String := include_str "midval/real_magic_add64.unopt.clif"
 def add64G : String := include_str "midval/real_magic_add64.opt.clif"
+def srem100F : String := include_str "midval/real_magic_srem100.unopt.clif"
+def srem100G : String := include_str "midval/real_magic_srem100.opt.clif"
+def sdiv72F : String := include_str "midval/real_magic_sdiv72.unopt.clif"
+def sdiv72G : String := include_str "midval/real_magic_sdiv72.opt.clif"
 
 theorem real_udiv10_c0_rejects : c0Verdict udiv10F udiv10G = some false := by native_decide
 theorem real_udiv10_checked : checkedC udiv10F udiv10G = some (true, true) := by native_decide
@@ -166,5 +258,13 @@ theorem real_urem192_sim : SimRefinesC urem192F urem192G := simC_of_checked real
 theorem real_add64_c0_rejects : c0Verdict add64F add64G = some false := by native_decide
 theorem real_add64_checked : checkedC add64F add64G = some (true, true) := by native_decide
 theorem real_add64_sim : SimRefinesC add64F add64G := simC_of_checked real_add64_checked
+
+theorem real_srem100_c0_rejects : c0Verdict srem100F srem100G = some false := by native_decide
+theorem real_srem100_checked : checkedC srem100F srem100G = some (true, true) := by native_decide
+theorem real_srem100_sim : SimRefinesC srem100F srem100G := simC_of_checked real_srem100_checked
+
+theorem real_sdiv72_c0_rejects : c0Verdict sdiv72F sdiv72G = some false := by native_decide
+theorem real_sdiv72_checked : checkedC sdiv72F sdiv72G = some (true, true) := by native_decide
+theorem real_sdiv72_sim : SimRefinesC sdiv72F sdiv72G := simC_of_checked real_sdiv72_checked
 
 end Opt.MidVal.MagicWitness

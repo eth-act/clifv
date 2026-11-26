@@ -1166,6 +1166,20 @@ import FVTest.Opt.MidValMagicWitness
 #print axioms Opt.MidVal.magicStmts_noCall
 #print axioms Opt.MidVal.magicStmts_mem_v
 #print axioms Opt.MidVal.magicStmts_run
+#print axioms Opt.MidVal.magicS_facts
+#print axioms Opt.MidVal.ofNat_toInt_small
+#print axioms Opt.MidVal.sshr_ofNat_zero
+#print axioms Opt.MidVal.eval_sshr
+#print axioms Opt.MidVal.RunS.sshr
+#print axioms Opt.MidVal.sFix_noCall
+#print axioms Opt.MidVal.sShift_noCall
+#print axioms Opt.MidVal.sQuot_noCall
+#print axioms Opt.MidVal.sFix_run
+#print axioms Opt.MidVal.sShift_run
+#print axioms Opt.MidVal.sQuot_run
+#print axioms Opt.MidVal.magicStmtsS_noCall
+#print axioms Opt.MidVal.magicStmtsS_mem_v
+#print axioms Opt.MidVal.magicStmtsS_run
 #print axioms Opt.MidVal.magicRw_spec
 #print axioms Opt.MidVal.magicBody_ge
 #print axioms Opt.MidVal.bodyRelM_cons
@@ -1190,6 +1204,8 @@ import FVTest.Opt.MidValMagicWitness
 #print axioms Opt.MidVal.MagicWitness.magicU_u32_10 -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.magicU_u64_7 -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.magicU_u64_10 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.magicS_s32_7 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.magicS_s64_7 -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.pos_udiv3 -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.pos_udiv3_check_rejects -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.pos_udiv3_c0_rejects -- witness: native_decide
@@ -1199,12 +1215,27 @@ import FVTest.Opt.MidValMagicWitness
 #print axioms Opt.MidVal.MagicWitness.pos_udiv7 -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.pos_udiv7_check_rejects -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.pos_udiv7_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_sdiv7 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_sdiv7_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_sdiv7_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_srem7 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_srem7_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_srem7_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_sdiv3 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_sdiv3_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_sdiv7_32 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_sdiv7_32_c0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.udiv3_text -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.low_text -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.low_not_sim
 #print axioms Opt.MidVal.MagicWitness.neg_low -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.low_rejected
-#print axioms Opt.MidVal.MagicWitness.sdiv7_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.sdiv7_text -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.nofix_text -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.nofix_not_sim
+#print axioms Opt.MidVal.MagicWitness.neg_nofix -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.nofix_rejected
+#print axioms Opt.MidVal.MagicWitness.sdiv8_not_rewritten -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.div0_not_rewritten -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.pow2_not_rewritten -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.i8_not_rewritten -- witness: native_decide
@@ -1223,3 +1254,9 @@ import FVTest.Opt.MidValMagicWitness
 #print axioms Opt.MidVal.MagicWitness.real_add64_c0_rejects -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.real_add64_checked -- witness: native_decide
 #print axioms Opt.MidVal.MagicWitness.real_add64_sim -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_srem100_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_srem100_checked -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_srem100_sim -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_sdiv72_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_sdiv72_checked -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_sdiv72_sim -- witness: native_decide

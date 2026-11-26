@@ -1,0 +1,144 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC9criterion11HOIXo9vPjcX
+function u0:325(i64, i64) system_v {
+; symbol _RNxC9criterion11HOIXo9vPjcX
+; instance Instance { def: Item(DefId(10:173 ~ hashbrown[0432]::raw::{impl#8}::erase_no_drop)), args: [((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>), std::alloc::Global] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut hashbrown::raw::RawTable<((std::option::Option<&str>, std::option::Option<&str>), html::ReportLink<'_>)>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &hashbrown::raw::Bucket<((std::option::Option<&str>, std::option::Option<&str>), html::ReportLink<'_>)>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut hashbrown::raw::RawTable<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>), std::alloc::Global>
+; arg   _2      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} hashbrown::raw::Bucket<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>
+
+; kind  local ty                              size align (abi)
+; stack _1    &'{erased} mut hashbrown::raw::RawTable<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>), std::alloc::Global>    8b 8                storage=ss0
+; ssa   _2    &'{erased} hashbrown::raw::Bucket<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>    8b 8                var=1
+; ssa   _3    usize                             8b 8                var=2
+; zst   _4    ()                                0b 1                align=1,offset=
+; ssa   _5    &'{erased} mut hashbrown::raw::RawTableInner    8b 8                var=3
+; stack _6    std::ptr::NonNull<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>    8b 8                storage=ss1
+; stack _7    std::ptr::NonNull<u8>             8b 8                storage=ss2
+; ssa   _8    usize                             8b 8                var=4
+; ssa   _9    *mut ((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)    8b 8                var=5
+; stack _10   std::ptr::NonNull<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>    8b 8                storage=ss3
+; ssa   _11   *const ((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)    8b 8                var=6
+; ssa   _12   *const ((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)    8b 8                var=7
+; stack _13   std::ptr::NonNull<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>    8b 8                storage=ss4
+; ssa   _14   isize                             8b 8                var=8
+; ssa   _15   bool                              1b 1                var=9
+; ssa   _16   bool                              1b 1                var=10
+; zst   _17   !                                 0b 1                align=1,offset=
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 8, align = 8
+    ss3 = explicit_slot 8, align = 8
+    ss4 = explicit_slot 8, align = 8
+    gv0 = symbol colocated userextname1 ; alloc1236
+    gv1 = symbol colocated userextname2 ; alloc4495
+    sig0 = (i64, i64) system_v
+    sig1 = (i64, i64, i64) system_v
+    fn0 = colocated u0:32 sig0 ; Instance { def: Item(DefId(10:321 ~ hashbrown[0432]::raw::{impl#12}::erase)), args: [] }
+    fn1 = u0:4887 sig1 ; Instance { def: Item(DefId(2:12378 ~ core[7b1c]::panicking::panic)), args: [] }
+
+block0(v0: i64, v1: i64):
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): &'{erased} mut hashbrown::raw::RawTable<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>), std::alloc::Global> <- ByVal(v0): &'{erased} mut hashbrown::raw::RawTable<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>), std::alloc::Global>
+    v2 = stack_addr.i64 ss0
+    store notrap v0, v2
+; write_cvalue: Var(_2, var1): &'{erased} hashbrown::raw::Bucket<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)> <- ByVal(v1): &'{erased} hashbrown::raw::Bucket<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>
+    jump block1
+
+block1:
+    v5 = load.i64 notrap v0
+    v6 = stack_addr.i64 ss2
+    store notrap v5, v6
+; _6 = copy _7 as std::ptr::NonNull<T> (Transmute)
+; write_cvalue_transmute: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): std::ptr::NonNull<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)> <- ByRef(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): std::ptr::NonNull<u8>
+    v9 = stack_addr.i64 ss1
+    store notrap v5, v9
+; 
+; switchInt(const <T as hashbrown::raw::SizedTypeProperties>::IS_ZERO_SIZED)
+    jump block5
+
+block2:
+    return
+
+block3:
+    v12 = load.i64 notrap v2
+; write_cvalue: Var(_5, var3): &'{erased} mut hashbrown::raw::RawTableInner <- ByVal(v12): &'{erased} mut hashbrown::raw::RawTableInner
+; 
+; _4 = hashbrown::raw::RawTableInner::erase(move _5, move _3)
+    v30 = isub.i64 v15, v17
+    v51 = iconst.i64 0x0e38_e38e_38e3_8e39
+    v52 = smulhi v30, v51  ; v51 = 0x0e38_e38e_38e3_8e39
+    v53 = iconst.i64 2
+    v54 = sshr v52, v53  ; v53 = 2
+    v55 = iconst.i64 63
+    v56 = ushr v54, v55  ; v55 = 63
+    v57 = iadd v54, v56
+    v32 -> v57
+    call fn0(v12, v57)
+    jump block2
+
+block5:
+    v15 = load.i64 notrap v6
+; _13 = copy ((*_2).0: std::ptr::NonNull<T>)
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(0) }, None): std::ptr::NonNull<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)> <- ByRef(Pointer { base: Addr(v16), offset: Offset32(0) }, None): std::ptr::NonNull<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>
+    v17 = load.i64 notrap v1
+    v18 = stack_addr.i64 ss4
+    store notrap v17, v18
+; _12 = copy _13 as *const T (Transmute)
+; write_cvalue_transmute: Var(_12, var7): *const ((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>) <- ByRef(Pointer { base: Stack(ss4), offset: Offset32(0) }, None): std::ptr::NonNull<((std::option::Option<&'{erased} str>, std::option::Option<&'{erased} str>), html::ReportLink<'{erased}>)>
+    jump block7
+
+block6:
+    jump block3
+
+block7:
+    jump block8
+
+block8:
+    jump block6
+}
+
+; clifv-extnames 1
+; userextname0 = u0:32
+; userextname1 = u1:276
+; userextname2 = u1:277
+; userextname3 = u0:4887
+; decl u0:32 func local "_RNvMsa_NtCsmlD8GyOXCj_9hashbrown3rawNtB5_13RawTableInner5erase"
+; decl u0:325 func local "_RNxC9criterion11HOIXo9vPjcX"
+; decl u0:4887 func import "_RNvNtCsazjiGSRkgVH_4core9panicking5panic"
+; decl u1:276 data local ro notls ".Ldata114"
+; decl u1:277 data local ro notls ".Ldata115"
+; end clifv-extnames
