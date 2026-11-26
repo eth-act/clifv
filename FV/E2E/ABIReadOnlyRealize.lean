@@ -39,7 +39,8 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
       ⟨op,key,off,fl,rfl,hop,read⟩ | ⟨pairs,rfl⟩
   · have hs : mspec ctx.slotBase i us w = some (outs,w,ctl) := by
       cases i <;> simpa only [sem,valueSem,specForm_of_pure pure,↓reduceIte] using executed
-    have noMem : i.isMemAcc = false := by cases i <;> simp_all [pureForm,MInst.isMemAcc]
+    have noMem : i.isMemAcc = false := by
+      cases i <;> simp_all [pureForm,MInst.isMemAcc,Backend.ABIReadOnly.instruction,pureNoFlags]
     obtain ⟨t',run,related⟩ := mspec_lockstep noMem worlds.symm hs
     have fixed := (mspec_pure pure run).1
     subst t'

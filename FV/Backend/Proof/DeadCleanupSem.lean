@@ -23,6 +23,18 @@ theorem mspec_pure {sb : Nat} {i : MInst} {us outs : List CV}
     rcases us with _ | ⟨a, _ | ⟨b, us⟩⟩ <;> simp [mspec, ispec, ispecFP] at h
     obtain ⟨_, rfl, rfl⟩ := h
     exact ⟨rfl, rfl⟩
+  -- the float loads: only the literal-pool load (#1181) is pure; it gives the entry's value
+  -- from no use, same world, `next`
+  by_cases hfl : ∃ sz rd am fl, i = .fpuLoad sz rd am fl
+  · obtain ⟨sz, rd, am, fl, rfl⟩ := hfl
+    cases am
+    case const v =>
+      rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> rcases us with _ | ⟨a, us⟩ <;>
+        simp [mspec, ispec, ispecFP, amodeAddr] at h
+      by_cases hsz : sz = .size32 ∨ sz = .size64 <;> simp [hsz] at h
+      obtain ⟨-, rfl, rfl⟩ := h
+      exact ⟨rfl, rfl⟩
+    all_goals simp [pureForm] at hp
   unfold mspec at h
   split at h <;> try { simp_all [pureForm, pureAlu] }
   unfold ispec at h
@@ -81,6 +93,14 @@ theorem mspec_flagFree_pstate {sb : Nat} {i : MInst} {us : List CV} (hf : flagFr
     (p : Arm.PState) (w : Arm.ArmState) :
     mspec sb i us (Arm.write_pstate p w) =
       (mspec sb i us w).map (fun r => (r.1, Arm.write_pstate p r.2.1, r.2.2)) := by
+  by_cases hfl : ∃ sz rd am fl, i = .fpuLoad sz rd am fl
+  · obtain ⟨sz, rd, am, fl, rfl⟩ := hfl
+    cases am
+    case const v =>
+      rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> rcases us with _ | ⟨a, us⟩ <;>
+        simp [mspec, ispec, ispecFP, amodeAddr]
+      by_cases hsz : sz = .size32 ∨ sz = .size64 <;> simp [hsz]
+    all_goals simp [flagFree, pureForm] at hf
   unfold mspec
   split <;> try { simp_all [flagFree, pureForm, pureAlu, spOf_write_pstate] }
   unfold ispec

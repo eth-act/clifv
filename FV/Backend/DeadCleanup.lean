@@ -33,12 +33,17 @@ one-operand bit operations (`rbit`/`clz`/`cls`/`rev*`), the float constant moves
 `isa/aarch64/lower.isle`, is dead afterwards; it writes only its def), the float-to-integer
 conversions (`fcvtzs`/`fcvtzu`, `fpuToInt`, #1141: cg_clif tests `fcmp eq x, x` before a
 saturating `fcvt_to_{s,u}int_sat` and `select`s on it; the conversion sits between that dead
-`fcmp` and the `select`'s own `fcmp`; it writes only its def and reads no flags), and `cset`,
+`fcmp` and the `select`'s own `fcmp`; it writes only its def and reads no flags), the
+literal-pool load of a float constant (`ldr s/d/q, <entry>`, `fpuLoad … (.const v)`, #1181: the
+third shape of `constant_f32`/`constant_f64` beside `movi` and `fmov #imm`; it reads only the
+function's own code and writes only its def; LICM can leave an unused `f64const` in cg_clif's
+optimised CLIF), and `cset`,
 which reads the flags but writes only its def. Cranelift does not lower an instruction none of
 whose results is used (`machinst/lower.rs`), e.g. the boolean of an `icmp` that the `brif` rule
 re-compares, with the operand extension of that compare (#552), or the `ishl` that the `bor`
 rule folds into a shifted operand (`isa/aarch64/inst.isle`, `alu_rs_imm_logic_commutative` with
-`lshl_from_imm64`, #555).
+`lshl_from_imm64`, #555), or an unused float constant (#1181). A dropped literal-pool load's
+entry goes with it: the pool is built from the emitted lines (`Asm.poolUses`).
 The shifts and bit operations are outside `pureNoFlags`, whose forms `ABIReadOnly` accepts. -/
 def pureForm : MInst → Bool
   | .mov .. | .movWide .. | .loadAddr .. | .extend .. | .cset .. | .bitRR .. => true
@@ -47,6 +52,7 @@ def pureForm : MInst → Bool
     pureAlu op
   | .aluRRRR .mAdd .. | .aluRRRR .mSub .. => true
   | .fpuMoveFPImm .. | .vecDupImm .. | .fpuRR .neg .. | .fpuToInt .. => true
+  | .fpuLoad _ _ (.const _) _ => true
   | _ => false
 
 theorem pureForm_of_pureNoFlags {i : MInst} (h : pureNoFlags i = true) : pureForm i = true := by
