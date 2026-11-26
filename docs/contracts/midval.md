@@ -196,7 +196,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: 77.6 % → 78.1 % (94,442 → 95,064 of 121,767) |
 | hoisting mode at link level (`placement:symbol_value`/`func_addr`; `symsCopy`, `Link.hoistCopy`, premise `globalsResolve` at the executable's symbol table) | none (`checkCertSyms` on `f`, `foldPre f bs` or `foldPreK f bs`) | `symsCopy_sound`, `checkCertSymsAt_sound`, `midValidatedSymsB_sound` | 118,210 (97.0 %) | not measured on the pairs | 9 crates: 78.1 % → 78.1 % (95,064 → 95,137 of 121,767) |
 | division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: 78.1 % → 78.4 % (95,137 → 95,499 of 121,767) |
-| 6: shifts and bitwise constants (`Norm.base`: `fam6Mul` first, `fam6Step` after family 5; `narrowId` in `narrowStep`) | `fam6Mul`, `shAmt` (typed), `reStep`, `narrowId` | `ruleSound_fam6Mul`, `ruleSoundT_shAmt`, `ruleSound_reStep`, `ruleSoundT_fam6Step`, `narrowId_val`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 119,273 (97.9 %) | not measured on the pairs | 9 crates: CRATES_ROW |
+| 6: shifts and bitwise constants (`Norm.base`: `fam6Mul` first, `fam6Step` after family 5; `narrowId` in `narrowStep`) | `fam6Mul`, `shAmt` (typed), `reStep`, `narrowId` | `ruleSound_fam6Mul`, `ruleSoundT_shAmt`, `ruleSound_reStep`, `ruleSoundT_fam6Step`, `narrowId_val`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 119,273 (97.9 %) | not measured on the pairs | 9 crates: 78.4 % → 78.7 % (95,499 → 95,871 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -919,4 +919,12 @@ counterfactual.)
     re-checks `ok`. Removing one rule at a time from a prototype with the same verdicts: `fam6Mul`
     139, `reStep`'s reassociation 132, `narrowId` 122, `shAmt` 72, `imul (ishl x k) c` 38 (a pair
     can need two).
-    CRATES_BULLET
+    `cargo fv test --release` on the 9 crates (2026-11-26, clifv-remote, main d2095b5c6's tools,
+    run on a351952f6 whose tree differs only in docs, against this one's), in plain mode and with
+    `--lean-link --verified`: binary check 48/48 → 48/48 both ways, verified 121,767 → 121,767,
+    left out of the region 0 → 0 (plain) and 1 → 1 (`--lean-link --verified`), tests the same as
+    stock's on all 9 both ways, validated 116,928 → 117,356 (96.0 → 96.4 %; per function 115,820
+    → 116,246, at link level 1,108 → 1,110; up on 8 crates, num-traits unchanged), byte-identical
+    to stock 95,499 → 95,871 (78.4 → 78.7 %, the same in both modes); `cargo fv test` wall summed
+    3,670 → 3,759 s (plain) and 3,998 → 4,377 s (`--lean-link --verified`; this one's plain runs
+    overlapped its full gate, so the wall times are no comparison).
