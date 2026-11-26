@@ -6,7 +6,7 @@ import FV.Opt.Proof.MidValDiv
 `divPre` (`FV/Opt/MidValFold.lean`, inside `foldPre`) rewrites `f`'s divisions whose divisor has
 a constant: `udiv`/`sdiv` by 1 into `imul x, y`, `urem` by 1 into `iconst 0`, `udiv` by `2^k` into
 `ushr x, k`, `urem` by `2^k` into `band x, 2^k-1`; `check_soundC` composes the check with
-`foldPre_simU` (`FV/Opt/Proof/MidValDiv.lean`).
+`foldPre_simU` (`FV/Opt/Proof/MidValMagic.lean`).
 
 * Hand-made: `udiv x, 8` against `ushr x, 3`, `urem x, 8` against `band x, 7`, `udiv x, 1` and
   `sdiv x, 1` against `x` are accepted, and rejected without the rewrite (`*_check_rejects`,

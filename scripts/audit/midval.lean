@@ -26,6 +26,8 @@ import FVTest.Opt.MidValPhiMWitness
 import FVTest.Opt.MidValZeroWitness
 import FV.Opt.Proof.MidValNormFam5
 import FVTest.Opt.MidValFam5Witness
+import FV.Opt.Proof.MidValMagic
+import FVTest.Opt.MidValMagicWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -1075,7 +1077,7 @@ import FVTest.Opt.MidValFam5Witness
 
 -- #1119 family 5 (FV/Opt/Proof/MidValNormFam5.lean; normSoundT_base / normSoundT_narrowN /
 -- normSoundT_stdT above moved there, same statements), swapped unit comparisons
--- (MidValNormAlg2.lean), parameters kept after the folds (MidValDiv.lean foldPreK_simU, used by
+-- (MidValNormAlg2.lean), parameters kept after the folds (foldPreK_simU, now in MidValMagic.lean, used by
 -- check_soundC_norm / check_soundC_normT)
 #print axioms Opt.MidVal.ns_icmpSwapUnit
 #print axioms Opt.MidVal.regs_ineg
@@ -1145,3 +1147,79 @@ import FVTest.Opt.MidValFam5Witness
 #print axioms Opt.MidVal.Fam5Witness.real_redred_prev_rejects -- witness: native_decide
 #print axioms Opt.MidVal.Fam5Witness.real_redred_checked -- witness: native_decide
 #print axioms Opt.MidVal.Fam5Witness.real_redred_sim -- witness: native_decide
+
+-- #1119 skeleton-removed div: division by a constant with magic numbers (MidValMagic.lean;
+-- foldPre_simU / foldPreK_simU above moved there, same statements, now through magicPre_simU)
+#print axioms Opt.MidVal.sem_ushr_ofNat
+#print axioms Opt.MidVal.log2Exact_none
+#print axioms Opt.MidVal.magicU_facts
+#print axioms Opt.MidVal.magic_noadd0
+#print axioms Opt.MidVal.magic_noadd
+#print axioms Opt.MidVal.magic_add1
+#print axioms Opt.MidVal.magic_add
+#print axioms Opt.MidVal.urem_of_quot
+#print axioms Opt.MidVal.RunS.app
+#print axioms Opt.MidVal.RunS.lstar
+#print axioms Opt.MidVal.uQuot_noCall
+#print axioms Opt.MidVal.uQuot_run
+#print axioms Opt.MidVal.uQuot_mem_dst
+#print axioms Opt.MidVal.magicStmts_noCall
+#print axioms Opt.MidVal.magicStmts_mem_v
+#print axioms Opt.MidVal.magicStmts_run
+#print axioms Opt.MidVal.magicRw_spec
+#print axioms Opt.MidVal.magicBody_ge
+#print axioms Opt.MidVal.bodyRelM_cons
+#print axioms Opt.MidVal.magicBody_results
+#print axioms Opt.MidVal.magicBlocks_find
+#print axioms Opt.MidVal.magicBlocks_head
+#print axioms Opt.MidVal.magicBlocks_mem
+#print axioms Opt.MidVal.magicFn_block?
+#print axioms Opt.MidVal.magicFn_freshValue_ge
+#print axioms Opt.MidVal.refsOk_lt
+#print axioms Opt.MidVal.MagR.enter
+#print axioms Opt.MidVal.magic_step
+#print axioms Opt.MidVal.magic_only_next
+#print axioms Opt.MidVal.MagR.stepA
+#print axioms Opt.MidVal.MagR.stepC
+#print axioms Opt.MidVal.MagR.win_agree
+#print axioms Opt.MidVal.MagR.isSimWU
+#print axioms Opt.MidVal.magicFn_simU
+#print axioms Opt.MidVal.magicPre_simU
+-- witnesses (FVTest/Opt/MidValMagicWitness.lean)
+#print axioms Opt.MidVal.MagicWitness.magicU_u32_7 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.magicU_u32_10 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.magicU_u64_7 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.magicU_u64_10 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_udiv3 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_udiv3_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_udiv3_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_urem3 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_urem3_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_urem3_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_udiv7 -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_udiv7_check_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pos_udiv7_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.udiv3_text -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.low_text -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.low_not_sim
+#print axioms Opt.MidVal.MagicWitness.neg_low -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.low_rejected
+#print axioms Opt.MidVal.MagicWitness.sdiv7_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.div0_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.pow2_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.i8_not_rewritten -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_udiv10_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_udiv10_checked -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_udiv10_sim -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_udiv24_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_udiv24_checked -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_udiv24_sim -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_add32_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_add32_checked -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_add32_sim -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_urem192_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_urem192_checked -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_urem192_sim -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_add64_c0_rejects -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_add64_checked -- witness: native_decide
+#print axioms Opt.MidVal.MagicWitness.real_add64_sim -- witness: native_decide

@@ -10,9 +10,8 @@ import FV.Opt.Proof.MidValPhi
 `imul x, y`, `urem` by 1 into `iconst 0`, `udiv` by `2^k` into `s = iconst k; ushr x, s`, `urem`
 by `2^k` into `s = iconst 2^k-1; band x, s`. The inserted values `s` come from a supply `S` of
 values below `f.freshValue` that `f` neither defines nor reads (`supplyOk`), and the rewritten
-function keeps `f`'s fresh value. Here: **`divPre_simU : FunSimU f (divPre f bs)`** and
-**`foldPre_simU : FunSimU f (foldPre f bs)`** (`foldPre f bs = ConstPhi.run (foldBr (divPre
-(phiPre f) bs) bs)`, `phiPre_simU`: `FV/Opt/Proof/MidValPhi.lean`).
+function keeps `f`'s fresh value. Here: **`divPre_simU : FunSimU f (divPre f bs)`**
+(`foldPre_simU`, for the whole preparation, is in `FV/Opt/Proof/MidValMagic.lean`).
 
 The frame relation `DR`: the same point of a block of `f`, the rewritten frame running the
 rewritten rest of that block's body (`BodyRel`), registers agreeing outside `S`, the same slots
@@ -967,23 +966,5 @@ theorem divPre_simU (f : Function) (bs : List BlockId) : FunSimU f (divPre f bs)
         exact divFn_simU hk (fun _ _ h => kLook_lt h) (supOk_of hc.1) hc.2
       · exact FunSimU.refl f
     · exact FunSimU.refl f
-
-/-- **The folded function without its unreachable blocks is simulated by its input**
-(the validator's constant-phi removal `phiPre`, divisions by constants rewritten, branches
-folded, constant-phi removal). -/
-theorem foldPre_simU (f : Function) (bs : List BlockId) : FunSimU f (foldPre f bs) :=
-  (phiPre_simU f).trans ((divPre_simU _ bs).trans ((foldBr_simU _ bs).trans (ConstPhi.run_simU _)))
-
-/-- **The folded function without its unreachable blocks, parameters kept, is simulated by its
-input** (`foldPreK`: as `foldPre`, with `removeUnreachable` in place of the constant-phi removal
-after the folds). -/
-theorem foldPreK_simU (f : Function) (bs : List BlockId) : FunSimU f (foldPreK f bs) := by
-  have h1 := (phiPre_simU f).trans ((divPre_simU _ bs).trans (foldBr_simU _ bs))
-  unfold foldPreK
-  dsimp only
-  split
-  · rename_i hC
-    exact h1.trans (removeUnreachable_simU _ hC)
-  · exact h1
 
 end Opt.MidVal

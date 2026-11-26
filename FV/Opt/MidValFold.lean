@@ -1,5 +1,6 @@
 import FV.Opt.MidValCert
 import FV.Opt.ConstPhi
+import FV.Isle.Opt.Helpers
 
 /-!
 # Branch folding before the mid-end validator's comparison (#1119, `rewrite:blocks`)
@@ -34,15 +35,26 @@ input, `Opt.MidVal.foldBr_simU`, `FV/Opt/Proof/MidValFold.lean`).
   windows, is unchanged; otherwise `f`. Divisor 0, `srem`, `sdiv` by other constants (rounding
   toward zero, the `-1` trap) and the magic-number divisions are left alone
   (`Opt.MidVal.divPre_simU`, `FV/Opt/Proof/MidValDiv.lean`).
+* `magicPre f bs` (division by other constants, `skeleton-removed div`): when `kOk f K` and `f`
+  reads only values below its fresh value (`refsOk`), in the blocks `bs`, a `udiv`/`urem` at width
+  32 or 64 whose divisor has a constant `d ≥ 2` that is not a power of two becomes Cranelift's
+  multiply-high sequence (`apply_div_const_magic_u32`/`_u64`, `prelude_opt.isle`): `q0 = umulhi
+  x, M`, then `q0 >> s`, or with the add step `((x - q0) >> 1 + q0) >> (s - 1)` (a shift by 0
+  left out, as Cranelift's rules remove it), for `urem` then `x - q * d`; `M`, `add`, `s` from
+  `Isle.Opt.Rust.magicU` (the port of `magic_u32`/`magic_u64` the ISLE interpreter runs, proved
+  correct for every such `d`: `Opt.Proof.DivConst.magicU_spec`). The new values are numbered from
+  `f.freshValue` on, so the fresh value grows; the `try_call` windows move with it, on both
+  sides alike (`Opt.MidVal.magicPre_simU`, `FV/Opt/Proof/MidValMagic.lean`). `sdiv`/`srem` (the
+  signed sequence) are left alone.
 * `phiPre f` (removed block parameters, `shape:params`/`jump arity`): `ConstPhi`'s solution
   applied when `phiOk` or `phiOkM` accepts it; `phiOk` is `ConstPhi.cpOk` without two conditions
   the backend needs for the function it compiles (`ConstPhi.run f`: in a function with a
   `try_call`, an unchanged fresh value; the result's well-formedness), `phiOkM` the same with the
   validator's `wfCheck` (a `call_indirect` typed by its signature declaration); Cranelift removes
   those parameters (`Opt.MidVal.phiPre_simU`, `FV/Opt/Proof/MidValPhi.lean`).
-* `foldPre f bs = ConstPhi.run (foldBr (divPre (phiPre f) bs) bs)`: the parameters removed (before
-  the folds, as Cranelift's `remove_constant_phis` runs before its mid-end), the divisions
-  rewritten and the branches folded, without the blocks that became unreachable
+* `foldPre f bs = ConstPhi.run (foldBr (magicPre (divPre (phiPre f) bs) bs) bs)`: the parameters
+  removed (before the folds, as Cranelift's `remove_constant_phis` runs before its mid-end), the
+  divisions rewritten and the branches folded, without the blocks that became unreachable
   (`Opt.removeUnreachable`, and constant-phi removal, inside `ConstPhi.run`).
 * `foldPreK f bs`: the same without the constant-phi removal after the folds (only
   `Opt.removeUnreachable`): a parameter that receives one value once a folded edge is gone stays,
@@ -254,6 +266,102 @@ def divPre (f : Function) (bs : List BlockId) : Function :=
       if supplyOk f S && f'.freshValue == fv then f' else f
     else f
 
+/-! ## Division by a constant: the magic numbers -/
+
+/-- Every value `g` reads (statement operands, terminator operands) is below its fresh value
+(`Opt.closedB`'s test; the validator does not import the optimiser). -/
+def refsOk (g : Function) : Bool :=
+  g.blocks.all fun b =>
+    (b.body.all fun st => (operands st.inst).all (· < g.freshValue)) &&
+      (termOperands b.term).all (· < g.freshValue)
+
+/-- The unsigned quotient by the magic numbers `M`, `add`, `s` (`Isle.Opt.Rust.magicU`, the port
+of Cranelift's `magic_u32`/`magic_u64` the ISLE interpreter runs) of `x` (type `ty`) into `dst`,
+the temporaries numbered from `n` on (Cranelift's `apply_div_const_magic_u*`; its shift by 0, which
+Cranelift's own rules remove, left out); the number of temporaries. -/
+def uQuot (ty : Ty) (x : ValueId) (M : Nat) (add : Bool) (s : Nat) (n dst : ValueId) :
+    List Stmt × Nat :=
+  if add then
+    let pre : List Stmt :=
+      [⟨[n], .iconst ty (BitVec.ofNat _ M)⟩, ⟨[n + 1], .binary .umulhi ty x n⟩,
+        ⟨[n + 2], .binary .isub ty x (n + 1)⟩, ⟨[n + 3], .iconst ty (BitVec.ofNat _ 1)⟩,
+        ⟨[n + 4], .binary .ushr ty (n + 2) (n + 3)⟩]
+    if s ≤ 1 then (pre ++ [⟨[dst], .binary .iadd ty (n + 1) (n + 4)⟩], 5)
+    else
+      (pre ++ [⟨[n + 5], .binary .iadd ty (n + 1) (n + 4)⟩,
+        ⟨[n + 6], .iconst ty (BitVec.ofNat _ (s - 1))⟩, ⟨[dst], .binary .ushr ty (n + 5) (n + 6)⟩], 7)
+  else if s = 0 then ([⟨[n], .iconst ty (BitVec.ofNat _ M)⟩, ⟨[dst], .binary .umulhi ty x n⟩], 1)
+  else
+    ([⟨[n], .iconst ty (BitVec.ofNat _ M)⟩, ⟨[n + 1], .binary .umulhi ty x n⟩,
+      ⟨[n + 2], .iconst ty (BitVec.ofNat _ s)⟩, ⟨[dst], .binary .ushr ty (n + 1) (n + 2)⟩], 3)
+
+/-- The statements of `v = op ty x y` by the magic numbers `M`, `add`, `s`, the new values from
+`n` on, and how many: for `udiv` the quotient (`uQuot`), otherwise (`urem`) the quotient into
+`n`, then `t = imul n, y; v = isub x, t` (Cranelift's `apply_div_const_magic_u*_finish`). -/
+def magicStmts (op : DivOp) (ty : Ty) (v x y : ValueId) (M : Nat) (add : Bool) (s n : Nat) :
+    List Stmt × Nat :=
+  if op = .udiv then uQuot ty x M add s n v
+  else
+    let q := uQuot ty x M add s (n + 1) n
+    (q.1 ++ [⟨[n + 1 + q.2], .binary .imul ty n y⟩, ⟨[v], .binary .isub ty x (n + 1 + q.2)⟩],
+      q.2 + 2)
+
+/-- The statements that replace `v = op ty x y` when `y` has a constant `d` in `K` that Cranelift
+divides by with magic numbers (`udiv`/`urem` at width 32 or 64, `d` neither 0, 1 nor a power of
+two): `magicStmts` with `Isle.Opt.Rust.magicU`'s numbers, values from `n` on, and how many.
+`none`: the statement is left alone. -/
+def magicRw (K : ValueId → Option Val) (n : ValueId) (st : Stmt) : Option (List Stmt × Nat) :=
+  match st.results, st.inst with
+  | [v], .div op ty x y =>
+    match K y with
+    | some c =>
+      let w := ty.width
+      let d := c.bits.toNat
+      if c.ty = ty ∧ (op = .udiv ∨ op = .urem) ∧ (w = 32 ∨ w = 64) ∧ 2 ≤ d ∧
+          log2Exact d = none then
+        let mg := Isle.Opt.Rust.magicU w d
+        some (magicStmts op ty v x y mg.1 mg.2.1 mg.2.2.toNat n)
+      else none
+    | none => none
+  | _, _ => none
+
+/-- A body with its divisions by magic numbers rewritten (`magicRw`), the new values numbered
+from `n` on; the next new value. -/
+def magicBody (K : ValueId → Option Val) : List Stmt → ValueId → List Stmt × ValueId
+  | [], n => ([], n)
+  | st :: ss, n =>
+    match magicRw K n st with
+    | some (xs, k) => let r := magicBody K ss (n + k); (xs ++ r.1, r.2)
+    | none => let r := magicBody K ss n; (st :: r.1, r.2)
+
+/-- The blocks of `bs` with their divisions by magic numbers rewritten, the new values threaded
+through them. -/
+def magicBlocks (K : ValueId → Option Val) (bs : List BlockId) :
+    List Block → ValueId → List Block
+  | [], _ => []
+  | b :: rest, n =>
+    if bs.contains b.id then
+      let r := magicBody K b.body n
+      { b with body := r.1 } :: magicBlocks K bs rest r.2
+    else b :: magicBlocks K bs rest n
+
+/-- Every block through `magicBlocks`, new values from `n` on. -/
+def magicFn (f : Function) (K : ValueId → Option Val) (bs : List BlockId) (n : ValueId) :
+    Function :=
+  { f with blocks := magicBlocks K bs f.blocks n }
+
+/-- **Division by a constant with magic numbers** (module doc): when `kOk` accepts `f`'s
+constants (as `foldBr`) and `f` reads only values below its fresh value (`refsOk`), in the blocks
+of `bs` the divisions `magicRw` rewrites, the new values numbered from `f.freshValue` on; `f`
+otherwise. -/
+def magicPre (f : Function) (bs : List BlockId) : Function :=
+  if bs.isEmpty then f
+  else
+    let fv := f.freshValue
+    let hm := kTable f
+    let K := kLook fv hm
+    if kOk f K && refsOk f then magicFn f K bs fv else f
+
 /-! ## Constant-phi removal without the backend's fresh-value condition -/
 
 /-- **The validator's constant-phi checker**: `ConstPhi.cpOk` without its last two conjuncts,
@@ -286,16 +394,16 @@ def phiPre (f : Function) : Function :=
 
 /-- **The folded function without its unreachable blocks** (module doc): the parameters
 `ConstPhi.run` kept removed (`phiPre`, before the folds, where Cranelift removes them),
-divisions by constants rewritten (`divPre`), constant-condition branches folded (`foldBr`),
-then constant-phi removal. -/
+divisions by constants rewritten (`divPre`, then `magicPre`), constant-condition branches folded
+(`foldBr`), then constant-phi removal. -/
 def foldPre (f : Function) (bs : List BlockId) : Function :=
-  ConstPhi.run (foldBr (divPre (phiPre f) bs) bs)
+  ConstPhi.run (foldBr (magicPre (divPre (phiPre f) bs) bs) bs)
 
 /-- **The folded function without its unreachable blocks, parameters kept** (module doc): as
 `foldPre`, with `Opt.removeUnreachable` (when `freshOkB` allows it, as in `ConstPhi.runCore`) in
 place of the final `ConstPhi.run`. -/
 def foldPreK (f : Function) (bs : List BlockId) : Function :=
-  let f1 := foldBr (divPre (phiPre f) bs) bs
+  let f1 := foldBr (magicPre (divPre (phiPre f) bs) bs) bs
   if freshOkB f1 then removeUnreachable f1 else f1
 
 /-- The fold requests among `checkCertC`'s hints: the blocks hinted with an empty wrapper

@@ -1,0 +1,104 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10dissimilar12H4Yj6LmGyOuT
+function u0:63(i64) -> i64 system_v {
+; symbol _RNxC10dissimilar12H4Yj6LmGyOuT
+; instance Instance { def: Item(DefId(3:9545 ~ alloc[e0b3]::vec::in_place_drop::{impl#0}::len)), args: [Chunk<'{erased}>] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &std::vec::in_place_drop::InPlaceDrop<Chunk<'_>>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    usize                             8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} std::vec::in_place_drop::InPlaceDrop<Chunk<'{erased}>>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} std::vec::in_place_drop::InPlaceDrop<Chunk<'{erased}>>    8b 8                var=2
+; ssa   _2    *mut Chunk<'{erased}>             8b 8                var=3
+; ssa   _3    *const Chunk<'{erased}>           8b 8                var=4
+; ssa   _4    *mut Chunk<'{erased}>             8b 8                var=5
+; ssa   _5    *const Chunk<'{erased}>           8b 8                var=6
+; zst   _6    ()                                0b 1                align=1,offset=
+; ssa   _7    *const ()                         8b 8                var=7
+; ssa   _8    *const ()                         8b 8                var=8
+; ssa   _9    bool                              1b 1                var=9
+; ssa   _10   bool                              1b 1                var=10
+; zst   _11   !                                 0b 1                align=1,offset=
+
+    gv0 = symbol colocated userextname0 ; alloc61
+    gv1 = symbol colocated userextname1 ; alloc342
+    sig0 = (i64, i64, i64) system_v
+    fn0 = u0:236 sig0 ; Instance { def: Item(DefId(2:12378 ~ core[7b1c]::panicking::panic)), args: [] }
+
+block0(v0: i64):
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} std::vec::in_place_drop::InPlaceDrop<Chunk<'{erased}>> <- ByVal(v0): &'{erased} std::vec::in_place_drop::InPlaceDrop<Chunk<'{erased}>>
+    jump block1
+
+block1:
+    v2 = load.i64 notrap v0+8
+; _4 = copy ((*_1).0: *mut T)
+; write_cvalue: Var(_4, var5): *mut Chunk<'{erased}> <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): *mut Chunk<'{erased}>
+    v3 = load.i64 notrap v0
+; _3 = copy _4 as *const T (PtrToPtr)
+; write_cvalue: Var(_3, var4): *const Chunk<'{erased}> <- ByVal(v3): *const Chunk<'{erased}>
+; _5 = copy _2 as *const T (PtrToPtr)
+; write_cvalue: Var(_5, var6): *const Chunk<'{erased}> <- ByVal(v2): *const Chunk<'{erased}>
+; 
+; switchInt(UbChecks)
+    jump block5
+
+block2:
+    v14 = isub.i64 v2, v3
+    v35 = iconst.i64 -6148914691236517205
+    v36 = umulhi v14, v35  ; v35 = -6148914691236517205
+    v37 = iconst.i64 4
+    v38 = ushr v36, v37  ; v37 = 4
+    v16 -> v38
+    return v38
+
+block5:
+    jump block6
+
+block6:
+    jump block7
+
+block7:
+    jump block2
+}
+
+; clifv-extnames 1
+; userextname0 = u1:49
+; userextname1 = u1:50
+; userextname2 = u0:236
+; decl u0:63 func local "_RNxC10dissimilar12H4Yj6LmGyOuT"
+; decl u0:236 func import "_RNvNtCsazjiGSRkgVH_4core9panicking5panic"
+; decl u1:49 data local ro notls ".Ldata31"
+; decl u1:50 data local ro notls ".Ldata32"
+; end clifv-extnames

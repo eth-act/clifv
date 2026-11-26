@@ -1,0 +1,156 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC13crypto_bigint12H4fJJTthPfTU
+function u0:1521(i64 sret, i64, i32) system_v {
+; symbol _RNxC13crypto_bigint12H4fJJTthPfTU
+; instance Instance { def: Item(DefId(0:6610 ~ crypto_bigint[7523]::uint::shl::{impl#2}::wrapping_shl_vartime)), args: [3_usize] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &uint::Uint<3>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: u32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(u32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462607322841091 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: uint::Uint<3>, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 10896843801053236493 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } uint::Uint<3_usize>
+; arg   _1      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} uint::Uint<3_usize>
+; arg   _2      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u32
+
+; kind  local ty                              size align (abi)
+; stack _1    &'{erased} uint::Uint<3_usize>    8b 8                storage=ss0
+; ssa   _2    u32                               4b 4                var=1
+; ssa   _3    u32                               4b 4                var=2
+; ssa   _4    bool                              1b 1                var=3
+; stack _5    uint::Uint<3_usize>              24b 8                storage=ss1
+; zst   _6    ()                                0b 1                align=1,offset=
+; ssa   _7    &'{erased} uint::ref_type::UintRef   16b 8                var=(4, 5)
+; ssa   _8    &'{erased} mut uint::ref_type::UintRef   16b 8                var=(6, 7)
+; stack _9    &'{erased} [limb::Limb]          16b 8                storage=ss2
+; ssa   _10   &'{erased} [limb::Limb; 3_usize]    8b 8                var=8
+; stack _11   *const uint::ref_type::UintRef   16b 8                storage=ss3
+; ssa   _12   *const [limb::Limb]              16b 8                var=(9, 10)
+; stack _13   &'{erased} mut [limb::Limb]      16b 8                storage=ss4
+; ssa   _14   &'{erased} mut [limb::Limb; 3_usize]    8b 8                var=11
+; stack _15   *mut uint::ref_type::UintRef     16b 8                storage=ss5
+; ssa   _16   *mut [limb::Limb]                16b 8                var=(12, 13)
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 24, align = 8
+    ss2 = explicit_slot 16, align = 8
+    ss3 = explicit_slot 16, align = 8
+    ss4 = explicit_slot 16, align = 8
+    ss5 = explicit_slot 16, align = 8
+    gv0 = symbol colocated userextname0 ; alloc49655
+    gv1 = symbol colocated userextname2 ; alloc28617
+    sig0 = (i64) system_v
+    sig1 = (i64, i64, i32, i64, i64) system_v
+    fn0 = u0:6759 sig0 ; "_RNvNtNtCsazjiGSRkgVH_4core9panicking11panic_const23panic_const_rem_by_zero"
+    fn1 = colocated u0:2889 sig1 ; Instance { def: Item(DefId(0:6352 ~ crypto_bigint[7523]::uint::ref_type::shl::{impl#0}::unbounded_shl_vartime)), args: [] }
+
+block0(v0: i64, v1: i64, v2: i32):
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): &'{erased} uint::Uint<3_usize> <- ByVal(v1): &'{erased} uint::Uint<3_usize>
+    v3 = stack_addr.i64 ss0
+    store notrap v1, v3
+; write_cvalue: Var(_2, var1): u32 <- ByVal(v2): u32
+    jump block1
+
+block1:
+    jump block2
+
+block2:
+    v11 = symbol_value.i64 gv1
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): uint::Uint<3_usize> <- ByRef(Pointer { base: Addr(v11), offset: Offset32(0) }, None): uint::Uint<3_usize>
+    v13 = load.i64 notrap aligned v11
+    v14 = load.i64 notrap aligned v11+8
+    v15 = load.i64 notrap aligned v11+16
+    v12 = stack_addr.i64 ss1
+    store notrap aligned v13, v12
+    store notrap aligned v14, v12+8
+    store notrap aligned v15, v12+16
+; _10 = &((*_1).0: [limb::Limb; LIMBS])
+    v17 = load.i64 notrap v3
+; write_cvalue: Var(_10, var8): &'{erased} [limb::Limb; 3_usize] <- ByVal(v17): &'{erased} [limb::Limb; 3_usize]
+; _9 = copy _10 as &[limb::Limb] (PointerCoercion(Unsize, Implicit))
+    v19 = stack_addr.i64 ss2
+    store notrap v17, v19
+    v18 = iconst.i64 3
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): &'{erased} [limb::Limb] <- ByValPair(v17, v18): &'{erased} [limb::Limb]
+    v20 = stack_addr.i64 ss2+8
+    store notrap v18, v20  ; v18 = 3
+; _12 = &raw const (*_9)
+    v22 = load.i64 notrap v19
+    v25 = stack_addr.i64 ss3
+    store notrap v22, v25
+    v26 = stack_addr.i64 ss3+8
+    store notrap v18, v26  ; v18 = 3
+; _7 = &(*_11)
+    v28 = load.i64 notrap v25
+    v33 = stack_addr.i64 ss4
+    store notrap v12, v33
+    v34 = stack_addr.i64 ss4+8
+    store notrap v18, v34  ; v18 = 3
+; _16 = &raw mut (*_13)
+    v36 = load.i64 notrap v33
+    v39 = stack_addr.i64 ss5
+    store notrap v36, v39
+    v40 = stack_addr.i64 ss5+8
+    store notrap v18, v40  ; v18 = 3
+; _8 = &mut (*_15)
+    v42 = load.i64 notrap v39
+    v55 = iconst.i32 -1431655765
+    v56 = umulhi.i32 v2, v55  ; v55 = -1431655765
+    v57 = iconst.i32 7
+    v58 = ushr v56, v57  ; v57 = 7
+    v4 = iconst.i32 192
+    v59 = imul v58, v4  ; v4 = 192
+    v60 = isub.i32 v2, v59
+    v10 -> v60
+    call fn1(v28, v18, v60, v42, v18)  ; v18 = 3, v18 = 3
+    jump block3
+
+block3:
+    v46 = load.i64 notrap aligned v12
+    v47 = load.i64 notrap aligned v12+8
+    v48 = load.i64 notrap aligned v12+16
+    store notrap aligned v46, v0
+    store notrap aligned v47, v0+8
+    store notrap aligned v48, v0+16
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u1:3860
+; userextname1 = u0:6759
+; userextname2 = u1:3861
+; userextname3 = u0:2889
+; decl u0:1521 func local "_RNxC13crypto_bigint12H4fJJTthPfTU"
+; decl u0:2889 func local "_RNxC13crypto_bigint12H9F3IJdBbEYo"
+; decl u0:6759 func import "_RNvNtNtCsazjiGSRkgVH_4core9panicking11panic_const23panic_const_rem_by_zero"
+; decl u1:3860 data local ro notls ".Ldataf14"
+; decl u1:3861 data local ro notls ".Ldataf15"
+; end clifv-extnames
