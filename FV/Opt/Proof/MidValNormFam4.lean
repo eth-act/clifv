@@ -24,9 +24,9 @@ steps, each proved here against `Clif.evalInst`:
   node.
 
 Main results: `ruleSoundT_idStep`, `ruleSound_affStep`, `ruleSound_swapStep`,
-`ruleSoundT_narrowStep`. `normSoundT_base`, `normSoundT_narrowN` and `normSoundT_stdT` (the
-validator's default normaliser, which now ends with family 5) are in
-`FV/Opt/Proof/MidValNormFam5.lean`.
+`ruleSoundT_narrowStep` (with `narrowId_val`: a neutral constant the narrowing leaves, family 6).
+`normSoundT_base`, `normSoundT_narrowN` and `normSoundT_stdT` (the validator's default
+normaliser, which now starts and ends with family 6) are in `FV/Opt/Proof/MidValNormFam6.lean`.
 -/
 
 namespace Opt.MidVal
@@ -382,6 +382,64 @@ theorem redOf_spec {f : Function} {n : Norm} (hn : NormSoundT f n) {tms : Array 
     obtain ⟨h1, h2⟩ := findTm_spec h
     exact tmVal_node h1 h2
 
+/-- The value of `ireduce ty a`, if any, has type `ty`. -/
+theorem evalNode_ireduce_ty {F : Frame} {mem : Mem} {ty : Ty} {a : ValueId} {v : Val}
+    (h : evalNode F mem (.ireduce ty a) = some v) : v.ty = ty := by
+  rw [evalNode_ireduce] at h
+  rcases ha : F.regs a with _ | va
+  · rw [ha] at h; cases h
+  · rw [ha] at h
+    simp only [Option.bind_some] at h
+    split at h
+    · cases h; rfl
+    · cases h
+
+/-- **`narrowId`**: the other term, of type `ty` whenever it has a value, has the value of
+`op ty a' b'` with a neutral constant. -/
+theorem narrowId_val {f : Function} {tms : Array Tm} {fr : Frame} {mem : Mem} {op : BinaryOp}
+    {ty : Ty} {a' b' t : Nat} {z : Tm} (h : narrowId tms op ty a' b' = some z)
+    (ht : tms[t]? = some z) (hot : ∀ o ∈ z.ops, o < t)
+    (hoa : ∀ x, tms[a']? = some x → ∀ o ∈ x.ops, o < a')
+    (hob : ∀ x, tms[b']? = some x → ∀ o ∈ x.ops, o < b')
+    (hta : ∀ v, tmVal f tms fr mem a' = some v → v.ty = ty)
+    (htb : ∀ v, tmVal f tms fr mem b' = some v → v.ty = ty) :
+    tmVal f tms fr mem t = evalNode (tmFrame f tms fr mem) mem (.binary op ty a' b') := by
+  unfold narrowId at h
+  split at h
+  · rename_i kv hkv
+    split at h
+    · rename_i hn
+      have hk : (tmFrame f tms fr mem).regs b' = some ⟨ty, kv⟩ := constAt_spec hkv
+      rw [tmVal_same ht h hot (hoa z h), evalNode_binary_nonShift (rNeutral_nonShift hn), hk]
+      change tmVal f tms fr mem a' = ((tmVal f tms fr mem a').bind (·.as? ty)).bind fun A =>
+        ((some (⟨ty, kv⟩ : Val)).bind (·.as? ty)).map fun B => (⟨ty, Sem.binary op A B⟩ : Val)
+      rcases hv : tmVal f tms fr mem a' with _ | v
+      · rfl
+      · have hvt := hta v hv
+        obtain ⟨vt, vb⟩ := v
+        simp only at hvt
+        subst hvt
+        simp [rNeutral_spec hn]
+    · cases h
+  · split at h
+    · rename_i kv hkv
+      split at h
+      · rename_i hc
+        simp only [Bool.and_eq_true] at hc
+        have hk : (tmFrame f tms fr mem).regs a' = some ⟨ty, kv⟩ := constAt_spec hkv
+        rw [tmVal_same ht h hot (hob z h), evalNode_binary_nonShift (commOp_nonShift hc.1), hk]
+        change tmVal f tms fr mem b' = ((some (⟨ty, kv⟩ : Val)).bind (·.as? ty)).bind fun A =>
+          ((tmVal f tms fr mem b').bind (·.as? ty)).map fun B => (⟨ty, Sem.binary op A B⟩ : Val)
+        rcases hv : tmVal f tms fr mem b' with _ | v
+        · simp
+        · have hvt := htb v hv
+          obtain ⟨vt, vb⟩ := v
+          simp only at hvt
+          subst hvt
+          simp [commOp_spec hc.1 kv vb, rNeutral_spec hc.2]
+      · cases h
+    · cases h
+
 theorem ruleSoundT_narrowStep {f : Function} {n : Norm} (hn : NormSoundT f n) :
     RuleSoundT f (narrowStep n (atomTy f)) := by
   intro tms i x' h hord fr mem t ht hA
@@ -396,22 +454,6 @@ theorem ruleSoundT_narrowStep {f : Function} {n : Norm} (hn : NormSoundT f n) :
         obtain ⟨⟨⟨hring, hw⟩, hta⟩, htb⟩ := hc
         obtain ⟨a', ha', h⟩ := Option.bind_eq_some_iff.1 h
         obtain ⟨b', hb', rfl⟩ := Option.map_eq_some_iff.1 h
-        -- the value of the narrowed node `j`
-        have hj : tmVal f tms fr mem t =
-            evalNode (tmFrame f tms fr mem) mem (.binary op ty a' b') := by
-          cases haff : affStep tms (.binary op ty a' b') with
-          | some z =>
-            simp only [haff, Option.orElse_some, Option.getD_some] at ht hord
-            exact ruleSound_affStep tms _ z haff hord f fr mem t ht
-          | none =>
-            cases hsw : swapStep tms (.binary op ty a' b') with
-            | some z =>
-              simp only [haff, hsw, Option.orElse_none, Option.getD_some] at ht hord
-              exact ruleSound_swapStep tms _ z hsw hord f fr mem t ht
-            | none =>
-              simp only [haff, hsw, Option.orElse_none, Option.getD_none] at ht hord
-              exact tmVal_node' ht (hord t ht)
-        rw [hj]
         have hna := nodeAt_spec hu
         have hru : TmReach tms (.ireduce ty u) u := .op (by simp [operands])
         have hra : TmReach tms (.ireduce ty u) a := .sub hru hna.1 (by simp [operands])
@@ -424,6 +466,33 @@ theorem ruleSoundT_narrowStep {f : Function} {n : Norm} (hn : NormSoundT f n) :
             evalNode (tmFrame f tms fr mem) mem (.ireduce ty a) := redOf_spec hn ha' hAa
         have hbv : (tmFrame f tms fr mem).regs b' =
             evalNode (tmFrame f tms fr mem) mem (.ireduce ty b) := redOf_spec hn hb' hAb
+        -- the value of the narrowed node `j`
+        have hj : tmVal f tms fr mem t =
+            evalNode (tmFrame f tms fr mem) mem (.binary op ty a' b') := by
+          cases hid : narrowId tms op ty a' b' with
+          | some z =>
+            simp only [hid, Option.orElse_some, Option.getD_some] at ht hord
+            have hfa := findTm_spec ha'
+            have hfb := findTm_spec hb'
+            exact narrowId_val hid ht (hord t ht)
+              (fun x hx => by rw [hfa.1] at hx; cases hx; exact hfa.2)
+              (fun x hx => by rw [hfb.1] at hx; cases hx; exact hfb.2)
+              (fun v hv => evalNode_ireduce_ty (by rw [← hav]; exact hv))
+              (fun v hv => evalNode_ireduce_ty (by rw [← hbv]; exact hv))
+          | none =>
+            cases haff : affStep tms (.binary op ty a' b') with
+            | some z =>
+              simp only [hid, haff, Option.orElse_none, Option.orElse_some, Option.getD_some] at ht hord
+              exact ruleSound_affStep tms _ z haff hord f fr mem t ht
+            | none =>
+              cases hsw : swapStep tms (.binary op ty a' b') with
+              | some z =>
+                simp only [hid, haff, hsw, Option.orElse_none, Option.getD_some] at ht hord
+                exact ruleSound_swapStep tms _ z hsw hord f fr mem t ht
+              | none =>
+                simp only [hid, haff, hsw, Option.orElse_none, Option.getD_none] at ht hord
+                exact tmVal_node' ht (hord t ht)
+        rw [hj]
         have huv : (tmFrame f tms fr mem).regs u =
             evalNode (tmFrame f tms fr mem) mem (.binary op wty a b) := tmVal_node hna.1 hna.2
         have hop := ringOp_nonShift hring

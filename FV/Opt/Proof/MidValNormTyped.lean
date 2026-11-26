@@ -20,7 +20,7 @@ the atoms below the node hold values of those types (`AtomsTyped`): their obliga
   (as `redExt`, whose `x` is a node typed by `nodeTy`).
 
 Main results: `ruleSoundT_selTyped`, `ruleSoundT_redTyped`, `normSoundT_typed` (the default
-normaliser `normSoundT_stdT`: `FV/Opt/Proof/MidValNormFam5.lean`).
+normaliser `normSoundT_stdT`: `FV/Opt/Proof/MidValNormFam6.lean`).
 -/
 
 namespace Opt.MidVal

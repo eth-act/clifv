@@ -1,0 +1,280 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC12regex_syntax12HjiH6To1FFOY
+function u0:1733(i64, i64, i64, i64, i64) -> i64 system_v {
+; symbol _RNxC12regex_syntax12HjiH6To1FFOY
+; instance Instance { def: Item(DefId(1:14567 ~ core[7b1c]::slice::sort::shared::pivot::median3_rec)), args: [ast::Span, FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &mut for<'a, 'b> fn(&'a ast::Span, &'b ast::Span) -> bool {<ast::Span as core::cmp::PartialOrd>::lt}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 5, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    *const ast::Span                  8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const ast::Span
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const ast::Span
+; arg   _2      = v1       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const ast::Span
+; arg   _3      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const ast::Span
+; arg   _4      = v3       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+; arg   _5      = v4       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} mut FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })
+
+; kind  local ty                              size align (abi)
+; stack _1    *const ast::Span                  8b 8                storage=ss0
+; stack _2    *const ast::Span                  8b 8                storage=ss1
+; stack _3    *const ast::Span                  8b 8                storage=ss2
+; ssa   _4    usize                             8b 8                var=2
+; ssa   _5    &'{erased} mut FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })    8b 8                var=3
+; ssa   _6    bool                              1b 1                var=4
+; ssa   _7    usize                             8b 8                var=5
+; ssa   _8    usize                             8b 8                var=6
+; ssa   _9    *const ast::Span                  8b 8                var=7
+; ssa   _10   *const ast::Span                  8b 8                var=8
+; ssa   _11   *const ast::Span                  8b 8                var=9
+; ssa   _12   usize                             8b 8                var=10
+; ssa   _13   *const ast::Span                  8b 8                var=11
+; ssa   _14   usize                             8b 8                var=12
+; ssa   _15   *const ast::Span                  8b 8                var=13
+; ssa   _16   *const ast::Span                  8b 8                var=14
+; ssa   _17   *const ast::Span                  8b 8                var=15
+; ssa   _18   *const ast::Span                  8b 8                var=16
+; ssa   _19   *const ast::Span                  8b 8                var=17
+; ssa   _20   *const ast::Span                  8b 8                var=18
+; ssa   _21   *const ast::Span                  8b 8                var=19
+; ssa   _22   *const ast::Span                  8b 8                var=20
+; ssa   _23   &'{erased} ast::Span              8b 8                var=21
+; ssa   _24   &'{erased} ast::Span              8b 8                var=22
+; ssa   _25   &'{erased} ast::Span              8b 8                var=23
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 8, align = 8
+    sig0 = (i64, i64, i64, i64, i64) -> i64 system_v
+    sig1 = (i64, i64, i64, i64, i64) -> i64 system_v
+    sig2 = (i64, i64, i64, i64, i64) -> i64 system_v
+    sig3 = (i64, i64, i64, i64) -> i64 system_v
+    fn0 = colocated u0:1733 sig0 ; Instance { def: Item(DefId(1:14567 ~ core[7b1c]::slice::sort::shared::pivot::median3_rec)), args: [ast::Span, FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })] }
+    fn1 = colocated u0:1733 sig1 ; Instance { def: Item(DefId(1:14567 ~ core[7b1c]::slice::sort::shared::pivot::median3_rec)), args: [ast::Span, FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })] }
+    fn2 = colocated u0:1733 sig2 ; Instance { def: Item(DefId(1:14567 ~ core[7b1c]::slice::sort::shared::pivot::median3_rec)), args: [ast::Span, FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })] }
+    fn3 = colocated u0:1611 sig3 ; Instance { def: Item(DefId(1:14570 ~ core[7b1c]::slice::sort::shared::pivot::median3)), args: [ast::Span, FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })] }
+
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v8 -> v3
+    v13 -> v3
+    v32 -> v4
+    v50 -> v4
+    v68 -> v4
+    v77 -> v4
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): *const ast::Span <- ByVal(v0): *const ast::Span
+    v5 = stack_addr.i64 ss0
+    store notrap v0, v5
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): *const ast::Span <- ByVal(v1): *const ast::Span
+    v6 = stack_addr.i64 ss1
+    store notrap v1, v6
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): *const ast::Span <- ByVal(v2): *const ast::Span
+    v7 = stack_addr.i64 ss2
+    store notrap v2, v7
+; write_cvalue: Var(_4, var2): usize <- ByVal(v3): usize
+; write_cvalue: Var(_5, var3): &'{erased} mut FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] }) <- ByVal(v4): &'{erased} mut FnDef(DefId(1:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [ast::Span, ast::Span], bound_vars: [] })
+    jump block1
+
+block1:
+    nop 
+; _7 = Mul(copy _4, const 8_usize)
+    v9 = iconst.i64 8
+    v10 = imul.i64 v8, v9  ; v9 = 8
+; write_cvalue: Var(_7, var5): usize <- ByVal(v10): usize
+; _6 = Ge(move _7, const 64_usize)
+    v11 = iconst.i64 64
+    v12 = icmp uge v10, v11  ; v11 = 64
+; write_cvalue: Var(_6, var4): bool <- ByVal(v12): bool
+; 
+; switchInt(move _6)
+    brif v12, block2, block6
+
+block2:
+    nop 
+; _8 = Div(copy _4, const 8_usize)
+    v14 = iconst.i64 8
+    v15 = udiv.i64 v13, v14  ; v14 = 8
+    v49 -> v15
+    v67 -> v15
+; write_cvalue: Var(_8, var6): usize <- ByVal(v15): usize
+; _9 = copy _1
+; write_cvalue: Var(_9, var7): *const ast::Span <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): *const ast::Span
+    v16 = stack_addr.i64 ss0
+    v17 = load.i64 notrap v16
+; _11 = copy _1
+; write_cvalue: Var(_11, var9): *const ast::Span <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): *const ast::Span
+    v18 = stack_addr.i64 ss0
+    v19 = load.i64 notrap v18
+; _12 = Mul(copy _8, const 4_usize)
+    v20 = iconst.i64 4
+    v21 = imul v15, v20  ; v20 = 4
+    v39 -> v21
+    v57 -> v21
+; write_cvalue: Var(_12, var10): usize <- ByVal(v21): usize
+; _10 = Offset(copy _11, copy _12)
+    v22 = iconst.i64 48
+    v23 = imul v21, v22  ; v22 = 48
+    v24 = iadd v19, v23
+; write_cvalue: Var(_10, var8): *const ast::Span <- ByVal(v24): *const ast::Span
+; _14 = Mul(copy _8, const 7_usize)
+    v25 = iconst.i64 7
+    v26 = imul v15, v25  ; v25 = 7
+    v43 -> v26
+    v61 -> v26
+; write_cvalue: Var(_14, var12): usize <- ByVal(v26): usize
+; _13 = Offset(copy _1, copy _14)
+    v27 = iconst.i64 48
+    v28 = imul v26, v27  ; v27 = 48
+    v29 = stack_addr.i64 ss0
+    v30 = load.i64 notrap v29
+    v31 = iadd v30, v28
+; write_cvalue: Var(_13, var11): *const ast::Span <- ByVal(v31): *const ast::Span
+; 
+; _1 = core::slice::sort::shared::pivot::median3_rec::<T, F>(move _9, move _10, move _13, copy _8, copy _5)
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &mut for<'a, 'b> fn(&'a ast::Span, &'b ast::Span) -> bool {<ast::Span as core::cmp::PartialOrd>::lt}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 5, conv: Rust, can_unwind: true }
+    v33 = call fn0(v17, v24, v31, v15, v32)
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): *const ast::Span <- ByVal(v33): *const ast::Span
+    v34 = stack_addr.i64 ss0
+    store notrap v33, v34
+    jump block3
+
+block3:
+    nop 
+; _15 = copy _2
+; write_cvalue: Var(_15, var13): *const ast::Span <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): *const ast::Span
+    v35 = stack_addr.i64 ss1
+    v36 = load.i64 notrap v35
+; _17 = copy _2
+; write_cvalue: Var(_17, var15): *const ast::Span <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): *const ast::Span
+    v37 = stack_addr.i64 ss1
+    v38 = load.i64 notrap v37
+; _16 = Offset(copy _17, copy _12)
+    v40 = iconst.i64 48
+    v41 = imul.i64 v39, v40  ; v40 = 48
+    v42 = iadd v38, v41
+; write_cvalue: Var(_16, var14): *const ast::Span <- ByVal(v42): *const ast::Span
+; _18 = Offset(copy _2, copy _14)
+    v44 = iconst.i64 48
+    v45 = imul.i64 v43, v44  ; v44 = 48
+    v46 = stack_addr.i64 ss1
+    v47 = load.i64 notrap v46
+    v48 = iadd v47, v45
+; write_cvalue: Var(_18, var16): *const ast::Span <- ByVal(v48): *const ast::Span
+; 
+; _2 = core::slice::sort::shared::pivot::median3_rec::<T, F>(move _15, move _16, move _18, copy _8, copy _5)
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &mut for<'a, 'b> fn(&'a ast::Span, &'b ast::Span) -> bool {<ast::Span as core::cmp::PartialOrd>::lt}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 5, conv: Rust, can_unwind: true }
+    v51 = call fn1(v36, v42, v48, v49, v50)
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): *const ast::Span <- ByVal(v51): *const ast::Span
+    v52 = stack_addr.i64 ss1
+    store notrap v51, v52
+    jump block4
+
+block4:
+    nop 
+; _19 = copy _3
+; write_cvalue: Var(_19, var17): *const ast::Span <- ByRef(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): *const ast::Span
+    v53 = stack_addr.i64 ss2
+    v54 = load.i64 notrap v53
+; _21 = copy _3
+; write_cvalue: Var(_21, var19): *const ast::Span <- ByRef(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): *const ast::Span
+    v55 = stack_addr.i64 ss2
+    v56 = load.i64 notrap v55
+; _20 = Offset(copy _21, copy _12)
+    v58 = iconst.i64 48
+    v59 = imul.i64 v57, v58  ; v58 = 48
+    v60 = iadd v56, v59
+; write_cvalue: Var(_20, var18): *const ast::Span <- ByVal(v60): *const ast::Span
+; _22 = Offset(copy _3, copy _14)
+    v62 = iconst.i64 48
+    v63 = imul.i64 v61, v62  ; v62 = 48
+    v64 = stack_addr.i64 ss2
+    v65 = load.i64 notrap v64
+    v66 = iadd v65, v63
+; write_cvalue: Var(_22, var20): *const ast::Span <- ByVal(v66): *const ast::Span
+; 
+; _3 = core::slice::sort::shared::pivot::median3_rec::<T, F>(move _19, move _20, move _22, move _8, copy _5)
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &mut for<'a, 'b> fn(&'a ast::Span, &'b ast::Span) -> bool {<ast::Span as core::cmp::PartialOrd>::lt}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 5, conv: Rust, can_unwind: true }
+    v69 = call fn2(v54, v60, v66, v67, v68)
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): *const ast::Span <- ByVal(v69): *const ast::Span
+    v70 = stack_addr.i64 ss2
+    store notrap v69, v70
+    jump block5
+
+block5:
+    nop 
+; 
+; goto
+    jump block7
+
+block6:
+    nop 
+; 
+; goto
+    jump block7
+
+block7:
+    nop 
+; _23 = &(*_1)
+    v71 = stack_addr.i64 ss0
+    v72 = load.i64 notrap v71
+; write_cvalue: Var(_23, var21): &'{erased} ast::Span <- ByVal(v72): &'{erased} ast::Span
+; _24 = &(*_2)
+    v73 = stack_addr.i64 ss1
+    v74 = load.i64 notrap v73
+; write_cvalue: Var(_24, var22): &'{erased} ast::Span <- ByVal(v74): &'{erased} ast::Span
+; _25 = &(*_3)
+    v75 = stack_addr.i64 ss2
+    v76 = load.i64 notrap v75
+; write_cvalue: Var(_25, var23): &'{erased} ast::Span <- ByVal(v76): &'{erased} ast::Span
+; 
+; _0 = core::slice::sort::shared::pivot::median3::<T, F>(move _23, move _24, move _25, move _5)
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(48 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(48 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(48 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &mut for<'a, 'b> fn(&'a ast::Span, &'b ast::Span) -> bool {<ast::Span as core::cmp::PartialOrd>::lt}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: *const ast::Span, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 4, conv: Rust, can_unwind: true }
+    v78 = call fn3(v72, v74, v76, v77)
+    v79 -> v78
+; write_cvalue: Var(_0, var1): *const ast::Span <- ByVal(v78): *const ast::Span
+    jump block8
+
+block8:
+    nop 
+; 
+; return
+    return v79
+}
+
+; clifv-extnames 1
+; userextname0 = u0:1733
+; userextname1 = u0:1611
+; decl u0:1611 func local "_RNxC12regex_syntax12HiDvDG4tc5UE"
+; decl u0:1733 func local "_RNxC12regex_syntax12HjiH6To1FFOY"
+; end clifv-extnames

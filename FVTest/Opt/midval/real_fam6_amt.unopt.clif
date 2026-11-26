@@ -1,0 +1,107 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC13crypto_bigint12HlV9wufij0kF
+function u0:6583(i64 sret, i64) system_v {
+; symbol _RNxC13crypto_bigint12HlV9wufij0kF
+; instance Instance { def: Item(DefId(0:5319 ~ crypto_bigint[7523]::uint::div_limb::{impl#0}::new)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: non_zero::NonZero<limb::Limb>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17919703079827588196 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: uint::div_limb::Reciprocal, layout: Layout { size: Size(24 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes), Size(16 bytes), Size(8 bytes)], in_memory_order: [0, 2, 1] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 6417940093579034918 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } uint::div_limb::Reciprocal
+; arg   _1      = v1       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) non_zero::NonZero<limb::Limb>
+
+; kind  local ty                              size align (abi)
+; stack _1    non_zero::NonZero<limb::Limb>     8b 8                storage=ss0
+; ssa   _2    u32                               4b 4                var=1
+; ssa   _3    u64                               8b 8                var=2
+; ssa   _4    u64                               8b 8                var=3
+; ssa   _5    u64                               8b 8                var=4
+
+    ss0 = explicit_slot 8, align = 8
+    sig0 = (i64) -> i64 system_v
+    fn0 = colocated u0:5006 sig0 ; Instance { def: Item(DefId(0:10069 ~ crypto_bigint[7523]::uint::div_limb::reciprocal)), args: [] }
+
+block0(v0: i64, v1: i64):
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): non_zero::NonZero<limb::Limb> <- ByVal(v1): non_zero::NonZero<limb::Limb>
+    v2 = stack_addr.i64 ss0
+    store notrap v1, v2
+    jump block1
+
+block1:
+    nop 
+; _5 = copy ((_1.0: limb::Limb).0: u64)
+; write_cvalue: Var(_5, var4): u64 <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): u64
+    v3 = stack_addr.i64 ss0
+    v4 = load.i64 notrap v3
+    v10 -> v4
+; 
+; _2 = core::intrinsics::ctlz::<u64>(copy _5)
+    v5 = clz v4
+    v6 = ireduce.i32 v5
+    v11 -> v6
+    v8 -> v11
+; write_cvalue: Var(_2, var1): u32 <- ByVal(v6): u32
+    jump block3
+
+block2:
+    nop 
+; _0 = uint::div_limb::Reciprocal { divisor_normalized: copy _3, shift: copy _2, reciprocal: move _4 }
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(0) }, None): u64 <- ByVal(v7): u64
+    store.i64 notrap v7, v0
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(16) }, None): u32 <- ByVal(v8): u32
+    store.i32 notrap v8, v0+16
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(8) }, None): u64 <- ByVal(v9): u64
+    store.i64 notrap v9, v0+8
+; 
+; return
+    return
+
+block3:
+    nop 
+; _3 = Shl(copy _5, copy _2)
+    v12 = ishl.i64 v10, v11
+    v7 -> v12
+; write_cvalue: Var(_3, var2): u64 <- ByVal(v12): u64
+; 
+; _4 = uint::div_limb::reciprocal(copy _3)
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: u64, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: u64, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+    v13 = call fn0(v12)
+    v9 -> v13
+; write_cvalue: Var(_4, var3): u64 <- ByVal(v13): u64
+    jump block2
+}
+
+; clifv-extnames 1
+; userextname0 = u0:5006
+; decl u0:5006 func local "_RNxC13crypto_bigint12HgGChhowrzZw"
+; decl u0:6583 func local "_RNxC13crypto_bigint12HlV9wufij0kF"
+; end clifv-extnames

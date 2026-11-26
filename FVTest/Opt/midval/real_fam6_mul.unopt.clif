@@ -1,0 +1,189 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC14regex_automata12Ha6ZGqiSITse
+function u0:1272(i64) system_v {
+; symbol _RNxC14regex_automata12Ha6ZGqiSITse
+; instance Instance { def: Item(DefId(1:14336 ~ core[7b1c]::slice::sort::stable::merge::{impl#1}::drop)), args: [regex_syntax::hir::literal::Literal] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>    8b 8                var=1
+; ssa   _2    usize                             8b 8                var=2
+; ssa   _3    *mut regex_syntax::hir::literal::Literal    8b 8                var=3
+; ssa   _4    *const regex_syntax::hir::literal::Literal    8b 8                var=4
+; ssa   _5    *mut regex_syntax::hir::literal::Literal    8b 8                var=5
+; ssa   _6    *const regex_syntax::hir::literal::Literal    8b 8                var=6
+; ssa   _7    *mut regex_syntax::hir::literal::Literal    8b 8                var=7
+; ssa   _8    *mut regex_syntax::hir::literal::Literal    8b 8                var=8
+; ssa   _9    *const regex_syntax::hir::literal::Literal    8b 8                var=9
+; zst   _10   ()                                0b 1                align=1,offset=
+; ssa   _11   *const ()                         8b 8                var=10
+; ssa   _12   *const ()                         8b 8                var=11
+; ssa   _13   bool                              1b 1                var=12
+; ssa   _14   bool                              1b 1                var=13
+; zst   _15   !                                 0b 1                align=1,offset=
+; zst   _16   ()                                0b 1                align=1,offset=
+; ssa   _17   *const ()                         8b 8                var=14
+; ssa   _18   *mut ()                           8b 8                var=15
+
+    gv0 = symbol colocated userextname0 ; alloc847
+    gv1 = symbol colocated userextname1 ; alloc3904
+    sig0 = (i64, i64, i64) system_v
+    sig1 = (i64, i64, i64) -> i64 system_v
+    fn0 = u0:2611 sig0 ; Instance { def: Item(DefId(1:12378 ~ core[7b1c]::panicking::panic)), args: [] }
+    fn1 = %Memcpy sig1
+
+block0(v0: i64):
+    v1 -> v0
+    v29 -> v0
+    v5 -> v29
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal> <- ByVal(v0): &'{erased} mut core::slice::sort::stable::merge::MergeState<regex_syntax::hir::literal::Literal>
+    jump block1
+
+block1:
+    nop 
+; _3 = copy ((*_1).1: *mut T)
+; write_cvalue: Var(_3, var3): *mut regex_syntax::hir::literal::Literal <- ByRef(Pointer { base: Addr(v1), offset: Offset32(8) }, None): *mut regex_syntax::hir::literal::Literal
+    v2 = load.i64 notrap v1+8
+    v15 -> v2
+; _5 = copy ((*_1).0: *mut T)
+; write_cvalue: Var(_5, var5): *mut regex_syntax::hir::literal::Literal <- ByRef(Pointer { base: Addr(v1), offset: Offset32(0) }, None): *mut regex_syntax::hir::literal::Literal
+    v3 = load.i64 notrap v1
+    v16 -> v3
+; _4 = copy _5 as *const T (PtrToPtr)
+; write_cvalue: Var(_4, var4): *const regex_syntax::hir::literal::Literal <- ByVal(v3): *const regex_syntax::hir::literal::Literal
+; _9 = copy _3 as *const T (PtrToPtr)
+; write_cvalue: Var(_9, var9): *const regex_syntax::hir::literal::Literal <- ByVal(v2): *const regex_syntax::hir::literal::Literal
+; 
+; switchInt(UbChecks)
+    v4 = iconst.i8 0
+    jump block5
+
+block2:
+    nop 
+; _7 = copy ((*_1).0: *mut T)
+; write_cvalue: Var(_7, var7): *mut regex_syntax::hir::literal::Literal <- ByRef(Pointer { base: Addr(v5), offset: Offset32(0) }, None): *mut regex_syntax::hir::literal::Literal
+    v6 = load.i64 notrap v5
+    v24 -> v6
+; _6 = copy _7 as *const T (PtrToPtr)
+; write_cvalue: Var(_6, var6): *const regex_syntax::hir::literal::Literal <- ByVal(v6): *const regex_syntax::hir::literal::Literal
+; _8 = copy ((*_1).2: *mut T)
+; write_cvalue: Var(_8, var8): *mut regex_syntax::hir::literal::Literal <- ByRef(Pointer { base: Addr(v5), offset: Offset32(16) }, None): *mut regex_syntax::hir::literal::Literal
+    v7 = load.i64 notrap v5+16
+    v23 -> v7
+; 
+; switchInt(UbChecks)
+    v8 = iconst.i8 0
+    jump block11
+
+block3:
+    trap user1
+
+block4:
+    trap user1
+
+block5:
+    nop 
+; _13 = Lt(const 0_usize, const <T as core::mem::SizedTypeProperties>::SIZE)
+    v9 = iconst.i64 0
+    v10 = iconst.i64 32
+    v11 = icmp ult v9, v10  ; v9 = 0, v10 = 32
+; write_cvalue: Var(_13, var12): bool <- ByVal(v11): bool
+; 
+; switchInt(move _13)
+    brif v11, block6, block8
+
+block6:
+    nop 
+; _14 = Le(const <T as core::mem::SizedTypeProperties>::SIZE, const 9223372036854775807_usize)
+    v12 = iconst.i64 32
+    v13 = iconst.i64 0x7fff_ffff_ffff_ffff
+    v14 = icmp ule v12, v13  ; v12 = 32, v13 = 0x7fff_ffff_ffff_ffff
+; write_cvalue: Var(_14, var13): bool <- ByVal(v14): bool
+; 
+; switchInt(move _14)
+    brif v14, block7, block8
+
+block7:
+    nop 
+; 
+; _2 = core::intrinsics::ptr_offset_from_unsigned::<T>(move _9, move _4)
+    v17 = isub.i64 v15, v16
+    v18 = iconst.i64 32
+    v19 = udiv v17, v18  ; v18 = 32
+    v25 -> v19
+; write_cvalue: Var(_2, var2): usize <- ByVal(v19): usize
+    jump block2
+
+block8 cold:
+    nop 
+; 
+; _15 = core::panicking::panic(const "assertion failed: 0 < pointee_size && pointee_size <= isize::MAX as usize")
+    v20 = symbol_value.i64 gv0
+    v21 = iconst.i64 73
+    v22 = symbol_value.i64 gv1
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &str, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u64 is .., b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16 } }, mode: Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &core::panic::Location<'_>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(24 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: !, layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Primitive, largest_niche: None, uninhabited: true, variants: Empty, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+    call fn0(v20, v21, v22)  ; v21 = 73
+    trap user1
+
+block9:
+    trap user1
+
+block10:
+    trap user1
+
+block11:
+    nop 
+; copy_nonoverlapping(dst = copy _8, src = copy _6, count = copy _2)
+    v26 = iconst.i64 32
+    v27 = imul.i64 v25, v26  ; v26 = 32
+    v28 = call fn1(v23, v24, v27)
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u1:1198
+; userextname1 = u1:1199
+; userextname2 = u0:2611
+; decl u0:1272 func local "_RNxC14regex_automata12Ha6ZGqiSITse"
+; decl u0:2611 func import "_RNvNtCsazjiGSRkgVH_4core9panicking5panic"
+; decl u1:1198 data local ro notls ".Ldata4ae"
+; decl u1:1199 data local ro notls ".Ldata4af"
+; libcall %Memcpy "memcpy"
+; end clifv-extnames

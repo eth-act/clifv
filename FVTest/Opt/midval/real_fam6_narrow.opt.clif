@@ -1,0 +1,114 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC7ctutils12HaFzNS3jBufb
+function u0:6739(i64, i64, i8) system_v {
+; symbol _RNxC7ctutils12HaFzNS3jBufb
+; instance Instance { def: Item(DefId(4:547 ~ ctutils[82e0]::traits::ct_assign::{impl#33}::ct_assign)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: ctutils::Choice, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is ..), fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 8375714107996500882 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 3, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) &'{erased} mut u8
+; arg   _2      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) &'{erased} u8
+; arg   _3      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) ctutils::Choice
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut u8                 8b 8                var=1
+; ssa   _2    &'{erased} u8                     8b 8                var=2
+; stack _3    ctutils::Choice                   1b 1                storage=ss0
+; ssa   _4    u8                                1b 1                var=3
+; ssa   _5    u16                               2b 2                var=4
+; ssa   _6    u8                                1b 1                var=5
+; ssa   _7    u16                               2b 2                var=6
+; ssa   _8    u8                                1b 1                var=7
+; ssa   _9    u16                               2b 2                var=8
+; ssa   _10   u16                               2b 2                var=9
+; ssa   _11   u8                                1b 1                var=10
+
+    ss0 = explicit_slot 1
+    ss1 = explicit_slot 32, align = 16
+    sig0 = (i64) system_v
+    fn0 = u0:7185 sig0 ; _RNxC7ctutils12HaFzNS3jBufb__inline_asm_crypto_bigint__7523d1f5c9903916_cgu__0_n0
+
+block0(v0: i64, v1: i64, v2: i8):
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} mut u8 <- ByVal(v0): &'{erased} mut u8
+; write_cvalue: Var(_2, var2): &'{erased} u8 <- ByVal(v1): &'{erased} u8
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): ctutils::Choice <- ByVal(v2): ctutils::Choice
+    v3 = stack_addr.i64 ss0
+    store notrap v2, v3
+    jump block1
+
+block1:
+    jump block2
+
+block2:
+    v7 = load.i8 notrap v0
+; _5 = copy _6 as u16 (IntToInt)
+    v10 = load.i8 notrap v1
+; _7 = copy _8 as u16 (IntToInt)
+    v13 = stack_addr.i64 ss1+8
+    store.i8 notrap v2, v13
+    v8 = uextend.i16 v7
+; write_cvalue: Var(_5, var4): u16 <- ByVal(v8): u16
+; _8 = copy (*_2)
+; write_cvalue: Var(_8, var7): u8 <- ByRef(Pointer { base: Addr(v9), offset: Offset32(0) }, None): u8
+    v14 = stack_addr.i64 ss1
+    store notrap v8, v14
+    v11 = uextend.i16 v10
+; write_cvalue: Var(_7, var6): u16 <- ByVal(v11): u16
+; _10 = copy _5
+; write_cvalue: Var(_10, var9): u16 <- ByVal(v8): u16
+; 
+; asm!("tst {0:w}, 0xff
+; csel {1:w}, {2:w}, {3:w}, NE", in(reg) copy _4, inlateout(reg) copy _5 => _5, in(reg) copy _7, in(reg) move _10, options(PURE | NOMEM | NOSTACK))
+    v15 = stack_addr.i64 ss1+16
+    store notrap v11, v15
+    v16 = stack_addr.i64 ss1+24
+    store notrap v8, v16
+    call fn0(v14)
+    v19 = load.i16 notrap v14
+; write_cvalue: Var(_5, var4): u16 <- ByVal(v19): u16
+    jump block3
+
+block3:
+    v25 = ireduce.i8 v19
+    store notrap v25, v0
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u0:7185
+; decl u0:6739 func local "_RNxC7ctutils12HaFzNS3jBufb"
+; decl u0:7185 func import "_RNxC7ctutils12HaFzNS3jBufb__inline_asm_crypto_bigint__7523d1f5c9903916_cgu__0_n0"
+; end clifv-extnames
