@@ -1,0 +1,288 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC4sha311HvJs53D2OHO
+function u0:23(i64 sret, i64, i64) system_v {
+; symbol _RNxC4sha311HvJs53D2OHO
+; instance Instance { def: Item(DefId(0:56 ~ sha3[136f]::utils::serialize)), args: [144_usize] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &[u64; 25], layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(200 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &sponge_cursor::SpongeCursor<144>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: [u8; 201], layout: Layout { size: Size(201 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Array { stride: Size(1 bytes), count: 201 }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 71776127651152074 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(201 bytes), pointee_align: Some(Align(1 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(201 bytes), pointee_align: Some(Align(1 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } [u8; 201_usize]
+; arg   _1      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(200 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} [u64; 25_usize]
+; arg   _2      = v2       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(1 bytes), pointee_align: None }) &'{erased} sponge_cursor::SpongeCursor<144_usize>
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} [u64; 25_usize]        8b 8                var=1
+; ssa   _2    &'{erased} sponge_cursor::SpongeCursor<144_usize>    8b 8                var=2
+; stack _3    [u8; 201_usize]                 201b 1                storage=ss0
+; ssa   _4    &'{erased} mut [u8; 200_usize]    8b 8                var=3
+; ssa   _5    &'{erased} mut u8                 8b 8                var=4
+; stack _6    core::slice::ChunksExactMut<'{erased}, u8>   40b 8                storage=ss1
+; ssa   _7    &'{erased} mut [u8]              16b 8                var=(5, 6)
+; stack _8    core::iter::Zip<core::slice::Iter<'{erased}, u64>, core::slice::ChunksExactMut<'{erased}, u8>>   72b 8                storage=ss2
+; stack _9    core::slice::Iter<'{erased}, u64>   16b 8                storage=ss3
+; stack _10   &'{erased} [u64]                 16b 8                storage=ss4
+; stack _11   core::iter::Zip<core::slice::Iter<'{erased}, u64>, core::slice::ChunksExactMut<'{erased}, u8>>   72b 8                storage=ss5
+; stack _12   core::option::Option<(&'{erased} u64, &'{erased} mut [u8])>   24b 8                storage=ss6
+; ssa   _13   &'{erased} mut core::iter::Zip<core::slice::Iter<'{erased}, u64>, core::slice::ChunksExactMut<'{erased}, u8>>    8b 8                var=7
+; ssa   _14   isize                             8b 8                var=8
+; ssa   _15   &'{erased} u64                    8b 8                var=9
+; ssa   _16   &'{erased} mut [u8]              16b 8                var=(10, 11)
+; zst   _17   ()                                0b 1                align=1,offset=
+; ssa   _18   &'{erased} [u8]                  16b 8                var=(12, 13)
+; ssa   _19   &'{erased} [u8; 8_usize]          8b 8                var=14
+; stack _20   [u8; 8_usize]                     8b 1                storage=ss7
+; ssa   _21   u64                               8b 8                var=15
+; ssa   _22   u8                                1b 1                var=16
+; stack _23   core::ptr::NonNull<u64>           8b 8                storage=ss8
+; stack _24   core::ptr::NonNull<[u64]>        16b 8                storage=ss9
+; ssa   _25   *const u64                        8b 8                var=17
+; ssa   _26   *mut u64                          8b 8                var=18
+; ssa   _27   *mut u64                          8b 8                var=19
+; ssa   _28   *const [u64]                     16b 8                var=(20, 21)
+; ssa   _29   *mut u64                          8b 8                var=22
+; ssa   _30   *mut [u64]                       16b 8                var=(23, 24)
+; ssa   _31   u8                                1b 1                var=25
+; stack _32   core::result::Result<u8, core::num::TryFromIntError>    2b 1                storage=ss10
+; ssa   _33   bool                              1b 1                var=26
+; ssa   _34   bool                              1b 1                var=27
+; ssa   _35   u8                                1b 1                var=28
+
+    ss0 = explicit_slot 201
+    ss1 = explicit_slot 40, align = 8
+    ss2 = explicit_slot 72, align = 8
+    ss3 = explicit_slot 16, align = 8
+    ss4 = explicit_slot 16, align = 8
+    ss5 = explicit_slot 72, align = 8
+    ss6 = explicit_slot 24, align = 8
+    ss7 = explicit_slot 8
+    ss8 = explicit_slot 8, align = 8
+    ss9 = explicit_slot 16, align = 8
+    ss10 = explicit_slot 2
+    gv0 = symbol colocated userextname0 ; alloc240
+    gv1 = symbol colocated userextname4 ; alloc241
+    gv2 = symbol colocated userextname6 ; alloc140
+    gv3 = symbol colocated userextname7 ; alloc141
+    gv4 = symbol colocated userextname8 ; alloc243
+    sig0 = (i64, i32, i64) -> i64 system_v
+    sig1 = (i64 sret, i64, i64, i64, i64) system_v
+    sig2 = (i64 sret, i64, i64, i64) system_v
+    sig3 = (i64, i64, i64) -> i64 system_v
+    sig4 = (i64 sret, i64) system_v
+    sig5 = (i64, i64, i64, i64, i64) system_v
+    sig6 = (i64, i64, i64) -> i64 system_v
+    sig7 = (i8 uext, i8, i64, i64, i64) -> i8 system_v
+    fn0 = %Memset sig0
+    fn1 = colocated u0:184 sig1 ; Instance { def: Item(DefId(1:16085 ~ core[7b1c]::slice::{impl#0}::chunks_exact_mut)), args: [u8] }
+    fn2 = colocated u0:115 sig2 ; Instance { def: Item(DefId(1:11144 ~ core[7b1c]::iter::traits::iterator::Iterator::zip)), args: [core::slice::Iter<'{erased}, u64>, core::slice::ChunksExactMut<'{erased}, u8>] }
+    fn3 = %Memcpy sig3
+    fn4 = colocated u0:52 sig4 ; Instance { def: Item(DefId(1:10299 ~ core[7b1c]::iter::adapters::zip::{impl#5}::next)), args: [core::slice::Iter<'{erased}, u64>, core::slice::ChunksExactMut<'{erased}, u8>] }
+    fn5 = colocated u0:166 sig5 ; Instance { def: Item(DefId(1:16297 ~ core[7b1c]::slice::copy_from_slice_impl)), args: [u8] }
+    fn6 = %Memcpy sig6
+    fn7 = colocated u0:45 sig7 ; Instance { def: Item(DefId(1:12928 ~ core[7b1c]::result::{impl#0}::expect)), args: [u8, core::num::TryFromIntError] }
+
+block0(v0: i64, v1: i64, v2: i64):
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} [u64; 25_usize] <- ByVal(v1): &'{erased} [u64; 25_usize]
+; write_cvalue: Var(_2, var2): &'{erased} sponge_cursor::SpongeCursor<144_usize> <- ByVal(v2): &'{erased} sponge_cursor::SpongeCursor<144_usize>
+    jump block1
+
+block1:
+    v5 = stack_addr.i64 ss0
+    v107 = iconst.i32 0
+    v4 = iconst.i64 201
+    v7 = call fn0(v5, v107, v4)  ; v107 = 0, v4 = 201
+; _4 = &mut _3[0..200]
+    v12 = stack_addr.i64 ss1
+    v9 = iconst.i64 200
+; write_cvalue: VarPair(_7, var5, var6): &'{erased} mut [u8] <- ByValPair(v8, v9): &'{erased} mut [u8]
+; 
+; _6 = core::slice::<impl [u8]>::chunks_exact_mut(move _7, const 8_usize)
+    v10 = iconst.i64 8
+    v11 = symbol_value.i64 gv0
+    call fn1(v12, v5, v9, v10, v11)  ; v9 = 200, v10 = 8
+    jump block2
+
+block2:
+    v15 = stack_addr.i64 ss4
+    store.i64 notrap v1, v15
+    v14 = iconst.i64 25
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(0) }, None): &'{erased} [u64] <- ByValPair(v13, v14): &'{erased} [u64]
+    v16 = stack_addr.i64 ss4+8
+    store notrap v14, v16  ; v14 = 25
+; _28 = &raw const (*_10)
+    v18 = load.i64 notrap v15
+    v21 = stack_addr.i64 ss9
+    store notrap v18, v21
+    v22 = stack_addr.i64 ss9+8
+    store notrap v14, v22  ; v14 = 25
+; _30 = copy _24 as *mut [u64] (Transmute)
+; write_cvalue_transmute: VarPair(_30, var23, var24): *mut [u64] <- ByRef(Pointer { base: Stack(ss9), offset: Offset32(0) }, None): core::ptr::NonNull<[u64]>
+    v24 = load.i64 notrap v21
+    v27 = stack_addr.i64 ss8
+    store notrap v24, v27
+; _27 = copy _23 as *mut u64 (Transmute)
+; write_cvalue_transmute: Var(_27, var19): *mut u64 <- ByRef(Pointer { base: Stack(ss8), offset: Offset32(0) }, None): core::ptr::NonNull<u64>
+    v36 = stack_addr.i64 ss3
+    store notrap v24, v36
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(8) }, None): *const u64 <- ByVal(v33): *const u64
+    v136 = iconst.i64 200
+    v137 = iadd v24, v136  ; v136 = 200
+    v37 = stack_addr.i64 ss3+8
+    store notrap v137, v37
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(16) }, None): core::marker::PhantomData<&'{erased} u64> <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): core::marker::PhantomData<&'{erased} u64>
+; 
+; _8 = <core::slice::Iter<'_, u64> as core::iter::Iterator>::zip::<core::slice::ChunksExactMut<'_, u8>>(move _9, move _6)
+    v40 = load.i64 notrap v36
+    v38 = stack_addr.i64 ss2
+    call fn2(v38, v40, v137, v12)
+    jump block3
+
+block3:
+    v45 = stack_addr.i64 ss5
+    v46 = iconst.i64 72
+    v47 = call fn3(v45, v38, v46)  ; v46 = 72
+; 
+; goto
+    v49 = stack_addr.i64 ss6
+    v69 = iconst.i64 1
+    v66 = iconst.i64 0
+    v71 = iconst.i64 0xffff_ffff
+    v52 = stack_addr.i64 ss6+8
+    v54 = stack_addr.i64 ss6+16
+    v57 = stack_addr.i64 ss7
+    v60 = symbol_value.i64 gv1
+    jump block4
+
+block4:
+    call fn4(v49, v45)
+    jump block8
+
+block5 cold:
+    trap user1
+
+block6:
+    v53 = load.i64 notrap v52
+    v55 = load.i64 notrap v54
+; _21 = copy (*_15)
+; write_cvalue: Var(_21, var15): u64 <- ByRef(Pointer { base: Addr(v51), offset: Offset32(0) }, None): u64
+    v56 = load.i64 notrap v65
+; _20 = copy _21 as [u8; 8] (Transmute)
+; write_cvalue_transmute: Addr(Pointer { base: Stack(ss7), offset: Offset32(0) }, None): [u8; 8_usize] <- ByVal(v56): u64
+    store notrap v56, v57
+; _19 = &_20
+    v145 = iconst.i64 8
+    call fn5(v53, v55, v57, v145, v60)  ; v145 = 8
+    jump block13
+
+block7:
+    jump block11
+
+block8:
+    v65 = load.i64 notrap v49
+    v138 = iconst.i64 1
+    v139 = iconst.i64 0
+    v140 = select v65, v138, v139  ; v138 = 1, v139 = 0
+    v141 = iconst.i64 0xffff_ffff
+    v142 = icmp ugt v140, v141  ; v141 = 0xffff_ffff
+    brif v142, block5, block14
+
+block14:
+    v143 = iconst.i64 0
+    v144 = icmp.i64 ne v65, v143  ; v143 = 0
+    v122 = uextend.i32 v144
+    br_table v122, block5, [block7, block6]
+
+block9:
+    v75 = load.i8 notrap v2
+; _33 = Lt(copy _22, copy _31)
+    v148 = iconst.i64 200
+    v149 = iadd.i64 v5, v148  ; v148 = 200
+    store notrap v75, v149
+; _0 = copy _3
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(0) }, None): [u8; 201_usize] <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): [u8; 201_usize]
+    v150 = iconst.i64 201
+    v85 = call fn6(v0, v5, v150)  ; v150 = 201
+; 
+; return
+    return
+
+block11:
+    v129 = iconst.i8 -112
+    v93 = stack_addr.i64 ss10+1
+    store notrap v129, v93  ; v129 = -112
+    v3 = iconst.i8 0
+    v95 = stack_addr.i64 ss10
+    store notrap v3, v95  ; v3 = 0
+; 
+; goto
+    jump block12
+
+block12:
+    v146 = stack_addr.i64 ss10
+    v100 = load.i8 notrap v146
+    v147 = stack_addr.i64 ss10+1
+    v102 = load.i8 notrap v147
+    v96 = symbol_value.i64 gv3
+    v97 = iconst.i64 24
+    v98 = symbol_value.i64 gv4
+    v103 = call fn7(v100, v102, v96, v97, v98)  ; v97 = 24
+; write_cvalue: Var(_31, var25): u8 <- ByVal(v103): u8
+    jump block9
+
+block13:
+    jump block4
+}
+
+; clifv-extnames 1
+; userextname0 = u1:17
+; userextname1 = u0:184
+; userextname2 = u0:115
+; userextname3 = u0:52
+; userextname4 = u1:18
+; userextname5 = u0:166
+; userextname6 = u1:19
+; userextname7 = u1:20
+; userextname8 = u1:21
+; userextname9 = u0:45
+; decl u0:23 func local "_RNxC4sha311HvJs53D2OHO"
+; decl u0:45 func local "_RNxC4sha312H3NuyzVVBfoB"
+; decl u0:52 func local "_RNxC4sha312H3xF4X4CJC6e"
+; decl u0:115 func local "_RNxC4sha312HabVUlfOYebz"
+; decl u0:166 func local "_RNxC4sha312Hg6gu4PZ5fpe"
+; decl u0:184 func local "_RNxC4sha312HiEj7cnKSdRb"
+; decl u1:17 data local ro notls ".Ldata11"
+; decl u1:18 data local ro notls ".Ldata12"
+; decl u1:19 data local ro notls ".Ldata13"
+; decl u1:20 data local ro notls ".Ldata14"
+; decl u1:21 data local ro notls ".Ldata15"
+; libcall %Memset "memset"
+; libcall %Memcpy "memcpy"
+; end clifv-extnames

@@ -12,7 +12,10 @@ take `Q = prog I` and `syms = I.syms.lookup`, the routes' `…MidS` theorems
 
 * `midEntry_srMUAt`: `Link.midEntry_srMU` from `Opt.FunSimMUAt syms f g`;
 * `midProgAt_sim`: the functions named `n` of the two programs simulate at `syms`;
-* **`midProgAt`**, **`midProgAt_depth`**: the conclusions of `midProg`, `midProg_depth`.
+* **`midProgAt`**, **`midProgAt_depth`**: the conclusions of `midProg`, `midProg_depth`;
+* **`E2E.midval_entrySyms`**: per function, `E2E.midval_entry` for a pair the hoisting mode accepts
+  (`Link.hoistCopy f g = some f'`) at a run whose symbol table resolves `f'`'s global values: what
+  `lean-backend` names next to the compiled `g`'s own theorem.
 -/
 
 namespace Link
@@ -118,3 +121,25 @@ theorem midProgAt_depth {syms : String → Option Nat} {P0 Q : Clif.Program}
       hdT (fun msg he => by rw [hx] at he; cases he) (fun he => by rw [hx] at he; cases he)⟩
 
 end Link
+
+namespace E2E
+
+/-- **`midval_entry` through the hoisting mode** (module doc): for a pair the hoisting mode accepts
+(`Link.hoistCopy f g = some f'`) and a source state `cs` at `f`'s entry whose symbol table resolves
+the copy's global values, the source run from `cs` is refined by the run of a program `q` whose
+functions simulate `p`'s at that table, from `g`'s entry with `cs`'s registers, slots and memory. -/
+theorem midval_entrySyms {f g f' : Clif.Function} (hc : Link.hoistCopy f g = some f')
+    {args : List Clif.Val} {cs : Clif.State} (hcs : ClifEntry f args cs)
+    (hres : Opt.MidVal.globalsResolve f' cs.mem.symbols = true)
+    {p q : Clif.Program} (hv : Opt.FunsSimMUAt cs.mem.symbols p.funcs q.funcs)
+    {env : Clif.Env} (hE : Opt.EnvKeepsSymbols env) (fuel : Nat) :
+    ClifEntry g args (midEntry g cs) ∧
+      (midEntry g cs).frame.slots = cs.frame.slots ∧ (midEntry g cs).mem = cs.mem ∧
+      ∃ n', Opt.OutcomeRefines (Clif.runLoop env p fuel cs)
+        (Clif.runLoop env q n' (midEntry g cs)) := by
+  obtain ⟨hcs', hsl, hmem, hSR⟩ := Link.midEntry_srMUAt (Link.hoistCopy_sound hc hres) hcs rfl
+  obtain ⟨n', hn⟩ := Opt.runLoopX_refinesSRMUAt (envKeepsSymbolsX_toX hE) hv fuel _ _ hSR
+  rw [Clif.runLoopX_toX, Clif.runLoopX_toX] at hn
+  exact ⟨hcs', hsl, hmem, n', outcomeRefines_of_toX hn⟩
+
+end E2E

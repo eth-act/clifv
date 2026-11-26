@@ -29,6 +29,7 @@ import FV.E2E.SrcScopeFast
 import FV.Link.TypedStockShared
 import FV.Front.BundleFast
 import FV.Link.MidPair
+import FV.Link.MidPairSyms
 import FVTest.Link.Coverage
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
@@ -788,11 +789,16 @@ def main (args0 : List String) : IO UInt32 := do
   -- the bundle's source program (the unoptimised dumps), on `SrcScopeB S0.input0` (`srcOk`); on a
   -- bundle only in `SrcScopeTB` (`srcT`, the typed Stock route alone) the `…TBMid` ones
   -- (`FV/Link/MidSourceTB.lean`), decided on that route's input below (`midFis0`: the source
-  -- dumps' inputs).
+  -- dumps' inputs). A pair `midPairB` rejects but the hoisting mode accepts (`Link.hoistCopy`:
+  -- Cranelift hoisted a `symbol_value` out of a loop) is kept; then the source theorems named are
+  -- the `…MidS` ones (`FV/Link/MidSourceRoutesSyms.lean`, `MidSourceTBSyms.lean`), whose premise
+  -- `Opt.FunsSimMUAt syms …` is decided at the symbol table of the route's input (`midCov`'s
+  -- `sy`: `Link.midValidatedSymsB_sound`).
   let midSrc ← try Front.readSrcBundle dir
     catch e => do IO.eprintln s!"lean-link: {e}"; return 2
-  let (midN, midFis0) : Nat × List FnInput ← match midSrc with
-    | none => pure (0, [])
+  let (midN, midFis0, midPairs) : Nat × List FnInput ×
+      List ((Clif.Function × Clif.Function) × Bool × Option Clif.Function) ← match midSrc with
+    | none => pure (0, [], [])
     | some (bs, srcNames) => do
       if !verified then
         IO.eprintln s!"lean-link: {exe}: {srcNames.length} function(s) compiled from optimised dumps (src_dump, #1119): only with --verified; not written"
@@ -807,27 +813,48 @@ def main (args0 : List String) : IO UInt32 := do
         return 1
       let pairs := fs0.zip fs1
       let oks := parMap (fun (p : Clif.Function × Clif.Function) => Link.midPairB p.1 p.2) pairs
-      let bad := (pairs.zip oks).filterMap fun (p, b) => if b then none else some p.2.name
+      -- the hoisting mode's copy for the pairs `midPairB` rejects (`Link.midPairSymsB` without
+      -- the symbol table, which each route's coverage line decides, `midCov`)
+      let hcs := parMap (fun (q : (Clif.Function × Clif.Function) × Bool) =>
+        if q.2 then none else Link.hoistCopy q.1.1 q.1.2) (pairs.zip oks)
+      let mp := (pairs.zip oks).zip hcs |>.map fun ((p, b), h) => (p, b, h)
+      let bad := mp.filterMap fun (p, b, h) => if b || h.isSome then none else some p.2.name
       if !bad.isEmpty then
-        IO.eprintln s!"lean-link: {exe}: --verified: the mid-end validator's pair fails (Link.midPairB, re-decided on the bundle's dumps): {bad.length} function(s) {bad.take 3}; not written"
+        IO.eprintln s!"lean-link: {exe}: --verified: the mid-end validator's pair fails (Link.midPairB and the hoisting mode's Link.hoistCopy, re-decided on the bundle's dumps): {bad.length} function(s) {bad.take 3}; not written"
         printExclusions exe S0 SC typedOk bad (only := true)
         return 1
+      let nH := (hcs.filter Option.isSome).length
+      let hoistTxt := if nH == 0 then "" else
+        s!"; {nH} of them only by the hoisting mode (Link.hoistCopy: a symbol_value hoisted out of a loop), so the source theorems are the …MidS ones where Link.midValidatedSymsB holds at the route input's symbol table"
       if srcOk then
-        IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midValidatedB holds against the source dumps (src_dump): the source theorems below are the …Mid ones, about the bundle's source program (unoptimised dumps)"
+        IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midValidatedB holds against the source dumps (src_dump): the source theorems below are the …Mid ones, about the bundle's source program (unoptimised dumps){hoistTxt}"
       else
-        IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midPairB holds on every pair of the bundle's dumps; the bundle's program is in SrcScopeTB only: the typed Stock route decides Link.midValidatedB on its input (the …TBMid source theorems)"
-      pure (srcNames.length, A0.funcs)
+        IO.println s!"lean-link: {exe}: mid-end validator: {srcNames.length} function(s) compiled from Cranelift's optimised dumps; Link.midPairB holds on every pair of the bundle's dumps; the bundle's program is in SrcScopeTB only: the typed Stock route decides Link.midValidatedB on its input (the …TBMid source theorems){hoistTxt}"
+      pure (srcNames.length, A0.funcs, mp)
+  -- the hoisting mode in the bundle (`…MidS` theorems in place of `…Mid`)
+  let midS := midPairs.any fun (_, b, _) => !b
   -- a coverage line through the validator: the `…Cp` source theorems by their `…Mid`
   -- compositions (`FV/Link/MidSourceRoutes.lean`), about the unoptimised dumps; `Front.…TCp`
-  -- (about the dumps compiled) not named
-  let midCov (s : String) : String := if midN == 0 then s else
-    let s := midName s
-    let s := s.replace s!"; cg_clif's program: {frontClaim.names}" ""
-    let s := s.replace "the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB:"
-      "the bundle's source program (the unoptimised dumps, src_dump, before the i128 legalisation and constant-phi removal; through the mid-end validator: Link.midValidatedB decided against the dumps compiled, whose program is in SrcScopeB):"
-    s ++ (if (s.splitOn "Mid").length > 1 then
-        s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps"
-      else s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps, and no theorem named here is about their unoptimised dumps")
+  -- (about the dumps compiled) not named. With the hoisting mode (`midS`): the `…MidS` ones when
+  -- `Link.midValidatedSymsB sy fs0 fs1` holds at the symbol table `sy` of the route's input
+  -- (`(X.input0.syms).lookup` for the route's placed spec `X`: the table of
+  -- `(input lower X cleanup).syms`, `X.input.syms`, `X.inputCleanup.syms` in the theorems'
+  -- outside call premise), evaluated pointwise from `midPairs` (`midPairSymsB sy f g = midPairB f
+  -- g || hoistCopy f g`'s copy resolving at `sy`); else no theorem about the unoptimised dumps.
+  let midCov (sy : Option (String → Option Nat)) (s : String) : String := if midN == 0 then s else
+    let symsOk := midS && sy.any fun sy => midPairs.all fun (_, b, h) =>
+      b || h.any (Opt.MidVal.globalsResolve · sy)
+    if midS && !symsOk then
+      s ++ s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps, and no theorem named here is about their unoptimised dumps (the hoisting mode's Link.midValidatedSymsB {if sy.isSome then "fails at the route input's symbol table" else "is not decided for this route"})"
+    else
+      let s := if midS then midNameS s else midName s
+      let s := s.replace s!"; cg_clif's program: {frontClaim.names}" ""
+      let s := s.replace "the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB:"
+        (if midS then "the bundle's source program (the unoptimised dumps, src_dump, before the i128 legalisation and constant-phi removal; through the mid-end validator and its hoisting mode: Link.midValidatedSymsB decided at the route input's symbol table against the dumps compiled, whose program is in SrcScopeB):"
+        else "the bundle's source program (the unoptimised dumps, src_dump, before the i128 legalisation and constant-phi removal; through the mid-end validator: Link.midValidatedB decided against the dumps compiled, whose program is in SrcScopeB):")
+      s ++ (if (s.splitOn "Mid").length > 1 then
+          s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps"
+        else s!"; mid-end validator (#1119): {midN} function(s) compiled from Cranelift's optimised dumps, and no theorem named here is about their unoptimised dumps")
   -- the input conditions decided on the CLIF alone (`fnScopeInB`, `addrSlotsInputB`); with
   -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`; with the cleanup
   -- compiler, an input outside `fnScopeInB` whose functions all meet the typed `fnScopeInTB`
@@ -943,18 +970,27 @@ def main (args0 : List String) : IO UInt32 := do
       -- `FV/Link/MidSourceTB.lean`) take `Opt.MidVal.ValidatedC P0.funcs Q.funcs`, `Q` the route
       -- input's source program, `P0` the source dumps' inputs taken as the route takes the dumps
       -- (`FnInput.cp`, then parsed), by name; decided here (`Link.midValidatedB_sound`) before the
-      -- executable is written, a failing pair left out (`--verified: exclude:`)
+      -- executable is written, a failing pair left out (`--verified: exclude:`). Where it fails
+      -- but `Link.midValidatedSymsB` holds at the route input's symbol table (the hoisting mode;
+      -- `(input routes[0]! SP true).syms = SP.input0.syms`), the `…TBMidS` theorems
+      -- (`FV/Link/MidSourceTBSyms.lean`, `tbS`).
       let midTB : Bool := midN != 0 && srcT && SrcScopeTB SP.input0
+      let mut tbS := false
       if midTB then
         let Q := (SemanticCompilerWith.input routes[0]! SP true).toLinkInput.srcProg.funcs
         let m0 : Std.HashMap String Clif.Function :=
           midFis0.foldl (fun m fi => let f := (FnInput.cp fi).src; m.insert f.name f) {}
         let P0 := Q.map fun q => (m0[q.name]?).getD default
+        let syTB := fun n => SP.input0.syms.lookup n
         if !Link.midValidatedB P0 Q then
-          let badQ := (P0.zip Q).filterMap fun (f, g) => if Link.midPairB f g then none else some g.name
-          IO.eprintln s!"lean-link: {exe}: --verified: the mid-end validator's pair fails on the typed Stock route's input (Link.midPairB, the source dumps taken as the route takes the dumps): {badQ.length} function(s) {badQ.take 3}; not written"
-          printExclusions exe S0 SC typedOk badQ (only := true)
-          return 1
+          if Link.midValidatedSymsB syTB P0 Q then
+            tbS := true
+          else
+            let badQ := (P0.zip Q).filterMap fun (f, g) =>
+              if Link.midPairSymsB syTB f g then none else some g.name
+            IO.eprintln s!"lean-link: {exe}: --verified: the mid-end validator's pair fails on the typed Stock route's input (Link.midPairB, and the hoisting mode's Link.midPairSymsB at the route input's symbol table; the source dumps taken as the route takes the dumps): {badQ.length} function(s) {badQ.take 3}; not written"
+            printExclusions exe S0 SC typedOk badQ (only := true)
+            return 1
       if let .ok file := att then
         IO.FS.writeBinFile exe file
         IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT ({Route.stockT.writtenClaim.names}); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
@@ -971,9 +1007,9 @@ def main (args0 : List String) : IO UInt32 := do
         -- route's input (the compiled input's source program; `SrcScopeTB` does not read the
         -- route input's call-level stack, `SrcScopeTB_withDepth`: decided on `SP.input0`)
         let srcTB := if !srcT then "" else
-          let thmTB := (sourceTBClaim (SrcScopeTB SP.input0) midTB).pick fun n =>
+          let thmTB := (sourceTBClaim (SrcScopeTB SP.input0) midTB tbS).pick fun n =>
             if midTB then
-              s!", {n}: about the bundle's unoptimised dumps (src_dump) taken as the route's input takes the dumps (constant-phi removal), through the mid-end validator (Link.midValidatedB decided on the route's input)"
+              s!", {n}: about the bundle's unoptimised dumps (src_dump) taken as the route's input takes the dumps (constant-phi removal), through the mid-end validator ({if tbS then "Link.midValidatedSymsB decided at the route input's symbol table: the hoisting mode" else "Link.midValidatedB decided on the route's input"})"
             else s!", {n}"
           s!"; the bundle's program is in SrcScopeTB, not SrcScopeB (#1076: i128 functions with a try_call_indirect at an i128-free signature): its legalisation refines it ({legalTBThm}{thmTB})"
         -- #1100: the bundle's program through the legalisation and constant-phi removal, at
@@ -982,7 +1018,7 @@ def main (args0 : List String) : IO UInt32 := do
         -- with `SC0 = S0.cp` on this route, then `rfl`)
         let srcCp := (Route.stockT.source srcOk).pick fun n =>
           s!"; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: {n}"
-        IO.println <| midCov s!"lean-link: {exe}: coverage: {Route.stockT.claim.names} (returned values by class; per function the typed checks okRWithTS); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
+        IO.println <| midCov (some fun n => SP.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {Route.stockT.claim.names} (returned values by class; per function the typed checks okRWithTS); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
         return 0
       if let .error e := att then
         let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
@@ -1030,7 +1066,7 @@ def main (args0 : List String) : IO UInt32 := do
       let srcV := (Route.exeTV.source srcOk).pick (fun n =>
           s!"; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: {n}; cg_clif's program: {(frontClaim.given [("SrcScopeB of the bundle's program", srcOk)]).text}")
         "; outside SrcScopeB: about the legalised program only"
-      IO.println <| midCov s!"lean-link: {exe}: coverage: {Route.exeTV.claim.names} (returned values by class){srcV}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem covers this executable ({exeTTotal} needs InScopeIn; {typedN} function(s) are outside fnScopeInB); {tcbN} function(s) admitted only through fnScopeInTCB"
+      IO.println <| midCov (some fun n => SC.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {Route.exeTV.claim.names} (returned values by class){srcV}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem covers this executable ({exeTTotal} needs InScopeIn; {typedN} function(s) are outside fnScopeInB); {tcbN} function(s) admitted only through fnScopeInTCB"
       IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
       return 0
@@ -1063,7 +1099,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
         | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
       let src := srcText Route.returnPin srcOk
-      IO.println <| midCov s!"lean-link: {exe}: coverage: {Route.returnPin.claim.names}{src}"
+      IO.println <| midCov (some fun n => SP.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {Route.returnPin.claim.names}{src}"
       return 0
     | .error _ => pure ()
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
@@ -1082,7 +1118,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
       let src := srcText Route.stock srcOk
       let scope := if verified then "; input conditions InScopeIn decided (--verified; no totality theorem for this route)" else ""
-      IO.println <| midCov s!"lean-link: {exe}: coverage: {Route.stock.claim.names}{src}{scope}"
+      IO.println <| midCov (some fun n => SP.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {Route.stock.claim.names}{src}{scope}"
       return 0
     -- the unwind tables (S10f): with the cleanup compiler, `compileExeU SC file0 = .ok file`
     let unwOk := deadCleanup && Link.DeadCleanup.unwOkB SC file
@@ -1112,7 +1148,7 @@ def main (args0 : List String) : IO UInt32 := do
     let scope := if verified then s!"; input in InScopeIn (--verified); totality: {totalAll}{if ldOk then "" else " (its layout, reach and file0 premises decided only with --ld)"}" else ""
     -- the exceptional edges: `compileExeU SC0 file0 = .ok file` (`compileExeOptU S` under `--opt`)
     let unw := (unwindClaim opt (unwOk && !tailOn)).pick fun n => s!"; exceptional edges: {n}"
-    IO.println <| midCov s!"lean-link: {exe}: coverage: {exeR.claim.names}{src}{scope}{unw}"
+    IO.println <| midCov (some fun n => SC.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {exeR.claim.names}{src}{scope}{unw}"
     if deadCleanup && !unwOk then
       IO.println s!"lean-link: {exe}: exceptional edges not covered (unwOkB: {Link.DeadCleanup.unwFail SC file})"
     -- report only (S10g, #404): the unwinding conditions of the totality argument, measured
@@ -1133,7 +1169,7 @@ def main (args0 : List String) : IO UInt32 := do
             | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
             | .error why => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {why}"
           let src := srcText Route.typed srcOk
-          IO.println <| midCov s!"lean-link: {exe}: coverage: {Route.typed.claim.names}{src}"
+          IO.println <| midCov (some fun n => TP.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {Route.typed.claim.names}{src}"
           return 0
         | .error _ => pure ()
     if e != outOfScopeMsg && e != outOfScopeInMsg then
@@ -1180,7 +1216,7 @@ def main (args0 : List String) : IO UInt32 := do
       | .ok file =>
         IO.FS.writeBinFile exe file
         IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT3 ({Route.exeT3.writtenClaim.names})"
-        IO.println <| midCov s!"lean-link: {exe}: coverage: {Route.exeT3.claim.names} (typed scope InScopeInT3, OutOkTCleanup; returned values by class)"
+        IO.println <| midCov none s!"lean-link: {exe}: coverage: {Route.exeT3.claim.names} (typed scope InScopeInT3, OutOkTCleanup; returned values by class)"
         return 0
       | .error e3 =>
         IO.eprintln s!"lean-link: {exe}: decider-free typed scope: {e3}"
@@ -1188,7 +1224,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .ok file =>
           IO.FS.writeBinFile exe file
           IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT ({Route.exeT.writtenClaim.names})"
-          IO.println <| midCov s!"lean-link: {exe}: coverage: {Route.exeT.claim.names} (typed scope InScopePT, OutOkTCleanup; returned values by class)"
+          IO.println <| midCov none s!"lean-link: {exe}: coverage: {Route.exeT.claim.names} (typed scope InScopePT, OutOkTCleanup; returned values by class)"
           return 0
         | .error e => IO.eprintln s!"lean-link: {exe}: typed scope: {e}"
     if !stockFns.isEmpty then
@@ -1198,7 +1234,7 @@ def main (args0 : List String) : IO UInt32 := do
         | .ok file =>
           IO.FS.writeBinFile exe file
           IO.println s!"lean-link: {exe}: {summary} written by Link.leanLinkProductionWith (Stock route {i})"
-          IO.println <| midCov s!"lean-link: {exe}: coverage: none (outside {scopeName}; Link.leanLinkProductionWith, no compiler theorem)"
+          IO.println <| midCov none s!"lean-link: {exe}: coverage: none (outside {scopeName}; Link.leanLinkProductionWith, no compiler theorem)"
           return 0
         | .error e => IO.eprintln s!"lean-link: {exe}: Stock route {i}: {e}"
       return 1
@@ -1207,5 +1243,5 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok file =>
       IO.FS.writeBinFile exe file
       IO.println s!"lean-link: {exe}: {summary} written by {linkerName}"
-      IO.println <| midCov s!"lean-link: {exe}: coverage: none (outside {scopeName}; {linkerName}, no compiler theorem)"
+      IO.println <| midCov none s!"lean-link: {exe}: coverage: none (outside {scopeName}; {linkerName}, no compiler theorem)"
       return 0

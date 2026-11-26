@@ -330,4 +330,31 @@ def unwindMidThm (legal cp : Bool) (cpT : String) : String :=
   else if legal then "E2E.backend_correct_midval_legal_unwind_any"
   else "E2E.backend_correct_midval_final_cleanup_unwind_any"
 
+/-! ## Through the mid-end validator's hoisting mode (#1119, `symbol_value` hoisting)
+
+When `checkCertC` rejects the pair but the hoisting mode accepts it (`Link.hoistCopy f g`, the
+pair link-check and lean-link re-decide; Cranelift hoisted a `symbol_value` out of a loop),
+`lean-backend` compiles `g` too. The simulation then holds only at a symbol table where the
+compared copy's global values resolve, which `lean-backend` does not know: the theorem it names is
+`g`'s own (about the optimised function, `midSymsAbout`), with `Link.hoistCopy` among the decided
+checks; `link-check` (`…_midS`) and `lean-link` (`…MidS`) carry it to the source function at the
+executable's symbol table, per function `E2E.midval_entrySyms`. -/
+
+/-- What the theorem of a function validated by the hoisting mode is about. -/
+def midSymsAbout : String :=
+  "Cranelift's optimised function (.opt.clif); about the source function (.unopt.clif) only at link level, where link-check (…_midS) and lean-link (…MidS) decide the hoisting mode's premise at the executable's symbol table (E2E.midval_entrySyms)"
+
+/-- The check `lean-backend --midval-opt` decides for the hoisting mode. -/
+def midSymsCheck : String :=
+  "Link.hoistCopy f g (Opt.MidVal.symsCopy on Opt.MidVal.emitC (hoist := true); the premise globalsResolve at the executable's symbol table is decided at link level)"
+
+/-- **The verdict of a function compiled from a `g` the hoisting mode accepts**: `g`'s own
+theorem, about the optimised function (`midSymsAbout`), with `midSymsCheck`; `.error why` when
+`g`'s verdict names no theorem. -/
+def midvalSymsVerdict (x : Facts) : Except String Verdict :=
+  let v := verdict x
+  match v.thm with
+  | none => .error s!"the compiled g is unverified ({v.fail.getD "?"})"
+  | some _ => .ok { v with about := midSymsAbout, checks := v.checks ++ [midSymsCheck] }
+
 end FVTest.Backend.FnVerdict

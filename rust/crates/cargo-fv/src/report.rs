@@ -57,7 +57,10 @@ pub struct FnReport {
 pub struct MidvalReport {
     /// `validated`: Cranelift's optimised function was compiled, `Opt.MidVal.checkCertC`
     /// decided, and a verified one's theorem (`E2E.backend_correct_midval_*`) is about the
-    /// `.unopt.clif` ([`MIDVAL_ABOUT`]); `rejected` (the check failed), `not composed` (no theorem
+    /// `.unopt.clif` ([`MIDVAL_ABOUT`]); `validated-link`: compiled from the optimised function
+    /// too, accepted by the validator's hoisting mode (`Link.hoistCopy`), its theorem about the
+    /// optimised function and carried to the `.unopt.clif` at link level (link-check's `…_midS`,
+    /// lean-link's `…MidS`); `rejected` (the check failed), `not composed` (no theorem
     /// through the validator for the optimised function) or `not attempted`: compiled from the
     /// `.unopt.clif` exactly as without `--midval`.
     pub outcome: String,
@@ -87,6 +90,12 @@ impl FnReport {
     /// Compiled from Cranelift's optimised function validated by `Opt.MidVal` (`--midval`).
     pub fn midval_validated(&self) -> bool {
         self.midval.as_ref().is_some_and(|m| m.outcome == "validated")
+    }
+
+    /// Compiled from Cranelift's optimised function accepted by `Opt.MidVal`'s hoisting mode, its
+    /// premise decided at link level (`--midval`, `validated-link`).
+    pub fn midval_validated_link(&self) -> bool {
+        self.midval.as_ref().is_some_and(|m| m.outcome == "validated-link")
     }
 }
 
@@ -214,6 +223,10 @@ pub struct Counts {
     /// `Opt.MidVal` (`--midval`, #1119; `FnReport::midval`).
     #[serde(default)]
     pub midval_validated: usize,
+    /// Of `verified` + `unverified`: compiled from Cranelift's optimised function accepted by the
+    /// validator's hoisting mode (`FnReport::midval_validated_link`).
+    #[serde(default)]
+    pub midval_validated_link: usize,
 }
 
 impl Counts {
@@ -246,6 +259,9 @@ impl Counts {
         if f.midval_validated() {
             self.midval_validated += 1;
         }
+        if f.midval_validated_link() {
+            self.midval_validated_link += 1;
+        }
     }
     fn sum(&mut self, o: &Counts) {
         self.functions += o.functions;
@@ -255,6 +271,7 @@ impl Counts {
         self.verified_normal_returns += o.verified_normal_returns;
         self.unopt_input_optimised += o.unopt_input_optimised;
         self.midval_validated += o.midval_validated;
+        self.midval_validated_link += o.midval_validated_link;
         for (t, n) in &o.by_theorem {
             *self.by_theorem.entry(t.clone()).or_default() += n;
         }
@@ -346,7 +363,7 @@ impl Report {
     /// function validated by `Opt.MidVal`; `None` when there is none.
     pub fn unopt_input_note(&self) -> Option<String> {
         let t = &self.totals;
-        if t.unopt_input_optimised == 0 && t.midval_validated == 0 {
+        if t.unopt_input_optimised == 0 && t.midval_validated == 0 && t.midval_validated_link == 0 {
             return None;
         }
         let levels: BTreeSet<&str> = self
@@ -357,11 +374,11 @@ impl Report {
             .filter_map(|f| {
                 f.unopt_input_opt_level
                     .as_deref()
-                    .or(f.midval.as_ref().filter(|m| m.outcome == "validated").map(|m| m.opt_level.as_str()))
+                    .or(f.midval.as_ref().filter(|m| m.outcome == "validated" || m.outcome == "validated-link").map(|m| m.opt_level.as_str()))
             })
             .collect();
         let levels = levels.into_iter().collect::<Vec<_>>().join(", ");
-        if t.midval_validated == 0 {
+        if t.midval_validated == 0 && t.midval_validated_link == 0 {
             return Some(format!(
                 "{} of the {} Lean-compiled functions were compiled from cg_clif's unoptimised CLIF (.unopt.clif) while cg_clif \
                  optimised them (opt_level={} in their dumps' header): a verified one's theorem is about the unoptimised \
@@ -372,16 +389,28 @@ impl Report {
                 levels
             ));
         }
+        let link = if t.midval_validated_link == 0 {
+            String::new()
+        } else {
+            format!(
+                "; {} more were accepted by its hoisting mode (lean-backend decided Link.hoistCopy: Cranelift hoisted a \
+                 symbol_value, tls_value or func_addr out of a loop) and compiled from Cranelift's optimised function: a \
+                 verified one's theorem is about the optimised function, and link-check's …_midS and lean-link's …MidS \
+                 theorems, where named, are about the unoptimised one at the executable's symbol table",
+                t.midval_validated_link
+            )
+        };
         Some(format!(
             "of the {} Lean-compiled functions cg_clif optimised (opt_level={} in their dumps' header), {} were validated by \
              the mid-end validator (lean-backend decided Opt.MidVal.checkCertC) and compiled from Cranelift's optimised \
              function: a verified one's theorem (E2E.backend_correct_midval_*) is about the unoptimised function \
-             (.unopt.clif) and Cranelift's mid-end is not trusted; {} were compiled from cg_clif's unoptimised CLIF \
+             (.unopt.clif) and Cranelift's mid-end is not trusted{}; {} were compiled from cg_clif's unoptimised CLIF \
              (.unopt.clif), with a theorem about it and code in general not byte-equal to stock's (docs/USAGE.md \
              \"Optimised builds\", #1119)",
-            t.midval_validated + t.unopt_input_optimised,
+            t.midval_validated + t.midval_validated_link + t.unopt_input_optimised,
             levels,
             t.midval_validated,
+            link,
             t.unopt_input_optimised
         ))
     }
@@ -710,7 +739,7 @@ mod tests {
                 reason: why.map(String::from),
                 opt_level: "speed_and_size".into(),
             });
-            if outcome != "validated" {
+            if outcome != "validated" && outcome != "validated-link" {
                 r.unopt_input_opt_level = Some("speed_and_size".into());
             }
             r
@@ -720,13 +749,16 @@ mod tests {
             mid(f(Status::Verified, mth, Some(MIDVAL_ABOUT), false), "validated", None),
             mid(f(Status::Verified, th, Some("the source function"), false), "rejected", Some("Opt.MidVal.check rejects: rewrite:operand")),
             mid(f(Status::Fallback, None, None, false), "validated", None),
+            mid(f(Status::Verified, th, Some("Cranelift's optimised function (.opt.clif)"), false), "validated-link", None),
         ];
         let r = Report::new("release", "plain", "", vec![unit(false, fs)]);
-        assert_eq!((r.totals.midval_validated, r.totals.unopt_input_optimised, r.totals.verified), (2, 1, 3));
+        assert_eq!((r.totals.midval_validated, r.totals.unopt_input_optimised, r.totals.verified), (2, 1, 4));
+        assert_eq!(r.totals.midval_validated_link, 1);
         assert_eq!(r.totals.by_theorem.get(mth.unwrap()), Some(&2));
         let note = r.unopt_input_note().expect("a line");
-        assert!(note.starts_with("of the 3 Lean-compiled functions cg_clif optimised (opt_level=speed_and_size"), "{note}");
+        assert!(note.starts_with("of the 4 Lean-compiled functions cg_clif optimised (opt_level=speed_and_size"), "{note}");
         assert!(note.contains(", 2 were validated by the mid-end validator") && note.contains("; 1 were compiled from"), "{note}");
+        assert!(note.contains("; 1 more were accepted by its hoisting mode"), "{note}");
         let s = r.summary(false);
         assert!(s.contains("mid-end validator (--midval, #1119)"), "{s}");
         let json = serde_json::to_value(&r).unwrap();
