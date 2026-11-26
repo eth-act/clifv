@@ -1,0 +1,182 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNvMNtCsazjiGSRkgVH_4core4timeNtB2_8Duration3new
+function u0:2(i64, i32) -> i64, i32 system_v {
+; symbol _RNvMNtCsazjiGSRkgVH_4core4timeNtB2_8Duration3new
+; instance Instance { def: Item(DefId(2:17332 ~ core[7b1c]::time::{impl#0}::new)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: u64, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: u32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(u32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462607322841091 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: std::time::Duration, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: u64 is .., b: u32 is 0..=999999999, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(8 bytes), value: u32, valid_range: 0..=999999999 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 13096675420319647077 } }, mode: Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; stack _0    std::time::Duration              16b 8                storage=ss0
+; ret   _0      -          Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) std::time::Duration
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u64
+; arg   _2      = v1       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u32
+
+; kind  local ty                              size align (abi)
+; ssa   _1    u64                               8b 8                var=1
+; ssa   _2    u32                               4b 4                var=2
+; ssa   _3    bool                              1b 1                var=3
+; stack _4    core::num::niche_types::Nanoseconds    4b 4                storage=ss1
+; ssa   _5    u64                               8b 8                var=4
+; stack _6    std::option::Option<u64>         16b 8                storage=ss2
+; ssa   _7    u64                               8b 8                var=5
+; ssa   _8    u32                               4b 4                var=6
+; ssa   _9    u32                               4b 4                var=7
+; stack _10   core::num::niche_types::Nanoseconds    4b 4                storage=ss3
+; ssa   _11   bool                              1b 1                var=8
+; ssa   _12   (u64, bool)                      16b 8                var=(9, 10)
+; ssa   _13   u64                               8b 8                var=11
+; zst   _14   ()                                0b 1                align=1,offset=
+; zst   _15   !                                 0b 1                align=1,offset=
+
+    ss0 = explicit_slot 16, align = 8
+    ss1 = explicit_slot 4, align = 4
+    ss2 = explicit_slot 16, align = 8
+    ss3 = explicit_slot 4, align = 4
+    gv0 = symbol colocated userextname0 ; alloc61
+    gv1 = symbol colocated userextname1 ; alloc62
+    gv2 = symbol colocated userextname2 ; alloc282
+    sig0 = (i64, i64, i64) system_v
+    fn0 = u0:211 sig0 ; Instance { def: Item(DefId(2:12019 ~ core[7b1c]::option::expect_failed)), args: [] }
+
+block0(v0: i64, v1: i32):
+    nop 
+; write_cvalue: Var(_1, var1): u64 <- ByVal(v0): u64
+; write_cvalue: Var(_2, var2): u32 <- ByVal(v1): u32
+    jump block1
+
+block1:
+    v3 = iconst.i32 0x3b9a_ca00
+    v4 = icmp.i32 ult v1, v3  ; v3 = 0x3b9a_ca00
+; write_cvalue: Var(_3, var3): bool <- ByVal(v4): bool
+; 
+; switchInt(move _3)
+    brif v4, block2, block3
+
+block2:
+    v6 = stack_addr.i64 ss1
+    store.i32 notrap v1, v6
+; _0 = std::time::Duration { secs: copy _1, nanos: move _4 }
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): u64 <- ByVal(v7): u64
+    v69 = stack_addr.i64 ss0
+    store.i64 notrap v0, v69
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(8) }, None): core::num::niche_types::Nanoseconds <- ByRef(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): core::num::niche_types::Nanoseconds
+    v10 = load.i32 notrap v6
+    v70 = stack_addr.i64 ss0+8
+    store notrap v10, v70
+; 
+; goto
+    v13 = load.i64 notrap v69
+    return v13, v10
+
+block3:
+    v55 = iconst.i32 0x12e0_be83
+    v56 = umulhi.i32 v1, v55  ; v55 = 0x12e0_be83
+    v57 = isub.i32 v1, v56
+    v58 = iconst.i32 1
+    v59 = ushr v57, v58  ; v58 = 1
+    v60 = iadd v56, v59
+    v61 = iconst.i32 29
+    v62 = ushr v60, v61  ; v61 = 29
+    v18 -> v62
+    v19 = uextend.i64 v62
+; write_cvalue: Var(_7, var5): u64 <- ByVal(v19): u64
+; _12 = AddWithOverflow(copy _1, copy _7)
+    v21 = iadd.i64 v0, v19
+    v22 = icmp ult v21, v0
+; write_cvalue: VarPair(_12, var9, var10): (u64, bool) <- ByValPair(v21, v22): (u64, bool)
+; _11 = copy (_12.1: bool)
+; write_cvalue: Var(_11, var8): bool <- ByVal(v22): bool
+; 
+; switchInt(copy _11)
+    brif v22, block5, block7
+
+block5 cold:
+    jump block6
+
+block6 cold:
+    v27 = symbol_value.i64 gv0
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): std::option::Option<u64> <- ByRef(Pointer { base: Addr(v27), offset: Offset32(0) }, None): std::option::Option<u64>
+    v28 = load.i64 notrap v27
+    v29 = load.i64 notrap v27+8
+    v67 = stack_addr.i64 ss2
+    store notrap v28, v67
+    v68 = stack_addr.i64 ss2+8
+    store notrap v29, v68
+; 
+; _15 = std::option::expect_failed(const "overflow in Duration::new")
+    v32 = symbol_value.i64 gv1
+    v33 = iconst.i64 25
+    v34 = symbol_value.i64 gv2
+    call fn0(v32, v33, v34)  ; v33 = 25
+    trap user1
+
+block7:
+    v38 = stack_addr.i64 ss2+8
+    store.i64 notrap v21, v38
+    v39 = iconst.i64 1
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): u64 <- ByVal(v39): u64
+    v40 = stack_addr.i64 ss2
+    store notrap v39, v40  ; v39 = 1
+; _5 = move ((_6 as Some).0: u64)
+; write_cvalue: Var(_5, var4): u64 <- ByRef(Pointer { base: Stack(ss2), offset: Offset32(8) }, None): u64
+    v42 = load.i64 notrap v38
+; _9 = Rem(copy _2, const 1000000000_u32)
+    v65 = iconst.i32 0x3b9a_ca00
+    v66 = imul.i32 v62, v65  ; v65 = 0x3b9a_ca00
+    v64 = isub.i32 v1, v66
+    v45 -> v64
+    v46 = stack_addr.i64 ss3
+    store notrap v64, v46
+; _0 = std::time::Duration { secs: copy _5, nanos: move _10 }
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): u64 <- ByVal(v42): u64
+    v47 = stack_addr.i64 ss0
+    store notrap v42, v47
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(8) }, None): core::num::niche_types::Nanoseconds <- ByRef(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): core::num::niche_types::Nanoseconds
+    v49 = load.i32 notrap v46
+    v50 = stack_addr.i64 ss0+8
+    store notrap v49, v50
+; 
+; goto
+    v52 = load.i64 notrap v47
+    return v52, v49
+}
+
+; clifv-extnames 1
+; userextname0 = u1:2
+; userextname1 = u1:3
+; userextname2 = u1:4
+; userextname3 = u0:211
+; decl u0:2 func local "_RNvMNtCsazjiGSRkgVH_4core4timeNtB2_8Duration3new"
+; decl u0:211 func import "_RNvNtCsazjiGSRkgVH_4core6option13expect_failed"
+; decl u1:2 data local ro notls ".Ldata2"
+; decl u1:3 data local ro notls ".Ldata3"
+; decl u1:4 data local ro notls ".Ldata4"
+; end clifv-extnames

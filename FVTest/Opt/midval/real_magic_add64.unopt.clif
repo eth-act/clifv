@@ -1,0 +1,179 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNvNtNtNtCsazjiGSRkgVH_4core3num3imp9int_log108u64_impl
+function u0:21(i64) -> i32 system_v {
+; symbol _RNvNtNtNtCsazjiGSRkgVH_4core3num3imp9int_log108u64_impl
+; instance Instance { def: Item(DefId(1:1132 ~ core[7b1c]::num::imp::int_log10::u64_impl)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: u64, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: u32, layout: Layout { size: Size(4 bytes), align: AbiAlign { abi: Align(4 bytes) }, backend_repr: Scalar(u32 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(4 bytes), randomization_seed: 18446462607322841091 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    u32                               4b 4                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u32
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u64
+
+; kind  local ty                              size align (abi)
+; ssa   _1    u64                               8b 8                var=2
+; ssa   _2    u32                               4b 4                var=3
+; ssa   _3    bool                              1b 1                var=4
+; ssa   _4    u64                               8b 8                var=5
+; ssa   _5    bool                              1b 1                var=6
+; ssa   _6    u64                               8b 8                var=7
+; ssa   _7    u32                               4b 4                var=8
+; ssa   _8    u32                               4b 4                var=9
+; ssa   _9    u32                               4b 4                var=10
+; ssa   _10   u32                               4b 4                var=11
+; ssa   _11   u32                               4b 4                var=12
+; ssa   _12   u32                               4b 4                var=13
+; ssa   _13   u32                               4b 4                var=14
+; ssa   _14   u32                               4b 4                var=15
+; ssa   _15   u32                               4b 4                var=16
+
+block0(v0: i64):
+    v2 -> v0
+    v5 -> v0
+    nop 
+; write_cvalue: Var(_1, var2): u64 <- ByVal(v0): u64
+    jump block1
+
+block1:
+    nop 
+; _2 = const 0_u32
+    v1 = iconst.i32 0
+    v8 -> v1
+; write_cvalue: Var(_2, var3): u32 <- ByVal(v1): u32
+; _4 = copy _1
+; write_cvalue: Var(_4, var5): u64 <- ByVal(v2): u64
+; _3 = Ge(move _4, const 10000000000_u64)
+    v3 = iconst.i64 0x0002_540b_e400
+    v4 = icmp.i64 uge v2, v3  ; v3 = 0x0002_540b_e400
+; write_cvalue: Var(_3, var4): bool <- ByVal(v4): bool
+; 
+; switchInt(move _3)
+    brif v4, block2, block3
+
+block2:
+    nop 
+; _1 = Div(copy _1, const 10000000000_u64)
+    v6 = iconst.i64 0x0002_540b_e400
+    v7 = udiv.i64 v5, v6  ; v6 = 0x0002_540b_e400
+; write_cvalue: Var(_1, var2): u64 <- ByVal(v7): u64
+; _2 = Add(copy _2, const 10_u32)
+    v9 = iconst.i32 10
+    v10 = iadd.i32 v8, v9  ; v8 = 0, v9 = 10
+; write_cvalue: Var(_2, var3): u32 <- ByVal(v10): u32
+; 
+; goto
+    jump block4(v7, v10)
+
+block3:
+    nop 
+; 
+; goto
+    jump block4(v2, v1)  ; v1 = 0
+
+block4(v11: i64, v37: i32):
+    v14 -> v11
+    v17 -> v37
+    nop 
+; _6 = copy _1
+; write_cvalue: Var(_6, var7): u64 <- ByVal(v11): u64
+; _5 = Ge(move _6, const 100000_u64)
+    v12 = iconst.i64 0x0001_86a0
+    v13 = icmp uge v11, v12  ; v12 = 0x0001_86a0
+; write_cvalue: Var(_5, var6): bool <- ByVal(v13): bool
+; 
+; switchInt(move _5)
+    brif v13, block5, block6
+
+block5:
+    nop 
+; _1 = Div(copy _1, const 100000_u64)
+    v15 = iconst.i64 0x0001_86a0
+    v16 = udiv.i64 v14, v15  ; v15 = 0x0001_86a0
+; write_cvalue: Var(_1, var2): u64 <- ByVal(v16): u64
+; _2 = Add(copy _2, const 5_u32)
+    v18 = iconst.i32 5
+    v19 = iadd.i32 v17, v18  ; v18 = 5
+; write_cvalue: Var(_2, var3): u32 <- ByVal(v19): u32
+; 
+; goto
+    jump block7(v16, v19)
+
+block6:
+    nop 
+; 
+; goto
+    jump block7(v11, v37)
+
+block7(v20: i64, v35: i32):
+    nop 
+; _8 = move _1 as u32 (IntToInt)
+    v21 = ireduce.i32 v20
+; write_cvalue: Var(_8, var9): u32 <- ByVal(v21): u32
+; _11 = Add(copy _8, const 393206_u32)
+    v22 = iconst.i32 0x0005_fff6
+    v23 = iadd v21, v22  ; v22 = 0x0005_fff6
+; write_cvalue: Var(_11, var12): u32 <- ByVal(v23): u32
+; _12 = Add(copy _8, const 524188_u32)
+    v24 = iconst.i32 0x0007_ff9c
+    v25 = iadd v21, v24  ; v24 = 0x0007_ff9c
+; write_cvalue: Var(_12, var13): u32 <- ByVal(v25): u32
+; _10 = BitAnd(move _11, move _12)
+    v26 = band v23, v25
+; write_cvalue: Var(_10, var11): u32 <- ByVal(v26): u32
+; _14 = Add(copy _8, const 916504_u32)
+    v27 = iconst.i32 0x000d_fc18
+    v28 = iadd v21, v27  ; v27 = 0x000d_fc18
+; write_cvalue: Var(_14, var15): u32 <- ByVal(v28): u32
+; _15 = Add(copy _8, const 514288_u32)
+    v29 = iconst.i32 0x0007_d8f0
+    v30 = iadd v21, v29  ; v29 = 0x0007_d8f0
+; write_cvalue: Var(_15, var16): u32 <- ByVal(v30): u32
+; _13 = BitAnd(move _14, move _15)
+    v31 = band v28, v30
+; write_cvalue: Var(_13, var14): u32 <- ByVal(v31): u32
+; _9 = BitXor(move _10, move _13)
+    v32 = bxor v26, v31
+; write_cvalue: Var(_9, var10): u32 <- ByVal(v32): u32
+; _7 = Shr(move _9, const 17_i32)
+    v33 = iconst.i32 17
+    v34 = ushr v32, v33  ; v33 = 17
+; write_cvalue: Var(_7, var8): u32 <- ByVal(v34): u32
+; _0 = Add(move _2, move _7)
+    v36 = iadd v35, v34
+; write_cvalue: Var(_0, var1): u32 <- ByVal(v36): u32
+; 
+; return
+    return v36
+}
+
+; clifv-extnames 1
+; decl u0:21 func local "_RNvNtNtNtCsazjiGSRkgVH_4core3num3imp9int_log108u64_impl"
+; end clifv-extnames

@@ -1,6 +1,6 @@
 import FV.Opt.Proof.MidValProg
 import FV.Opt.Proof.MidValCondSim
-import FV.Opt.Proof.MidValDiv
+import FV.Opt.Proof.MidValMagic
 
 /-!
 # The re-check with branch-condition hints is sound (#1119 family 3, route D)
@@ -11,7 +11,7 @@ and otherwise `refsOk g` and `checkCert f (condPrep g hints) cert`, or, with fol
 `foldPreK f bs`. Its soundness composes the re-check's (`check_sound_norm`: `FunSimMU f (condPrep
 g hints)`, or `check_sound`: `FunSimMU (foldPre f bs) (condPrep g hints)`) with `condPrep_simU`
 (`FunSimU (condPrep g hints) g`) by `FunSimMU.trans`, and with fold requests first with
-`foldPre_simU` (`FunSimU f (foldPre f bs)`, `FV/Opt/Proof/MidValDiv.lean`) or `foldPreK_simU`;
+`foldPre_simU` (`FunSimU f (foldPre f bs)`, `FV/Opt/Proof/MidValMagic.lean`) or `foldPreK_simU`;
 the compiled function is `g` itself.
 
 * **`check_soundC_norm`**, **`check_soundC_normT`** (a normaliser sound under typing),

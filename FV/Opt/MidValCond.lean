@@ -77,13 +77,6 @@ def prepBlocks (hints : List (BlockId × List Wrap)) (base : ValueId) :
 def condPrep (g : Function) (hints : List (BlockId × List Wrap)) : Function :=
   { g with blocks := prepBlocks hints g.freshValue g.blocks g.freshValue }
 
-/-- Every value `g` reads (statement operands, terminator operands) is below its fresh value
-(`Opt.closedB`'s test; the validator does not import the optimiser). -/
-def refsOk (g : Function) : Bool :=
-  g.blocks.all fun b =>
-    (b.body.all fun st => (operands st.inst).all (· < g.freshValue)) &&
-      (termOperands b.term).all (· < g.freshValue)
-
 /-- **The re-check with branch-condition hints and fold requests** (module doc). -/
 def checkCertC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap))
     (norm : Norm := Norm.stdT f) : Bool :=

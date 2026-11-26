@@ -195,6 +195,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | swapped unit comparisons and parameters kept after the folds (`algStep2`; `checkCertC`, prep requests) | `icmpSwapUnit` in `Norm.alg2`; `foldPreK f bs` as a second copy | `ns_icmpSwapUnit`, `foldPreK_simU`, `check_soundC` | 116,600 (95.7 %) | not measured on the pairs | 9 crates: with the next row |
 | 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: 77.6 % → 78.1 % (94,442 → 95,064 of 121,767) |
 | hoisting mode at link level (`placement:symbol_value`/`func_addr`; `symsCopy`, `Link.hoistCopy`, premise `globalsResolve` at the executable's symbol table) | none (`checkCertSyms` on `f`, `foldPre f bs` or `foldPreK f bs`) | `symsCopy_sound`, `checkCertSymsAt_sound`, `midValidatedSymsB_sound` | 118,210 (97.0 %) | not measured on the pairs | 9 crates: 78.1 % → 78.1 % (95,064 → 95,137 of 121,767) |
+| division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: 78.1 % → 78.4 % (95,137 → 95,499 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -508,7 +509,8 @@ counterfactual.)
     = ConstPhi.run (foldBr (divPre f bs) bs)`; the requests are the fold requests (`foldBlocks
     hints`), and `foldCands` also offers the blocks with a division. Divisor 0 (the division
     traps), `srem`, `sdiv` by `2^k` (rounding toward zero) or by `-1` (the minimum traps) and
-    the magic-number divisions are left alone.
+    the magic-number divisions are left alone (the magic-number ones are rewritten since
+    `magicPre`, the last bullet of this section).
   - Entry: unchanged (`checkCertC`, `checkC`'s re-check after `checkC0` rejects; the failure of
     the re-check is marked `[prep]`); no theorem statement and no E2E theorem name changes.
   - Proof (`FV/Opt/Proof/MidValDiv.lean`): **`divPre_simU : FunSimU f (divPre f bs)`** and
@@ -797,3 +799,72 @@ counterfactual.)
     | serde_json 1.0.154 | 18,555 → 18,726 (171) | 13,785 → 13,809 | 19,479 |
     | sha3 0.12.0 | 1,318 → 1,540 (222) | 1,276 → 1,276 | 1,565 |
     | **total** | 115,246 → 116,352 (1,106) | 95,064 → 95,137 | 121,767 |
+* **Division by a constant with magic numbers (`skeleton-removed div`)** (agents MagicDiv1,
+  MagicDiv2). Cranelift's mid-end replaces a `udiv`/`urem` by a constant `d` that is neither 0, 1
+  nor a power of two, at width 32 or 64, by a multiply-high and shifts, and an `sdiv`/`srem` whose
+  `|d|` is neither 0, 1 nor a power of two by a signed multiply-high, a sign correction and shifts
+  (`opts/arithmetic.isle`, `prelude_opt.isle`'s `apply_div_const_magic_{u,s}{32,64}`,
+  `opts/div_const.rs`'s `magic_u32`/`magic_u64`/`magic_s32`/`magic_s64`). `magicPre` emits the
+  sequence of 0.136.1 (the version the backend follows); 0.135.0, the version the pinned
+  nightly's cg_clif links and every corpus pair comes from, has the same text in `div_const.rs`,
+  in the division rules of `arithmetic.isle` and in `prelude_opt.isle`'s `apply_div_const_magic_*`
+  (`diff` of the two crates' sources: the changes in those files are other rules and
+  constructors), so the sequences are the same. On main 504 pairs were still rejected first on
+  `skeleton-removed div`; the unsigned sequences accept 463 of them, the signed ones 11 more.
+  - Compiler side (`FV/Opt/MidValFold.lean`): `magicPre f bs`, when `kOk f K` (the fold's
+    constants) and `refsOk f` (`f` reads only values below its fresh value; moved here from
+    `MidValCond.lean`, the same text), rewrites in the blocks `bs` a division `v = op x, y` whose
+    divisor `y` has such a constant `d` of the division's type (`magicRw`) into Cranelift's
+    statements (`uQuot`/`magicStmts` unsigned, `sQuot`/`magicStmtsS` signed: `umulhi`/`smulhi`
+    by the magic number, the add step or the sign correction `sFix`, the shifts; a remainder is
+    then `x - q * y`); the shift by 0, which Cranelift's own rules remove, is left out. The magic
+    numbers are `Isle.Opt.Rust.magicU`/`magicS`, the ports of Cranelift's `magic_*` functions the
+    ISLE interpreter already runs. The new values are numbered from `f.freshValue` on, so the
+    rewritten function's fresh value may grow. `foldPre f bs = ConstPhi.run (foldBr (magicPre
+    (divPre (phiPre f) bs) bs) bs)`, and `foldPreK` the same way; the requests are unchanged.
+    Divisor 0, 1, a power of two (left to `divPre`, or `sdiv` by `2^k`, not covered) and widths 8
+    and 16 are left alone.
+  - Entry: unchanged (`checkCertC`'s re-check); no theorem statement and no E2E theorem name
+    changes. `foldPre_simU` and `foldPreK_simU` moved from `MidValDiv.lean` to `MidValMagic.lean`
+    with byte-identical statements and doc comments (their proofs add `magicPre_simU`).
+  - Proof (`FV/Opt/Proof/MidValMagic.lean`): **`magicPre_simU : FunSimU f (magicPre f bs)`**.
+    The arithmetic is the ISLE rules' (`FV/Opt/Proof/RuleInfraDivConst.lean`: `magicU_spec`,
+    `udiv_magic_noadd`, `udiv_magic_add`, `urem_of_udiv`; `magicS_spec` and the `sdc_*` lemmas of
+    `RuleSkeleton5.lean`), stated in the validator's operations (`magic_noadd0`, `magic_noadd`,
+    `magic_add1`, `magic_add`, `urem_of_quot`, `sQuot_run`); `magicStmts_run`/`magicStmtsS_run`
+    put the division's value in its result and write only values from `n` on. The frame relation
+    `MagR`: the same point of a block of `f`, the rewritten rest of the body (`BodyRelM`),
+    registers agreeing below `f.freshValue`, the same slots and terminator, `KInv`; the windows of
+    `try_call` results and handler payloads through `IsSimWU` (`MagR.isSimWU`, `magicFn_simU`).
+  - Witnesses (`FVTest/Opt/MidValMagicWitness.lean`): `magicU`/`magicS` give Cranelift's own test
+    vectors (`magic_u32(7)`, `magic_u32(10)`, `magic_u64(7)`, `magic_u64(10)`, `magic_s32(7)`,
+    `magic_s64(7)`); hand-made `udiv`/`urem`/`sdiv`/`srem` pairs accepted and rejected without the
+    rewrite; negative: a multiplier one too small and the signed sequence without its sign
+    correction are no simulation, so every certificate with every hint list is rejected
+    (`low_rejected`, `nofix_rejected`), `sdiv` by 8, divisor 0, a power of two and width 8 are
+    left alone (`*_not_rewritten`); seven real pairs of the corpus (semver, serde_json and
+    crypto-bigint builds: `real_magic_*.clif`), each rejected by `checkC0`, `checkCertC` decided, and
+    the simulation. Audit: `scripts/audit/midval.lean` (1,166 theorems, standard axioms,
+    `native_decide` only in the marked witnesses).
+  - Measured (2026-11-26, the shared corpus, main b63bf2f98's `midval-check --cert --cond
+    --hoist` against this one's): 118,210 → 118,813 (+603, 97.0 % → 97.5 %), 0 lost, every
+    accepted pair re-checks `ok`; by main's reason: `skeleton-removed div` 474,
+    `rewrite:operand` 119, `rewrite:blocks` 10; per crate crypto-bigint 265, ryu 87, itoa 86,
+    semver 84, serde_json 76, memchr 5. `skeleton-removed div` pairs 504 → 30 (`sdiv` by `2^k`,
+    unsigned powers of two `divPre` has no gap values for, divisors that are no direct `iconst`,
+    and pairs with another rejection after the division).
+    `cargo fv test --release` on the 9 crates (2026-11-26, clifv-remote, main b63bf2f98's tools
+    against this one's), in plain mode and with `--lean-link --verified`: binary check 48/48 →
+    48/48 both ways, verified 121,767 → 121,767, left out of the region 0 → 0 (plain) and 1 → 1
+    (`--lean-link --verified`), tests the same as stock's on all 9 both ways, validated 116,352 →
+    116,928 (95.6 → 96.0 %; per function 115,246 → 115,820, at link level 1,106 → 1,108; up on 6
+    crates, blake2, num-traits and sha3 unchanged), byte-identical to stock 95,137 → 95,499
+    (78.1 → 78.4 %, the same in both modes); `cargo fv test` wall summed 3,700 → 3,670 s (plain)
+    and 4,500 → 3,998 s (`--lean-link --verified`; main's runs overlapped this one's full gate,
+    this one's ran alone). link-check names the same theorems as on main (a `_midS` one for 29
+    executables in plain mode and 35 with `--lean-link --verified`), lean-link `…MidS` source
+    theorems for 29 executables as on main; no `globalsResolve` or `midValidatedSymsB` failure.
+    Why the validated functions still differ from stock (ParityGap1's classification, #1119
+    issuecomment-7199047886): per function 17,285 of 20,424 differ only by the 0.135.0 → 0.136.1
+    gap and 2,779 by our backend; at link level 678 of 1,035 and 357 (225 of them #550 frame
+    layout first, 28 a dead `f64const` we load from the literal pool, #1181).

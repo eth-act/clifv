@@ -750,8 +750,8 @@ check 48 of 48 both ways, 121,767 verified both ways, left out 1 → 1, test out
 stock's on all 9 both ways; validated 110,220 → 111,476 (90.5 % → 91.5 %; up on every crate);
 byte-identical to stock 92,018 → 92,975 of 121,767 (75.6 % → 76.4 %); `cargo fv test` wall summed
 2,678 → 2,664 s. The validator rewrites `f`'s `udiv`/`sdiv` by 1, `urem` by 1 and `udiv`/`urem`
-by a power of two as Cranelift does; the magic-number divisions (394 of the 121,879 pairs) stay
-rejected.
+by a power of two as Cranelift does; the magic-number divisions (394 of the 121,879 pairs) stayed
+rejected until the magic-number paragraph below.
 
 Removed block parameters and unsigned comparisons with 0 (docs/contracts/midval.md; measured
 2026-11-22 on clifv-remote, main 8e750ac2f's tools against this one's, the same 9 crates and
@@ -794,6 +794,18 @@ byte-identical to stock 95,064 → 95,137 of 121,767 (78.1 % both); `cargo fv te
 theorem for 29 (plain) and 35 (`--lean-link --verified`); lean-link names `…MidS` source theorems
 for 29, `…Mid` for 13 and none for 6 (as before); no executable lost its theorem about the
 unoptimised dumps.
+
+Division by a constant with magic numbers (`skeleton-removed div`; docs/contracts/midval.md): the
+validator rewrites `f`'s `udiv`/`urem`/`sdiv`/`srem` by a constant other than 0, 1 and the powers
+of two, at width 32 or 64, into Cranelift's multiply-high sequence (0.136.1's; 0.135.0, which the
+pinned nightly's cg_clif links, has the same rules and magic numbers). Pairs of the shared corpus
+accepted: 118,210 → 118,813 of 121,879 (measured 2026-11-26 on clifv-remote, 0 lost). The same 9
+crates and commands (main b63bf2f98's tools against this one's, plain mode and `--lean-link
+--verified`): binary check 48 of 48 both ways, 121,767 verified both ways, left out 0 → 0 (plain)
+and 1 → 1, test outcomes the same as stock's on all 9 both ways; validated 116,352 → 116,928
+(95.6 % → 96.0 %; 1,106 → 1,108 of them `validated-link`; up on 6 crates); byte-identical to stock
+95,137 → 95,499 of 121,767 (78.1 % → 78.4 %); `cargo fv test` wall summed 3,700 → 3,670 s (plain)
+and 4,500 → 3,998 s (main's runs overlapped a full gate).
 
 ### The executable compiler (`--lean-link`, L1)
 
