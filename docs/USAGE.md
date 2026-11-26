@@ -807,6 +807,14 @@ and 1 → 1, test outcomes the same as stock's on all 9 both ways; validated 116
 95,137 → 95,499 of 121,767 (78.1 % → 78.4 %); `cargo fv test` wall summed 3,700 → 3,670 s (plain)
 and 4,500 → 3,998 s (main's runs overlapped a full gate).
 
+Family 6, shifts and bitwise constants (docs/contracts/midval.md): the validator's normaliser
+now reads `x * 2^s` and `x + x` of a shift by a constant as one shift or mask (`(x >> k) << k` is
+`x & (-1 << k)`, `(x << a) << b` is `x << (a + b)`), drops an extension or truncation of a shift
+amount, reassociates the constants of `band`, `bor`, `bxor` and `imul` (`imul (ishl x k) c` too),
+and drops a neutral constant the narrowing of `ireduce` leaves. Pairs of the shared corpus
+accepted: 118,813 → 119,273 of 121,879 (measured 2026-11-26 on clifv-remote, 0 lost).
+USAGE_CRATES
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of

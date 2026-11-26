@@ -196,6 +196,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 5: negations and nested truncations (`Norm.base`, after family 4) | `fam5Step`: `addNeg`, `mulNeg`, `redRed` (typed) | `ns_addNeg`, `ns_mulNeg`, `ruleSoundT_redRed`, `ruleSoundT_fam5Step`, `normSoundT_stdT` | 117,082 (96.1 %) | not measured on the pairs | 9 crates: 77.6 % → 78.1 % (94,442 → 95,064 of 121,767) |
 | hoisting mode at link level (`placement:symbol_value`/`func_addr`; `symsCopy`, `Link.hoistCopy`, premise `globalsResolve` at the executable's symbol table) | none (`checkCertSyms` on `f`, `foldPre f bs` or `foldPreK f bs`) | `symsCopy_sound`, `checkCertSymsAt_sound`, `midValidatedSymsB_sound` | 118,210 (97.0 %) | not measured on the pairs | 9 crates: 78.1 % → 78.1 % (95,064 → 95,137 of 121,767) |
 | division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: 78.1 % → 78.4 % (95,137 → 95,499 of 121,767) |
+| 6: shifts and bitwise constants (`Norm.base`: `fam6Mul` first, `fam6Step` after family 5; `narrowId` in `narrowStep`) | `fam6Mul`, `shAmt` (typed), `reStep`, `narrowId` | `ruleSound_fam6Mul`, `ruleSoundT_shAmt`, `ruleSound_reStep`, `ruleSoundT_fam6Step`, `narrowId_val`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 119,273 (97.9 %) | not measured on the pairs | 9 crates: CRATES_ROW |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -868,3 +869,54 @@ counterfactual.)
     issuecomment-7199047886): per function 17,285 of 20,424 differ only by the 0.135.0 → 0.136.1
     gap and 2,779 by our backend; at link level 678 of 1,035 and 357 (225 of them #550 frame
     layout first, 28 a dead `f64const` we load from the literal pool, #1181).
+* **Family 6: shifts and bitwise constants** (agent MidendNext5; recount and choice #1119
+  issuecomment-7200665739). On main 3,066 pairs were rejected. By blocking family, measured with
+  a build of main's checker that only reports more (same verdicts): an operand long tail with no
+  shape above 140 pairs (913), branches Cranelift folds on conditions `foldPre` cannot evaluate
+  (592; 424 where the prep gets no further, nearly all constants forwarded from a store to a
+  stack slot), masks and bit tricks (424), operand-dropping `(x + y) - x` (398), shifts (252),
+  and smaller ones. This family takes the shapes around shifts and masks that keep their
+  operands, after Cranelift 0.135.0's `opts/shifts.isle` and `opts/cprop.isle`:
+  - Compiler side (`FV/Opt/MidVal.lean`): `fam6Mul`, the first step of `Norm.base` (`Norm.alg`
+    turns `imul x 2^s` into `ishl x s` and the result is not normalised again): `imul ty a 2^s`
+    and `iadd ty a a` (`mulShAmt`) with `a` a shift by a constant are the shift of `a` by `s`
+    (`shlPlan`): `(y << k) << s` is `y << (k mod w + s)` below the width, `(y >> s) << s`
+    (`ushr`, `sshr`) is `y & (-1 << s)` at a width of at most 64. `fam6Step`, after family 5:
+    `shAmt` (typed), a shift or rotation amount given as an `uextend`/`sextend` of a narrower term
+    or an `ireduce` of a wider term of at most 64 bits is that term; `reStep`, `op (op x k1) k2`
+    is `op x (k1 op k2)` for `band`, `bor`, `bxor`, `imul`, and `imul (ishl x k) c` is `imul x
+    (c << k)`. In `narrowStep`, `narrowId`: the narrowed node with a neutral constant
+    (`ireduce.i8 (band.i16 x 255)` becomes `band.i8 (ireduce.i8 x) -1`) is the other term. The
+    new constants are interned first (`fam6Aux`).
+  - Proof (`FV/Opt/Proof/MidValNormFam6.lean`): `ruleSound_fam6Mul` (`mulShAmt_val`,
+    `shlPlan_val`: `BitVec.shiftLeft_add`, `BitVec.shiftLeft_ushiftRight`,
+    `sshiftRight_shiftLeft`), `ruleSoundT_shAmt` (an amount counts modulo the width, which
+    divides `2^8`, `shiftAmt_of_low8`; extensions and truncations to at least 8 bits keep the low
+    8 bits, `low8_setWidth`, `low8_signExtend`; the typing makes the extension have a value
+    exactly when the term has one), `ruleSound_reStep` (`reOp_spec`, `rePlan_val`),
+    `ruleSoundT_fam6Step`; `narrowId_val` and the extended `ruleSoundT_narrowStep` in
+    `MidValNormFam4.lean` (the narrowed terms stand for `ireduce ty`, so they need no static
+    type). `normSoundT_base`, `normSoundT_narrowN` and `normSoundT_stdT` keep their statements and
+    move from `MidValNormFam5.lean` to that file. No theorem statement changes.
+  - Not taken (the reasons): the folds on forwarded constants need a prep pass with a memory
+    invariant (a store, then a load, of a constant) and its own simulation; the operand-dropping
+    rewrites need a definedness premise next to `NormSoundT`. A shift of a shift on the shift
+    instructions themselves and Cranelift's `bor (band x k) ~k = bor x ~k` gained no pair in the
+    prototype and are left out.
+  - Witnesses (`FVTest/Opt/MidValFam6Witness.lean`): `(x >> 3) * 8` against `x & -8`, `(x * 4) *
+    8` against `x << 5`, `x >> uextend y` against `x >> y`, `(x & 255) & 15` against `x & 15`,
+    `(x << 3) * 5` against `x * 40`, `ireduce.i8 (x & 255)` against `ireduce.i8 x`, each accepted
+    and rejected with main's normaliser (`normPrev`); negative: a wrong mask, a wrong amount,
+    `sshr` for `ushr`, a wrong constant, a wrong product, the mask 127, each rejected and no
+    simulation, so every certificate is rejected; `shAmt` is no normaliser sound in every frame
+    (`shAmt_not_normSound`: a parameter declared `i64` holding an `i128`); five real pairs of the
+    corpus (crypto-bigint ×3, semver's regex_automata and regex_syntax), each rejected by main's
+    `checkC` (`checkCPrev`), `checkCertC` decided, and the simulation. Audit:
+    `scripts/audit/midval.lean` (1,247 theorems, standard axioms, `native_decide` only in the
+    marked witnesses).
+  - Measured (2026-11-26, the shared corpus, main d2095b5c6's `midval-check --cert --cond --hoist`
+    against this one's): 118,813 → 119,273 (+460, 97.5 % → 97.9 %), 0 lost, every accepted pair
+    re-checks `ok`. Removing one rule at a time from a prototype with the same verdicts: `fam6Mul`
+    139, `reStep`'s reassociation 132, `narrowId` 122, `shAmt` 72, `imul (ishl x k) c` 38 (a pair
+    can need two).
+    CRATES_BULLET
