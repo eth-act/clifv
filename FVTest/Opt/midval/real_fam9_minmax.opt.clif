@@ -1,0 +1,114 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC11num_integer12H3MSDDmzWzax
+function u0:37(i8) -> i8 system_v {
+; symbol _RNxC11num_integer12H3MSDDmzWzax
+; instance Instance { def: Item(DefId(0:151 ~ num_integer[19b0]::roots::{impl#6}::sqrt::go)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: u8, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 71776127651151873 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: u8, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 71776127651151873 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    u8                                1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u8
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u8
+
+; kind  local ty                              size align (abi)
+; stack _1    u8                                1b 1                storage=ss0
+; ssa   _2    u32                               4b 4                var=2
+; ssa   _3    u8                                1b 1                var=3
+; ssa   _4    bool                              1b 1                var=4
+; ssa   _5    bool                              1b 1                var=5
+; stack _6    Closure(DefId(0:153 ~ num_integer[19b0]::roots::{impl#6}::sqrt::go::{closure#0}), [i8, Binder { value: extern "RustCall" fn((u8,)) -> u8, bound_vars: [] }, (&'{erased} u8,)])    8b 8                storage=ss1
+; ssa   _7    &'{erased} u8                     8b 8                var=6
+; ssa   _8    u8                                1b 1                var=7
+; ssa   _9    f64                               8b 8                var=8
+; ssa   _10   f64                               8b 8                var=9
+
+    ss0 = explicit_slot 1
+    ss1 = explicit_slot 8, align = 8
+    sig0 = (i8, i64) -> i8 system_v
+    fn0 = colocated u0:35 sig0 ; Instance { def: Item(DefId(0:26 ~ num_integer[19b0]::roots::fixpoint)), args: [u8, Closure(DefId(0:153 ~ num_integer[19b0]::roots::{impl#6}::sqrt::go::{closure#0}), [i8, Binder { value: extern "RustCall" fn((u8,)) -> u8, bound_vars: [] }, (&'{erased} u8,)])] }
+
+block0(v0: i8):
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): u8 <- ByVal(v0): u8
+    v1 = stack_addr.i64 ss0
+    store notrap v0, v1
+    jump block1
+
+block1:
+    v2 = iconst.i8 4
+    v5 = icmp.i8 ult v0, v2  ; v2 = 4
+; write_cvalue: Var(_4, var4): bool <- ByVal(v5): bool
+; 
+; switchInt(move _4)
+    brif v5, block2, block3
+
+block2:
+    v37 = iconst.i8 0
+    v35 = icmp.i8 ne v0, v37  ; v37 = 0
+    return v35
+
+block3:
+    v11 = stack_addr.i64 ss1
+    store.i64 notrap v1, v11
+; _10 = copy _1 as f64 (IntToFloat)
+    v13 = load.i8 notrap v1
+    jump block6
+
+block4:
+    return v31
+
+block6:
+    v14 = fcvt_from_uint.f64 v13
+; write_cvalue: Var(_10, var9): f64 <- ByVal(v14): f64
+; 
+; _9 = core::intrinsics::sqrtf64(move _10)
+    v15 = sqrt v14
+; write_cvalue: Var(_9, var8): f64 <- ByVal(v15): f64
+    v26 = fcmp eq v15, v15
+    v19 = fcvt_to_uint_sat.i32 v15
+    v21 = iconst.i32 255
+    v33 = umin v19, v21  ; v21 = 255
+    v25 = ireduce.i8 v33
+    v27 = iconst.i8 0
+    v28 = select v26, v25, v27  ; v27 = 0
+; write_cvalue: Var(_8, var7): u8 <- ByVal(v28): u8
+; 
+; _0 = roots::fixpoint::<u8, {closure@/home/devops/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num-integer-0.1.47/src/roots.rs:344:32: 344:39}>(move _8, move _6)
+    v31 = call fn0(v28, v1)
+; write_cvalue: Var(_0, var1): u8 <- ByVal(v31): u8
+    jump block4
+}
+
+; clifv-extnames 1
+; userextname0 = u0:35
+; decl u0:35 func local "_RNxC11num_integer12H2tOB9cAQyGM"
+; decl u0:37 func export "_RNxC11num_integer12H3MSDDmzWzax"
+; end clifv-extnames

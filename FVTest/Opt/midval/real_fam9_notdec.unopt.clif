@@ -1,0 +1,128 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC10num_bigint12H4M9jjHFxQlC
+function u0:151(i64, i64) -> i64 system_v {
+; symbol _RNxC10num_bigint12H4M9jjHFxQlC
+; instance Instance { def: Item(DefId(0:478 ~ num_bigint[d9b7]::bigint::bits::bitor_pos_neg::{closure#0})), args: [i16, Binder { value: extern "RustCall" fn((&'{erased} u64,)) -> u64, bound_vars: [] }, (&'{erased} mut u128, &'{erased} mut u128)] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &mut {closure@/home/devops/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num-bigint-0.5.1/src/bigint/bits.rs:190:39: 190:44}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &u64, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: u64, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    u64                               8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) u64
+; arg   _1      = v0       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(16 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} mut Closure(DefId(0:478 ~ num_bigint[d9b7]::bigint::bits::bitor_pos_neg::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} u64,)) -> u64, bound_vars: [] }, (&'{erased} mut u128, &'{erased} mut u128)])
+; arg   _2      = v1       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} u64
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} mut Closure(DefId(0:478 ~ num_bigint[d9b7]::bigint::bits::bitor_pos_neg::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} u64,)) -> u64, bound_vars: [] }, (&'{erased} mut u128, &'{erased} mut u128)])    8b 8                var=2
+; ssa   _2    &'{erased} u64                    8b 8                var=3
+; ssa   _3    u64                               8b 8                var=4
+; ssa   _4    u64                               8b 8                var=5
+; ssa   _5    &'{erased} mut u128               8b 8                var=6
+; ssa   _6    &'{erased} mut u128               8b 8                var=7
+; ssa   _7    u128                             16b 16                var=8
+; ssa   _8    u64                               8b 8                var=9
+; ssa   _9    u128                             16b 16                var=10
+; ssa   _10   u128                             16b 16                var=11
+; ssa   _11   u64                               8b 8                var=12
+; ssa   _12   u128                             16b 16                var=13
+
+block0(v0: i64, v1: i64):
+    v4 -> v0
+    v2 -> v1
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} mut Closure(DefId(0:478 ~ num_bigint[d9b7]::bigint::bits::bitor_pos_neg::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} u64,)) -> u64, bound_vars: [] }, (&'{erased} mut u128, &'{erased} mut u128)]) <- ByVal(v0): &'{erased} mut Closure(DefId(0:478 ~ num_bigint[d9b7]::bigint::bits::bitor_pos_neg::{closure#0}), [i16, Binder { value: extern "RustCall" fn((&'{erased} u64,)) -> u64, bound_vars: [] }, (&'{erased} mut u128, &'{erased} mut u128)])
+; write_cvalue: Var(_2, var3): &'{erased} u64 <- ByVal(v1): &'{erased} u64
+    jump block1
+
+block1:
+    nop 
+; _3 = copy (*_2)
+; write_cvalue: Var(_3, var4): u64 <- ByRef(Pointer { base: Addr(v2), offset: Offset32(0) }, None): u64
+    v3 = load.i64 notrap v2
+; _5 = no_retag copy ((*_1).0: &mut u128)
+; write_cvalue: Var(_5, var6): &'{erased} mut u128 <- ByRef(Pointer { base: Addr(v4), offset: Offset32(0) }, None): &'{erased} mut u128
+    v5 = load.i64 notrap v4
+; _8 = Not(copy _3)
+    v6 = bnot v3
+; write_cvalue: Var(_8, var9): u64 <- ByVal(v6): u64
+; _7 = copy _8 as u128 (IntToInt)
+    v7 = uextend.i128 v6
+; write_cvalue: Var(_7, var8): u128 <- ByVal(v7): u128
+; (*_5) = Add(copy (*_5), move _7)
+    v8 = load.i128 notrap v5
+    v9 = iadd v8, v7
+; write_cvalue: Addr(Pointer { base: Addr(v5), offset: Offset32(0) }, None): u128 <- ByVal(v9): u128
+    store notrap v9, v5
+; _9 = copy (*_5)
+; write_cvalue: Var(_9, var10): u128 <- ByRef(Pointer { base: Addr(v5), offset: Offset32(0) }, None): u128
+    v10 = load.i128 notrap v5
+; _4 = move _9 as u64 (IntToInt)
+    v11 = ireduce.i64 v10
+; write_cvalue: Var(_4, var5): u64 <- ByVal(v11): u64
+; (*_5) = Shr(copy (*_5), const 64_u8)
+    v12 = iconst.i8 64
+    v13 = load.i128 notrap v5
+    v14 = ushr v13, v12  ; v12 = 64
+; write_cvalue: Addr(Pointer { base: Addr(v5), offset: Offset32(0) }, None): u128 <- ByVal(v14): u128
+    store notrap v14, v5
+; _6 = no_retag copy ((*_1).1: &mut u128)
+; write_cvalue: Var(_6, var7): &'{erased} mut u128 <- ByRef(Pointer { base: Addr(v4), offset: Offset32(8) }, None): &'{erased} mut u128
+    v15 = load.i64 notrap v4+8
+; _11 = Not(copy _4)
+    v16 = bnot v11
+; write_cvalue: Var(_11, var12): u64 <- ByVal(v16): u64
+; _10 = copy _11 as u128 (IntToInt)
+    v17 = uextend.i128 v16
+; write_cvalue: Var(_10, var11): u128 <- ByVal(v17): u128
+; (*_6) = Add(copy (*_6), move _10)
+    v18 = load.i128 notrap v15
+    v19 = iadd v18, v17
+; write_cvalue: Addr(Pointer { base: Addr(v15), offset: Offset32(0) }, None): u128 <- ByVal(v19): u128
+    store notrap v19, v15
+; _12 = copy (*_6)
+; write_cvalue: Var(_12, var13): u128 <- ByRef(Pointer { base: Addr(v15), offset: Offset32(0) }, None): u128
+    v20 = load.i128 notrap v15
+; _0 = move _12 as u64 (IntToInt)
+    v21 = ireduce.i64 v20
+; write_cvalue: Var(_0, var1): u64 <- ByVal(v21): u64
+; (*_6) = Shr(copy (*_6), const 64_u8)
+    v22 = iconst.i8 64
+    v23 = load.i128 notrap v15
+    v24 = ushr v23, v22  ; v22 = 64
+; write_cvalue: Addr(Pointer { base: Addr(v15), offset: Offset32(0) }, None): u128 <- ByVal(v24): u128
+    store notrap v24, v15
+; 
+; return
+    return v21
+}
+
+; clifv-extnames 1
+; decl u0:151 func local "_RNxC10num_bigint12H4M9jjHFxQlC"
+; end clifv-extnames

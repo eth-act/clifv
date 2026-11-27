@@ -858,6 +858,20 @@ lost). The same 9 crates and commands (main f2635bda8's code against this one's,
 to stock 96,432 → 96,742 of 121,767 (79.2 % → 79.4 %); `cargo fv test` wall summed 2,201 → 2,187 s
 (plain) and 2,531 → 2,563 s.
 
+Family 9, masks, narrowed shifts, complements, extensions, comparisons of extensions and of
+`<=>`, `select` as min/max and multiply-high (docs/contracts/midval.md): Cranelift's `(x & y) | ~y`
+as `x | ~y`, `~(x - 1)` as `-x`, `ireduce ((uextend x) << k)` as `x << k`, `ireduce (-(ext x))`
+as `-x`, extensions of extensions, `(uextend x) <s 0` as `0`, `(sextend x) == 0` as `x == 0`,
+`((x > y) - (x < y)) == -1` as `x < y`, `select (x > y) x y` as `max x y` and the high half of a
+double-width product as `umulhi`/`smulhi` are now read the same way by the validator's
+normaliser. Pairs of the shared corpus accepted: 120,867 → 121,229 of 121,879 (measured
+2026-11-27 on clifv-remote, 0 lost). The same 9 crates and commands (main 26c49c216's code against
+this one's, plain mode and `--lean-link --verified`): binary check 48 of 48 both ways, 121,767
+verified both ways, left out 0 → 0 (plain) and 1 → 1, test outcomes the same as stock's on all 9
+both ways; validated 118,826 → 119,140 (97.6 % → 97.8 %; 1,153 → 1,272 of them `validated-link`;
+up on 8 crates); byte-identical to stock 96,742 → 96,882 of 121,767 (79.4 % → 79.6 %); `cargo fv
+test` wall summed 2,187 → 2,196 s (plain) and 2,563 → 2,549 s (both partly beside other builds).
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of

@@ -5,8 +5,8 @@ import FV.Opt.Proof.MidValNormAlg2
 # Family 8: comparisons with an offset, saturating differences, products of constants,
 differences of sums (#1119, agent MidendNext8)
 
-`Norm.stdD f = Norm.orElse (Norm.guard fam8Step) (Norm.orElse (Norm.stdT f) (Norm.guard
-(dropStep (atomTy f))))` (`FV/Opt/MidVal.lean`), the validator's default normaliser. Each rule of
+`fam8Step`, the first step of `Norm.stdD f` (`FV/Opt/MidVal.lean`), the validator's default
+normaliser. Each rule of
 `fam8Step` gives a node with the value of the node it rewrites wherever the node's operands have
 values (`RuleSoundD`, `FV/Opt/Proof/MidValNormDrop.lean`), proved against `Clif.evalInst`:
 
@@ -20,8 +20,8 @@ values (`RuleSoundD`, `FV/Opt/Proof/MidValNormDrop.lean`), proved against `Clif.
   drops the common term, so it holds where the operands have values (`NormSoundD`), not in
   every frame.
 
-Main results: `ruleSoundD_fam8Step`, **`normSoundD_stdD : NormSoundD f (Norm.stdD f)`** (moved
-here from `MidValNormDrop.lean`, statement unchanged).
+Main results: `ruleSoundD_fam8Step` (`normSoundD_stdD`, the default normaliser with families 8
+and 9: `FV/Opt/Proof/MidValNormFam9.lean`).
 -/
 
 namespace Opt.MidVal
@@ -437,10 +437,5 @@ theorem ruleSoundD_fam8Step {f : Function} : RuleSoundD f fam8Step := by
     case imul => exact ruleSoundD_mulMul tms x' h hord fr mem t ht hd
     all_goals simp [fam8Step] at h
   | _ => simp [fam8Step] at h
-
-/-- **The validator's default normaliser is sound where the operands have values.** -/
-theorem normSoundD_stdD {f : Function} : NormSoundD f (Norm.stdD f) :=
-  normSoundD_orElse (normSoundD_guard ruleSoundD_fam8Step)
-    (normSoundD_orElse normSoundT_stdT.toD (normSoundD_guard ruleSoundD_dropStep))
 
 end Opt.MidVal

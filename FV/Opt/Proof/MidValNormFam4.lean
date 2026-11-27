@@ -353,6 +353,59 @@ theorem ruleSound_swapStep : RuleSound swapStep := by
     · cases h
   | _ => simp [swapStep] at h
 
+/-! ## `borMask` (family 9, also on the node `narrowStep` builds) -/
+
+/-- `(x & y) | ~y = x | ~y`. -/
+theorem or_and_not {w : Nat} (X Y : BitVec w) : (X &&& Y) ||| ~~~Y = X ||| ~~~Y := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, hi, decide_true,
+    Bool.true_and]
+  cases X.getLsbD i <;> cases Y.getLsbD i <;> rfl
+
+theorem borMask_spec {tms : Array Tm} {ty : Ty} {a b : Nat} {x' : Tm}
+    (h : borMask tms ty a b = some x') :
+    ∃ x y yv, nodeAt tms a = some (.binary .band ty x y) ∧ constAt tms ty y = some yv ∧
+      constAt tms ty b = some (~~~yv) ∧ x' = .node (.binary .bor ty x b) := by
+  unfold borMask at h
+  split at h
+  · rename_i ty' x y z hA hb
+    split at h
+    · rename_i hty
+      have hty' : ty' = ty := by simpa using hty
+      subst hty'
+      split at h
+      · rename_i yv hy
+        split at h
+        · rename_i hz
+          have hz' : z = ~~~yv := by simpa using hz
+          subst hz'
+          cases h
+          exact ⟨x, y, yv, hA, hy, hb, rfl⟩
+        · cases h
+      · cases h
+    · cases h
+  · cases h
+
+/-- **`borMask`** has the value of the node in every frame (the operand `x` is read at `ty` on
+both sides). -/
+theorem borMask_val {f : Function} {tms : Array Tm} {ty : Ty} {a b : Nat} {x' : Tm}
+    (h : borMask tms ty a b = some x') (hord : ∀ t, tms[t]? = some x' → ∀ o ∈ x'.ops, o < t)
+    (fr : Frame) (mem : Mem) {t : Nat} (ht : tms[t]? = some x') :
+    tmVal f tms fr mem t = evalNode (tmFrame f tms fr mem) mem (.binary .bor ty a b) := by
+  obtain ⟨x, y, yv, hA, hy, hb, rfl⟩ := borMask_spec h
+  have hna := nodeAt_spec hA
+  have hY : (tmFrame f tms fr mem).regs y = some ⟨ty, yv⟩ := constAt_spec hy
+  have hB : (tmFrame f tms fr mem).regs b = some ⟨ty, ~~~yv⟩ := constAt_spec hb
+  have hav : (tmFrame f tms fr mem).regs a =
+      evalNode (tmFrame f tms fr mem) mem (.binary .band ty x y) := tmVal_node hna.1 hna.2
+  rw [tmVal_node ht (hord t ht), evalNode_binary_nonShift (op := .bor) rfl,
+    evalNode_binary_nonShift (op := .bor) rfl, hav, evalNode_binary_nonShift (op := .band) rfl,
+    hY, hB]
+  rcases ((tmFrame f tms fr mem).regs x).bind (·.as? ty) with _ | X
+  · simp
+  · simp [Val.as?_mk, Sem.binary, Sem.band, Sem.bor, or_and_not]
+
 /-! ## `narrowStep` -/
 
 theorem TmReach.of_ops {tms : Array Tm} {i i' : Inst}
@@ -487,11 +540,22 @@ theorem ruleSoundT_narrowStep {f : Function} {n : Norm} (hn : NormSoundT f n) :
             | none =>
               cases hsw : swapStep tms (.binary op ty a' b') with
               | some z =>
-                simp only [hid, haff, hsw, Option.orElse_none, Option.getD_some] at ht hord
+                simp only [hid, haff, hsw, Option.orElse_none, Option.orElse_some,
+                  Option.getD_some] at ht hord
                 exact ruleSound_swapStep tms _ z hsw hord f fr mem t ht
               | none =>
-                simp only [hid, haff, hsw, Option.orElse_none, Option.getD_none] at ht hord
-                exact tmVal_node' ht (hord t ht)
+                cases hbm : (if op == .bor then borMask tms ty a' b' else none) with
+                | some z =>
+                  simp only [hid, haff, hsw, hbm, Option.orElse_none, Option.getD_some] at ht hord
+                  split at hbm
+                  · rename_i hop
+                    have hop' : op = .bor := by simpa using hop
+                    subst hop'
+                    exact borMask_val hbm hord fr mem ht
+                  · cases hbm
+                | none =>
+                  simp only [hid, haff, hsw, hbm, Option.orElse_none, Option.getD_none] at ht hord
+                  exact tmVal_node' ht (hord t ht)
         rw [hj]
         have huv : (tmFrame f tms fr mem).regs u =
             evalNode (tmFrame f tms fr mem) mem (.binary op wty a b) := tmVal_node hna.1 hna.2
