@@ -4852,6 +4852,20 @@ Since #754 the typed Stock route's exclusion list is the typed failures alone (`
 `only`: `attemptT_correct` has no per-function input premise). `indBC`'s at most 8 parameters
 excludes nothing on either example.
 
+**Call contracts with the site's registers (#753, stage R1 of 4).** `LinkSys.OkT.blrRegs` is
+false as stated at a vtable `blr` whose caller declares a function through the GOT with another
+`sret` placement (`XT` enters any `IndTo` target with the site's registers), so #753 carries the
+site's registers through the call contracts instead (plan: #753 issuecomment-6956067039).
+Stage R1 (`FV/Backend/Proof/IselContractPR.lean`, new modules only): `SiteRegsR s us ds` (the
+uses in `E2E.regLocs s`, the first defs from `retRegsT` of the returns' `retClass`), the
+contracts `CallsRefinePR`/`IndCallsRefinePR` (`CallsRefineP`/`IndCallsRefineP` whose GOT and
+indirect clauses are required only at sites with `SiteRegsR`; `CallsRefineP.toPR`,
+`IndCallsRefineP.toPR`), `regLocs_of_abiMatch`/`siteRegsR_of_abiMatch`, and the call/try rule
+theorems under them for `CtxInv`, `CtxT` and `CallCtxT` contexts (`IselCtlCallPR`,
+`IselCtlCallTPR`, `IselCtlCallTFPR`: `call_got_lowerInstOkPR` … and the families
+`callRulesCorrectPR` …, each giving its family without registers, `…_of_PR`). Nothing uses them
+yet; generated code and coverage are unchanged. Witnesses: `IselContractPRWitness`.
+
 **Plain `call`s with float signatures (S11g, #1015).** `Compile.functionETCF` no longer requires
 integer callee signatures for `call` statements (`callsE` dropped) and does not count a `call`'s
 arguments as integer positions (`intOperandsFC`); `lowerCheckTCF`'s context check accepts float
