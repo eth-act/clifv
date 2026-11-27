@@ -1,0 +1,103 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC13crypto_bigint12H5o2LecSMBHx
+function u0:1836() system_v {
+; symbol _RNxC13crypto_bigint12H5o2LecSMBHx
+; instance Instance { def: Item(DefId(0:8445 ~ crypto_bigint[7523]::bitlen::tests::to_limbs#1)), args: [] }
+; abi FnAbi { args: [], ret: ArgAbi { layout: TyAndLayout { ty: (), layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }, c_variadic: false, fixed_count: 0, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; zst   _0    ()                                0b 1                align=1,offset=
+; ret   _0      -          Ignore                               ()
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} usize                  8b 8                var=1
+; ssa   _2    &'{erased} usize                  8b 8                var=2
+; ssa   _3    &'{erased} usize                  8b 8                var=3
+; ssa   _4    &'{erased} usize                  8b 8                var=4
+; ssa   _5    &'{erased} usize                  8b 8                var=5
+; stack _6    usize                             8b 8                storage=ss0
+; ssa   _7    &'{erased} usize                  8b 8                var=6
+; stack _8    usize                             8b 8                storage=ss1
+; ssa   _9    u32                               4b 4                var=7
+; zst   _10   !                                 0b 1                align=1,offset=
+; ssa   _11   &'{erased} usize                  8b 8                var=8
+; ssa   _12   &'{erased} usize                  8b 8                var=9
+; ssa   _13   &'{erased} usize                  8b 8                var=10
+; ssa   _14   &'{erased} usize                  8b 8                var=11
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 1
+    gv0 = symbol colocated userextname0 ; alloc24202
+    gv1 = symbol colocated userextname1 ; alloc24204
+    gv2 = symbol colocated userextname2 ; alloc24206
+    gv3 = symbol colocated userextname3 ; alloc24208
+    gv4 = symbol colocated userextname4 ; alloc39399
+    gv5 = symbol colocated userextname5 ; alloc50043
+    sig0 = (i8, i64, i64, i64, i64, i64) system_v
+    fn0 = u0:6855 sig0 ; Instance { def: Item(DefId(1:12397 ~ core[7b1c]::panicking::assert_failed)), args: [usize, usize] }
+
+block0:
+    nop 
+    jump block1
+
+block1:
+    v4 = iconst.i64 0x0400_0000
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): usize <- ByVal(v4): usize
+    v5 = stack_addr.i64 ss0
+    store notrap v4, v5  ; v4 = 0x0400_0000
+; _5 = &_6
+    v9 = stack_addr.i64 ss1
+    store notrap v4, v9  ; v4 = 0x0400_0000
+; _7 = &_8
+    jump block2
+
+block2:
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u1:4747
+; userextname1 = u1:4748
+; userextname2 = u1:4749
+; userextname3 = u1:4750
+; userextname4 = u1:4751
+; userextname5 = u1:4752
+; userextname6 = u0:6855
+; decl u0:1836 func local "_RNxC13crypto_bigint12H5o2LecSMBHx"
+; decl u0:6855 func import "_RINvNtCsazjiGSRkgVH_4core9panicking13assert_failedjjEB4_"
+; decl u1:4747 data local ro notls ".Ldata128b"
+; decl u1:4748 data local ro notls ".Ldata128c"
+; decl u1:4749 data local ro notls ".Ldata128d"
+; decl u1:4750 data local ro notls ".Ldata128e"
+; decl u1:4751 data local ro notls ".Ldata128f"
+; decl u1:4752 data local ro notls ".Ldata1290"
+; end clifv-extnames

@@ -6,10 +6,12 @@ import FV.Opt.Proof.MidValCondProg
 
 `symsCopy f g cert hints = some f'` (`FV/Opt/MidValSyms.lean`) says the hoisting-mode re-check
 `checkCertSyms` accepts `g` (or `condPrep g hints`) against the copy `f'` of `f`: `f` itself, or
-`foldPre f bs` / `foldPreK f bs` for the fold requests `bs`. At a symbol table where `f'`'s global
-values resolve, `check_soundSyms` gives `FunSimMUAt syms f' (condPrep g hints)`; composed with
-`foldPre_simU`/`foldPreK_simU` (`FunSimU f f'`) and `condPrep_simU` (`FunSimU (condPrep g hints)
-g`), both at every symbol table:
+`foldPre f bs` / `foldPreK f bs` for the fold requests `bs`, or the same on the forwarding copy
+`fwdPre f` when `fwdOk f`. At a symbol table where `f'`'s global values resolve,
+`check_soundSyms` gives `FunSimMUAt syms f' (condPrep g hints)`; composed with
+`foldPre_simU`/`foldPreK_simU` (`FunSimU f f'`) or `fwdFoldPre_simMU`/`fwdFoldPreK_simMU`
+(`FunSimMU f f'`) and `condPrep_simU` (`FunSimU (condPrep g hints) g`), all at every symbol
+table:
 
 * **`symsCopy_sound`** (a normaliser sound under typing), **`symsCopy_soundD`** (sound where the
   operands have values): `symsCopy f g cert hints = some f' → globalsResolve f' syms = true →
@@ -58,7 +60,19 @@ theorem symsCopy_soundD {f g f' : Function} {cert : Cert} {hints : List (BlockId
           simp only [Bool.and_eq_true] at hc
           exact ((foldPreK_simU f _).toMU.at syms).trans
             ((check_soundSyms hc.2 hres).trans ((condPrep_simU hc.1).toMU.at syms))
-        · cases h
+        · split at h
+          · rename_i hc
+            cases h
+            simp only [Bool.and_eq_true] at hc
+            exact ((fwdFoldPre_simMU hc.1.2 _).at syms).trans
+              ((check_soundSyms hc.2 hres).trans ((condPrep_simU hc.1.1).toMU.at syms))
+          · split at h
+            · rename_i hc
+              cases h
+              simp only [Bool.and_eq_true] at hc
+              exact ((fwdFoldPreK_simMU hc.1.2 _).at syms).trans
+                ((check_soundSyms hc.2 hres).trans ((condPrep_simU hc.1.1).toMU.at syms))
+            · cases h
 
 /-- **Soundness of the copy the hoisting mode accepts against** (module doc). -/
 theorem symsCopy_sound {f g f' : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
