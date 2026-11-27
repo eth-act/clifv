@@ -930,7 +930,7 @@ theorem mulHiPlan_spec {aty : Tm → Option Ty} {tms : Array Tm} {op : BinaryOp}
           obtain ⟨⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hw⟩, hk⟩ := hc
           simp only [Option.some.injEq, Prod.mk.injEq] at h
           obtain ⟨rfl, rfl, rfl, rfl⟩ := h
-          exact ⟨eop, e1, e2, K, hcase, hM, hE1, hE2, hK, htx, hty, hw, hk⟩
+          exact ⟨_, e1, e2, K, hcase, hM, hE1, hE2, hK, htx, hty, hw, hk⟩
         · cases h
       · cases h
     · cases h
