@@ -832,6 +832,20 @@ stock's on all 9 both ways; validated 117,356 → 117,866 (96.4 % → 96.8 %; 1,
 78.9 %); `cargo fv test` wall summed 3,759 → 4,109 s (plain, overlapping this one's full gate)
 and 4,377 → 4,419 s.
 
+Family A, branch folds through store-to-load forwarding (docs/contracts/midval.md): where Cranelift
+folds a branch whose condition became a constant once a stored value was forwarded to a later load
+(mostly Rust locals stored to a stack slot and reloaded), the validator forwards the same loads in a
+copy of the unoptimised function (`fwdPre`) before its fold prep. It uses the copy only when its
+own checker accepts the copy against the function (`fwdOk`). `icmp x, x` now reads as its constant.
+Pairs of the shared corpus accepted: 119,833 → 120,258 of 121,879 (measured 2026-11-27 on
+clifv-remote, 0 lost). The same 9 crates and commands (main
+ccd4c6847's code against this one's, plain mode and `--lean-link --verified`): binary check 48 of
+48 both ways, 121,767 verified both ways, left out 0 → 0 (plain) and 1 → 1, test outcomes the same
+as stock's on all 9 both ways; validated 117,866 → 118,236 (96.8 % → 97.1 %; 1,129 → 1,141 of them
+`validated-link`; up on 8 crates); byte-identical to stock 96,120 → 96,402 of 121,767 (78.9 % →
+79.2 %); `cargo fv test` wall summed 4,109 → 3,921 s (plain, both overlapping a full gate) and
+4,419 → 4,252 s.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
