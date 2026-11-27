@@ -15,11 +15,12 @@ the optimised one (`Opt.MidVal.check`). One tab-separated line per pair on stdou
 With `--cert`, two more columns: the re-check of the emitted certificate
 (`Opt.MidVal.checkCert f g (emit f g)`: `ok` when it gives `check`'s verdict, `MISMATCH`
 otherwise, `-` for a rejected pair) and its microseconds (`checkCert` alone, not the emission).
-The normaliser is the validator's default (`Opt.MidVal.Norm.stdT f`: constant evaluation, the
-single-node algebraic rules, the typed rules with `f`'s atom types, then family 4: neutral and
-affine constants, constants on the right, narrowed `ireduce`); with `--norm-std`, the
-untyped `Norm.std`; with `--norm-id`, stage 1's identity; with `--norm-const`, constant
-evaluation alone. With `--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by
+The normaliser is the validator's default (`Opt.MidVal.Norm.stdD f`: constant evaluation, the
+single-node algebraic rules, the typed rules with `f`'s atom types, families 4 to 6, then
+family 7's operand-dropping rules); with `--norm-t`, the typed `Norm.stdT f` (without family 7);
+with `--norm-std`, the untyped `Norm.std`; with `--norm-id`, stage 1's identity; with
+`--norm-const`, constant evaluation alone (the prep copies of `--cond` keep the default). With
+`--hoist`, the hoisting mode (`check … (hoist := true)`, re-checked by
 `checkCertSyms`, whose theorem assumes the function's global values resolve; with `--cond`, by
 `Opt.MidVal.symsCopy`, and one more column: `resolves` when the accepted copy's global values
 resolve in the table of the names `g` itself references (`globalsResolve`; every image linking `g`
@@ -41,13 +42,14 @@ def decodeOne (p : System.FilePath) : IO (Except String Clif.Function) := do
 
 def firstWord (s : String) : String := (s.splitOn " ").headD s
 
-/-- The normaliser for `f`: the validator's default `Norm.stdT f`, or (before/after
-measurements) with `--norm-std` the untyped `Norm.std`, with `--norm-id` stage 1's identity
-(`Norm.id`), with `--norm-const` constant evaluation alone. -/
-def normOf (normId normConst normStd : Bool) (f : Clif.Function) : Opt.MidVal.Norm :=
+/-- The normaliser for `f`: the validator's default `Norm.stdD f`, or (before/after
+measurements) with `--norm-t` the typed `Norm.stdT f`, with `--norm-std` the untyped `Norm.std`,
+with `--norm-id` stage 1's identity (`Norm.id`), with `--norm-const` constant evaluation alone. -/
+def normOf (normId normConst normStd normT : Bool) (f : Clif.Function) : Opt.MidVal.Norm :=
   if normId then Opt.MidVal.Norm.id
   else if normConst then Opt.MidVal.evalConst
-  else if normStd then Opt.MidVal.Norm.std else Opt.MidVal.Norm.stdT f
+  else if normStd then Opt.MidVal.Norm.std
+  else if normT then Opt.MidVal.Norm.stdT f else Opt.MidVal.Norm.stdD f
 
 /-- Constant-phi removal and the check (`checkC` with `cond`), evaluated inside the call
 (timing). -/
@@ -111,18 +113,20 @@ def pairMode (fp gp : String) : IO UInt32 := do
       | .error e => throw (IO.userError s!"{p}: {e}")
     | none => throw (IO.userError s!"{p}: no function")
   let g ← one gp
-  let (f, r) ← runCheck Opt.MidVal.Norm.stdT false true (← one fp) g
+  let (f, r) ← runCheck Opt.MidVal.Norm.stdD false true (← one fp) g
   match r with
-  | .ok () => IO.println s!"accept\trecheck {← recheck Opt.MidVal.Norm.stdT false true f g true}"; return 0
+  | .ok () => IO.println s!"accept\trecheck {← recheck Opt.MidVal.Norm.stdD false true f g true}"; return 0
   | .error e => IO.println s!"reject\t{e}"; return 1
 
 def main (args : List String) : IO UInt32 := do
   if let ["--pair", fp, gp] := args then return ← pairMode fp gp
-  -- `--norm-id`: stage 1's identity normaliser instead of the default `Opt.MidVal.Norm.stdT f`
+  -- `--norm-id`: stage 1's identity normaliser instead of the default `Opt.MidVal.Norm.stdD f`
   let normId := args.contains "--norm-id"
   -- `--norm-const`: constant evaluation alone (`Opt.MidVal.evalConst`, family 1); `--norm-std`:
-  -- the untyped `Opt.MidVal.Norm.std` (families 1–2, without the typed rules)
+  -- the untyped `Opt.MidVal.Norm.std` (families 1–2, without the typed rules); `--norm-t`: the
+  -- typed `Opt.MidVal.Norm.stdT f` (without family 7)
   let nm := normOf normId (args.contains "--norm-const") (args.contains "--norm-std")
+    (args.contains "--norm-t")
   -- `--cert`: re-check the emitted certificate of every accepted pair (`Opt.MidVal.checkCert`)
   let cert := args.contains "--cert"
   -- `--hoist`: the hoisting mode (`Opt.MidVal.checkCertSyms`)

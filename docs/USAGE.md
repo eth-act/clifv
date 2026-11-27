@@ -821,6 +821,17 @@ unchanged); byte-identical to stock 95,499 → 95,871 of 121,767 (78.4 % → 78.
 wall summed 3,670 → 3,759 s (plain) and 3,998 → 4,377 s (this one's plain runs overlapped its full
 gate).
 
+Family 7, operand-dropping rewrites (docs/contracts/midval.md): where no other rule applies, the
+validator's normaliser now reads `(x + y) - x` as `y`, `(x - y) + y` as `x`, and `x * 0`, `x & 0`,
+`x | -1` as the constant. Pairs of the shared corpus accepted: 119,273 → 119,833 of 121,879
+(measured 2026-11-26 on clifv-remote, 0 lost). The same 9 crates and commands (main 6e0245fcb's
+code against this one's, plain mode and `--lean-link --verified`): binary check 48 of 48 both
+ways, 121,767 verified both ways, left out 0 → 0 (plain) and 1 → 1, test outcomes the same as
+stock's on all 9 both ways; validated 117,356 → 117,866 (96.4 % → 96.8 %; 1,110 → 1,129 of them
+`validated-link`; up on 7 crates); byte-identical to stock 95,871 → 96,120 of 121,767 (78.7 % →
+78.9 %); `cargo fv test` wall summed 3,759 → 4,109 s (plain, overlapping this one's full gate)
+and 4,377 → 4,419 s.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of

@@ -247,7 +247,7 @@ variable {syms : String → Option Nat} {bi k k' k'' : Nat} {S : List Fact} {fr 
   {m : Mem} {st t : Stmt} {rest ts : List Stmt} {fb gb : Block}
 
 /-- Both statements evaluate alike (the common term instruction, `evalInst_rename`). -/
-theorem MCtx.evalT (H : HypT f g fi gi cert norm)
+theorem MCtx.evalD (H : HypD f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
     (hops : mapOperands (ccOf fi gi cert norm).ef st.inst = mapOperands (ccOf fi gi cert norm).eg t.inst)
@@ -265,6 +265,15 @@ theorem MCtx.evalT (H : HypT f g fi gi cert norm)
   rw [← h2, ← hops, h1]
 
 /-- Both statements evaluate alike (the common term instruction, `evalInst_rename`). -/
+theorem MCtx.evalT (H : HypT f g fi gi cert norm)
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hops : mapOperands (ccOf fi gi cert norm).ef st.inst = mapOperands (ccOf fi gi cert norm).eg t.inst)
+    (mem : Mem) :
+    (evalInst fr2 mem t.inst).norm = (evalInst fr mem st.inst).norm := by
+  exact MCtx.evalD H.toD hR hC hops mem
+
+/-- Both statements evaluate alike (the common term instruction, `evalInst_rename`). -/
 theorem MCtx.eval (H : Hyp f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
@@ -274,7 +283,7 @@ theorem MCtx.eval (H : Hyp f g fi gi cert norm)
   exact MCtx.evalT H.toT hR hC hops mem
 
 /-- A matched call: the same callee, and the arguments evaluate alike. -/
-theorem MCtx.callT (H : HypT f g fi gi cert norm)
+theorem MCtx.callD (H : HypD f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
     (hops : mapOperands (ccOf fi gi cert norm).ef st.inst = mapOperands (ccOf fi gi cert norm).eg t.inst)
@@ -293,6 +302,15 @@ theorem MCtx.callT (H : HypT f g fi gi cert norm)
   rw [← h2, ← hmap, h1]
 
 /-- A matched call: the same callee, and the arguments evaluate alike. -/
+theorem MCtx.callT (H : HypT f g fi gi cert norm)
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hops : mapOperands (ccOf fi gi cert norm).ef st.inst = mapOperands (ccOf fi gi cert norm).eg t.inst)
+    {fn : FnRef} {args : List ValueId} (hc : st.inst = .call fn args) :
+    ∃ a, t.inst = .call fn a ∧ (callArgs fr2 fn a).norm = (callArgs fr fn args).norm := by
+  exact MCtx.callD H.toD hR hC hops hc
+
+/-- A matched call: the same callee, and the arguments evaluate alike. -/
 theorem MCtx.call (H : Hyp f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
@@ -305,7 +323,7 @@ theorem MCtx.call (H : Hyp f g fi gi cert norm)
 
 /-- Binding the same values to the results of both statements gives the relation at the next
 positions, for any facts `S'` that hold there with sites up to `(bi, k + 1)`. -/
-theorem rel_bindT (H : HypT f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} {vals : List Val}
+theorem rel_bindD (H : HypD f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} {vals : List Val}
     {regs regs' : Regs}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
@@ -366,6 +384,30 @@ theorem rel_bindT (H : HypT f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem
 
 /-- Binding the same values to the results of both statements gives the relation at the next
 positions, for any facts `S'` that hold there with sites up to `(bi, k + 1)`. -/
+theorem rel_bindT (H : HypT f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} {vals : List Val}
+    {regs regs' : Regs}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hpF : pureK st.inst = false) (hlen : st.results.length = t.results.length)
+    (hrF : (ccOf fi gi cert norm).resOk (ccOf fi gi cert norm).ef st.results bi k = true)
+    (hrG : (ccOf fi gi cert norm).resOk (ccOf fi gi cert norm).eg t.results bi k = true)
+    (hwk : (ccOf fi gi cert norm).walk bi rest ts (k + 1) (k'' + 1) S' = some Send)
+    (hend : EndOk (ccOf fi gi cert norm) bi fb gb Send)
+    (htyF : ∀ ts0, st.inst.resultTypes (sigOf f) (sigDeclOf f) = some ts0 →
+      vals.map (·.ty) = ts0)
+    (htyG : ∀ ts0, t.inst.resultTypes (sigOf g) (sigDeclOf g) = some ts0 →
+      vals.map (·.ty) = ts0)
+    (hset : fr.regs.setMany st.results vals = some regs)
+    (hset' : fr2.regs.setMany t.results vals = some regs')
+    (hF : ∀ F ∈ S', FactHolds f cert syms { fr with regs, body := rest } m1 F)
+    (hFs : ∀ F ∈ S', ∀ u ∈ F.terms,
+      LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf u) (bi, k + 1)) :
+    Rel f g fi gi cert norm syms bi (k + 1) (k'' + 1) S' { fr with regs, body := rest }
+      { fr2 with regs := regs', body := ts } m1 := by
+  exact rel_bindD H.toD hR hC hpF hlen hrF hrG hwk hend htyF htyG hset hset' hF hFs
+
+/-- Binding the same values to the results of both statements gives the relation at the next
+positions, for any facts `S'` that hold there with sites up to `(bi, k + 1)`. -/
 theorem rel_bind (H : Hyp f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} {vals : List Val}
     {regs regs' : Regs}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
@@ -390,7 +432,7 @@ theorem rel_bind (H : Hyp f g fi gi cert norm) {S' Send : List Fact} {m1 : Mem} 
 
 /-! ## The facts after a statement that is not a call -/
 
-theorem facts_nextT (H : HypT f g fi gi cert norm) {m1 : Mem} {vals : List Val} {regs : Regs}
+theorem facts_nextD (H : HypD f g fi gi cert norm) {m1 : Mem} {vals : List Val} {regs : Regs}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hfb : f.blocks[bi]? = some fb) (hstk : fb.body[k]? = some st)
     (hrF : (ccOf fi gi cert norm).resOk (ccOf fi gi cert norm).ef st.results bi k = true)
@@ -500,13 +542,25 @@ theorem facts_nextT (H : HypT f g fi gi cert norm) {m1 : Mem} {vals : List Val} 
       · exact hopSite p hp
       · exact hopSite x hx
   · -- an old fact: a memory fact survives only instructions that keep memory
-    refine ⟨FactHolds.stableT (fr1 := fr) (fr2 := { fr with regs, body := rest }) (m1 := m)
+    refine ⟨FactHolds.stableD (fr1 := fr) (fr2 := { fr with regs, body := rest }) (m1 := m)
       (m2 := m1) H rfl rfl rfl hreg (hR.factSites F hS)
       (fun hmem => ?_) (hR.facts F hS),
       fun u hu => (hR.factSites F hS u hu).mono (Nat.le_succ k)⟩
     by_cases hwk : writerK st.inst = true
     · exact absurd hmem (by simp [hw (by rw [writerK_mapOperands]; exact hwk)])
     · exact evalInst_mem_of_not_writer (by simpa using hwk) he
+
+theorem facts_nextT (H : HypT f g fi gi cert norm) {m1 : Mem} {vals : List Val} {regs : Regs}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hfb : f.blocks[bi]? = some fb) (hstk : fb.body[k]? = some st)
+    (hrF : (ccOf fi gi cert norm).resOk (ccOf fi gi cert norm).ef st.results bi k = true)
+    (he : evalInst fr m st.inst = .ok (vals, m1))
+    (hset : fr.regs.setMany st.results vals = some regs) :
+    ∀ F ∈ afterKeep (mapOperands (ccOf fi gi cert norm).ef st.inst)
+        (st.results.head?.map (ccOf fi gi cert norm).ef) S,
+      FactHolds f cert syms { fr with regs, body := rest } m1 F ∧
+        ∀ u ∈ F.terms, LeP fi.cfg.idom ((ccOf fi gi cert norm).siteOf u) (bi, k + 1) := by
+  exact facts_nextD H.toD hR hfb hstk hrF he hset
 
 theorem facts_next (H : Hyp f g fi gi cert norm) {m1 : Mem} {vals : List Val} {regs : Regs}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
@@ -523,7 +577,7 @@ theorem facts_next (H : Hyp f g fi gi cert norm) {m1 : Mem} {vals : List Val} {r
 /-! ## The four conjuncts -/
 
 /-- A non-call statement steps to the relation. -/
-theorem matched_nextT (H : HypT f g fi gi cert norm) {Send : List Fact} {fr1 : Frame} {m1 : Mem}
+theorem matched_nextD (H : HypD f g fi gi cert norm) {Send : List Fact} {fr1 : Frame} {m1 : Mem}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
     (hp : pureK st.inst = false)
@@ -536,7 +590,7 @@ theorem matched_nextT (H : HypT f g fi gi cert norm) {Send : List Fact} {fr1 : F
     (hl : lstep fr m = .next fr1 m1) :
     ∃ fr1', LStar fr2 m fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1 := by
   have hcG := not_call_of_mapOperands hM.ops hcF
-  have htr := MCtx.evalT H hR hC hM.ops m
+  have htr := MCtx.evalD H hR hC hM.ops m
   rw [lstep_inst hC.bodyF hcF] at hl
   cases he : evalInst fr m st.inst with
   | trap c => rw [he] at hl; cases hl
@@ -551,15 +605,30 @@ theorem matched_nextT (H : HypT f g fi gi cert norm) {Send : List Fact} {fr1 : F
       have he' := Res.norm_eq_ok htr he
       obtain ⟨regs', hset'⟩ := setMany_len (r := fr2.regs) (xs := t.results) (vs := vals)
         (hM.len.symm.trans (setMany_spec hset).1)
-      have hF := facts_nextT H hR hC.hfb hC.stk hM.resF he hset (rest := rest)
+      have hF := facts_nextD H hR hC.hfb hC.stk hM.resF he hset (rest := rest)
       refine ⟨{ fr2 with regs := regs', body := ts }, LStar.single ?_, bi, k + 1, k'' + 1, _,
-        rel_bindT (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF
+        rel_bindD (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF
           hM.resG hwk hend (fun _ h0 => evalInst_types he h0)
           (fun _ h0 => evalInst_types he' h0) hset hset' (fun F h => (hF F h).1)
           (fun F h => (hF F h).2)⟩
       rw [lstep_inst hC.bodyG hcG, he']
       simp only [LRes.ofRes, hset']
     · cases hl
+
+/-- A non-call statement steps to the relation. -/
+theorem matched_nextT (H : HypT f g fi gi cert norm) {Send : List Fact} {fr1 : Frame} {m1 : Mem}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hp : pureK st.inst = false)
+    (hM : Matched (ccOf fi gi cert norm) bi st fr'.body k k' S t ts k'')
+    (hcF : ∀ fn args, st.inst ≠ .call fn args)
+    (hwk : (ccOf fi gi cert norm).walk bi rest ts (k + 1) (k'' + 1)
+      (afterKeep (mapOperands (ccOf fi gi cert norm).ef st.inst)
+        (st.results.head?.map (ccOf fi gi cert norm).ef) S) = some Send)
+    (hend : EndOk (ccOf fi gi cert norm) bi fb gb Send)
+    (hl : lstep fr m = .next fr1 m1) :
+    ∃ fr1', LStar fr2 m fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1 := by
+  exact matched_nextD H.toD hR hC hp hM hcF hwk hend hl
 
 /-- A non-call statement steps to the relation. -/
 theorem matched_next (H : Hyp f g fi gi cert norm) {Send : List Fact} {fr1 : Frame} {m1 : Mem}
@@ -577,14 +646,14 @@ theorem matched_next (H : Hyp f g fi gi cert norm) {Send : List Fact} {fr1 : Fra
   exact matched_nextT H.toT hR hC hp hM hcF hwk hend hl
 
 /-- A trap of `f`'s statement is a trap of `g`'s. -/
-theorem matched_trapT (H : HypT f g fi gi cert norm)
+theorem matched_trapD (H : HypD f g fi gi cert norm)
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
     (hops : mapOperands (ccOf fi gi cert norm).ef st.inst = mapOperands (ccOf fi gi cert norm).eg t.inst)
     {c' : TrapCode} (hl : lstep fr m = .trap c') : lstep fr2 m = .trap c' := by
   by_cases hc : ∃ fn args, st.inst = .call fn args
   · obtain ⟨fn, args, hc⟩ := hc
-    obtain ⟨a, hta, hn⟩ := MCtx.callT H hR hC hops hc
+    obtain ⟨a, hta, hn⟩ := MCtx.callD H hR hC hops hc
     rw [lstep_call hC.bodyF hc] at hl
     rw [lstep_call hC.bodyG hta]
     cases hca : callArgs fr fn args with
@@ -609,8 +678,16 @@ theorem matched_trapT (H : HypT f g fi gi cert norm)
     | trap c0 =>
       rw [he] at hl
       cases hl
-      rw [Res.norm_eq_trap (MCtx.evalT H hR hC hops m) he]
+      rw [Res.norm_eq_trap (MCtx.evalD H hR hC hops m) he]
       rfl
+
+/-- A trap of `f`'s statement is a trap of `g`'s. -/
+theorem matched_trapT (H : HypT f g fi gi cert norm)
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hops : mapOperands (ccOf fi gi cert norm).ef st.inst = mapOperands (ccOf fi gi cert norm).eg t.inst)
+    {c' : TrapCode} (hl : lstep fr m = .trap c') : lstep fr2 m = .trap c' := by
+  exact matched_trapD H.toD hR hC hops hl
 
 /-- A trap of `f`'s statement is a trap of `g`'s. -/
 theorem matched_trap (H : Hyp f g fi gi cert norm)
@@ -622,7 +699,7 @@ theorem matched_trap (H : Hyp f g fi gi cert norm)
 
 /-- A call of `f` is the same call of `g`; after it returns (any memory with the symbols), the
 results are bound alike and the non-memory facts still hold. -/
-theorem matched_callT (H : HypT f g fi gi cert norm) {Send : List Fact} {ext : ExtFunc}
+theorem matched_callD (H : HypD f g fi gi cert norm) {Send : List Fact} {ext : ExtFunc}
     {vals : List Val} {rs : List ValueId} {rest' : List Stmt}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
@@ -641,7 +718,7 @@ theorem matched_callT (H : HypT f g fi gi cert norm) {Send : List Fact} {ext : E
   simp only [List.cons.injEq] at hst
   obtain ⟨h1, h2⟩ := hst
   subst h1 h2 hrs
-  obtain ⟨a, hta, hn⟩ := MCtx.callT H hR hC hM.ops hc
+  obtain ⟨a, hta, hn⟩ := MCtx.callD H hR hC hM.ops hc
   have hca' : callArgs fr2 fn a = .ok (ext, vals) := Res.norm_eq_ok hn hca
   have hext : sigOf f fn = some ext.sig := by
     have hca0 := hca
@@ -663,7 +740,7 @@ theorem matched_callT (H : HypT f g fi gi cert norm) {Send : List Fact} {ext : E
   have hreg : ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := fun v hv =>
     ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hC.hfb hC.stk hv)
   refine ⟨regs', hset', bi, k + 1, k'' + 1, _,
-    rel_bindT (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF hM.resG
+    rel_bindD (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF hM.resG
       hwk hend (fun ts0 h0 => ?_) (fun ts0 h0 => ?_)
       hset hset' (fun F hF => ?_) (fun F hF => ?_)⟩
   · rw [hc, Inst.resultTypes, hext] at h0
@@ -678,7 +755,7 @@ theorem matched_callT (H : HypT f g fi gi cert norm) {Send : List Fact} {ext : E
     · rw [hc] at hk; simp [mergeK, mapOperands] at hk
     · rw [hc] at hmf; simp [memFact?, mapOperands] at hmf
     · have hnm : F.isMem = false := hw (by rw [hc]; rfl)
-      exact FactHolds.stableT (fr1 := fr) (fr2 := { fr with regs, body := rest }) (m1 := m)
+      exact FactHolds.stableD (fr1 := fr) (fr2 := { fr with regs, body := rest }) (m1 := m)
         (m2 := m') H rfl rfl rfl hreg (hR.factSites F hS)
         (fun h => absurd h (by simp [hnm])) (hR.facts F hS)
   · intro u hu
@@ -686,6 +763,24 @@ theorem matched_callT (H : HypT f g fi gi cert norm) {Send : List Fact} {ext : E
     · rw [hc] at hk; simp [mergeK, mapOperands] at hk
     · rw [hc] at hmf; simp [memFact?, mapOperands] at hmf
     · exact (hR.factSites F hS u hu).mono (Nat.le_succ k)
+
+/-- A call of `f` is the same call of `g`; after it returns (any memory with the symbols), the
+results are bound alike and the non-memory facts still hold. -/
+theorem matched_callT (H : HypT f g fi gi cert norm) {Send : List Fact} {ext : ExtFunc}
+    {vals : List Val} {rs : List ValueId} {rest' : List Stmt}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hp : pureK st.inst = false)
+    (hM : Matched (ccOf fi gi cert norm) bi st fr'.body k k' S t ts k'')
+    (hwk : (ccOf fi gi cert norm).walk bi rest ts (k + 1) (k'' + 1)
+      (afterKeep (mapOperands (ccOf fi gi cert norm).ef st.inst)
+        (st.results.head?.map (ccOf fi gi cert norm).ef) S) = some Send)
+    (hend : EndOk (ccOf fi gi cert norm) bi fb gb Send)
+    (hl : lstep fr m = .call ext vals rs rest') :
+    rs = st.results ∧ rest' = rest ∧ lstep fr2 m = .call ext vals t.results ts ∧
+      ContM syms (MR f g fi gi cert norm syms) { fr with body := rest } st.results
+        { fr2 with body := ts } t.results (AbiParam.tys ext.sig.returns) := by
+  exact matched_callD H.toD hR hC hp hM hwk hend hl
 
 /-- A call of `f` is the same call of `g`; after it returns (any memory with the symbols), the
 results are bound alike and the non-memory facts still hold. -/
@@ -709,7 +804,7 @@ theorem matched_call (H : Hyp f g fi gi cert norm) {Send : List Fact} {ext : Ext
 argument terms): the same prelude (`ciArgs`); after it returns (any memory with the symbols), the
 results, of the declared signature's return types, are bound alike and the non-memory facts still
 hold. -/
-theorem matched_ciT (H : HypT f g fi gi cert norm) {Send : List Fact}
+theorem matched_ciD (H : HypD f g fi gi cert norm) {Send : List Fact}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
     (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
     (hp : pureK st.inst = false)
@@ -752,7 +847,7 @@ theorem matched_ciT (H : HypT f g fi gi cert norm) {Send : List Fact}
   have hreg : ∀ v, Avail (wfData f fi) bi k v → regs v = fr.regs v := fun v hv =>
     ((setMany_spec hset).2 v).1 (H.wff.avail_not_result hC.hfb hC.stk hv)
   refine ⟨regs', hset', bi, k + 1, k'' + 1, _,
-    rel_bindT (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF hM.resG
+    rel_bindD (fr := fr) (fr2 := fr2) (rest := rest) (ts := ts) H hR hC hp hM.len hM.resF hM.resG
       hwk hend (fun ts0 h0 => ?_) (fun ts0 h0 => ?_)
       hset hset' (fun F hF => ?_) (fun F hF => ?_)⟩
   · rw [hi, Inst.resultTypes, sigDeclOf, hdF] at h0
@@ -767,7 +862,7 @@ theorem matched_ciT (H : HypT f g fi gi cert norm) {Send : List Fact}
     · rw [hi] at hk; simp [mergeK, mapOperands] at hk
     · rw [hi] at hmf; simp [memFact?, mapOperands] at hmf
     · have hnm : F.isMem = false := hw (by rw [hi]; rfl)
-      exact FactHolds.stableT (fr1 := fr) (fr2 := { fr with regs, body := rest }) (m1 := m)
+      exact FactHolds.stableD (fr1 := fr) (fr2 := { fr with regs, body := rest }) (m1 := m)
         (m2 := m') H rfl rfl rfl hreg (hR.factSites F hS)
         (fun h => absurd h (by simp [hnm])) (hR.facts F hS)
   · intro u hu
@@ -775,6 +870,28 @@ theorem matched_ciT (H : HypT f g fi gi cert norm) {Send : List Fact}
     · rw [hi] at hk; simp [mergeK, mapOperands] at hk
     · rw [hi] at hmf; simp [memFact?, mapOperands] at hmf
     · exact (hR.factSites F hS u hu).mono (Nat.le_succ k)
+
+/-- A `call_indirect` of `f` is the same `call_indirect` of `g` (the same signature, callee and
+argument terms): the same prelude (`ciArgs`); after it returns (any memory with the symbols), the
+results, of the declared signature's return types, are bound alike and the non-memory facts still
+hold. -/
+theorem matched_ciT (H : HypT f g fi gi cert norm) {Send : List Fact}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m)
+    (hC : MCtx f g fi gi cert norm syms bi k k'' fr fr2 st t rest ts fb gb)
+    (hp : pureK st.inst = false)
+    (hM : Matched (ccOf fi gi cert norm) bi st fr'.body k k' S t ts k'')
+    (hwk : (ccOf fi gi cert norm).walk bi rest ts (k + 1) (k'' + 1)
+      (afterKeep (mapOperands (ccOf fi gi cert norm).ef st.inst)
+        (st.results.head?.map (ccOf fi gi cert norm).ef) S) = some Send)
+    (hend : EndOk (ccOf fi gi cert norm) bi fb gb Send)
+    {sig : Nat} {callee : ValueId} {args : List ValueId} {d : Signature} {a : Nat}
+    {vals : List Val} (hi : st.inst = .callIndirect sig callee args)
+    (hca : ciArgs fr sig callee args = .ok (d, a, vals)) :
+    ∃ callee' args', t.inst = .callIndirect sig callee' args' ∧
+      ciArgs fr2 sig callee' args' = .ok (d, a, vals) ∧
+      ContM syms (MR f g fi gi cert norm syms) { fr with body := rest } st.results
+        { fr2 with body := ts } t.results (AbiParam.tys d.returns) := by
+  exact matched_ciD H.toD hR hC hp hM hwk hend hi hca
 
 /-- A `call_indirect` of `f` is the same `call_indirect` of `g` (the same signature, callee and
 argument terms): the same prelude (`ciArgs`); after it returns (any memory with the symbols), the
@@ -802,8 +919,8 @@ end
 
 /-! ## The matched statement -/
 
-theorem rel_matchedT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
-    (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
+theorem rel_matchedD {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : HypD f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
     {syms : String → Option Nat} {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
     {st : Stmt} {rest : List Stmt} {t : Stmt} {ts : List Stmt} {k'' : Nat}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hm : m.symbols = syms)
@@ -832,7 +949,7 @@ theorem rel_matchedT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
   obtain ⟨fb', gb', Send, hfb', hgb', hwk, hend⟩ := hw
   obtain rfl := Option.some.inj (hC.hfb.symm.trans hfb')
   obtain rfl := Option.some.inj (hC.hgb.symm.trans hgb')
-  refine ⟨fun fr1 m1 hl => ?_, fun c' hl => ⟨fr2, m, hpre, matched_trapT H hR hC hM.ops hl⟩,
+  refine ⟨fun fr1 m1 hl => ?_, fun c' hl => ⟨fr2, m, hpre, matched_trapD H hR hC hM.ops hl⟩,
     fun ext vals rs rest' hl => ?_, fun sig callee args d a vals hi hca => ?_⟩
   · by_cases hc : ∃ fn args, st.inst = .call fn args
     · obtain ⟨fn, args, hc⟩ := hc
@@ -841,13 +958,41 @@ theorem rel_matchedT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
       | ok p => obtain ⟨e, v⟩ := p; rw [hca] at hl; cases hl
       | trap c => rw [hca] at hl; cases hl
       | stuck s => rw [hca] at hl; cases hl
-    · obtain ⟨fr1', h1, h2⟩ := matched_nextT H hR hC hp hM (fun fn args h => hc ⟨fn, args, h⟩)
+    · obtain ⟨fr1', h1, h2⟩ := matched_nextD H hR hC hp hM (fun fn args h => hc ⟨fn, args, h⟩)
         hwk hend hl
       exact ⟨fr1', hpre.trans h1, h2⟩
-  · obtain ⟨rfl, rfl, h1, h2⟩ := matched_callT H hR hC hp hM hwk hend hl
+  · obtain ⟨rfl, rfl, h1, h2⟩ := matched_callD H hR hC hp hM hwk hend hl
     exact ⟨fr2, t.results, ts, hpre, h1, h2⟩
-  · obtain ⟨c0, a0, hta, hca', hk⟩ := matched_ciT H hR hC hp hM hwk hend hi hca
+  · obtain ⟨c0, a0, hta, hca', hk⟩ := matched_ciD H hR hC hp hM hwk hend hi hca
     exact ⟨fr2, t, ts, sig, c0, a0, hpre, hC.bodyG, hta, hca', hk⟩
+
+theorem rel_matchedT {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
+    (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
+    {syms : String → Option Nat} {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
+    {st : Stmt} {rest : List Stmt} {t : Stmt} {ts : List Stmt} {k'' : Nat}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hm : m.symbols = syms)
+    (hb : fr.body = st :: rest)
+    (hn : st.inst ≠ .nop) (hp : pureK st.inst = false)
+    (hM : Matched (ccOf fi gi cert norm) bi st fr'.body k k' S t ts k'')
+    (hw : ∃ fb gb Send, f.blocks[bi]? = some fb ∧ g.blocks[bi]? = some gb ∧
+      (ccOf fi gi cert norm).walk bi rest ts (k + 1) (k'' + 1)
+        (afterKeep (mapOperands (ccOf fi gi cert norm).ef st.inst)
+          (st.results.head?.map (ccOf fi gi cert norm).ef) S) = some Send ∧
+      EndOk (ccOf fi gi cert norm) bi fb gb Send) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 →
+      ∃ fr1', LStar fr' m fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1) ∧
+    (∀ c', lstep fr m = .trap c' → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c') ∧
+    (∀ ext vals rs rest', lstep fr m = .call ext vals rs rest' →
+      ∃ fr2 rs' rest'', LStar fr' m fr2 m ∧ lstep fr2 m = .call ext vals rs' rest'' ∧
+        ContM syms (MR f g fi gi cert norm syms) { fr with body := rest' } rs { fr2 with body := rest'' } rs'
+          (AbiParam.tys ext.sig.returns)) ∧
+    (∀ sig callee args d a vals, st.inst = .callIndirect sig callee args →
+      ciArgs fr sig callee args = .ok (d, a, vals) →
+      ∃ fr2 st' rest'' sig' callee' args', LStar fr' m fr2 m ∧ fr2.body = st' :: rest'' ∧
+        st'.inst = .callIndirect sig' callee' args' ∧ ciArgs fr2 sig' callee' args' = .ok (d, a, vals) ∧
+        ContM syms (MR f g fi gi cert norm syms) { fr with body := rest } st.results
+          { fr2 with body := rest'' } st'.results (AbiParam.tys d.returns)) := by
+  exact rel_matchedD H.toD hrun hR hm hb hn hp hM hw
 
 theorem rel_matched {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm}
     (H : Hyp f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)

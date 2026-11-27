@@ -53,7 +53,7 @@ theorem hoistCopy_sound {f g f' : Clif.Function} (h : hoistCopy f g = some f')
   unfold hoistCopy at h
   split at h
   · exact ((Opt.ConstPhi.run_simU f).toMU.at syms).trans
-      (Opt.MidVal.symsCopy_sound h Opt.MidVal.normSoundT_stdT hres)
+      (Opt.MidVal.symsCopy_soundD h Opt.MidVal.normSoundD_stdD hres)
   · cases h
 
 /-- **Soundness of the per-function decision at `syms`.** -/

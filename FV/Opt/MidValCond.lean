@@ -79,7 +79,7 @@ def condPrep (g : Function) (hints : List (BlockId × List Wrap)) : Function :=
 
 /-- **The re-check with branch-condition hints and fold requests** (module doc). -/
 def checkCertC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap))
-    (norm : Norm := Norm.stdT f) : Bool :=
+    (norm : Norm := Norm.stdD f) : Bool :=
   if hints.isEmpty then checkCert f g cert norm
   else if (foldBlocks hints).isEmpty then refsOk g && checkCert f (condPrep g hints) cert norm
   else refsOk g && (checkCert (foldPre f (foldBlocks hints)) (condPrep g hints) cert ||
@@ -87,7 +87,7 @@ def checkCertC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wra
 
 /-- The hoisting mode of `checkCertC`. -/
 def checkCertSymsC (f g : Function) (cert : Cert) (hints : List (BlockId × List Wrap))
-    (norm : Norm := Norm.stdT f) : Bool :=
+    (norm : Norm := Norm.stdD f) : Bool :=
   if hints.isEmpty then checkCertSyms f g cert norm
   else refsOk g && checkCertSyms f (condPrep g hints) cert norm
 
@@ -96,7 +96,7 @@ def checkCertSymsC (f g : Function) (cert : Cert) (hints : List (BlockId × List
 /-- The hints of the relaxed check without folding: `.ok []` if `check` accepts; otherwise the
 wrapper chains the relaxed check records, if `check` accepts `f` against `condPrep g` of them
 (else `check`'s own rejection). -/
-def checkC0 (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
+def checkC0 (f g : Function) (norm : Norm := Norm.stdD f) (hoist : Bool := false) :
     Except Reject (List (BlockId × List Wrap)) :=
   match check f g norm hoist with
   | .ok () => .ok []
@@ -117,7 +117,7 @@ constant-phi removal `phiPre`), with the fold requests `(b, [])` of `bs` appende
 the hoisting mode when `hoist`. A copy is skipped when it has `f`'s blocks or its blocks are not
 `g`'s. A pair rejected for `rewrite:blocks`, a division or a block parameter that the prep does
 not rescue reports the rejection of the `foldPreK` copy, marked `[prep]`. -/
-def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
+def checkC (f g : Function) (norm : Norm := Norm.stdD f) (hoist : Bool := false) :
     Except Reject (List (BlockId × List Wrap)) :=
   match checkC0 f g norm hoist with
   | .ok h => .ok h
@@ -143,7 +143,7 @@ def checkC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false)
 /-- The certificate and hints of an accepted pair (`checkC`, then `emit` against the copy, from
 `foldPre f bs`, or else `foldPreK f bs`, for fold requests `bs`; in the hoisting mode when
 `hoist`). -/
-def emitC (f g : Function) (norm : Norm := Norm.stdT f) (hoist : Bool := false) :
+def emitC (f g : Function) (norm : Norm := Norm.stdD f) (hoist : Bool := false) :
     Except Reject (Cert × List (BlockId × List Wrap)) := do
   let h ← checkC f g norm hoist
   let bs := foldBlocks h
