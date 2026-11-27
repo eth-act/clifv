@@ -36,6 +36,8 @@ import FV.Opt.Proof.MidValFwd
 import FVTest.Opt.MidValFwdWitness
 import FV.Opt.Proof.MidValNormFam8
 import FVTest.Opt.MidValFam8Witness
+import FV.Opt.Proof.MidValNormFam9
+import FVTest.Opt.MidValFam9Witness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -823,7 +825,7 @@ import FVTest.Opt.MidValFam8Witness
 #print axioms Opt.MidVal.ruleSoundD_selfCmp
 #print axioms Opt.MidVal.ruleSoundD_dropStep
 -- #1119 family 8, comparisons with an offset, saturating differences, products of constants,
--- differences of sums (FV/Opt/Proof/MidValNormFam8.lean; normSoundD_stdD moved here)
+-- differences of sums (FV/Opt/Proof/MidValNormFam8.lean)
 #print axioms Opt.MidVal.mod_two
 #print axioms Opt.MidVal.nat_add_self
 #print axioms Opt.MidVal.ult_add_self
@@ -848,6 +850,61 @@ import FVTest.Opt.MidValFam8Witness
 #print axioms Opt.MidVal.ruleSoundD_mulMul
 #print axioms Opt.MidVal.ruleSoundD_subAdds
 #print axioms Opt.MidVal.ruleSoundD_fam8Step
+-- #1119 family 9, masks, narrowed shifts, complements, extensions, comparisons of extensions and
+-- of <=>, select as min/max, multiply-high (FV/Opt/Proof/MidValNormFam9.lean; normSoundD_stdD
+-- moved here; or_and_not, borMask_spec, borMask_val in FV/Opt/Proof/MidValNormFam4.lean)
+#print axioms Opt.MidVal.or_and_not
+#print axioms Opt.MidVal.borMask_spec
+#print axioms Opt.MidVal.borMask_val
+#print axioms Opt.MidVal.tmVal_un_ops
+#print axioms Opt.MidVal.tmVal_ext_ops
+#print axioms Opt.MidVal.val_of_tyAt
+#print axioms Opt.MidVal.extOp_self
+#print axioms Opt.MidVal.one_eq_ofNat
+#print axioms Opt.MidVal.not_eq_neg_sub
+#print axioms Opt.MidVal.not_add_neg_one
+#print axioms Opt.MidVal.not_sub_one
+#print axioms Opt.MidVal.not_not_add
+#print axioms Opt.MidVal.not_add_not
+#print axioms Opt.MidVal.notAddPick_spec
+#print axioms Opt.MidVal.notDec_spec
+#print axioms Opt.MidVal.notAdd_val
+#print axioms Opt.MidVal.ruleSoundD_notDec
+#print axioms Opt.MidVal.setWidth_shl
+#print axioms Opt.MidVal.setWidth_ishl_ext
+#print axioms Opt.MidVal.redShlPlan_spec
+#print axioms Opt.MidVal.ruleSoundD_redShl
+#print axioms Opt.MidVal.setWidth_unary_ext
+#print axioms Opt.MidVal.redUn_spec
+#print axioms Opt.MidVal.ruleSoundD_redUn
+#print axioms Opt.MidVal.uext_uext
+#print axioms Opt.MidVal.sext_sext
+#print axioms Opt.MidVal.toInt_uext
+#print axioms Opt.MidVal.sext_uext
+#print axioms Opt.MidVal.extExt_spec
+#print axioms Opt.MidVal.ruleSoundD_extExt
+#print axioms Opt.MidVal.sext_cmp_zero
+#print axioms Opt.MidVal.extCmpPlan_spec
+#print axioms Opt.MidVal.ruleSoundD_extCmp
+#print axioms Opt.MidVal.ship_cases
+#print axioms Opt.MidVal.ship_le
+#print axioms Opt.MidVal.ship_spec
+#print axioms Opt.MidVal.shipSg_spec
+#print axioms Opt.MidVal.shipCmp_spec
+#print axioms Opt.MidVal.ruleSoundD_shipCmp
+#print axioms Opt.MidVal.sel_mm
+#print axioms Opt.MidVal.selMinMax_spec
+#print axioms Opt.MidVal.mmOp_nonShift
+#print axioms Opt.MidVal.ruleSoundD_selMinMax
+#print axioms Opt.MidVal.borMaskRePlan_spec
+#print axioms Opt.MidVal.ruleSoundD_borMaskRe
+#print axioms Opt.MidVal.ushr_half
+#print axioms Opt.MidVal.sshr_half
+#print axioms Opt.MidVal.ushr_uext_mul
+#print axioms Opt.MidVal.sshr_sext_mul
+#print axioms Opt.MidVal.mulHiPlan_spec
+#print axioms Opt.MidVal.ruleSoundD_mulHi
+#print axioms Opt.MidVal.ruleSoundD_fam9Step
 #print axioms Opt.MidVal.normSoundD_stdD
 -- #1119 family A, store-to-load forwarding before the folds (FV/Opt/Proof/MidValFwd.lean)
 #print axioms Opt.MidVal.fwdOk_simMU
@@ -1567,3 +1624,55 @@ import FVTest.Opt.MidValFam8Witness
 #print axioms Opt.MidVal.Fam8Witness.real_mul_prev_rejects -- witness: native_decide
 #print axioms Opt.MidVal.Fam8Witness.real_mul_checked -- witness: native_decide
 #print axioms Opt.MidVal.Fam8Witness.real_mul_sim -- witness: native_decide
+-- witnesses of family 9 (FVTest/Opt/MidValFam9Witness.lean)
+#print axioms Opt.MidVal.Fam9Witness.pos_mask -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_mask_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_mask -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_maskRe -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_maskRe_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_maskRe -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_dec -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_dec_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_dec -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_notAdd -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_notAdd_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_notAdd -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_shl -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_shl_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_shl -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_un -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_un_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_un -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_ext -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_ext_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_ext -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_cmpU -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_cmpU_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_cmpU -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_cmpS -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_cmpS_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_cmpS -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_ship -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_ship_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_ship -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_mm -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_mm_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_mm -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_hi -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.pos_hi_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.neg_hi -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_notdec_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_notdec_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_notdec_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_mulhi_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_mulhi_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_mulhi_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_ship_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_ship_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_ship_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_minmax_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_minmax_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_minmax_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_extext_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_extext_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam9Witness.real_extext_sim -- witness: native_decide
