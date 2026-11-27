@@ -960,6 +960,19 @@ def swapStep (tms : Array Tm) : Inst → Option Tm
     else none
   | _ => none
 
+/-- **Masks** (family 9, module doc of `fam9Step`; also on the node `narrowStep` builds):
+`bor ty (band ty x y) z` with `y`, `z` constants of type `ty` and `z = ~y` is `bor ty x z`
+(Cranelift 0.136's `opts/bitops.isle`, `(x & y) | ~y`). -/
+def borMask (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  match nodeAt tms a, constAt tms ty b with
+  | some (.binary .band ty' x y), some z =>
+    if ty' == ty then
+      match constAt tms ty y with
+      | some yv => if z == ~~~yv then some (.node (.binary .bor ty x b)) else none
+      | none => none
+    else none
+  | _, _ => none
+
 /-- The operations whose result truncated is the operation on the truncated operands. -/
 def ringOp : BinaryOp → Bool
   | .iadd | .isub | .imul | .band | .bor | .bxor => true
@@ -984,7 +997,8 @@ def narrowId (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a' b' : Nat) : Option T
 /-- **Narrowed `ireduce`** (typed): `ireduce ty (op wty a b)` with `op` a ring operation and `a`,
 `b` of static type `wty` wider than `ty`: `op ty a' b'` with `a'`, `b'` the terms of
 `ireduce ty a`, `ireduce ty b` under `n` (`redOf`; the checker interns them first,
-`narrowAux`), then `narrowId`, `affStep` or `swapStep` on that node. -/
+`narrowAux`), then `narrowId`, `affStep`, `swapStep` or (for `bor`, family 9) `borMask` on that
+node. -/
 def narrowStep (n : Norm) (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
   | .ireduce ty u =>
     match nodeAt tms u with
@@ -994,7 +1008,8 @@ def narrowStep (n : Norm) (aty : Tm → Option Ty) (tms : Array Tm) : Inst → O
         (redOf n tms ty a).bind fun a' => (redOf n tms ty b).map fun b' =>
           let j := Inst.binary op ty a' b'
           ((narrowId tms op ty a' b').orElse fun _ =>
-            (affStep tms j).orElse fun _ => swapStep tms j).getD (.node j)
+            (affStep tms j).orElse fun _ => (swapStep tms j).orElse fun _ =>
+              if op == .bor then borMask tms ty a' b' else none).getD (.node j)
       else none
     | _ => none
   | _ => none
@@ -1405,12 +1420,293 @@ def fam8Aux (tms : Array Tm) : Inst → List Tm
   | .binary .imul ty a b => (mulMulPlan tms ty a b).toList.map fun (_, v) => .node (.iconst ty v)
   | _ => []
 
+/-! ### Family 9: masks, narrowed shifts, complements, extensions, comparisons of extensions and
+of `<=>`, `select` as min/max
+
+The largest one-node shapes of the `rewrite:operand` tail after family 8 (#1119, agent
+MidendNext10), after Cranelift 0.136's `opts/bitops.isle`, `arithmetic.isle`, `extends.isle`,
+`spaceship.isle` and `selects.isle`. Each result has the node's value wherever its operands have
+values and the atoms below it are typed (`FV/Opt/Proof/MidValNormFam9.lean`).
+
+* `borMask` (defined before `narrowStep`, which also applies it to the node it builds): `bor ty
+  (band ty x y) z` with `y`, `z` constants of type `ty` and `z = ~y` is `bor ty x z`
+  (`bitops.isle`);
+* `notDec`: `bnot ty (iadd ty x -1)` and `bnot ty (isub ty x 1)` are `ineg ty x`
+  (`arithmetic.isle`); `bnot ty (iadd ty (bnot ty x) y)` and `bnot ty (iadd ty y (bnot ty x))`
+  are `isub ty x y` (`bitops.isle`);
+* `redShl` (typed): `ireduce ty (ishl wty (extend op wty x) k)` with `x` of static type `ty` and
+  the amount `s = k mod width(wty)` below `ty`'s width is `ishl ty x s` (an `s` of type `ty`).
+  Cranelift reaches it from `ireduce ty (imul wty (uextend x) 2^s)` (`extends.isle`: `ireduce`
+  of `imul` and of an extension back to `x`'s type; `arithmetic.isle`: `imul x 2^s = ishl x s`);
+  `Norm.alg` writes the `imul` as the shift first;
+* `redUn` (typed): `ireduce ty (op wty (extend op' wty x))` with `op` `ineg` or `bnot` and `x` of
+  static type `ty` is `op ty x` (`extends.isle`: `ireduce` of `ineg`/`bnot`, then of the
+  extension);
+* `extExt`: `uextend ty (uextend ty2 x)` and `sextend ty (uextend ty2 x)` are `uextend ty x`,
+  `sextend ty (sextend ty2 x)` is `sextend ty x`, with `ty2` narrower than `ty`
+  (`extends.isle`);
+* `extCmp` (typed; `extends.isle`): `icmp slt/sge i64 (uextend i64 x) 0` with `x` of static
+  type `i32` is the `i8` constant `0`/`1`; `icmp cc wty (sextend wty x) 0` with `cc` `eq`, `ne`
+  or signed and `x` of a static integer type `xt` is `icmp cc xt x 0`;
+* `shipCmp` (`spaceship.isle`): with `s = isub i8 (icmp ugt rty x y) (icmp ult rty x y)` (or
+  `sgt`/`slt`), `icmp cc i8 s k` for `(cc, k)` = `(eq, 0)`, `(ne, 0)`, the signed comparisons with
+  `0`, `(eq, -1)`, `(ne, -1)`, `(eq, 1)`, `(ne, 1)` is the comparison of `x` and `y` it stands for;
+* `selMinMax` (`selects.isle`): `select ty (icmp cc ty x y) x y` and `select ty (icmp cc ty x y)
+  y x` with `cc` an ordering are `umin`/`umax`/`smin`/`smax ty x y`.
+
+The constants `redShl` and `extCmp` look up are interned first (`fam9Aux`). -/
+
+/-- `bnot ty (iadd ty p q)` with `p = bnot ty x`: `isub ty x q` (`notDec`). -/
+def notAddPick (tms : Array Tm) (ty : Ty) (p q : Nat) : Option Tm :=
+  match nodeAt tms p with
+  | some (.unary .bnot tp x) => if tp == ty then some (.node (.binary .isub ty x q)) else none
+  | _ => none
+
+/-- **Negations written as complements** (module doc above). -/
+def notDec (tms : Array Tm) (ty : Ty) (a : Nat) : Option Tm :=
+  match nodeAt tms a with
+  | some (.binary .iadd ty' p q) =>
+    if ty' != ty then none
+    else if constAt tms ty q == some (-1) then some (.node (.unary .ineg ty p))
+    else (notAddPick tms ty p q).orElse fun _ => notAddPick tms ty q p
+  | some (.binary .isub ty' x k) =>
+    if ty' == ty && constAt tms ty k == some 1 then some (.node (.unary .ineg ty x)) else none
+  | _ => none
+
+/-- `redShl`'s `(x, s)` for `ireduce ty u` (module doc above). -/
+def redShlPlan (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (u : Nat) : Option (Nat × Nat) :=
+  match nodeAt tms u with
+  | some (.binary .ishl wty e k) =>
+    match nodeAt tms e, constOf tms k with
+    | some (.extend _ ety x), some K =>
+      if ety == wty && ty.width < wty.width && tyAt aty tms x == some ty &&
+          K.bits.toNat % wty.width < ty.width then
+        some (x, K.bits.toNat % wty.width)
+      else none
+    | _, _ => none
+  | _ => none
+
+/-- **Narrowed shifts** (typed; module doc above): `ishl ty x s`, the constant looked up. -/
+def redShl (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (u : Nat) : Option Tm :=
+  (redShlPlan aty tms ty u).bind fun (x, s) =>
+    (findTm tms (.node (.iconst ty (BitVec.ofNat ty.width s)))).map fun kc =>
+      .node (.binary .ishl ty x kc)
+
+/-- **Narrowed negations and complements** (typed; module doc above). -/
+def redUn (aty : Tm → Option Ty) (tms : Array Tm) (ty : Ty) (u : Nat) : Option Tm :=
+  match nodeAt tms u with
+  | some (.unary op wty e) =>
+    if op == .ineg || op == .bnot then
+      match nodeAt tms e with
+      | some (.extend _ ety x) =>
+        if ety == wty && ty.width < wty.width && tyAt aty tms x == some ty then
+          some (.node (.unary op ty x))
+        else none
+      | _ => none
+    else none
+  | _ => none
+
+/-- **Extensions of extensions** (module doc above; the inner type `ty2` narrower than `ty`, as
+the outer extension needs). -/
+def extExt (tms : Array Tm) (op : ExtendOp) (ty : Ty) (u : Nat) : Option Tm :=
+  match nodeAt tms u with
+  | some (.extend op2 ty2 x) =>
+    if ty2.width < ty.width then
+      match op, op2 with
+      | .uextend, .uextend | .sextend, .uextend => some (.node (.extend .uextend ty x))
+      | .sextend, .sextend => some (.node (.extend .sextend ty x))
+      | .uextend, .sextend => none
+    else none
+  | _ => none
+
+/-- An `eq`, `ne` or signed comparison (`extends.isle`'s `signed_cond_code`, with `eq`/`ne`). -/
+def sextCC : IntCC → Bool
+  | .eq | .ne | .slt | .sge | .sgt | .sle => true
+  | _ => false
+
+/-- `extCmp`'s plan for `icmp cc ty a b`: `inl v` for the `i8` constant `v`, `inr (xt, x)` for
+`icmp cc xt x 0` (module doc above). -/
+def extCmpPlan (aty : Tm → Option Ty) (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) :
+    Option (BitVec 8 ⊕ (Ty × Nat)) :=
+  match nodeAt tms a, constAt tms ty b with
+  | some (.extend .uextend ety x), some z =>
+    if z == 0 && ety == ty && ty == .i64 && tyAt aty tms x == some .i32 then
+      if cc == .slt then some (.inl 0) else if cc == .sge then some (.inl 1) else none
+    else none
+  | some (.extend .sextend ety x), some z =>
+    if z == 0 && ety == ty && sextCC cc then
+      (tyAt aty tms x).bind fun xt => if xt.isInt then some (.inr (xt, x)) else none
+    else none
+  | _, _ => none
+
+/-- **Comparisons of extensions with `0`** (typed; module doc above). -/
+def extCmp (aty : Tm → Option Ty) (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) :
+    Option Tm :=
+  match extCmpPlan aty tms cc ty a b with
+  | some (.inl v) => some (.node (.iconst .i8 v))
+  | some (.inr (xt, x)) => (findTm tms (.node (.iconst xt 0))).map fun z => .node (.icmp cc xt x z)
+  | none => none
+
+/-- The signed (`sg`) or unsigned form of an unsigned ordering `cc`. -/
+def ordCC (sg : Bool) (cc : IntCC) : IntCC :=
+  if sg then
+    match cc with
+    | .ult => .slt | .ule => .sle | .ugt => .sgt | .uge => .sge | c => c
+  else cc
+
+/-- `shipCC` for the constant `0`. -/
+def shipCC0 (sg : Bool) : IntCC → Option IntCC
+  | .eq => some .eq | .ne => some .ne | .slt => some (ordCC sg .ult)
+  | .sle => some (ordCC sg .ule) | .sgt => some (ordCC sg .ugt) | .sge => some (ordCC sg .uge)
+  | _ => none
+
+/-- `shipCC` for the constant `-1`. -/
+def shipCCm (sg : Bool) : IntCC → Option IntCC
+  | .eq => some (ordCC sg .ult) | .ne => some (ordCC sg .uge) | _ => none
+
+/-- `shipCC` for the constant `1`. -/
+def shipCCp (sg : Bool) : IntCC → Option IntCC
+  | .eq => some (ordCC sg .ugt) | .ne => some (ordCC sg .ule) | _ => none
+
+/-- The comparison `icmp cc i8 (x <=> y) k` stands for (`spaceship.isle`; `sg`: signed), if any. -/
+def shipCC {w : Nat} (sg : Bool) (cc : IntCC) (k : BitVec w) : Option IntCC :=
+  if k == 0 then shipCC0 sg cc
+  else if k == -1 then shipCCm sg cc
+  else if k == 1 then shipCCp sg cc
+  else none
+
+/-- `(gc, lc)` is `(ugt, ult)` (`some false`) or `(sgt, slt)` (`some true`). -/
+def shipSg : IntCC → IntCC → Option Bool
+  | .ugt, .ult => some false
+  | .sgt, .slt => some true
+  | _, _ => none
+
+/-- **Comparisons of `x <=> y`** (module doc above). -/
+def shipCmp (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) : Option Tm :=
+  if ty != .i8 then none
+  else
+    match nodeAt tms a, constAt tms ty b with
+    | some (.binary .isub sty g l), some k =>
+      if sty != .i8 then none
+      else
+        match nodeAt tms g, nodeAt tms l with
+        | some (.icmp gc rty x y), some (.icmp lc rty' x' y') =>
+          if rty == rty' && x == x' && y == y' then
+            (shipSg gc lc).bind fun sg => (shipCC sg cc k).map fun cc' => .node (.icmp cc' rty x y)
+          else none
+        | _, _ => none
+    | _, _ => none
+
+/-- The min/max operation `select (icmp cc x y) x y` (`swap = false`) or `select (icmp cc x y)
+y x` (`swap = true`) is. -/
+def mmOp : IntCC → Bool → Option BinaryOp
+  | .sgt, false | .sge, false | .slt, true | .sle, true => some .smax
+  | .ugt, false | .uge, false | .ult, true | .ule, true => some .umax
+  | .slt, false | .sle, false | .sgt, true | .sge, true => some .smin
+  | .ult, false | .ule, false | .ugt, true | .uge, true => some .umin
+  | _, _ => none
+
+/-- **`select` as min/max** (module doc above). -/
+def selMinMax (tms : Array Tm) (ty : Ty) (c x y : Nat) : Option Tm :=
+  match nodeAt tms c with
+  | some (.icmp cc cty a b) =>
+    if cty != ty then none
+    else if a == x && b == y then (mmOp cc false).map fun op => .node (.binary op ty a b)
+    else if a == y && b == x then (mmOp cc true).map fun op => .node (.binary op ty a b)
+    else none
+  | _ => none
+
+/-- `borMaskRe`'s `(x, k1 | k2)` for `bor ty a b` (module doc above). -/
+def borMaskRePlan (tms : Array Tm) (ty : Ty) (a b : Nat) : Option (Nat × BitVec ty.width) :=
+  match nodeAt tms a, constAt tms ty b with
+  | some (.binary .bor ty1 a1 k1), some k2 =>
+    if ty1 == ty then
+      match constAt tms ty k1, nodeAt tms a1 with
+      | some k1v, some (.binary .band ty2 x y) =>
+        if ty2 == ty then
+          match constAt tms ty y with
+          | some yv => if (k1v ||| k2) == ~~~yv then some (x, k1v ||| k2) else none
+          | none => none
+        else none
+      | _, _ => none
+    else none
+  | _, _ => none
+
+/-- **Masks after reassociated constants** (module doc above): `bor ty x (k1 | k2)`, the constant
+looked up. -/
+def borMaskRe (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  (borMaskRePlan tms ty a b).bind fun (x, v) =>
+    (findTm tms (.node (.iconst ty v))).map fun kc => .node (.binary .bor ty x kc)
+
+/-- The extension and the multiply-high of `mulHi` for the shift `op`. -/
+def mulHiOps : BinaryOp → Option (ExtendOp × BinaryOp)
+  | .ushr => some (.uextend, .umulhi)
+  | .sshr => some (.sextend, .smulhi)
+  | _ => none
+
+/-- `mulHi`'s `(hop, half, x, y)` for `op ty m k` (module doc above): `m = imul ty (ext ty x)
+(ext ty y)` with `x`, `y` of static type `half`, `ty` twice as wide, the amount the constant
+`half.width`, `ext` and `op` `uextend`/`ushr` (`hop = umulhi`) or `sextend`/`sshr` (`smulhi`). -/
+def mulHiPlan (aty : Tm → Option Ty) (tms : Array Tm) (op : BinaryOp) (ty : Ty) (m k : Nat) :
+    Option (BinaryOp × Ty × Nat × Nat) :=
+  (mulHiOps op).bind fun (eop, hop) =>
+    match nodeAt tms m with
+    | some (.binary .imul ty' e1 e2) =>
+      match nodeAt tms e1, nodeAt tms e2, constOf tms k with
+      | some (.extend o1 t1 x), some (.extend o2 t2 y), some K =>
+        match tyAt aty tms x, tyAt aty tms y with
+        | some hx, some hy =>
+          if ty' == ty && o1 == eop && o2 == eop && t1 == ty && t2 == ty && hx == hy &&
+              ty.width == hx.width + hx.width && K.bits.toNat == hx.width then
+            some (hop, hx, x, y)
+          else none
+        | _, _ => none
+      | _, _, _ => none
+    | _ => none
+
+/-- **Multiply-high written out** (typed; module doc above): `ext ty (hop half x y)`, the high
+product looked up. -/
+def mulHi (aty : Tm → Option Ty) (tms : Array Tm) (op : BinaryOp) (ty : Ty) (m k : Nat) :
+    Option Tm :=
+  (mulHiPlan aty tms op ty m k).bind fun (hop, half, x, y) =>
+    (findTm tms (.node (.binary hop half x y))).map fun h =>
+      .node (.extend (if hop == .umulhi then .uextend else .sextend) ty h)
+
+/-- **Family 9** (module doc above; typed through `redShl`, `redUn` and `extCmp`). -/
+def fam9Step (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .binary .bor ty a b => (borMask tms ty a b).orElse fun _ => borMaskRe tms ty a b
+  | .binary .ushr ty a b => mulHi aty tms .ushr ty a b
+  | .binary .sshr ty a b => mulHi aty tms .sshr ty a b
+  | .unary .bnot ty a => notDec tms ty a
+  | .ireduce ty u => (redShl aty tms ty u).orElse fun _ => redUn aty tms ty u
+  | .extend op ty u => extExt tms op ty u
+  | .icmp cc ty a b => (shipCmp tms cc ty a b).orElse fun _ => extCmp aty tms cc ty a b
+  | .select ty c x y => selMinMax tms ty c x y
+  | _ => none
+
+/-- The terms family 9 looks up (`borMaskRePlan`'s constant, `mulHiPlan`'s high product,
+`redShlPlan`'s and `extCmpPlan`'s constants). -/
+def fam9Aux (aty : Tm → Option Ty) (tms : Array Tm) : Inst → List Tm
+  | .binary .bor ty a b =>
+    (borMaskRePlan tms ty a b).toList.map fun (_, v) => .node (.iconst ty v)
+  | .binary op ty a b =>
+    (mulHiPlan aty tms op ty a b).toList.map fun (hop, half, x, y) => .node (.binary hop half x y)
+  | .ireduce ty u =>
+    (redShlPlan aty tms ty u).toList.map fun (_, s) => .node (.iconst ty (BitVec.ofNat ty.width s))
+  | .icmp cc ty a b =>
+    match extCmpPlan aty tms cc ty a b with
+    | some (.inr (xt, _)) => [.node (.iconst xt 0)]
+    | _ => []
+  | _ => []
+
 /-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
-`checkCert`, `checkCertSyms`): family 8, then the typed normaliser `Norm.stdT f`, then family 7's
-operand-dropping rules; proved sound where the node's operands have values
+`checkCert`, `checkCertSyms`): families 8 and 9, then the typed normaliser `Norm.stdT f`, then
+family 7's operand-dropping rules; proved sound where the node's operands have values
 (`normSoundD_stdD`). -/
 def Norm.stdD (f : Function) : Norm :=
-  Norm.orElse (Norm.guard fam8Step) (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f))))
+  Norm.orElse (Norm.guard fam8Step)
+    (Norm.orElse (Norm.guard (fam9Step (atomTy f)))
+      (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))))
 
 /-- Intern a term (normalised, if a node), without auxiliary terms. -/
 def intern1 (t : Tm) : M Nat := do
@@ -1453,8 +1749,8 @@ def narrowNode (n : Norm) (tms : Array Tm) : Inst → Option Inst
   | _ => none
 
 /-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`,
-`affAux`, `fam5Aux`, `fam6Aux`, `fam8Aux`; `narrowAux` interned the same way, `d` levels deep,
-then the constant `affStep` looks up for the narrowed node). -/
+`affAux`, `fam5Aux`, `fam6Aux`, `fam8Aux`, `fam9Aux`; `narrowAux` interned the same way, `d`
+levels deep, then the constant `affStep` looks up for the narrowed node). -/
 def internD : Nat → Tm → M Nat
   | 0, t => do
     if let .node i := t then
@@ -1463,6 +1759,7 @@ def internD : Nat → Tm → M Nat
       for a in fam5Aux (← get).tms i do discard (intern1 a)
       for a in fam6Aux (← get).tms i do discard (intern1 a)
       for a in fam8Aux (← get).tms i do discard (intern1 a)
+      for a in fam9Aux (← get).aty (← get).tms i do discard (intern1 a)
     intern1 t
   | d + 1, t => do
     if let .node i := t then
@@ -1472,6 +1769,7 @@ def internD : Nat → Tm → M Nat
       for a in fam5Aux (← get).tms i do discard (intern1 a)
       for a in fam6Aux (← get).tms i do discard (intern1 a)
       for a in fam8Aux (← get).tms i do discard (intern1 a)
+      for a in fam9Aux (← get).aty (← get).tms i do discard (intern1 a)
       for a in narrowAux (← get).tms i do discard (internD d a)
       let s ← get
       if let some j := narrowNode s.norm s.tms i then
