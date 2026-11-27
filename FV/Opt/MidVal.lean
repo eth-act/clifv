@@ -562,7 +562,9 @@ def constAt (tms : Array Tm) (ty : Ty) (o : Nat) : Option (BitVec ty.width) :=
   (constOf tms o).bind (·.as? ty)
 
 /-- Family 3: the wrappers (outermost first) that make `f`'s condition term `a` out of `g`'s
-`b`, each `Wrap.ok` with its constant `0`; `fuel` bounds the descent (operands are earlier). -/
+`b`, each `Wrap.ok` with its constant `0`; `fuel` bounds the descent (operands are earlier).
+`a = icmp ne ty x c` with `b = iadd ty x k`, `c = -k`, is the wrapper `icmp ne ty b 0`, which
+family 8 (`cmpOff`) normalises to `a` in `condPrep`'s copy. -/
 def condChain (tms : Array Tm) : Nat → Nat → Nat → Option (List Wrap)
   | 0, a, b => if a == b then some [] else none
   | fuel + 1, a, b =>
@@ -573,6 +575,10 @@ def condChain (tms : Array Tm) : Nat → Nat → Nat → Option (List Wrap)
         (condChain tms fuel x b).map (.icmp cc ty false :: ·)
       else if (Wrap.icmp cc ty true).ok && constAt tms ty x == some 0 then
         (condChain tms fuel y b).map (.icmp cc ty true :: ·)
+      else if cc == .ne && (match nodeAt tms b, constAt tms ty y with
+          | some (.binary .iadd ty' x' k), some c =>
+            ty' == ty && x' == x && (constAt tms ty k).map (fun kv => c == -kv) == some true
+          | _, _ => false) then some [.icmp .ne ty false]
       else none
     | some (.extend op ty c) => (condChain tms fuel c b).map (.ext op ty :: ·)
     | _ => none
@@ -1274,12 +1280,137 @@ def dropStep (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
   | .icmp cc ty a b => selfCmp aty tms cc ty a b
   | _ => none
 
+/-! ### Family 8: comparisons with an offset, saturating differences, products of constants,
+differences of sums
+
+The largest one-node shapes of the `rewrite:operand` tail after families 6, 7 and A (#1119
+issuecomment-7214657352, agent MidendNext8), after Cranelift 0.136's `opts/cprop.isle`,
+`opts/icmp.isle` and `opts/arithmetic.isle`. Each result has the node's value wherever its
+operands have values (`FV/Opt/Proof/MidValNormFam8.lean`). Family 8 comes first in `Norm.stdD`:
+a node is normalised once, so `icmp ugt (x + k), 0`, which `icmpUnit` makes `icmp ne (x + k), 0`,
+and `imul (imul x c1) c2`, which `mulPow2` makes a shift when `c2` is a power of two, would stop
+there.
+
+* `cmpOff`: `icmp cc ty (iadd ty x k) c` with `k`, `c` constants of type `ty` is `icmp cc ty x
+  (c - k)` for `eq`/`ne` (`cprop.isle`), and `icmp ne/eq ty x (-k)` for the forms `icmpUnit`
+  makes a comparison with `0` (`ugt 0`, `ule 0`, `ult 1`, `uge 1`); `icmp ugt/ule ty (iadd ty x
+  k) x` with `k ≠ 0` is `icmp ult/uge ty x (-k)` (`icmp eq/ne ty x 0` when `-k = 1`; Cranelift
+  reaches it from `(x - (-k)) >u x`, `icmp.isle`);
+* `cmpSub`: `icmp ugt/ule ty (isub ty x y) x` is `icmp ugt/ule ty y x` (written `icmp ult/uge
+  ty x y` when `y` is a constant and `x` is not), `icmp uge/ult ty x (isub ty x y)` is `icmp
+  uge/ult ty x y` (`icmp.isle`);
+* `mulMul`: `imul ty (imul ty x c1) c2` with `c1`, `c2` constants of type `ty` is `imul ty x
+  (c1 * c2)` (`cprop.isle`), unless `c1 * c2` is a power of two;
+* `subAdds`: `isub ty (iadd ty p q) (iadd ty r s)` with a term common to both sums is the
+  difference of the other two (`arithmetic.isle`); it drops the common term.
+
+The constants `cmpOff` and `mulMul` look up are interned first (`fam8Aux`). -/
+
+/-- `icmp cc z c` as an `eq`/`ne` comparison `icmp cc' z c'` (`icmpUnit`'s forms with `0`). -/
+def offCmp {w : Nat} (cc : IntCC) (c : BitVec w) : Option (IntCC × BitVec w) :=
+  if cc == .eq || cc == .ne then some (cc, c)
+  else if c == 0 && cc == .ugt then some (.ne, 0)
+  else if c == 0 && cc == .ule then some (.eq, 0)
+  else if c == 1 && cc == .ult then some (.eq, 0)
+  else if c == 1 && cc == .uge then some (.ne, 0)
+  else none
+
+/-- `icmp cc (x + k) x`, `k ≠ 0`, as `icmp cc' x c'`: `x <u -k` for `ugt`, `x >=u -k` for `ule`,
+`x == 0` / `x != 0` when `-k = 1`. -/
+def selfOff {w : Nat} (cc : IntCC) (k : BitVec w) : Option (IntCC × BitVec w) :=
+  if k != 0 && (cc == .ugt || cc == .ule) then
+    if -k == 1 then some (if cc == .ugt then .eq else .ne, 0)
+    else some (if cc == .ugt then .ult else .uge, -k)
+  else none
+
+/-- `cmpOff`'s comparison `(cc', x, v)`: the node is `icmp cc' ty x v` (module doc above). -/
+def cmpOffPlan (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) :
+    Option (IntCC × Nat × BitVec ty.width) :=
+  match nodeAt tms a with
+  | some (.binary .iadd ty' x k) =>
+    if ty' == ty then
+      match constAt tms ty k with
+      | some kv =>
+        match constAt tms ty b with
+        | some c => (offCmp cc c).map fun (cc', c') => (cc', x, c' - kv)
+        | none => if x == b then (selfOff cc kv).map fun (cc', c') => (cc', x, c') else none
+      | none => none
+    else none
+  | _ => none
+
+/-- **Comparisons with an offset** (module doc above): `cmpOffPlan`'s comparison, its constant
+looked up. -/
+def cmpOff (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) : Option Tm :=
+  (cmpOffPlan tms cc ty a b).bind fun (cc', x, v) =>
+    (findTm tms (.node (.iconst ty v))).map fun kc => .node (.icmp cc' ty x kc)
+
+/-- **Saturating differences** (module doc above). -/
+def cmpSub (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) : Option Tm :=
+  if cc == .ugt || cc == .ule then
+    match nodeAt tms a with
+    | some (.binary .isub ty' x y) =>
+      if ty' == ty && x == b then
+        if (constOf tms y).isSome && (constOf tms x).isNone then
+          some (.node (.icmp (IntCC.swap cc) ty x y))
+        else some (.node (.icmp cc ty y x))
+      else none
+    | _ => none
+  else if cc == .uge || cc == .ult then
+    match nodeAt tms b with
+    | some (.binary .isub ty' x y) =>
+      if ty' == ty && x == a then some (.node (.icmp cc ty x y)) else none
+    | _ => none
+  else none
+
+/-- `mulMul`'s `(x, c1 * c2)` for `imul ty a b` (module doc above). -/
+def mulMulPlan (tms : Array Tm) (ty : Ty) (a b : Nat) : Option (Nat × BitVec ty.width) :=
+  match nodeAt tms a, constAt tms ty b with
+  | some (.binary .imul ty' x c), some k2 =>
+    if ty' == ty then
+      match constAt tms ty c with
+      | some cv => if (pow2Log (cv * k2).toNat).isSome then none else some (x, cv * k2)
+      | none => none
+    else none
+  | _, _ => none
+
+/-- **Products of constants** (module doc above): `imul ty x (c1 * c2)`, the constant looked up. -/
+def mulMul (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  (mulMulPlan tms ty a b).bind fun (x, v) =>
+    (findTm tms (.node (.iconst ty v))).map fun kc => .node (.binary .imul ty x kc)
+
+/-- **Differences of sums** (module doc above): `isub ty (iadd ty p q) (iadd ty r s)` with a
+common term. -/
+def subAdds (tms : Array Tm) (ty : Ty) (a b : Nat) : Option Tm :=
+  match nodeAt tms a, nodeAt tms b with
+  | some (.binary .iadd ta p q), some (.binary .iadd tb r s) =>
+    if ta == ty && tb == ty then
+      if q == s then some (.node (.binary .isub ty p r))
+      else if p == r then some (.node (.binary .isub ty q s))
+      else if p == s then some (.node (.binary .isub ty q r))
+      else if q == r then some (.node (.binary .isub ty p s))
+      else none
+    else none
+  | _, _ => none
+
+/-- **Family 8** (module doc above). -/
+def fam8Step (tms : Array Tm) : Inst → Option Tm
+  | .icmp cc ty a b => (cmpSub tms cc ty a b).orElse fun _ => cmpOff tms cc ty a b
+  | .binary .isub ty a b => subAdds tms ty a b
+  | .binary .imul ty a b => mulMul tms ty a b
+  | _ => none
+
+/-- The constants family 8 looks up (`cmpOffPlan`'s and `mulMulPlan`'s). -/
+def fam8Aux (tms : Array Tm) : Inst → List Tm
+  | .icmp cc ty a b => (cmpOffPlan tms cc ty a b).toList.map fun (_, _, v) => .node (.iconst ty v)
+  | .binary .imul ty a b => (mulMulPlan tms ty a b).toList.map fun (_, v) => .node (.iconst ty v)
+  | _ => []
+
 /-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
-`checkCert`, `checkCertSyms`): the typed normaliser `Norm.stdT f`, then family 7's
+`checkCert`, `checkCertSyms`): family 8, then the typed normaliser `Norm.stdT f`, then family 7's
 operand-dropping rules; proved sound where the node's operands have values
 (`normSoundD_stdD`). -/
 def Norm.stdD (f : Function) : Norm :=
-  Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))
+  Norm.orElse (Norm.guard fam8Step) (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f))))
 
 /-- Intern a term (normalised, if a node), without auxiliary terms. -/
 def intern1 (t : Tm) : M Nat := do
@@ -1322,8 +1453,8 @@ def narrowNode (n : Norm) (tms : Array Tm) : Inst → Option Inst
   | _ => none
 
 /-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`,
-`affAux`, `fam5Aux`, `fam6Aux`; `narrowAux` interned the same way, `d` levels deep, then the
-constant `affStep` looks up for the narrowed node). -/
+`affAux`, `fam5Aux`, `fam6Aux`, `fam8Aux`; `narrowAux` interned the same way, `d` levels deep,
+then the constant `affStep` looks up for the narrowed node). -/
 def internD : Nat → Tm → M Nat
   | 0, t => do
     if let .node i := t then
@@ -1331,6 +1462,7 @@ def internD : Nat → Tm → M Nat
       if let .select ty c x y := i then internSelAux ty c x y
       for a in fam5Aux (← get).tms i do discard (intern1 a)
       for a in fam6Aux (← get).tms i do discard (intern1 a)
+      for a in fam8Aux (← get).tms i do discard (intern1 a)
     intern1 t
   | d + 1, t => do
     if let .node i := t then
@@ -1339,6 +1471,7 @@ def internD : Nat → Tm → M Nat
       for a in affAux (← get).tms i do discard (intern1 a)
       for a in fam5Aux (← get).tms i do discard (intern1 a)
       for a in fam6Aux (← get).tms i do discard (intern1 a)
+      for a in fam8Aux (← get).tms i do discard (intern1 a)
       for a in narrowAux (← get).tms i do discard (internD d a)
       let s ← get
       if let some j := narrowNode s.norm s.tms i then

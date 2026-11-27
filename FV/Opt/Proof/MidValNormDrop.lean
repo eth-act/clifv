@@ -4,8 +4,8 @@ import FV.Opt.Proof.RuleNode
 /-!
 # Family 7: operand-dropping rewrites, sound where the operands have values (#1119, agent MidendNext7)
 
-`Norm.stdD f = Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))`
-(`FV/Opt/MidVal.lean`), the validator's default normaliser. Each rule of `dropStep` drops an
+`dropStep`, the last step of `Norm.stdD f` (`FV/Opt/MidVal.lean`), the validator's default
+normaliser. Each rule of `dropStep` drops an
 operand of the node, so it is false as a `NormSoundT` rule: in a frame where the dropped operand
 has no value the node has none and the result has one. Its obligation is `NormSoundD f`
 (`FV/Opt/Proof/MidValTerm.lean`): the node's value in the frames where the atoms below it are
@@ -25,7 +25,8 @@ typed and its operands have values, which is where the simulation evaluates a no
   `ty` is the `i8` constant `intcc cc X X` gives (`intcc_self`: 1 for `eq`, `uge`, `ule`, `sge`,
   `sle`, 0 for the others), dropping the operand `x`.
 
-Main results: `ruleSoundD_dropStep`, **`normSoundD_stdD : NormSoundD f (Norm.stdD f)`**.
+Main results: `ruleSoundD_dropStep` (`normSoundD_stdD`, the default normaliser with family 8 in
+front: `FV/Opt/Proof/MidValNormFam8.lean`).
 -/
 
 namespace Opt.MidVal
@@ -308,9 +309,5 @@ theorem ruleSoundD_dropStep {f : Function} : RuleSoundD f (dropStep (atomTy f)) 
     simp only [dropStep] at h
     exact ruleSoundD_selfCmp tms x' h hord fr mem t ht hA hd
   | _ => simp [dropStep] at h
-
-/-- **The validator's default normaliser is sound where the operands have values.** -/
-theorem normSoundD_stdD {f : Function} : NormSoundD f (Norm.stdD f) :=
-  normSoundD_orElse normSoundT_stdT.toD (normSoundD_guard ruleSoundD_dropStep)
 
 end Opt.MidVal
