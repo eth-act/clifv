@@ -1,4 +1,6 @@
 import FV.Backend.Proof.DeadCleanupSem
+import FV.E2E.Guarded
+import FV.E2E.PairGuardS
 
 /-! Witnesses for #1181: the cleanup removes the literal-pool load (`ldr dN, <entry>`,
 `fpuLoad … (.const v)`) of an unused float constant, as Cranelift never lowers an instruction
@@ -10,7 +12,12 @@ its own copy (`v116 = fdiv.f64 v95, v115`); reduced: `v1 = f64const A` (unused),
 holds `B` only (the pool is built from the emitted lines, `Asm.poolUses`).
 
 Negative witnesses: an addressed float load (a memory access) is not a pure form, and a pool load
-whose result is used stays. -/
+whose result is used stays.
+
+The three statements this change replaces are false under the new `pureForm` (rule (a)); the dead
+pool load refutes each (last three examples): `specForm_loadForm` (now `specForm_loadForm_npool`),
+`loadForm_of_flagFree_or_jump` (now `loadForm_of_flagFree_or_jump_npool`) and the private
+`spec_guarded` of `FV/E2E/DeadCleanupGuarded.lean` (now `spec_guarded_npool`). -/
 
 namespace Backend.DeadCleanup
 open Backend.Proof
@@ -57,5 +64,25 @@ example : ∃ vc : VCode, (prune vc).blocks[0]!.insts.toList = [poolUsed, fdiv, 
   refine ⟨⟨"dead_pool_const", #[⟨0, #[poolDead, poolUsed, fdiv, retF], #[], #[]⟩],
     #[.float, .float, .float, .float], 0, 0, #[], #[], none⟩, ?_⟩
   decide +kernel
+
+/-- Old `specForm_loadForm` is false: the pool load is a specification form and a load form. -/
+example : ¬ ∀ i : MInst, specForm i = true → i.loadForm = false := fun h =>
+  absurd (h poolDead rfl) (by decide)
+
+/-- Old `loadForm_of_flagFree_or_jump` is false: the pool load is flag-free and a load form. -/
+example : ¬ ∀ j : MInst, (flagFree j || isJump j) = true → j.loadForm = false := fun h =>
+  absurd (h poolDead rfl) (by decide)
+
+/-- Old `spec_guarded` is false for every guard parameter: the pool load is a specification form,
+`GuardR` rejects every float load (`csemG` gives `none`), and `csem` gives the entry's value. -/
+example (F Rd : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (syms : String → Option Nat)
+    (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) (sp0 : BitVec 64)
+    (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (w : Arm.ArmState) :
+    specForm poolDead = true ∧
+      E2E.csemG F ctx X Rd syms exts sigs sp0 Pc poolDead [] w ≠ csem F ctx X poolDead [] w := by
+  refine ⟨rfl, ?_⟩
+  simp only [poolDead]
+  rw [csem_pool_mspec]
+  simp [E2E.csemG, E2E.GuardR, mspec]
 
 end Backend.DeadCleanup
