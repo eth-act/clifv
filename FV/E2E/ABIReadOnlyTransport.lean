@@ -58,7 +58,8 @@ theorem step_transport {sig : Clif.Signature} {args : List Clif.Val}
   rcases instruction_cases checked with pure | ⟨pairs,rfl,_,_,reads⟩ |
       ⟨op,key,off,fl,rfl,hop,read⟩ | ⟨pairs,rfl⟩
   · rw [pure_sem pure] at executed ⊢
-    have noMem : i.isMemAcc = false := by cases i <;> simp_all [pureForm,MInst.isMemAcc]
+    have noMem : i.isMemAcc = false := by
+      cases i <;> simp_all [pureForm,MInst.isMemAcc,Backend.ABIReadOnly.instruction,pureNoFlags]
     obtain ⟨next,run,_⟩ := mspec_lockstep noMem worlds executed
     have same : next = w' := (mspec_pure pure run).1
     rwa [same] at run

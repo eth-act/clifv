@@ -763,6 +763,17 @@ theorem csem_pool_some {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {sz :
     simp [mspec, ispec, amodeAddr] at h
   exact ⟨_, rfl, rfl, h.1, h.2.symm⟩
 
+/-- **`csem` of the literal-pool load is `mspec`'s** on every register and use list (#1181): no
+form of it is `csemWF`, so `csem` takes the specification fallback. -/
+theorem csem_pool_mspec (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (sz : ScalarSize)
+    (rd : Reg) (v : Nat) (fl : Clif.MemFlags) (us : List CV) (w : Arm.ArmState) :
+    csem F ctx X (.fpuLoad sz rd (.const v) fl) us w =
+      mspec ctx.slotBase (.fpuLoad sz rd (.const v) fl) us w := by
+  rw [csem_straight rfl]
+  have hwf : csemWF ctx (.fpuLoad sz rd (.const v) fl) us = false := by
+    rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> simp [csemWF, FormOk, memOk]
+  simp only [hwf, Bool.false_eq_true, false_and, ite_false]
+
 /-- The form of a literal-pool load. -/
 theorem isPoolLoad_form {i : MInst} (h : i.isPoolLoad = true) :
     ∃ sz d v fl, i = .fpuLoad sz (.vreg d .float) (.const v) fl ∧ (sz = .size32 ∨ sz = .size64) := by

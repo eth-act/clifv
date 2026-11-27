@@ -48,6 +48,14 @@ theorem spec_mspec_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
     {i : MInst} {us outs : List CV} {w w' : Arm.ArmState} {ctl : Ctl}
     (hp : specForm i = true) (h : mspec ctx.slotBase i us w = some (outs, w', ctl)) :
     ∃ wc, csem F ctx X i us w = some (outs, wc, ctl) ∧ SameWorld F wc w' := by
+  -- the float loads: only the literal-pool load (#1181) is a specification form, and `csem`
+  -- runs it by `mspec` (`csem_pool_mspec`)
+  by_cases hfl : ∃ sz rd am fl, i = .fpuLoad sz rd am fl
+  · obtain ⟨sz, rd, am, fl, rfl⟩ := hfl
+    cases am
+    case const v =>
+      exact ⟨w', (csem_pool_mspec F ctx X sz rd v fl us w).trans h, SameWorld.refl F w'⟩
+    all_goals simp [specForm, pureForm, cmpForm] at hp
   unfold mspec at h
   split at h <;> try { simp_all [specForm, cmpForm, pureForm, pureAlu] }
   · simp only [Option.some.injEq, Prod.mk.injEq] at h

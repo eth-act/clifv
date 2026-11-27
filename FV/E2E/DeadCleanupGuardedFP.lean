@@ -83,7 +83,13 @@ theorem memRefinesFP_valueSemGF {sb : Nat} (hsb : ctx.slotBase = sb) :
     MemRefinesFP Rd F sb (valueSemGF F ctx X Rd syms exts sigs sp0 Pc) := by
   obtain ⟨h1, h2⟩ := memRefinesFP_csemGF (F := F) (ctx := ctx) (X := X) (Rd := Rd)
     (syms := syms) (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc) hsb
-  exact ⟨h1, h2⟩
+  -- the addressed loads are `csemGF`'s; the literal-pool load (a pure form, #1181) has no address
+  refine ⟨fun sz d am fl us w a hsz ha hav hrd => ?_, h2⟩
+  obtain ⟨w', e, hw⟩ := h1 sz d am fl us w a hsz ha hav hrd
+  refine ⟨w', ?_, hw⟩
+  cases am
+  case const v => simp [amodeAddr] at ha
+  all_goals exact e
 
 theorem callsRefineP_valueSemGF {env : Clif.Env} {MR : MemRelT}
     (hX : XCallsOk env exts MR X) (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)

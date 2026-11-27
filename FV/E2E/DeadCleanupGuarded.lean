@@ -16,11 +16,24 @@ variable {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {Rd : BitVec 64 →
   {sp0 : BitVec 64}
   {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop}
 
-private theorem spec_guarded {i : MInst} (hp : specForm i = true) (us : List CV) (w : Arm.ArmState) :
+/-- A specification form other than the literal-pool load passes both guards. (The pool load is a
+pure form since #1181, and `GuardR` rejects every float load, so `csemG` gives `none` on it while
+`csem` gives the entry's value.) -/
+private theorem spec_guarded_npool {i : MInst} (hp : specForm i = true)
+    (hnp : ∀ sz rd v fl, i ≠ .fpuLoad sz rd (.const v) fl) (us : List CV) (w : Arm.ArmState) :
     csemG F ctx X Rd syms exts sigs sp0 Pc i us w = csem F ctx X i us w := by
+  have hnf : ∀ sz rd am fl, i ≠ .fpuLoad sz rd am fl := by
+    rintro sz rd am fl rfl
+    cases am
+    case const v => exact hnp sz rd v fl rfl
+    all_goals simp [specForm, pureForm, cmpForm] at hp
   apply csemG_of
-  · cases i <;> simp_all [GuardR, specForm, pureForm, cmpForm]
-  · cases i <;> simp_all [GuardC, specForm, pureForm, cmpForm]
+  · cases i
+    case fpuLoad sz rd am fl => exact absurd rfl (hnf sz rd am fl)
+    all_goals simp_all [GuardR, specForm, pureForm, cmpForm]
+  · cases i
+    case fpuLoad sz rd am fl => exact absurd rfl (hnf sz rd am fl)
+    all_goals simp_all [GuardC, specForm, pureForm, cmpForm]
 
 /-- The guarded value semantics lets the next compare overwrite a compare's flags. -/
 theorem valueSemG_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
@@ -103,12 +116,21 @@ theorem valueSemG_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) 
     · obtain ⟨hew, hec⟩ := mspec_pure hp hs
       obtain ⟨hew', hec'⟩ := mspec_pure hp hs'
       subst w₁; subst c; subst w₁'; subst c'
+      -- the literal-pool load (#1181): the entry's value from either world
+      by_cases hpl : ∃ sz rd v fl, i = .fpuLoad sz rd (.const v) fl
+      · obtain ⟨sz, rd, v, fl, rfl⟩ := hpl
+        refine ⟨?_, rfl, hw⟩
+        rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> rcases us with _ | ⟨a, us⟩ <;>
+          simp [mspec, ispec, ispecFP, amodeAddr] at hs hs'
+        simp_all
+      have hnp : ∀ sz rd v fl, i ≠ .fpuLoad sz rd (.const v) fl :=
+        fun sz rd v fl he => hpl ⟨sz, rd, v, fl, he⟩
       obtain ⟨wc, hc, _⟩ := pure_mspec_csem (F := F) (X := X) hp hs
       obtain ⟨wc', hc', _⟩ := pure_mspec_csem (F := F) (X := X) hp hs'
       have hg : csemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w =
-          some (o, wc, .next) := (spec_guarded hsf us w).trans hc
+          some (o, wc, .next) := (spec_guarded_npool hsf hnp us w).trans hc
       have hg' : csemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w' =
-          some (o', wc', .next) := (spec_guarded hsf us w').trans hc'
+          some (o', wc', .next) := (spec_guarded_npool hsf hnp us w').trans hc'
       exact ⟨(csemG_lockstep2 hFZ hw hX hT hg hg').1, rfl, hw⟩
     · -- a compare: the same flags from both worlds (it reads only its uses)
       obtain ⟨-, p, rfl, hall⟩ := mspec_cmp hcm hs

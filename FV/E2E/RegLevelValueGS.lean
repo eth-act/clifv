@@ -10,8 +10,9 @@ uses the cleanup path (`CompiledCleanup`), whose code runs the value semantics `
 (`DeadCleanupRealizes.lean`: pure producers and compares by their specification `mspec`, the
 other forms by `csemV`). Here the guarded value semantics, with the same guard:
 
-* `specForm_loadForm`, `specForm_of_isCallI`, `valueSemVGS`, `valueSemVIGS`, `RL.valueSemGS` (+ `_inv`, `_nspec`,
-  `RL.valueSemGS_agree`, `valueSemVGS_eqF`, `valueSemVIGS_eqF`);
+* `specForm_loadForm_npool`, `rdOk_pool`, `pGuard_pool`, `specForm_of_isCallI`, `valueSemVGS`,
+  `valueSemVIGS`, `RL.valueSemGS` (+ `_inv`, `_nspec`, `RL.valueSemGS_agree`, `valueSemVGS_eqF`,
+  `valueSemVIGS_eqF`);
 * `QW.world_change`, `aInv_step_anySem`, `MConf.shapeEq_rfl`;
 * **`realizes_value_allCWSF`**: `realizes_allCWSF` for `RL.valueSemGS` (as `realizes_value_allC`
   is `realizes_allC` for `RL.valueSem`). Each value step is matched by an `RL.semGS` step of the
@@ -26,9 +27,42 @@ namespace Backend.Proof
 
 open Backend E2E Backend.DeadCleanup Backend.Proof.Driver
 
-/-- A specification form (pure producer or compare) is not a load form. -/
-theorem specForm_loadForm {i : MInst} (h : specForm i = true) : i.loadForm = false := by
-  cases i <;> first | rfl | (simp [specForm, pureForm, cmpForm] at h)
+/-- A specification form (pure producer or compare) other than the literal-pool load is not a
+load form. (Since #1181 the literal-pool load `fpuLoad … (.const v)` is a pure form and a load
+form, so the statement without `hnp`, `specForm_loadForm`, no longer holds:
+`specForm (.fpuLoad .size64 (.vreg 0 .float) (.const 0) default) = true` and its `loadForm` is
+`true`.) -/
+theorem specForm_loadForm_npool {i : MInst} (h : specForm i = true)
+    (hnp : ∀ sz rd v fl, i ≠ .fpuLoad sz rd (.const v) fl) : i.loadForm = false := by
+  cases i
+  case fpuLoad sz rd am fl =>
+    cases am
+    case const v => exact absurd rfl (hnp sz rd v fl)
+    all_goals simp [specForm, pureForm, cmpForm] at h
+  all_goals first | rfl | (simp [specForm, pureForm, cmpForm] at h)
+
+/-- **The reads of a literal-pool load avoid every set** (`RdOk`'s first case) wherever its
+specification is defined (#1181): `csem` runs it by `mspec` (`csem_pool_mspec`), which reads no
+world. -/
+theorem rdOk_pool {Y : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {sz : ScalarSize} {rd : Reg}
+    {v : Nat} {fl : Clif.MemFlags} {us : List CV} {w0 : Arm.ArmState}
+    {r0 : List CV × Arm.ArmState × Ctl}
+    (h : mspec ctx.slotBase (.fpuLoad sz rd (.const v) fl) us w0 = some r0) (w : Arm.ArmState) :
+    ∃ r, csem Y ctx X (.fpuLoad sz rd (.const v) fl) us w = some r := by
+  rw [csem_pool_mspec]
+  rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> rcases us with _ | ⟨a, us⟩ <;>
+    simp [mspec, ispec, ispecFP, amodeAddr] at h ⊢
+  all_goals (by_cases hsz : sz = .size32 ∨ sz = .size64 <;> simp_all)
+
+/-- **A literal-pool load is pair-guarded** (`PGuard`, `Y` = every address) at every pair of
+worlds wherever its specification is defined (#1181). -/
+theorem pGuard_pool {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {sz : ScalarSize}
+    {rd : Reg} {v : Nat} {fl : Clif.MemFlags} {us : List CV} {w0 : Arm.ArmState}
+    {r0 : List CV × Arm.ArmState × Ctl}
+    (h : mspec ctx.slotBase (.fpuLoad sz rd (.const v) fl) us w0 = some r0) (p : W2) :
+    PGuard F ctx X (.fpuLoad sz rd (.const v) fl) us p :=
+  ⟨fun _ => True, fun _ _ => trivial, fun _ _ => trivial, .inl (rdOk_pool h p.1),
+    .inl (rdOk_pool h p.2)⟩
 
 /-- A call is no specification form. -/
 theorem specForm_of_isCallI {i : MInst} (h : i.isCallI = true) : specForm i = false := by
@@ -96,7 +130,10 @@ theorem valueSemVGS_eqF (gv : Nat → String → Prop) (F : BitVec 64 → Prop) 
     | some r =>
       refine absurd ⟨F, fun _ h => h, rfl, fun _ => ?_⟩ hg
       by_cases hp : specForm i = true
-      · exact .inr (specForm_loadForm hp)
+      · by_cases hpl : ∃ sz rd v fl, i = .fpuLoad sz rd (.const v) fl
+        · obtain ⟨sz, rd, v, fl, rfl⟩ := hpl
+          exact .inl (rdOk_pool (by simpa [valueSemV, hp] using h) w)
+        · exact .inr (specForm_loadForm_npool hp fun sz rd v fl he => hpl ⟨sz, rd, v, fl, he⟩)
       · left
         refine ⟨r, csemV_sub (gv := gv) ?_⟩
         simpa [valueSemV, hp] using h
