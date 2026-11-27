@@ -21,7 +21,7 @@ variable {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {Rd : BitVec 64 →
   {P : BitVec 64 → Clif.Signature → Prop}
 
 /-- A GOT load of `csemG` gives the symbol's link-time address. -/
-theorem csemG_got : ∀ (rd : Reg) (n : String) (w : Arm.ArmState) (r : List CV × Arm.ArmState × Ctl),
+theorem csemG_gotR : ∀ (rd : Reg) (n : String) (w : Arm.ArmState) (r : List CV × Arm.ArmState × Ctl),
     csemG F ctx X Rd syms exts sigs sp0 Pc (.loadExtNameGot rd n) [] w = some r →
       r.1 = [ofX (X.sym n 0)] := by
   intro rd n w r h
@@ -34,7 +34,7 @@ theorem callsRefinePR_csemG {env : Clif.Env} {MR : MemRelT}
     (hX : XCallsOk env exts MR X) (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)
     (hMRc : ∀ sl cm w, MR sl cm w → spv w = sp0) (hP : RegCompatGot P exts (fun n => X.sym n 0)) :
     CallsRefinePR Pc F env exts MR (regG P (csemG F ctx X Rd syms exts sigs sp0 Pc)) :=
-  (callsRefineP_csemG hX hMRm hMRc).regG csemG_got hP
+  (callsRefineP_csemG hX hMRm hMRc).regG csemG_gotR hP
 
 /-- **The pinned indirect-call contract with registers for the register-guarded `csemG`.** -/
 theorem indCallsRefinePR_csemG {env : Clif.Env} {MR : MemRelT}

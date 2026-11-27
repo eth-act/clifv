@@ -14,7 +14,7 @@ open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false
 
 /-- A GOT load of `valueSem` gives the symbol's link-time address. -/
-theorem valueSem_got {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} :
+theorem valueSem_gotR {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} :
     ∀ (rd : Reg) (n : String) (w : Arm.ArmState) (r : List CV × Arm.ArmState × Ctl),
       valueSem F ctx X (.loadExtNameGot rd n) [] w = some r → r.1 = [ofX (X.sym n 0)] := by
   intro rd n w r h
@@ -28,7 +28,7 @@ theorem callsRefinePR_valueSem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSe
     {P : BitVec 64 → Clif.Signature → Prop}
     (hX : XCallsOk env exts MR X) (hP : RegCompatGot P exts (fun n => X.sym n 0)) :
     CallsRefinePR (fun _ _ _ _ => True) F env exts MR (regG P (valueSem F ctx X)) :=
-  ((callsRefine_valueSem hX).toP _).regG valueSem_got hP
+  ((callsRefine_valueSem hX).toP _).regG valueSem_gotR hP
 
 /-- **The indirect-call contract with registers for the register-guarded `valueSem`.** -/
 theorem indCallsRefinePR_valueSem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}

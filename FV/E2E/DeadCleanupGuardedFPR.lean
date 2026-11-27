@@ -22,21 +22,21 @@ variable {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {Rd : BitVec 64 →
   {P : BitVec 64 → Clif.Signature → Prop}
 
 /-- A GOT load of `valueSemGF` gives the symbol's link-time address. -/
-theorem valueSemGF_got : ∀ (rd : Reg) (n : String) (w : Arm.ArmState)
+theorem valueSemGF_gotR : ∀ (rd : Reg) (n : String) (w : Arm.ArmState)
     (r : List CV × Arm.ArmState × Ctl),
     valueSemGF F ctx X Rd syms exts sigs sp0 Pc (.loadExtNameGot rd n) [] w = some r →
       r.1 = [ofX (X.sym n 0)] := by
   intro rd n w r h
   simp only [valueSemGF, specForm, pureForm, cmpForm, Bool.or_false, Bool.false_eq_true,
     ↓reduceIte] at h
-  exact csemGF_got rd n w r h
+  exact csemGF_gotR rd n w r h
 
 /-- **The pinned callee contract with registers for the register-guarded `valueSemGF`.** -/
 theorem callsRefinePR_valueSemGF {env : Clif.Env} {MR : MemRelT}
     (hX : XCallsOk env exts MR X) (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)
     (hMRc : ∀ sl cm w, MR sl cm w → spv w = sp0) (hP : RegCompatGot P exts (fun n => X.sym n 0)) :
     CallsRefinePR Pc F env exts MR (regG P (valueSemGF F ctx X Rd syms exts sigs sp0 Pc)) :=
-  (callsRefineP_valueSemGF hX hMRm hMRc).regG valueSemGF_got hP
+  (callsRefineP_valueSemGF hX hMRm hMRc).regG valueSemGF_gotR hP
 
 /-- **The pinned indirect-call contract with registers for the register-guarded
 `valueSemGF`.** -/
