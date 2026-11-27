@@ -38,7 +38,15 @@ theorem pairSemD_of_valueSemG {F D : BitVec 64 → Prop} {cm : Clif.Mem} {ctx : 
       some (o, w₁', c)) :
     pairSemD (valueSem F ctx X) F ctx X i us (w, w') = some (o, (w₁, w₁'), c) := by
   by_cases hp : specForm i = true
-  · rw [pairSemD_of (pGuard_noLoad (specForm_loadForm hp) _ _)]
+  · -- a specification form reads no world memory; the literal-pool load (#1181) is a load form
+    -- whose reads avoid every set (`pGuard_pool`)
+    have hg : PGuard F ctx X i us (w, w') := by
+      by_cases hpl : ∃ sz rd v fl, i = .fpuLoad sz rd (.const v) fl
+      · obtain ⟨sz, rd, v, fl, rfl⟩ := hpl
+        exact pGuard_pool (by simpa [valueSemG, hp] using h) _
+      · exact pGuard_noLoad
+          (specForm_loadForm_npool hp fun sz rd v fl he => hpl ⟨sz, rd, v, fl, he⟩) _ _
+    rw [pairSemD_of hg]
     exact pairSem_eq (valueSemG_sub h) (valueSemG_sub h')
   · have hc : csemG F ctx X (fun b => ¬ Zof F D cm b) syms exts sigs sp0 Pc i us w =
         some (o, w₁, c) := by

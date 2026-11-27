@@ -472,11 +472,13 @@ theorem cmpOverwrite_countedW {W : Type} {sem : Nat → ISem CV W} (h : ∀ n, C
     refine ⟨Prod.ext e1 ?_, j, e2⟩
     rw [h2]; rfl
 
-/-- A flag-free form or a `jump` is no load form. -/
-theorem loadForm_of_flagFree_or_jump {j : MInst} (hj : (flagFree j || isJump j) = true) :
-    j.loadForm = false := by
+/-- A flag-free form other than the literal-pool load, or a `jump`, is no load form. (Since #1181
+the literal-pool load is flag-free and a load form, so the statement without `hnp`,
+`loadForm_of_flagFree_or_jump`, no longer holds.) -/
+theorem loadForm_of_flagFree_or_jump_npool {j : MInst} (hj : (flagFree j || isJump j) = true)
+    (hnp : ∀ sz rd v fl, j ≠ .fpuLoad sz rd (.const v) fl) : j.loadForm = false := by
   rcases Bool.or_eq_true_iff.mp hj with h | h
-  · exact specForm_loadForm (specForm_of_pure (pureForm_of_flagFree h))
+  · exact specForm_loadForm_npool (specForm_of_pure (pureForm_of_flagFree h)) hnp
   · cases j <;> first | rfl | (simp [isJump] at h)
 
 /-- **The guarded paired value semantics lets a compare's flags be overwritten**: a compare, the
@@ -491,13 +493,23 @@ theorem cmpOverwrite_pairSemD_value (F : BitVec 64 → Prop) (ctx : FnCtx) (X : 
     obtain ⟨hc1, hK1, hJ1⟩ := hc.1 _ _ _ _ _ _ hi h1
     obtain ⟨-, hK2, hJ2⟩ := hc.1 _ _ _ _ _ _ hi h2
     refine ⟨hc1, fun K us' r hK hs' => ?_, fun j us' outs' ctl' hj hs' => ?_⟩
-    · have hKl : K.loadForm = false := specForm_loadForm (by simp [specForm, hK])
+    · have hKl : K.loadForm = false :=
+        specForm_loadForm_npool (by simp [specForm, hK])
+          (by rintro sz rd v fl rfl; simp [cmpForm] at hK)
       rw [pairSemD_of (pGuard_noLoad hKl _ _)] at hs' ⊢
       obtain ⟨o, q, c⟩ := r
       obtain ⟨g1, g2⟩ := pairSem_inv hs'
       exact pairSem_eq (hK1 K us' _ hK g1) (hK2 K us' _ hK g2)
-    · have hjl := loadForm_of_flagFree_or_jump hj
-      rw [pairSemD_of (pGuard_noLoad hjl _ _)] at hs' ⊢
+    · -- the literal-pool load (#1181) is flag-free and a load form whose reads avoid every set
+      have hjg : ∀ p, PGuard F ctx X j us' p := by
+        by_cases hpl : ∃ sz rd v fl, j = .fpuLoad sz rd (.const v) fl
+        · obtain ⟨sz, rd, v, fl, rfl⟩ := hpl
+          obtain ⟨-, hsP⟩ := pairSemD_sub hs'
+          obtain ⟨g1, -⟩ := pairSem_inv hsP
+          exact pGuard_pool (by simpa [valueSem, specForm, pureForm] using g1)
+        · exact fun p => pGuard_noLoad (loadForm_of_flagFree_or_jump_npool hj
+            fun sz rd v fl he => hpl ⟨sz, rd, v, fl, he⟩) us' p
+      rw [pairSemD_of (hjg _)] at hs' ⊢
       obtain ⟨g1, g2⟩ := pairSem_inv hs'
       exact pairSem_eq (hJ1 j us' outs' ctl' hj g1) (hJ2 j us' outs' ctl' hj g2)
   · obtain ⟨-, hs⟩ := pairSemD_sub hs
