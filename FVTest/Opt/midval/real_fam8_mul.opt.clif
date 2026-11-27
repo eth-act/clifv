@@ -1,0 +1,224 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC9criterion12H7Zzm8JhpBTg
+function u0:2789(i64, i64, i64) -> i64 system_v {
+; symbol _RNxC9criterion12H7Zzm8JhpBTg
+; instance Instance { def: Item(DefId(2:14564 ~ core[7b1c]::slice::sort::shared::pivot::choose_pivot)), args: [i32, FnDef(DefId(2:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [i32, i32], bound_vars: [] })] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &[i32], layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: pointer is 1..=18446744073709551615, b: u64 is .., b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes), Size(8 bytes)], in_memory_order: [0, 1] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 16 } }, mode: Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: Some(Align(4 bytes)) }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: &mut for<'a, 'b> fn(&'a i32, &'b i32) -> bool {<i32 as std::cmp::PartialOrd>::lt}, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: usize, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 8589934599 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    usize                             8b 8                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) usize
+; arg   _1      = v0,v1    Pair(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: Some(Align(4 bytes)) }, ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} [i32]
+; arg   _2      = v2       Direct(ArgAttributes { regular: NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) &'{erased} mut FnDef(DefId(2:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [i32, i32], bound_vars: [] })
+
+; kind  local ty                              size align (abi)
+; stack _1    &'{erased} [i32]                 16b 8                storage=ss0
+; ssa   _2    &'{erased} mut FnDef(DefId(2:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [i32, i32], bound_vars: [] })    8b 8                var=2
+; ssa   _3    usize                             8b 8                var=3
+; ssa   _4    bool                              1b 1                var=4
+; zst   _5    !                                 0b 1                align=1,offset=
+; stack _6    *const i32                        8b 8                storage=ss1
+; ssa   _7    usize                             8b 8                var=5
+; stack _8    *const i32                        8b 8                storage=ss2
+; ssa   _9    usize                             8b 8                var=6
+; stack _10   *const i32                        8b 8                storage=ss3
+; ssa   _11   usize                             8b 8                var=7
+; ssa   _12   bool                              1b 1                var=8
+; ssa   _13   *const i32                        8b 8                var=9
+; ssa   _14   &'{erased} i32                    8b 8                var=10
+; ssa   _15   &'{erased} i32                    8b 8                var=11
+; ssa   _16   &'{erased} i32                    8b 8                var=12
+; ssa   _17   *const i32                        8b 8                var=13
+; ssa   _18   bool                              1b 1                var=14
+; ssa   _19   usize                             8b 8                var=15
+; ssa   _20   *const [i32]                     16b 8                var=(16, 17)
+; zst   _21   ()                                0b 1                align=1,offset=
+; ssa   _22   *const ()                         8b 8                var=18
+; ssa   _23   *const ()                         8b 8                var=19
+; ssa   _24   bool                              1b 1                var=20
+; ssa   _25   bool                              1b 1                var=21
+; zst   _26   !                                 0b 1                align=1,offset=
+; zst   _27   ()                                0b 1                align=1,offset=
+; ssa   _28   *const ()                         8b 8                var=22
+; ssa   _29   *const ()                         8b 8                var=23
+; ssa   _30   bool                              1b 1                var=24
+; ssa   _31   bool                              1b 1                var=25
+; zst   _32   !                                 0b 1                align=1,offset=
+; zst   _33   ()                                0b 1                align=1,offset=
+
+    ss0 = explicit_slot 16, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 8, align = 8
+    ss3 = explicit_slot 8, align = 8
+    gv0 = symbol colocated userextname2 ; alloc1148
+    gv1 = symbol colocated userextname3 ; alloc6520
+    gv2 = symbol colocated userextname2 ; alloc1148
+    gv3 = symbol colocated userextname5 ; alloc6521
+    sig0 = (i64, i64, i64, i64) -> i64 system_v
+    sig1 = (i64, i64, i64, i64, i64) -> i64 system_v
+    sig2 = (i64, i64, i64) system_v
+    sig3 = (i64, i64, i64) system_v
+    fn0 = colocated u0:3576 sig0 ; Instance { def: Item(DefId(2:14570 ~ core[7b1c]::slice::sort::shared::pivot::median3)), args: [i32, FnDef(DefId(2:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [i32, i32], bound_vars: [] })] }
+    fn1 = colocated u0:1071 sig1 ; Instance { def: Item(DefId(2:14567 ~ core[7b1c]::slice::sort::shared::pivot::median3_rec)), args: [i32, FnDef(DefId(2:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [i32, i32], bound_vars: [] })] }
+    fn2 = u0:7411 sig2 ; Instance { def: Item(DefId(2:12378 ~ core[7b1c]::panicking::panic)), args: [] }
+    fn3 = u0:7411 sig3 ; Instance { def: Item(DefId(2:12378 ~ core[7b1c]::panicking::panic)), args: [] }
+
+block0(v0: i64, v1: i64, v2: i64):
+    nop 
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): &'{erased} [i32] <- ByValPair(v0, v1): &'{erased} [i32]
+    v3 = stack_addr.i64 ss0
+    store notrap v0, v3
+    v4 = stack_addr.i64 ss0+8
+    store notrap v1, v4
+; write_cvalue: Var(_2, var2): &'{erased} mut FnDef(DefId(2:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [i32, i32], bound_vars: [] }) <- ByVal(v2): &'{erased} mut FnDef(DefId(2:30388 ~ core[7b1c]::cmp::PartialOrd::lt), Binder { value: [i32, i32], bound_vars: [] })
+    jump block1
+
+block1:
+    v6 = load.i64 notrap v3
+    v9 = iconst.i64 8
+    v10 = icmp.i64 ult v1, v9  ; v9 = 8
+; write_cvalue: Var(_4, var4): bool <- ByVal(v10): bool
+; 
+; switchInt(move _4)
+    brif v10, block2, block3
+
+block2 cold:
+    trap user2
+
+block3:
+    v15 = stack_addr.i64 ss1
+    store.i64 notrap v6, v15
+; _7 = Div(copy _3, const 8_usize)
+    v97 = iconst.i64 3
+    v98 = ushr.i64 v1, v97  ; v97 = 3
+    v18 -> v98
+    v19 = iconst.i64 4
+    v110 = ishl v98, v19  ; v19 = 4
+    v25 = iadd.i64 v6, v110
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): *const i32 <- ByVal(v25): *const i32
+    v26 = stack_addr.i64 ss2
+    store notrap v25, v26
+; _11 = Mul(copy _7, const 7_usize)
+    v32 = load.i64 notrap v15
+    v117 = iconst.i64 28
+    v123 = imul v98, v117  ; v117 = 28
+    v33 = iadd v32, v123
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): *const i32 <- ByVal(v33): *const i32
+    v34 = stack_addr.i64 ss3
+    store notrap v33, v34
+; _12 = Lt(copy _3, const 64_usize)
+    v35 = iconst.i64 64
+    v36 = icmp.i64 ult v1, v35  ; v35 = 64
+; write_cvalue: Var(_12, var8): bool <- ByVal(v36): bool
+; 
+; switchInt(move _12)
+    brif v36, block4, block6
+
+block4:
+    v38 = load.i64 notrap v15
+; write_cvalue: Var(_14, var10): &'{erased} i32 <- ByVal(v38): &'{erased} i32
+; _15 = &(*_8)
+    v40 = load.i64 notrap v26
+; write_cvalue: Var(_15, var11): &'{erased} i32 <- ByVal(v40): &'{erased} i32
+; _16 = &(*_10)
+    v44 = call fn0(v38, v40, v33, v2)
+; write_cvalue: Var(_13, var9): *const i32 <- ByVal(v44): *const i32
+    jump block5
+
+block5:
+    jump block12
+
+block6:
+    v49 = load.i64 notrap v15
+    v51 = load.i64 notrap v26
+    v54 = call fn1(v49, v51, v33, v98, v2)
+; write_cvalue: Var(_17, var13): *const i32 <- ByVal(v54): *const i32
+    jump block7
+
+block7:
+    jump block19
+
+block8(v56: i64):
+    jump block24
+
+block9:
+    v69 = isub.i64 v44, v68
+    v144 = iconst.i64 2
+    v143 = ushr v69, v144  ; v144 = 2
+    v71 -> v143
+    jump block8(v143)
+
+block12:
+    jump block13
+
+block13:
+    jump block14
+
+block14:
+    v68 = load.i64 notrap v15
+    jump block9
+
+block16:
+    v84 = isub.i64 v54, v83
+    v99 = iconst.i64 2
+    v142 = ushr v84, v99  ; v99 = 2
+    v86 -> v142
+    jump block8(v142)
+
+block19:
+    jump block20
+
+block20:
+    jump block21
+
+block21:
+    v83 = load.i64 notrap v15
+    jump block16
+
+block24:
+    return v56
+}
+
+; clifv-extnames 1
+; userextname0 = u0:3576
+; userextname1 = u0:1071
+; userextname2 = u1:2068
+; userextname3 = u1:2069
+; userextname4 = u0:7411
+; userextname5 = u1:2070
+; decl u0:1071 func local "_RNxC9criterion12H2LiMCq9PJBw"
+; decl u0:2789 func local "_RNxC9criterion12H7Zzm8JhpBTg"
+; decl u0:3576 func local "_RNxC9criterion12Ha5t4mpfDxfZ"
+; decl u0:7411 func import "_RNvNtCsazjiGSRkgVH_4core9panicking5panic"
+; decl u1:2068 data local ro notls ".Ldata814"
+; decl u1:2069 data local ro notls ".Ldata815"
+; decl u1:2070 data local ro notls ".Ldata816"
+; end clifv-extnames

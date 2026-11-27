@@ -201,6 +201,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 6: shifts and bitwise constants (`Norm.base`: `fam6Mul` first, `fam6Step` after family 5; `narrowId` in `narrowStep`) | `fam6Mul`, `shAmt` (typed), `reStep`, `narrowId` | `ruleSound_fam6Mul`, `ruleSoundT_shAmt`, `ruleSound_reStep`, `ruleSoundT_fam6Step`, `narrowId_val`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 119,273 (97.9 %) | not measured on the pairs | 9 crates: 78.4 % → 78.7 % (95,499 → 95,871 of 121,767) |
 | 7: operand-dropping rewrites (`Norm.stdD f`: `dropStep` after `Norm.stdT f`) | `subAdd`, `addSub`, `absTyped` (typed) | `ruleSoundD_subAdd`, `ruleSoundD_addSub`, `ruleSoundD_absTyped`, `ruleSoundD_dropStep`, `normSoundD_stdD`, `check_sound_normD` | 119,833 (98.3 %) | not measured on the pairs | 9 crates: 78.7 % → 78.9 % (95,871 → 96,120 of 121,767) |
 | A: branch folds through store-to-load forwarding (`checkCertC`, prep requests; `fwdOk`), and `icmp x x` (family 7) | `selfCmp` in `dropStep` (typed); `fwdPre f` before `foldPre`/`foldPreK` | `fwdOk_simMU` (from `check_sound`), `fwdFoldPre_simMU`, `fwdFoldPreK_simMU`, `ruleSoundD_selfCmp`, `check_soundC` | 120,258 (98.7 %) | not measured on the pairs | 9 crates: 78.9 % → 79.2 % (96,120 → 96,402 of 121,767) |
+| 8: comparisons with an offset, saturating differences, products of constants, differences of sums (`Norm.stdD f`: `fam8Step` first) | `cmpOff`, `cmpSub`, `mulMul`, `subAdds`; `condChain` takes `icmp ne x, -k` against a branch on `x + k` | `ruleSoundD_cmpOff`, `ruleSoundD_cmpSub`, `ruleSoundD_mulMul`, `ruleSoundD_subAdds`, `ruleSoundD_fam8Step`, `normSoundD_stdD` | 120,867 (99.2 %) | not measured on the pairs | 9 crates: 79.2 % → 79.4 % (96,432 → 96,742 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -1042,3 +1043,63 @@ counterfactual.)
     to stock 96,120 → 96,402 (78.9 → 79.2 %, the same in both modes); `cargo fv test` wall summed
     4,109 → 3,921 s (plain; both runs overlapped a full gate) and 4,419 → 4,252 s
     (`--lean-link --verified`).
+* **Family 8: comparisons with an offset, saturating differences, products of constants,
+  differences of sums** (agent MidendNext8; recount and choice #1119 issuecomment-7214657352). On
+  main f2635bda8, 1,621 pairs were rejected. By first blocking reason, after the branch-condition
+  mode (an explain build of main's checker with MidendNext3's `§D`/`§T` divergence terms, the
+  same verdicts on every pair; `fam8.py`): `icmp eq/ne (x + k1), k2` 176, constant against
+  value 152 (80 of them a `return 1` against a kept load), saturating differences `(x - y) >u x`
+  151, the operand tail with no shape above 10 pairs 143, masks and bit tricks 137, narrowing of
+  extended operations 119, overflow tests `(x + k) >u x` 113, products of constants 95,
+  `(x + z) - (y + z)` 74, multiply-high 72, folds left after `fwdPre` 58, `symbol_value + 0` 58,
+  and smaller ones. This family takes the five one-node shapes, after Cranelift 0.136's
+  `opts/cprop.isle`, `opts/icmp.isle` and `opts/arithmetic.isle`:
+  - Compiler side (`FV/Opt/MidVal.lean`): `fam8Step`, the first step of `Norm.stdD f =
+    Norm.orElse (Norm.guard fam8Step) (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy
+    f))))`. First, because a node is normalised once: `icmpUnit` would leave `icmp ne (x + k), 0`
+    for `icmp ugt (x + k), 0`, and `mulPow2` a shift for `imul (imul x c1) 2^s`. `cmpOff`:
+    `icmp cc ty (iadd ty x k) c` with constants `k`, `c` is `icmp cc' ty x (c' - k)` for
+    `offCmp cc c = (cc', c')` (`eq`/`ne` with `c`; `ugt 0`, `ule 0`, `ult 1`, `uge 1` as `ne`/`eq`
+    with `0`), and `icmp ugt/ule ty (iadd ty x k) x` with `k ≠ 0` is `icmp ult/uge ty x (-k)`
+    (`icmp eq/ne ty x 0` when `-k = 1`; `selfOff`). `cmpSub`: `icmp ugt/ule ty (isub ty x y) x` is
+    `icmp ugt/ule ty y x` (`icmp ult/uge ty x y` when `y` is a constant and `x` is not), and `icmp
+    uge/ult ty x (isub ty x y)` is `icmp uge/ult ty x y`. `mulMul`: `imul ty (imul ty x c1) c2` is
+    `imul ty x (c1 * c2)` unless `c1 * c2` is a power of two. `subAdds`: `isub ty (iadd ty p q)
+    (iadd ty r s)` with a term common to both sums is the difference of the other two. The
+    constants are interned first (`fam8Aux` in `internD`). `condChain` (family 3) takes `f`'s
+    condition `icmp ne ty x c` against `g`'s branch on `iadd ty x k` with `c = -k` as the wrapper
+    `icmp ne _, 0`, which `cmpOff` normalises to `f`'s condition in `condPrep`'s copy (without it,
+    5 pairs main accepts were lost).
+  - Proof (`FV/Opt/Proof/MidValNormFam8.lean`): one `RuleSoundD` lemma per rule, from the
+    operands' values (`tmVal_bin_ops`) and `BitVec` identities: `add_beq_sub` (`x + k == c` iff
+    `x == c - k`), `ugt_zero`/`ule_zero`/`ult_one`/`uge_one` for `offCmp_spec`, `ult_add_self`
+    (`x <u x + k` iff `x <u -k` for `k ≠ 0`, through `toNat` and one case split) for
+    `selfOff_spec`, `ult_sub_self` (`x <u x - y` iff `x <u y`), `BitVec.mul_assoc`, and
+    `sub_add_add_*` (`subAdds` drops the common term, so it needs the operands' values: a
+    `NormSoundD` rule like family 7's). `ruleSoundD_fam8Step`; `normSoundD_stdD` moved here from
+    `MidValNormDrop.lean` with its statement unchanged and the new composition as its proof.
+    No theorem statement changes.
+  - Witnesses (`FVTest/Opt/MidValFam8Witness.lean`): `(x + 1) == 5` against `x == 4`, `(x - 3) >u
+    x` against `x <u 3`, `(x - y) >u x` against `y >u x`, `(x * 7) * 8` against `x * 56`,
+    `(x + 1) - (y + 1)` against `x - y`, each accepted and rejected with main's normaliser
+    (`*_prev_rejects`), and a branch on `(x - 1) != 0` against a branch on `x - 1` (accepted
+    before and after); negative: `x == 5`, `x <u 2`, `x >u y`, `x * 48`, `y - x`, the swapped
+    branch, each rejected; four real pairs of the corpus (crypto-bigint's test build: core's
+    range `Step::backward_overflowing`, itertools, proptest, criterion), each rejected by main's
+    `checkC` with main's normaliser (`checkCPrev`), `checkCertC` decided, and the simulation.
+    Audit: `scripts/audit/midval.lean` (1,450 theorems, standard axioms, `native_decide` only in
+    the marked witnesses).
+  - Measured (2026-11-27, the shared corpus, main f2635bda8's `midval-check --cert --cond --hoist`
+    against this one's): 120,258 → 120,867 (+609, 98.7 % → 99.2 %), 0 lost, every accepted pair
+    re-checks `ok`; by main's first blocking family: `icmp eq/ne (x + k1), k2` 152, saturating
+    differences 144, overflow tests 109, products of constants 95, `(x + z) - (y + z)` 74, and 35
+    whose first blocker was another shape (16 folds, 10 constant or value against value, 9
+    others).
+    `cargo fv test --release` on the 9 crates (2026-11-27, clifv-remote, main f2635bda8's code
+    against this one's 96c4ea485), in plain mode and with `--lean-link --verified`: binary check
+    48/48 → 48/48 both ways, verified 121,767 → 121,767, left out of the region 0 → 0 (plain) and
+    1 → 1 (`--lean-link --verified`), tests the same as stock's on all 9 both ways, validated
+    118,236 → 118,826 (97.1 → 97.6 %; per function 117,095 → 117,673, at link level 1,141 →
+    1,153; up on 8 crates, blake2 unchanged), byte-identical to stock 96,432 → 96,742 (79.2 →
+    79.4 %, the same in both modes); `cargo fv test` wall summed 2,201 → 2,187 s (plain) and
+    2,531 → 2,563 s (`--lean-link --verified`).

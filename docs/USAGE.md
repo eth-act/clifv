@@ -846,6 +846,18 @@ as stock's on all 9 both ways; validated 117,866 → 118,236 (96.8 % → 97.1 %;
 79.2 %); `cargo fv test` wall summed 4,109 → 3,921 s (plain, both overlapping a full gate) and
 4,419 → 4,252 s.
 
+Family 8, comparisons with an offset, saturating differences, products of constants and
+differences of sums (docs/contracts/midval.md): Cranelift's `(x + k1) == k2` as `x == k2 - k1`,
+`(x - y) >u x` as `y >u x`, `(x + k) >u x` as `x <u -k`, `(x * c1) * c2` as `x * (c1 * c2)` and
+`(x + z) - (y + z)` as `x - y` are now read the same way by the validator's normaliser. Pairs of
+the shared corpus accepted: 120,258 → 120,867 of 121,879 (measured 2026-11-27 on clifv-remote, 0
+lost). The same 9 crates and commands (main f2635bda8's code against this one's, plain mode and
+`--lean-link --verified`): binary check 48 of 48 both ways, 121,767 verified both ways, left out
+0 → 0 (plain) and 1 → 1, test outcomes the same as stock's on all 9 both ways; validated 118,236
+→ 118,826 (97.1 % → 97.6 %; 1,141 → 1,153 of them `validated-link`; up on 8 crates); byte-identical
+to stock 96,432 → 96,742 of 121,767 (79.2 % → 79.4 %); `cargo fv test` wall summed 2,201 → 2,187 s
+(plain) and 2,531 → 2,563 s.
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of
