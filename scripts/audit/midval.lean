@@ -32,6 +32,8 @@ import FV.Opt.Proof.MidValNormFam6
 import FVTest.Opt.MidValFam6Witness
 import FV.Opt.Proof.MidValNormDrop
 import FVTest.Opt.MidValDropWitness
+import FV.Opt.Proof.MidValFwd
+import FVTest.Opt.MidValFwdWitness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -815,8 +817,14 @@ import FVTest.Opt.MidValDropWitness
 #print axioms Opt.MidVal.rAbsorb_nonShift
 #print axioms Opt.MidVal.absPick_spec
 #print axioms Opt.MidVal.ruleSoundD_absTyped
+#print axioms Opt.MidVal.intcc_self
+#print axioms Opt.MidVal.ruleSoundD_selfCmp
 #print axioms Opt.MidVal.ruleSoundD_dropStep
 #print axioms Opt.MidVal.normSoundD_stdD
+-- #1119 family A, store-to-load forwarding before the folds (FV/Opt/Proof/MidValFwd.lean)
+#print axioms Opt.MidVal.fwdOk_simMU
+#print axioms Opt.MidVal.fwdFoldPre_simMU
+#print axioms Opt.MidVal.fwdFoldPreK_simMU
 #print axioms Opt.MidVal.normSoundT_guard
 #print axioms Opt.MidVal.normSoundT_orElse
 #print axioms Opt.MidVal.tyAt_val
@@ -1476,3 +1484,26 @@ import FVTest.Opt.MidValDropWitness
 #print axioms Opt.MidVal.DropWitness.real_addsub_prev_rejects -- witness: native_decide
 #print axioms Opt.MidVal.DropWitness.real_addsub_checked -- witness: native_decide
 #print axioms Opt.MidVal.DropWitness.real_addsub_sim -- witness: native_decide
+-- witnesses of family A, forwarding before the folds, and selfCmp (FVTest/Opt/MidValFwdWitness.lean)
+#print axioms Opt.MidVal.FwdWitness.pos_fwd -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.pos_fwd_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.neg_fwd -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.pos_self -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.pos_self_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.neg_self -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.fwdSims_of
+#print axioms Opt.MidVal.FwdWitness.real_const_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_const_checked -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_const_sim -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_const_fwdOk -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_const_fwd -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_chain_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_chain_checked -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_chain_sim -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_chain_fwdOk -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_chain_fwd -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_self_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_self_checked -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_self_sim -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_self_fwdOk -- witness: native_decide
+#print axioms Opt.MidVal.FwdWitness.real_self_fwd -- witness: native_decide

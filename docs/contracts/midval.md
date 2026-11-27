@@ -200,6 +200,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: 78.1 % → 78.4 % (95,137 → 95,499 of 121,767) |
 | 6: shifts and bitwise constants (`Norm.base`: `fam6Mul` first, `fam6Step` after family 5; `narrowId` in `narrowStep`) | `fam6Mul`, `shAmt` (typed), `reStep`, `narrowId` | `ruleSound_fam6Mul`, `ruleSoundT_shAmt`, `ruleSound_reStep`, `ruleSoundT_fam6Step`, `narrowId_val`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 119,273 (97.9 %) | not measured on the pairs | 9 crates: 78.4 % → 78.7 % (95,499 → 95,871 of 121,767) |
 | 7: operand-dropping rewrites (`Norm.stdD f`: `dropStep` after `Norm.stdT f`) | `subAdd`, `addSub`, `absTyped` (typed) | `ruleSoundD_subAdd`, `ruleSoundD_addSub`, `ruleSoundD_absTyped`, `ruleSoundD_dropStep`, `normSoundD_stdD`, `check_sound_normD` | 119,833 (98.3 %) | not measured on the pairs | 9 crates: 78.7 % → 78.9 % (95,871 → 96,120 of 121,767) |
+| A: branch folds through store-to-load forwarding (`checkCertC`, prep requests; `fwdOk`), and `icmp x x` (family 7) | `selfCmp` in `dropStep` (typed); `fwdPre f` before `foldPre`/`foldPreK` | `fwdOk_simMU` (from `check_sound`), `fwdFoldPre_simMU`, `fwdFoldPreK_simMU`, `ruleSoundD_selfCmp`, `check_soundC` | 120,258 (98.7 %) | not measured on the pairs | 9 crates: 78.9 % → 79.2 % (96,120 → 96,402 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -986,3 +987,58 @@ counterfactual.)
     crates, blake2 and num-traits unchanged), byte-identical to stock 95,871 → 96,120 (78.7 →
     78.9 %, the same in both modes); `cargo fv test` wall summed 3,759 → 4,109 s (plain; this
     one's plain runs overlapped its full gate) and 4,377 → 4,419 s (`--lean-link --verified`).
+* **Family A: branch folds through store-to-load forwarding** (agent StoreFold1; classification,
+  prototype and choice #1119 issuecomment-7208256985). On main ccd4c6847, 2,046 pairs were
+  rejected, 452 of them first for `rewrite:domtree`/`rewrite:blocks`: Cranelift folded a branch
+  whose condition `foldPre` cannot evaluate. A script slices each folded condition back to its
+  leaves and looks every load up in a model of Cranelift's `LastStores` (one region). It found:
+  every load forwarded from a store in the same block to a stack slot, of a constant 251, of
+  constants and stored values 103; forwarded across single-predecessor blocks 17; forwarded with
+  parameter leaves 11; blocks removed only 22; a load compared with a load of the same field
+  across a merge 6; loads the model does not forward past a store 17 or a call 10; no load
+  (parameters, calls) 14. These are Rust locals that cg_clif spills to stack slots and reloads.
+  - Compiler side (`FV/Opt/MidValFwd.lean`): `fwdRun f` (untrusted) walks `f` alone the way the
+    checker walks `f`'s side (`checkBlock`: terms with the default normaliser, memory versions,
+    facts at a location from a dominating block). A load whose location holds a fact is
+    forwarded: its result is renamed to the value of `f` that holds the fact (the stored value,
+    or the earlier load's result). `fwdPre f` is `f` without the forwarded loads, those values
+    renamed, and each pure statement whose term is an integer constant replaced by an `iconst`.
+    `fwdOk f` is the checker's verdict on that copy, `checkCert f (fwdPre f) cert` with the
+    certificate `emit` gives (untrusted). `checkCertC` (and `symsCopy`, the hoisting mode) tries,
+    after `foldPre f bs` and `foldPreK f bs`, the same two on `fwdPre f` when `fwdOk f`;
+    `checkC`/`emitC` try them only after the existing copies fail, so nothing accepted before
+    takes another path. Family 7 gains `selfCmp`: `icmp cc ty x x` with `x` of static type `ty`
+    is the constant (`eq`, `uge`, `ule`, `sge`, `sle`: 1, the others 0; Cranelift 0.135.0's
+    `opts/icmp.isle`). It takes the load-against-load conditions once both loads have one term.
+  - Proof: no new memory invariant. The checker's is used: the certificate's facts hold at
+    each block, and a removed load reads the fact's value or is `stuck` (`evalInst_load_of_holds`).
+    So `check_sound` gives `fwdOk_simMU : fwdOk f = true → FunSimMU f (fwdPre f)`
+    (`FV/Opt/Proof/MidValFwd.lean`), composed with the unchanged `foldPre_simU`/`foldPreK_simU`
+    into `fwdFoldPre_simMU`/`fwdFoldPreK_simMU`. `check_soundC_norm`, `check_soundC_normT`,
+    `check_soundC_normD` and `symsCopy_soundD` keep their statements; their proofs take the two new
+    cases. `ruleSoundD_selfCmp` (`intcc_self`; the operand has a value, of type `ty` by `tyAt_val`)
+    extends `ruleSoundD_dropStep`; `normSoundD_stdD` keeps its statement. No theorem statement
+    changes.
+  - Witnesses (`FVTest/Opt/MidValFwdWitness.lean`): a branch on a byte loaded right after storing
+    1 to the same address against a `jump` to the `then` block, and `icmp eq x, x` against a
+    `jump` to the `then` block, each accepted, rejected by main's `checkC` (`checkCPrev`, main's
+    family 7); negative: the `jump` to the `else` block, `icmp ult x, x` against the `then` block,
+    each rejected; three real pairs of the corpus (crypto-bigint ×2: a stored constant; a
+    constant stored, reloaded, stored to a second slot and reloaded; serde_json: two loads of one
+    field compared), each rejected by main's `checkC`, `checkCertC` decided, the simulation, and
+    `fwdOk` decided with the forwarding simulations. Audit: `scripts/audit/midval.lean`
+    (1,395 theorems, standard axioms, `native_decide` only in the marked witnesses).
+  - Measured (2026-11-27, the shared corpus, main ccd4c6847's `midval-check --cert --cond --hoist`
+    against this one's): 119,833 → 120,258 (+425, 98.3 % → 98.7 %), 0 lost, every accepted pair
+    re-checks `ok`. The forwarding alone gives +412; `selfCmp` adds 13. Of the 452 fold pairs,
+    388 are accepted. The other 37 gained pairs stopped later in the prep before (26 on a stored
+    block parameter, `rewrite:operand store param→res … [prep]`).
+    `cargo fv test --release` on the 9 crates (2026-11-27, clifv-remote, main ccd4c6847's code
+    (MidendNext7's runs on a161e8d9f, whose tree differs only in docs) against this one's ab6769f70), in plain
+    mode and with `--lean-link --verified`: binary check 48/48 → 48/48 both ways, verified 121,767 →
+    121,767, left out of the region 0 → 0 (plain) and 1 → 1 (`--lean-link --verified`), tests the
+    same as stock's on all 9 both ways, validated 117,866 → 118,236 (96.8 → 97.1 %; per function
+    116,737 → 117,095, at link level 1,129 → 1,141; up on 8 crates, sha3 unchanged), byte-identical
+    to stock 96,120 → 96,402 (78.9 → 79.2 %, the same in both modes); `cargo fv test` wall summed
+    4,109 → 3,921 s (plain; both runs overlapped a full gate) and 4,419 → 4,252 s
+    (`--lean-link --verified`).

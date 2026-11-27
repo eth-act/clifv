@@ -20,7 +20,10 @@ typed and its operands have values, which is where the simulation evaluates a no
   = x`); no typing;
 * `absTyped` (typed) — `op ty x k` and `op ty k x` with `k` an absorbing constant of type `ty`
   (`x * 0`, `x & 0`, `x | -1`, `rAbsorb_spec`) and `x` of static type `ty` (`tyAt`) are `k`: `x`
-  has a value (the operands do), of type `ty` (`tyAt_val`).
+  has a value (the operands do), of type `ty` (`tyAt_val`);
+* `selfCmp` (typed; #1119 family A, agent StoreFold1) — `icmp cc ty x x` with `x` of static type
+  `ty` is the `i8` constant `intcc cc X X` gives (`intcc_self`: 1 for `eq`, `uge`, `ule`, `sge`,
+  `sle`, 0 for the others), dropping the operand `x`.
 
 Main results: `ruleSoundD_dropStep`, **`normSoundD_stdD : NormSoundD f (Norm.stdD f)`**.
 -/
@@ -250,6 +253,39 @@ theorem ruleSoundD_absTyped {f : Function} {op : BinaryOp} {ty : Ty} {a b : Nat}
       commOp_spec (rAbsorb_comm hn), rAbsorb_spec hn]
     exact hK
 
+/-! ## `selfCmp` -/
+
+/-- A comparison of a value with itself. -/
+theorem intcc_self {w : Nat} (cc : IntCC) (x : BitVec w) :
+    Sem.intcc cc x x = (cc == .eq || cc == .uge || cc == .ule || cc == .sge || cc == .sle) := by
+  cases cc <;> simp [Sem.intcc, BitVec.slt, BitVec.sle, BitVec.ult, BitVec.ule]
+
+theorem ruleSoundD_selfCmp {f : Function} {cc : IntCC} {ty : Ty} {a b : Nat} :
+    ∀ (tms : Array Tm) (x' : Tm), selfCmp (atomTy f) tms cc ty a b = some x' →
+      (∀ t, tms[t]? = some x' → ∀ o ∈ x'.ops, o < t) →
+      ∀ (fr : Frame) (mem : Mem) (t : Nat), tms[t]? = some x' →
+        AtomsTyped f tms fr mem (.icmp cc ty a b) →
+        (∀ o ∈ operands (.icmp cc ty a b), (tmVal f tms fr mem o).isSome) →
+        tmVal f tms fr mem t = evalNode (tmFrame f tms fr mem) mem (.icmp cc ty a b) := by
+  intro tms x' h hord fr mem t ht hA hd
+  unfold selfCmp at h
+  split at h
+  · rename_i hc
+    cases h
+    simp only [Bool.and_eq_true, beq_iff_eq] at hc
+    obtain ⟨rfl, htx⟩ := hc
+    have hao : a ∈ operands (.icmp cc ty a a) := by simp [operands]
+    obtain ⟨v, hv⟩ := Option.isSome_iff_exists.1 (hd a hao)
+    have hvt : v.ty = ty := tyAt_val hA (.op hao) htx hv
+    obtain ⟨vt, X⟩ := v
+    simp only at hvt
+    subst hvt
+    have hr : (tmFrame f tms fr mem).regs a = tmVal f tms fr mem a := rfl
+    rw [tmVal_node' ht (by simp [Tm.ops, operands]), evalNode_iconst, evalNode_icmp, hr, hv]
+    simp only [Option.bind_some, Val.as?_mk, Option.map_some, Sem.icmp, intcc_self]
+    cases cc <;> rfl
+  · cases h
+
 /-! ## Family 7 and the default normaliser -/
 
 theorem ruleSoundD_dropStep {f : Function} : RuleSoundD f (dropStep (atomTy f)) := by
@@ -268,6 +304,9 @@ theorem ruleSoundD_dropStep {f : Function} : RuleSoundD f (dropStep (atomTy f)) 
         subst hop'
         exact ruleSoundD_addSub tms x' h hord fr mem t ht hd
       · exact ruleSoundD_absTyped tms x' h hord fr mem t ht hA hd
+  | icmp cc ty a b =>
+    simp only [dropStep] at h
+    exact ruleSoundD_selfCmp tms x' h hord fr mem t ht hA hd
   | _ => simp [dropStep] at h
 
 /-- **The validator's default normaliser is sound where the operands have values.** -/

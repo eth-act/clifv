@@ -59,7 +59,7 @@ What it accepts (every other difference is a rejection with a reason, `Reject`):
   (a shift amount's extension or truncation dropped, typed; constants of `band`, `bor`, `bxor`,
   `imul` reassociated, `imul (ishl x k) c` is `imul x (c << k)`), then family 7, where no other
   rule applies (`Norm.stdD`: `(x + y) - x` is `y`, `x - y + y` is `x`, `x * 0`, `x & 0`, `x | -1`
-  are the constant, typed; sound where the node's operands have values).
+  and `icmp cc x x` are the constant, typed; sound where the node's operands have values).
 
 Not accepted: any other ISLE rewrite (new pure terms at compared positions, changed
 terminators, removed blocks), dead-store elimination, readonly loads moved across writes.
@@ -1214,7 +1214,9 @@ are the terms of available values.
   `iadd` has a value only when `x` and `y` hold values of type `ty`);
 * `addSub`: `iadd ty (isub ty x y) y` and `iadd ty y (isub ty x y)` are `x` (the same);
 * `absTyped` (typed): `op ty x k` with `k` an absorbing constant of type `ty` (`x * 0`, `x & 0`,
-  `x | -1`, `rAbsorb`) and `x` of static type `ty`, or the commuted form, is `k`. -/
+  `x | -1`, `rAbsorb`) and `x` of static type `ty`, or the commuted form, is `k`;
+* `selfCmp` (typed; #1119 family A): `icmp cc ty x x` with `x` of static type `ty` is the `i8`
+  constant of comparing a value with itself (Cranelift 0.135.0's `opts/icmp.isle`). -/
 
 /-- `isub ty a z` with `a` the node `iadd ty x y`: `y` if `z` is `x`, else `x` if `z` is `y`. -/
 def subAdd (tms : Array Tm) (ty : Ty) (a z : Nat) : Option Tm :=
@@ -1253,12 +1255,23 @@ def absTyped (aty : Tm → Option Ty) (tms : Array Tm) (op : BinaryOp) (ty : Ty)
     Option Tm :=
   (absPick aty tms op ty a b).orElse fun _ => absPick aty tms op ty b a
 
-/-- **Family 7** (module doc above; typed through `absTyped`). -/
+/-- `icmp cc ty a a` with `a` of static type `ty` (`tyAt`): the constant the comparison of a value
+with itself gives (`eq`, `uge`, `ule`, `sge`, `sle`: 1; the others 0; Cranelift 0.135.0's
+`opts/icmp.isle`). -/
+def selfCmp (aty : Tm → Option Ty) (tms : Array Tm) (cc : IntCC) (ty : Ty) (a b : Nat) :
+    Option Tm :=
+  if a == b && tyAt aty tms a == some ty then
+    some (.node (.iconst .i8 (if cc == .eq || cc == .uge || cc == .ule || cc == .sge ||
+      cc == .sle then 1 else 0)))
+  else none
+
+/-- **Family 7** (module doc above; typed through `absTyped` and `selfCmp`). -/
 def dropStep (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
   | .binary op ty a b =>
     if op == .isub then subAdd tms ty a b
     else if op == .iadd then addSub tms ty a b
     else absTyped aty tms op ty a b
+  | .icmp cc ty a b => selfCmp aty tms cc ty a b
   | _ => none
 
 /-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
