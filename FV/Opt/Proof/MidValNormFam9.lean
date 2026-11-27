@@ -4,9 +4,8 @@ import FV.Opt.Proof.MidValNormFam8
 # Family 9: masks, narrowed shifts, complements, extensions, comparisons of extensions and of
 `<=>`, `select` as min/max (#1119, agent MidendNext10)
 
-`Norm.stdD f = Norm.orElse (Norm.guard fam8Step) (Norm.orElse (Norm.guard (fam9Step (atomTy
-f))) (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))))` (`FV/Opt/MidVal.lean`), the
-validator's default normaliser. Each rule of `fam9Step` gives a node with the value of the node it
+`fam9Step`, the second step of `Norm.stdD f` (`FV/Opt/MidVal.lean`), the validator's default
+normaliser. Each rule of `fam9Step` gives a node with the value of the node it
 rewrites wherever the node's operands have values and the atoms below it are typed (`RuleSoundD`,
 `FV/Opt/Proof/MidValNormDrop.lean`), proved against `Clif.evalInst`:
 
@@ -22,8 +21,8 @@ rewrites wherever the node's operands have values and the atoms below it are typ
 * `shipCmp` — `(x > y) - (x < y)` is `1`, `0` or `-1` (`ship_spec`);
 * `selMinMax` — `select (x ? y) x y` and `select (x ? y) y x` are the min/max (`sel_mm`).
 
-Main results: `ruleSoundD_fam9Step`, **`normSoundD_stdD : NormSoundD f (Norm.stdD f)`** (moved
-here from `MidValNormFam8.lean`, statement unchanged).
+Main results: `ruleSoundD_fam9Step` (`normSoundD_stdD`, the default normaliser with families 8 to
+10: `FV/Opt/Proof/MidValNormFam10.lean`).
 -/
 
 namespace Opt.MidVal
@@ -1042,11 +1041,5 @@ theorem ruleSoundD_fam9Step {f : Function} : RuleSoundD f (fam9Step (atomTy f)) 
       exact ruleSoundD_extCmp tms x' h hord fr mem t ht hA hd
   | select ty c x y => exact ruleSoundD_selMinMax tms x' h hord fr mem t ht hd
   | _ => simp [fam9Step] at h
-
-/-- **The validator's default normaliser is sound where the operands have values.** -/
-theorem normSoundD_stdD {f : Function} : NormSoundD f (Norm.stdD f) :=
-  normSoundD_orElse (normSoundD_guard ruleSoundD_fam8Step)
-    (normSoundD_orElse (normSoundD_guard ruleSoundD_fam9Step)
-      (normSoundD_orElse normSoundT_stdT.toD (normSoundD_guard ruleSoundD_dropStep)))
 
 end Opt.MidVal

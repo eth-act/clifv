@@ -1,0 +1,153 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC12regex_syntax12HgorpCe7HbSY
+function u0:1586(i64) -> i8 uext system_v {
+; symbol _RNxC12regex_syntax12HgorpCe7HbSY
+; instance Instance { def: Item(DefId(0:1024 ~ regex_syntax[1eb6]::hir::{impl#17}::is_ascii)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &hir::ClassBytes, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    bool                              1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) bool
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) &'{erased} hir::ClassBytes
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} hir::ClassBytes        8b 8                var=2
+; stack _2    core::option::Option<&'{erased} hir::ClassBytesRange>    8b 8                storage=ss0
+; stack _3    *const [hir::ClassBytesRange]    16b 8                storage=ss1
+; ssa   _4    *const hir::ClassBytesRange       8b 8                var=3
+; ssa   _5    usize                             8b 8                var=4
+; stack _6    core::ptr::NonNull<u8>            8b 8                storage=ss2
+; ssa   _7    bool                              1b 1                var=5
+; ssa   _8    &'{erased} hir::ClassBytesRange    8b 8                var=6
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 16, align = 8
+    ss2 = explicit_slot 8, align = 8
+    ss3 = explicit_slot 8, align = 8
+    sig0 = (i64, i8 uext) -> i8 uext system_v
+    fn0 = colocated u0:117 sig0 ; Instance { def: Item(DefId(1:11945 ~ core[7b1c]::option::{impl#0}::map_or)), args: [&'{erased} hir::ClassBytesRange, bool, Closure(DefId(0:1025 ~ regex_syntax[1eb6]::hir::{impl#17}::is_ascii::{closure#0}), [i32, Binder { value: extern "RustCall" fn((&'{erased} hir::ClassBytesRange,)) -> bool, bound_vars: [] }, ()])] }
+
+block0(v0: i64):
+    v1 -> v0
+    nop 
+; write_cvalue: Var(_1, var2): &'{erased} hir::ClassBytes <- ByVal(v0): &'{erased} hir::ClassBytes
+    jump block1
+
+block1:
+    nop 
+; _6 = copy ((((((*_1).0: hir::interval::IntervalSet<hir::ClassBytesRange>).0: std::vec::Vec<hir::ClassBytesRange>).0: alloc::raw_vec::RawVec<hir::ClassBytesRange>).0: alloc::raw_vec::RawVecInner).0: core::ptr::NonNull<u8>)
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): core::ptr::NonNull<u8> <- ByRef(Pointer { base: Addr(v1), offset: Offset32(8) }, None): core::ptr::NonNull<u8>
+    v2 = load.i64 notrap v1+8
+    v3 = stack_addr.i64 ss2
+    store notrap v2, v3
+; _4 = copy _6 as *const hir::ClassBytesRange (Transmute)
+; write_cvalue_transmute: Var(_4, var3): *const hir::ClassBytesRange <- ByRef(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): core::ptr::NonNull<u8>
+    v4 = stack_addr.i64 ss2
+    v5 = load.i64 notrap v4
+; _5 = copy ((((*_1).0: hir::interval::IntervalSet<hir::ClassBytesRange>).0: std::vec::Vec<hir::ClassBytesRange>).1: usize)
+; write_cvalue: Var(_5, var4): usize <- ByRef(Pointer { base: Addr(v1), offset: Offset32(16) }, None): usize
+    v6 = load.i64 notrap v1+16
+; _3 = *const [hir::ClassBytesRange] from (copy _4, copy _5)
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): *const [hir::ClassBytesRange] <- ByValPair(v5, v6): *const [hir::ClassBytesRange]
+    v7 = stack_addr.i64 ss1
+    store notrap v5, v7
+    v8 = stack_addr.i64 ss1+8
+    store notrap v6, v8
+; _7 = Ge(copy _5, const 1_usize)
+    v9 = iconst.i64 1
+    v10 = icmp uge v6, v9  ; v9 = 1
+; write_cvalue: Var(_7, var5): bool <- ByVal(v10): bool
+; 
+; switchInt(move _7)
+    brif v10, block4, block5
+
+block2:
+    nop 
+; 
+; return
+    return v11
+
+block3:
+    nop 
+; 
+; _0 = core::option::Option::<&hir::ClassBytesRange>::map_or::<bool, {closure@/home/devops/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-syntax-0.8.11/src/hir/mod.rs:1441:50: 1441:53}>(move _2, const true, const ZeroSized: {closure@/home/devops/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-syntax-0.8.11/src/hir/mod.rs:1441:50: 1441:53})
+    v12 = iconst.i8 1
+    v13 = stack_addr.i64 ss0
+    v14 = load.i64 notrap v13
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: core::option::Option<&hir::ClassBytesRange>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Multiple { tag: pointer is 0..=18446744073709551615, tag_encoding: Niche { untagged_variant: 1, niche_variants: 0..=0, niche_start: 0 }, tag_field: 0, variants: [VariantLayout { size: Size(0 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(8 bytes), backend_repr: Scalar(pointer is 1..=18446744073709551615), field_offsets: [Size(0 bytes)], fields_in_memory_order: [0], largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4141940156209512287 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(2 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: {closure@/home/devops/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-syntax-0.8.11/src/hir/mod.rs:1441:50: 1441:53}, layout: Layout { size: Size(0 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [], in_memory_order: [] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 0 } }, mode: Ignore }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 3, conv: Rust, can_unwind: true }
+    v15 = call fn0(v14, v12)  ; v12 = 1
+    v11 -> v15
+; write_cvalue: Var(_0, var1): bool <- ByVal(v15): bool
+    jump block2
+
+block4:
+    nop 
+; _8 = &(*_3)[-1 of 1]
+    v16 = stack_addr.i64 ss1
+    v17 = load.i64 notrap v16
+    v18 = stack_addr.i64 ss1+8
+    v19 = load.i64 notrap v18
+    v20 = iconst.i64 -1
+    v21 = iadd v19, v20  ; v20 = -1
+    v22 = iconst.i64 2
+    v23 = imul v21, v22  ; v22 = 2
+    v24 = iadd v17, v23
+; write_cvalue: Var(_8, var6): &'{erased} hir::ClassBytesRange <- ByVal(v24): &'{erased} hir::ClassBytesRange
+; _2 = core::option::Option::<&hir::ClassBytesRange>::Some(copy _8)
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): &'{erased} hir::ClassBytesRange <- ByVal(v24): &'{erased} hir::ClassBytesRange
+    v25 = stack_addr.i64 ss0
+    store notrap v24, v25
+; 
+; goto
+    jump block3
+
+block5:
+    nop 
+; _2 = const core::option::Option::<&hir::ClassBytesRange>::None
+    v26 = iconst.i64 0
+    v27 = stack_addr.i64 ss3
+    store notrap v26, v27  ; v26 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): core::option::Option<&'{erased} hir::ClassBytesRange> <- ByRef(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): core::option::Option<&'{erased} hir::ClassBytesRange>
+    v28 = stack_addr.i64 ss3
+    v29 = load.i64 notrap v28
+    v30 = stack_addr.i64 ss0
+    store notrap v29, v30
+; 
+; goto
+    jump block3
+}
+
+; clifv-extnames 1
+; userextname0 = u0:117
+; decl u0:117 func local "_RNxC12regex_syntax11H4MJz6Ij558"
+; decl u0:1586 func export "_RNxC12regex_syntax12HgorpCe7HbSY"
+; end clifv-extnames
