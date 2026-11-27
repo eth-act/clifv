@@ -199,7 +199,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | hoisting mode at link level (`placement:symbol_value`/`func_addr`; `symsCopy`, `Link.hoistCopy`, premise `globalsResolve` at the executable's symbol table) | none (`checkCertSyms` on `f`, `foldPre f bs` or `foldPreK f bs`) | `symsCopy_sound`, `checkCertSymsAt_sound`, `midValidatedSymsB_sound` | 118,210 (97.0 %) | not measured on the pairs | 9 crates: 78.1 % → 78.1 % (95,064 → 95,137 of 121,767) |
 | division by a constant with magic numbers (`checkCertC`, prep requests) | none (`magicPre` inside `foldPre f bs` and `foldPreK f bs`) | `magicPre_simU`, `foldPre_simU`, `foldPreK_simU`, `check_soundC` | 118,813 (97.5 %) | not measured on the pairs | 9 crates: 78.1 % → 78.4 % (95,137 → 95,499 of 121,767) |
 | 6: shifts and bitwise constants (`Norm.base`: `fam6Mul` first, `fam6Step` after family 5; `narrowId` in `narrowStep`) | `fam6Mul`, `shAmt` (typed), `reStep`, `narrowId` | `ruleSound_fam6Mul`, `ruleSoundT_shAmt`, `ruleSound_reStep`, `ruleSoundT_fam6Step`, `narrowId_val`, `ruleSoundT_narrowStep`, `normSoundT_stdT` | 119,273 (97.9 %) | not measured on the pairs | 9 crates: 78.4 % → 78.7 % (95,499 → 95,871 of 121,767) |
-| 7: operand-dropping rewrites (`Norm.stdD f`: `dropStep` after `Norm.stdT f`) | `subAdd`, `addSub`, `absTyped` (typed) | `ruleSoundD_subAdd`, `ruleSoundD_addSub`, `ruleSoundD_absTyped`, `ruleSoundD_dropStep`, `normSoundD_stdD`, `check_sound_normD` | 119,833 (98.3 %) | not measured on the pairs | CRATES_ROW |
+| 7: operand-dropping rewrites (`Norm.stdD f`: `dropStep` after `Norm.stdT f`) | `subAdd`, `addSub`, `absTyped` (typed) | `ruleSoundD_subAdd`, `ruleSoundD_addSub`, `ruleSoundD_absTyped`, `ruleSoundD_dropStep`, `normSoundD_stdD`, `check_sound_normD` | 119,833 (98.3 %) | not measured on the pairs | 9 crates: 78.7 % → 78.9 % (95,871 → 96,120 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -977,4 +977,12 @@ counterfactual.)
     re-checks `ok`; by main's first blocking family: operand-dropping 403, the operand tail 157
     (mostly `x + y * 0`). The folds on forwarded constants (434) are the largest family left; they
     need a prep pass with a memory invariant and its own simulation.
-    CRATES_BULLET
+    `cargo fv test --release` on the 9 crates (2026-11-27, clifv-remote, main 6e0245fcb's code
+    (MidendNext5's runs on 993916827, whose tree differs only in docs) against this one's
+    a161e8d9f), in plain mode and with `--lean-link --verified`: binary check 48/48 → 48/48 both
+    ways, verified 121,767 → 121,767, left out of the region 0 → 0 (plain) and 1 → 1
+    (`--lean-link --verified`), tests the same as stock's on all 9 both ways, validated 117,356 →
+    117,866 (96.4 → 96.8 %; per function 116,246 → 116,737, at link level 1,110 → 1,129; up on 7
+    crates, blake2 and num-traits unchanged), byte-identical to stock 95,871 → 96,120 (78.7 →
+    78.9 %, the same in both modes); `cargo fv test` wall summed 3,759 → 4,109 s (plain; this
+    one's plain runs overlapped its full gate) and 4,377 → 4,419 s (`--lean-link --verified`).
