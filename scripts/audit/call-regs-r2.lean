@@ -19,16 +19,16 @@ import FV.E2E.TypedRulesSR
 #print axioms E2E.ActEntry.toR
 
 -- The register guard and the contracts with registers.
-#print axioms E2E.regG_mono
+#print axioms Backend.Proof.regG_mono
 #print axioms E2E.lockstep_regG
-#print axioms E2E.callsRefinePR_csemR
-#print axioms E2E.indCallsRefinePR_csemR
+#print axioms Backend.Proof.callsRefinePR_csemR
+#print axioms Backend.Proof.indCallsRefinePR_csemR
 #print axioms E2E.callsRefinePR_csemG
 #print axioms E2E.indCallsRefinePR_csemG
 #print axioms E2E.callsRefinePR_csemGF
 #print axioms E2E.indCallsRefinePR_csemGF
-#print axioms E2E.callsRefinePR_valueSem
-#print axioms E2E.indCallsRefinePR_valueSem
+#print axioms Backend.DeadCleanup.callsRefinePR_valueSem
+#print axioms Backend.DeadCleanup.indCallsRefinePR_valueSem
 #print axioms E2E.callsRefinePR_valueSemG
 #print axioms E2E.indCallsRefinePR_valueSemG
 #print axioms E2E.callsRefinePR_valueSemGF
@@ -37,7 +37,7 @@ import FV.E2E.TypedRulesSR
 -- The dispatchers and the typed indirect families with registers.
 #print axioms Backend.Proof.Driver.instCallsR_of_rules
 #print axioms Backend.Proof.Driver.instCallsTR_of_rules
-#print axioms Backend.Proof.Driver.instCallsTFSOR_of_rules
+#print axioms Backend.Proof.instCallsTFSOR_of_rules
 #print axioms Backend.Proof.Driver.tryCallsTCR_of_rules
 #print axioms Backend.Proof.Driver.tryIndCallsTRS_of_rules
 #print axioms Backend.Proof.indRulesCorrectTPRS_program
