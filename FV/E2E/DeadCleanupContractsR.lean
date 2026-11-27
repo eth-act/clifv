@@ -40,4 +40,24 @@ theorem indCallsRefinePR_valueSem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : Ex
     IndCallsRefinePR (fun _ _ _ _ => True) env sigs MR (regG P (valueSem F ctx X)) :=
   ((indCallsRefine_valueSem (ctx := ctx) (F := F) hX hsym hMR).toP _).regG hMR hP
 
+/-- `FlagsPend` of a semantics gives that of its register-guarded form. -/
+theorem FlagsPend.regG {W : Type} {P : BitVec 64 → Clif.Signature → Prop} {sem : ISem CV W}
+    {w wb : W} (h : FlagsPend sem w wb) : FlagsPend (regG P sem) w wb :=
+  ⟨fun K us r hK hs => by
+    obtain ⟨hg, hs'⟩ := regG_inv hs
+    rw [regG_of hg]
+    exact h.1 K us r hK hs',
+   fun j us outs ctl hj hs => by
+    obtain ⟨hg, hs'⟩ := regG_inv hs
+    rw [regG_of hg]
+    exact h.2 j us outs ctl hj hs'⟩
+
+/-- `CmpOverwrite` of a semantics gives that of its register-guarded form. -/
+theorem CmpOverwrite.regG {W : Type} {P : BitVec 64 → Clif.Signature → Prop} {sem : ISem CV W}
+    (h : CmpOverwrite sem) : CmpOverwrite (regG P sem) :=
+  ⟨fun i us w outs w' ctl hi hs =>
+    let ⟨h1, h2⟩ := h.1 i us w outs w' ctl hi (regG_sub hs)
+    ⟨h1, h2.regG⟩,
+   fun l us w outs w' ctl hs => h.2 l us w outs w' ctl (regG_sub hs)⟩
+
 end Backend.DeadCleanup
