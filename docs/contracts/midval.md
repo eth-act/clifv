@@ -202,6 +202,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | 7: operand-dropping rewrites (`Norm.stdD f`: `dropStep` after `Norm.stdT f`) | `subAdd`, `addSub`, `absTyped` (typed) | `ruleSoundD_subAdd`, `ruleSoundD_addSub`, `ruleSoundD_absTyped`, `ruleSoundD_dropStep`, `normSoundD_stdD`, `check_sound_normD` | 119,833 (98.3 %) | not measured on the pairs | 9 crates: 78.7 % → 78.9 % (95,871 → 96,120 of 121,767) |
 | A: branch folds through store-to-load forwarding (`checkCertC`, prep requests; `fwdOk`), and `icmp x x` (family 7) | `selfCmp` in `dropStep` (typed); `fwdPre f` before `foldPre`/`foldPreK` | `fwdOk_simMU` (from `check_sound`), `fwdFoldPre_simMU`, `fwdFoldPreK_simMU`, `ruleSoundD_selfCmp`, `check_soundC` | 120,258 (98.7 %) | not measured on the pairs | 9 crates: 78.9 % → 79.2 % (96,120 → 96,402 of 121,767) |
 | 8: comparisons with an offset, saturating differences, products of constants, differences of sums (`Norm.stdD f`: `fam8Step` first) | `cmpOff`, `cmpSub`, `mulMul`, `subAdds`; `condChain` takes `icmp ne x, -k` against a branch on `x + k` | `ruleSoundD_cmpOff`, `ruleSoundD_cmpSub`, `ruleSoundD_mulMul`, `ruleSoundD_subAdds`, `ruleSoundD_fam8Step`, `normSoundD_stdD` | 120,867 (99.2 %) | not measured on the pairs | 9 crates: 79.2 % → 79.4 % (96,432 → 96,742 of 121,767) |
+| 9: masks, narrowed shifts, complements, extensions, comparisons of extensions and of `<=>`, `select` as min/max, multiply-high (`Norm.stdD f`: `fam9Step` second) | `borMask` (also in `narrowStep`), `borMaskRe`, `notDec`, `redShl`, `redUn`, `extExt`, `extCmp`, `shipCmp`, `selMinMax`, `mulHi` (typed: `redShl`, `redUn`, `extCmp`, `mulHi`) | `borMask_val`, `ruleSoundD_notDec`, `ruleSoundD_redShl`, `ruleSoundD_redUn`, `ruleSoundD_extExt`, `ruleSoundD_extCmp`, `ruleSoundD_shipCmp`, `ruleSoundD_selMinMax`, `ruleSoundD_borMaskRe`, `ruleSoundD_mulHi`, `ruleSoundD_fam9Step`, `normSoundD_stdD` | 121,229 (99.5 %) | not measured on the pairs | 9 crates: 79.4 % → 79.6 % (96,742 → 96,882 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -1103,3 +1104,75 @@ counterfactual.)
     1,153; up on 8 crates, blake2 unchanged), byte-identical to stock 96,432 → 96,742 (79.2 →
     79.4 %, the same in both modes); `cargo fv test` wall summed 2,201 → 2,187 s (plain) and
     2,531 → 2,563 s (`--lean-link --verified`).
+* **Family 9: masks, narrowed shifts, complements, extensions, comparisons of extensions and of
+  `<=>`, `select` as min/max, multiply-high** (agents MidendNext10, MidendNext11). On main
+  26c49c216, 1,012 pairs were rejected. By first blocking reason (MidendNext8's explain build,
+  the same verdicts as main's checker on all 121,879 pairs; `fam8.py`): constant against value
+  154, the operand tail with no shape above 10 pairs 151, masks and bit tricks 137 (`(x & y) |
+  ~y` 80, `~(x - 1)` 16), narrowing of extended operations 119 (all `ireduce (ishl (uextend x)
+  k)`), `x + 0` 73, multiply-high 71, extensions 55, folds left after `fwdPre` 42, `select` as
+  min/max 42, `<=>` 31, and smaller ones. This family takes the one-node shapes among them,
+  after Cranelift 0.136's `opts/bitops.isle`, `arithmetic.isle`, `extends.isle`,
+  `spaceship.isle` and `selects.isle`:
+  - Compiler side (`FV/Opt/MidVal.lean`): `fam9Step (atomTy f)`, the second step of `Norm.stdD f
+    = Norm.orElse (Norm.guard fam8Step) (Norm.orElse (Norm.guard (fam9Step (atomTy f)))
+    (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))))`. `borMask`: `bor ty (band ty
+    x y) z` with constants `y`, `z = ~y` is `bor ty x z` (also on the node `narrowStep` builds for
+    a narrowed `bor`); `borMaskRe`: `bor ty (bor ty (band ty x y) k1) k2` with `k1 | k2 = ~y` is
+    `bor ty x (k1 | k2)`. `notDec`: `bnot (iadd x -1)` and `bnot (isub x 1)` are `ineg x`,
+    `bnot (iadd (bnot x) y)` (either order) is `isub x y`. `redShl` (typed): `ireduce ty (ishl
+    wty (extend wty x) k)` with `x` of static type `ty` and `s = k mod width(wty)` below `ty`'s
+    width is `ishl ty x s`. `redUn` (typed): `ireduce ty (ineg/bnot wty (extend wty x))` is
+    `ineg/bnot ty x`. `extExt`: `uextend (uextend x)` and `sextend (uextend x)` are `uextend x`,
+    `sextend (sextend x)` is `sextend x`. `extCmp` (typed): `icmp slt/sge i64 (uextend i64 x) 0`
+    with `x` of static type `i32` is the constant `0`/`1`; `icmp cc wty (sextend wty x) 0` with
+    `cc` `eq`, `ne` or signed is `icmp cc xt x 0`. `shipCmp`: `icmp cc i8 ((x >u y) - (x <u y))
+    k` (or signed) for `k` in `0`, `-1`, `1` and the codes `spaceship.isle` names is the
+    comparison of `x` and `y` it stands for. `selMinMax`: `select (icmp cc x y) x y` and `select
+    (icmp cc x y) y x` with an ordering `cc` are `umin`/`umax`/`smin`/`smax x y`. `mulHi` (typed):
+    `ushr/sshr ty (imul ty (ext ty x) (ext ty y)) k` with `x`, `y` of static type `half`, `ty`
+    twice as wide and `k = width(half)` is `ext ty (umulhi/smulhi half x y)` (the `ireduce`
+    above it then cancels, `redExt`). The constants and the high product are
+    interned first (`fam9Aux` in `internD`).
+  - Dropped, measured on the corpus: `-(y - x) = x - y` with `x * -1 = -x` (lost 665 pairs main
+    accepts, in `isub`/`iadd` forms); `icmp ne (uextend x) 0 = icmp ne x 0` (lost 52, branch
+    conditions through `condChain`); comparisons with an extreme constant (`x <=u UMAX`, `x <s SMIN`, …;
+    lost 3).
+  - Proof (`FV/Opt/Proof/MidValNormFam9.lean`): one `RuleSoundD` lemma per rule, from the
+    operands' values (`tmVal_un_ops`, `tmVal_ext_ops`, `tyAt_val`) and `BitVec` identities:
+    `or_and_not` (`(x & y) | ~y = x | ~y`; `borMask_val` in `MidValNormFam4.lean`, where the
+    proof of `narrowStep` uses it, statement unchanged), `not_add_neg_one`, `not_sub_one`,
+    `not_not_add`, `setWidth_ishl_ext` (the low `m` bits of `(ext x) << s` are `x << s` for `s <
+    m`), `setWidth_unary_ext`, `uext_uext`/`sext_sext`/`sext_uext`, `toInt_uext`,
+    `sext_cmp_zero`, `ship_spec` (`(x > y) - (x < y)` is `1`, `0` or `-1`), `sel_mm`,
+    `ushr_uext_mul`/`sshr_sext_mul` (the high half of the double-width product).
+    `ruleSoundD_fam9Step`; `normSoundD_stdD` moved here from `MidValNormFam8.lean` with its
+    statement unchanged (byte-identical) and the new composition as its proof. No theorem
+    statement changes.
+  - Witnesses (`FVTest/Opt/MidValFam9Witness.lean`): `(x & 63) | -64` against `x | -64`, `((x &
+    -16) | 3) | 12` against `x | 15`, `~(x + -1)` against `-x`, `~(~x + y)` against `x - y`,
+    `ireduce.i32 ((uextend.i64 x) << 7)` against `x << 7`, `ireduce.i32 (-(sextend.i64 x))`
+    against `-x`, `uextend.i64 (uextend.i32 x)` against `uextend.i64 x`, `(uextend.i64 x) <s 0`
+    against `0`, `(sextend.i64 x) >s 0` against `x >s 0`, `((x >u y) - (x <u y)) == -1` against
+    `x <u y`, `select (x >u y) x y` against `umax x y`, and the `i128` product's high half against
+    `umulhi x y`, each accepted and rejected with main's normaliser (`*_prev_rejects`);
+    look-alikes rejected: the mask `62`, `k1 | k2 ≠ ~y`, `~(x + 1)`, `y - x`, the amount `33`,
+    `~x`, `uextend` of `sextend`, a sign extension `<s 0`, `x <s 0`, `x >u y`, `umin`, `smulhi`;
+    five real pairs of the corpus (crypto-bigint's test build: num-bigint twice, fastrand,
+    num-integer, clap_builder), each rejected by main's `checkC` with main's normaliser
+    (`checkCPrev`), `checkCertC` decided, and the simulation. Audit: `scripts/audit/midval.lean`
+    (1,553 theorems, standard axioms, `native_decide` only in the marked witnesses).
+  - Measured (2026-11-27, the shared corpus, main 26c49c216's checker against this one's,
+    `midval-check --cert --cond --hoist`): 120,867 → 121,229 (+362, 99.2 % → 99.5 %), 0 lost,
+    every accepted pair re-checks `ok`; by main's first blocking family: narrowing 119, masks and
+    bit tricks 112, multiply-high 41, extensions 32, `<=>` 29, `select` as min/max 18, 11 whose
+    first blocker was another shape (7 operand tail, 4 folds).
+    `cargo fv test --release` on the 9 crates (2026-11-27, clifv-remote, main 26c49c216's code
+    (MidendNext8's runs of 96c4ea485, the same code) against this one's aaa093ca5), in plain mode
+    and with `--lean-link --verified`: binary check 48/48 → 48/48 both ways, verified 121,767 →
+    121,767, left out of the region 0 → 0 (plain) and 1 → 1 (`--lean-link --verified`), tests the
+    same as stock's on all 9 both ways, validated 118,826 → 119,140 (97.6 → 97.8 %; per function
+    117,673 → 117,868, at link level 1,153 → 1,272; up on 8 crates, blake2 unchanged),
+    byte-identical to stock 96,742 → 96,882 (79.4 → 79.6 %, the same in both modes); `cargo fv
+    test` wall summed 2,187 → 2,196 s (plain) and 2,563 → 2,549 s (`--lean-link --verified`; most
+    of this branch's runs beside a full gate or another agent's crate build).
