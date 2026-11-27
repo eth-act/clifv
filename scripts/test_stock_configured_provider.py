@@ -263,8 +263,9 @@ class StockConfiguredProviderTests(unittest.TestCase):
                         self.check_provider(source, cleanup, stock_selected=True)
 
     def test_configured_compiler_drops_unused_notrap_loads(self):
-        # #970: only the stock-configured driver drops them (`StockConfig.dropDeadNotrapLoads`,
-        # unproved); the default mode, like cg_clif 0.136.1 (`cargo fv`), keeps them.
+        # #970: the stock-configured driver drops them (`StockConfig.dropDeadNotrapLoads`,
+        # unproved); option D prototype (scratch): the default mode drops them too, before
+        # lowering (`Opt.NotrapDrop`), as Cranelift 0.136.1 does; trapping and atomic loads stay.
         ret = bytes.fromhex("c0035fd6")
         dropped = {"dead_notrap_load": ret, "dead_notrap_uload8": ret,
                    "dead_notrap_load_chain": ret,
@@ -294,8 +295,10 @@ class StockConfiguredProviderTests(unittest.TestCase):
                     plain_code = plain_object.function(name)[1]
                     if name == "dead_atomic_load":
                         self.assertIn(bytes.fromhex("02fcdfc8"), plain_code)
-                    else:
+                    elif name in kept:
                         self.assertGreater(integer_loads(plain_code), 0)
+                    else:
+                        self.assertEqual(integer_loads(plain_code), 0)
 
     def test_typed_pipeline_keeps_its_existing_provider(self):
         self.check_provider(MEMORY_CFG, cleanup=False, typed=True)
