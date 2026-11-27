@@ -1,0 +1,296 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC6memchr12HlFTkvsRv1Zb
+function u0:99(i64, i64, i64, i64, i64) -> i64, i64 system_v {
+; symbol _RNxC6memchr12HlFTkvsRv1Zb
+; instance Instance { def: Item(DefId(0:160 ~ memchr[3a6f]::arch::all::rabinkarp::{impl#1}::rfind_raw)), args: [] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &arch::all::rabinkarp::FinderRev, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: *const u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, ArgAbi { layout: TyAndLayout { ty: *const u8, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 0..=18446744073709551615), fields: Primitive, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 17179869191 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: core::option::Option<*const u8>, layout: Layout { size: Size(16 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: ScalarPair { a: u64 is 0..=1, b: union pointer, b_offset: Size(8 bytes) }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: Some(Niche { offset: Size(0 bytes), value: u64, valid_range: 0..=1 }), uninhabited: false, variants: Multiple { tag: u64 is 0..=1, tag_encoding: Direct, tag_field: 0, variants: [VariantLayout { size: Size(8 bytes), backend_repr: Memory { sized: true }, field_offsets: [], fields_in_memory_order: [], largest_niche: None, uninhabited: false }, VariantLayout { size: Size(16 bytes), backend_repr: ScalarPair { a: u64 is 0..=1, b: union pointer, b_offset: Size(8 bytes) }, field_offsets: [Size(8 bytes)], fields_in_memory_order: [0], largest_niche: None, uninhabited: false }] }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 4141658681232801631 } }, mode: Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: , arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 5, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; stack _0    core::option::Option<*const u8>   16b 8                storage=ss0
+; ret   _0      -          Pair(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }, ArgAttributes { regular: , arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) core::option::Option<*const u8>
+; arg   _1      = v0       Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(4 bytes)) }) &'{erased} arch::all::rabinkarp::FinderRev
+; arg   _2      = v1       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const u8
+; arg   _3      = v2       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const u8
+; arg   _4      = v3       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const u8
+; arg   _5      = v4       Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) *const u8
+
+; kind  local ty                              size align (abi)
+; ssa   _1    &'{erased} arch::all::rabinkarp::FinderRev    8b 8                var=1
+; ssa   _2    *const u8                         8b 8                var=2
+; ssa   _3    *const u8                         8b 8                var=3
+; ssa   _4    *const u8                         8b 8                var=4
+; ssa   _5    *const u8                         8b 8                var=5
+; ssa   _6    usize                             8b 8                var=6
+; ssa   _7    usize                             8b 8                var=7
+; ssa   _8    bool                              1b 1                var=8
+; ssa   _9    *const u8                         8b 8                var=9
+; ssa   _10   *const u8                         8b 8                var=10
+; ssa   _11   *const u8                         8b 8                var=11
+; ssa   _12   *const u8                         8b 8                var=12
+; ssa   _13   bool                              1b 1                var=13
+; ssa   _14   bool                              1b 1                var=14
+; ssa   _15   *const u8                         8b 8                var=15
+; ssa   _16   bool                              1b 1                var=16
+; ssa   _17   *const u8                         8b 8                var=17
+; ssa   _18   *const u8                         8b 8                var=18
+; ssa   _19   u8                                1b 1                var=19
+; ssa   _20   *const u8                         8b 8                var=20
+; ssa   _21   *const u8                         8b 8                var=21
+; ssa   _22   u8                                1b 1                var=22
+; ssa   _23   *const u8                         8b 8                var=23
+; ssa   _24   isize                             8b 8                var=24
+; ssa   _25   isize                             8b 8                var=25
+; ssa   _26   bool                              1b 1                var=26
+; ssa   _27   *const u8                         8b 8                var=27
+; ssa   _28   *const u8                         8b 8                var=28
+; ssa   _29   u8                                1b 1                var=29
+; ssa   _30   *const u8                         8b 8                var=30
+; ssa   _31   u32                               4b 4                var=31
+; ssa   _32   u32                               4b 4                var=32
+; ssa   _33   u32                               4b 4                var=33
+; ssa   _34   u32                               4b 4                var=34
+; ssa   _35   u32                               4b 4                var=35
+; ssa   _36   u32                               4b 4                var=36
+; ssa   _37   u32                               4b 4                var=37
+; ssa   _38   u32                               4b 4                var=38
+; ssa   _39   u32                               4b 4                var=39
+; ssa   _40   u32                               4b 4                var=40
+; ssa   _41   u32                               4b 4                var=41
+
+    ss0 = explicit_slot 16, align = 8
+    gv0 = symbol colocated userextname1 ; alloc182
+    gv1 = symbol colocated userextname1 ; alloc182
+    sig0 = (i64, i64) -> i64 system_v
+    sig1 = (i64, i64) -> i64 system_v
+    sig2 = (i64, i64, i64) -> i8 uext system_v
+    fn0 = colocated u0:78 sig0 ; Instance { def: Item(DefId(0:450 ~ memchr[3a6f]::ext::{impl#0}::distance)), args: [u8] }
+    fn1 = colocated u0:78 sig1 ; Instance { def: Item(DefId(0:450 ~ memchr[3a6f]::ext::{impl#0}::distance)), args: [u8] }
+    fn2 = colocated u0:94 sig2 ; Instance { def: Item(DefId(0:169 ~ memchr[3a6f]::arch::all::rabinkarp::is_equal_raw)), args: [] }
+
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    nop 
+; write_cvalue: Var(_1, var1): &'{erased} arch::all::rabinkarp::FinderRev <- ByVal(v0): &'{erased} arch::all::rabinkarp::FinderRev
+; write_cvalue: Var(_2, var2): *const u8 <- ByVal(v1): *const u8
+; write_cvalue: Var(_3, var3): *const u8 <- ByVal(v2): *const u8
+; write_cvalue: Var(_4, var4): *const u8 <- ByVal(v3): *const u8
+; write_cvalue: Var(_5, var5): *const u8 <- ByVal(v4): *const u8
+    jump block1
+
+block1:
+    v7 = call fn0(v2, v1)
+; write_cvalue: Var(_6, var6): usize <- ByVal(v7): usize
+    jump block2
+
+block2:
+    v10 = call fn1(v4, v3)
+; write_cvalue: Var(_7, var7): usize <- ByVal(v10): usize
+    jump block3
+
+block3:
+    v13 = icmp.i64 ugt v10, v7
+; write_cvalue: Var(_8, var8): bool <- ByVal(v13): bool
+; 
+; switchInt(move _8)
+    brif v13, block4, block5
+
+block4:
+    v14 = symbol_value.i64 gv0
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): core::option::Option<*const u8> <- ByRef(Pointer { base: Addr(v14), offset: Offset32(0) }, None): core::option::Option<*const u8>
+    v15 = load.i64 notrap v14
+    v16 = load.i64 notrap v14+8
+    v145 = stack_addr.i64 ss0
+    store notrap v15, v145
+    v146 = stack_addr.i64 ss0+8
+    store notrap v16, v146
+; 
+; goto
+    v20 = load.i64 notrap v145
+    return v20, v16
+
+block5:
+    v33 = iconst.i32 0
+; write_cvalue: Var(_31, var31): u32 <- ByVal(v33): u32
+; 
+; goto
+    v128 = isub.i64 v2, v10
+    jump block16(v2, v33)  ; v33 = 0
+
+block6(v36: i32, v100: i64):
+    v35 = load.i32 notrap v0
+; _35 = copy _31
+; write_cvalue: Var(_35, var35): u32 <- ByVal(v36): u32
+; _13 = Eq(move _34, move _35)
+    v37 = icmp eq v35, v36
+; write_cvalue: Var(_13, var13): bool <- ByVal(v37): bool
+; 
+; switchInt(move _13)
+    brif v37, block7, block11
+
+block7 cold:
+    v41 = call fn2(v100, v3, v10)
+; write_cvalue: Var(_14, var14): bool <- ByVal(v41): bool
+    jump block8
+
+block8 cold:
+    brif.i8 v41, block9, block10
+
+block9:
+    v44 = stack_addr.i64 ss0+8
+    store.i64 notrap v100, v44
+    v27 = iconst.i64 1
+    v46 = stack_addr.i64 ss0
+    store notrap v27, v46  ; v27 = 1
+; 
+; goto
+    jump block14
+
+block10:
+    jump block11
+
+block11:
+    v49 = icmp.i64 ule v100, v1
+; write_cvalue: Var(_16, var16): bool <- ByVal(v49): bool
+; 
+; switchInt(move _16)
+    brif v49, block12, block13
+
+block12:
+    v50 = symbol_value.i64 gv1
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): core::option::Option<*const u8> <- ByRef(Pointer { base: Addr(v50), offset: Offset32(0) }, None): core::option::Option<*const u8>
+    v51 = load.i64 notrap v50
+    v52 = load.i64 notrap v50+8
+    v139 = stack_addr.i64 ss0
+    store notrap v51, v139
+    v140 = stack_addr.i64 ss0+8
+    store notrap v52, v140
+; 
+; goto
+    jump block14
+
+block13:
+    v124 = iconst.i64 -1
+    v59 = iadd.i64 v100, v124  ; v124 = -1
+; write_cvalue: Var(_18, var18): *const u8 <- ByVal(v59): *const u8
+; _9 = copy _18
+; write_cvalue: Var(_9, var9): *const u8 <- ByVal(v59): *const u8
+; _21 = copy _9
+; write_cvalue: Var(_21, var21): *const u8 <- ByVal(v59): *const u8
+; _20 = Offset(copy _21, copy _7)
+    v63 = iadd v59, v10
+; write_cvalue: Var(_20, var20): *const u8 <- ByVal(v63): *const u8
+; _19 = copy (*_20)
+; write_cvalue: Var(_19, var19): u8 <- ByRef(Pointer { base: Addr(v63), offset: Offset32(0) }, None): u8
+    v64 = load.i8 notrap v63
+; _23 = copy _9
+; write_cvalue: Var(_23, var23): *const u8 <- ByVal(v59): *const u8
+; _22 = copy (*_23)
+; write_cvalue: Var(_22, var22): u8 <- ByRef(Pointer { base: Addr(v59), offset: Offset32(0) }, None): u8
+    v65 = load.i8 notrap v59
+; _36 = copy (((*_1).0: arch::all::rabinkarp::Finder).1: u32)
+; write_cvalue: Var(_36, var36): u32 <- ByRef(Pointer { base: Addr(v66), offset: Offset32(4) }, None): u32
+    v67 = load.i32 notrap v0+4
+; _39 = copy _19 as u32 (IntToInt)
+    v68 = uextend.i32 v64
+; write_cvalue: Var(_39, var39): u32 <- ByVal(v68): u32
+; _38 = Mul(copy _39, copy _36)
+    v69 = imul v68, v67
+; write_cvalue: Var(_38, var38): u32 <- ByVal(v69): u32
+; _37 = Sub(copy _31, copy _38)
+    v71 = isub.i32 v36, v69
+; write_cvalue: Var(_37, var37): u32 <- ByVal(v71): u32
+; _31 = move _37
+; write_cvalue: Var(_31, var31): u32 <- ByVal(v71): u32
+; _40 = ShlUnchecked(copy _31, const 1_u32)
+    v72 = iconst.i32 1
+    v73 = ishl v71, v72  ; v72 = 1
+; write_cvalue: Var(_40, var40): u32 <- ByVal(v73): u32
+; _41 = copy _22 as u32 (IntToInt)
+    v74 = uextend.i32 v65
+; write_cvalue: Var(_41, var41): u32 <- ByVal(v74): u32
+; _31 = Add(copy _40, copy _41)
+    v75 = iadd v73, v74
+; write_cvalue: Var(_31, var31): u32 <- ByVal(v75): u32
+; 
+; goto
+    jump block6(v75, v59)
+
+block14:
+    v141 = stack_addr.i64 ss0
+    v77 = load.i64 notrap v141
+    v142 = stack_addr.i64 ss0+8
+    v79 = load.i64 notrap v142
+    return v77, v79
+
+block16(v84: i64, v115: i32):
+    v86 = icmp.i64 ult v128, v84
+; write_cvalue: Var(_26, var26): bool <- ByVal(v86): bool
+; 
+; switchInt(move _26)
+    brif v86, block17, block18
+
+block17:
+    v143 = iconst.i64 -1
+    v91 = iadd.i64 v84, v143  ; v143 = -1
+; write_cvalue: Var(_28, var28): *const u8 <- ByVal(v91): *const u8
+; _11 = copy _28
+; write_cvalue: Var(_11, var11): *const u8 <- ByVal(v91): *const u8
+; _30 = copy _11
+; write_cvalue: Var(_30, var30): *const u8 <- ByVal(v91): *const u8
+; _29 = copy (*_30)
+; write_cvalue: Var(_29, var29): u8 <- ByRef(Pointer { base: Addr(v91), offset: Offset32(0) }, None): u8
+    v92 = load.i8 notrap v91
+; _32 = ShlUnchecked(copy _31, const 1_u32)
+    v144 = iconst.i32 1
+    v95 = ishl.i32 v115, v144  ; v144 = 1
+; write_cvalue: Var(_32, var32): u32 <- ByVal(v95): u32
+; _33 = copy _29 as u32 (IntToInt)
+    v96 = uextend.i32 v92
+; write_cvalue: Var(_33, var33): u32 <- ByVal(v96): u32
+; _31 = Add(copy _32, copy _33)
+    v97 = iadd v95, v96
+; write_cvalue: Var(_31, var31): u32 <- ByVal(v97): u32
+; 
+; goto
+    jump block16(v91, v97)
+
+block18:
+    jump block6(v115, v128)
+}
+
+; clifv-extnames 1
+; userextname0 = u0:78
+; userextname1 = u1:103
+; userextname2 = u0:94
+; decl u0:78 func local "_RNxC6memchr12HgOdqeKYa5Ry"
+; decl u0:94 func export "_RNxC6memchr12HkZWedW40JSm"
+; decl u0:99 func local "_RNxC6memchr12HlFTkvsRv1Zb"
+; decl u1:103 data local ro notls ".Ldata67"
+; end clifv-extnames

@@ -546,17 +546,21 @@ theorem term_step {fr fr2 : Frame} {m : Mem} {ft gt : Terminator} {σf σg : Val
 section
 variable {f g : Function} {fi gi : Info} {cert : Cert} {norm : Norm} {syms : String → Option Nat}
 
-theorem id_eqT (H : HypT f g fi gi cert norm) {i : Nat} {b gb : Block}
+theorem id_eqD (H : HypD f g fi gi cert norm) {i : Nat} {b gb : Block}
     (hb : f.blocks[i]? = some b) (hg : g.blocks[i]? = some gb) : gb.id = b.id := by
   have h := congrArg (·[i]?) H.ok.ids
   simp only [List.getElem?_map, hb, hg, Option.map_some] at h
   exact Option.some.inj h
 
+theorem id_eqT (H : HypT f g fi gi cert norm) {i : Nat} {b gb : Block}
+    (hb : f.blocks[i]? = some b) (hg : g.blocks[i]? = some gb) : gb.id = b.id := by
+  exact id_eqD H.toD hb hg
+
 theorem id_eq (H : Hyp f g fi gi cert norm) {i : Nat} {b gb : Block}
     (hb : f.blocks[i]? = some b) (hg : g.blocks[i]? = some gb) : gb.id = b.id := by
   exact id_eqT H.toT hb hg
 
-theorem block?_gT (H : HypT f g fi gi cert norm) {id : BlockId} {j : Nat} {b gb : Block}
+theorem block?_gD (H : HypD f g fi gi cert norm) {id : BlockId} {j : Nat} {b gb : Block}
     (hf : f.block? id = some b) (hj : f.blocks[j]? = some b) (hj' : g.blocks[j]? = some gb) :
     g.block? id = some gb := by
   obtain ⟨j0, hj0, hid⟩ := H.wff.block?_index hf
@@ -566,22 +570,27 @@ theorem block?_gT (H : HypT f g fi gi cert norm) {id : BlockId} {j : Nat} {b gb 
   obtain ⟨hp, i, hi, hbi, hlt⟩ := hf
   have hij : i = j0 := H.wff.idx_unique (by simp [hi, hbi]) hj0 rfl
   subst hij
-  have hid' : gb.id = b.id := id_eqT H hj0 hj'
+  have hid' : gb.id = b.id := id_eqD H hj0 hj'
   have hi' : i < g.blocks.length := (List.getElem?_eq_some_iff.1 hj').1
   refine ⟨by simpa [hid'] using hp, i, hi', by simpa [hi'] using hj', fun j2 hj2 => ?_⟩
   have hj2f : j2 < f.blocks.length := by omega
   have hid2 : g.blocks[j2].id = f.blocks[j2].id :=
-    id_eqT H (List.getElem?_eq_getElem hj2f) (List.getElem?_eq_getElem (by omega))
+    id_eqD H (List.getElem?_eq_getElem hj2f) (List.getElem?_eq_getElem (by omega))
   have := hlt j2 hj2
   rw [hid2]
   exact this
+
+theorem block?_gT (H : HypT f g fi gi cert norm) {id : BlockId} {j : Nat} {b gb : Block}
+    (hf : f.block? id = some b) (hj : f.blocks[j]? = some b) (hj' : g.blocks[j]? = some gb) :
+    g.block? id = some gb := by
+  exact block?_gD H.toD hf hj hj'
 
 theorem block?_g (H : Hyp f g fi gi cert norm) {id : BlockId} {j : Nat} {b gb : Block}
     (hf : f.block? id = some b) (hj : f.blocks[j]? = some b) (hj' : g.blocks[j]? = some gb) :
     g.block? id = some gb := by
   exact block?_gT H.toT hf hj hj'
 
-theorem strict_of_leT (H : HypT f g fi gi cert norm) {a : Nat × Nat} {d t si : Nat}
+theorem strict_of_leD (H : HypD f g fi gi cert norm) {a : Nat × Nat} {d t si : Nat}
     (h : LeP fi.cfg.idom a (d, t)) (hne : d ≠ si) (ha : Anc fi.cfg.idom d si) :
     a.1 ≠ si ∧ Anc fi.cfg.idom a.1 si := by
   rcases h with ⟨e, -⟩ | ⟨-, an⟩
@@ -591,16 +600,25 @@ theorem strict_of_leT (H : HypT f g fi gi cert norm) {a : Nat × Nat} {d t si : 
     rw [he] at an
     exact hne (Anc.antisymm H.rankF ha an)
 
+theorem strict_of_leT (H : HypT f g fi gi cert norm) {a : Nat × Nat} {d t si : Nat}
+    (h : LeP fi.cfg.idom a (d, t)) (hne : d ≠ si) (ha : Anc fi.cfg.idom d si) :
+    a.1 ≠ si ∧ Anc fi.cfg.idom a.1 si := by
+  exact strict_of_leD H.toD h hne ha
+
 theorem strict_of_le (H : Hyp f g fi gi cert norm) {a : Nat × Nat} {d t si : Nat}
     (h : LeP fi.cfg.idom a (d, t)) (hne : d ≠ si) (ha : Anc fi.cfg.idom d si) :
     a.1 ≠ si ∧ Anc fi.cfg.idom a.1 si := by
   exact strict_of_leT H.toT h hne ha
 
-theorem strict_of_ancT (H : HypT f g fi gi cert norm) {a d si : Nat} (h : Anc fi.cfg.idom a d)
+theorem strict_of_ancD (H : HypD f g fi gi cert norm) {a d si : Nat} (h : Anc fi.cfg.idom a d)
     (hne : d ≠ si) (ha : Anc fi.cfg.idom d si) : a ≠ si ∧ Anc fi.cfg.idom a si := by
   refine ⟨fun he => ?_, h.trans ha⟩
   rw [he] at h
   exact hne (Anc.antisymm H.rankF ha h)
+
+theorem strict_of_ancT (H : HypT f g fi gi cert norm) {a d si : Nat} (h : Anc fi.cfg.idom a d)
+    (hne : d ≠ si) (ha : Anc fi.cfg.idom d si) : a ≠ si ∧ Anc fi.cfg.idom a si := by
+  exact strict_of_ancD H.toD h hne ha
 
 theorem strict_of_anc (H : Hyp f g fi gi cert norm) {a d si : Nat} (h : Anc fi.cfg.idom a d)
     (hne : d ≠ si) (ha : Anc fi.cfg.idom d si) : a ≠ si ∧ Anc fi.cfg.idom a si := by
@@ -608,7 +626,7 @@ theorem strict_of_anc (H : Hyp f g fi gi cert norm) {a d si : Nat} (h : Anc fi.c
 
 /-- Entering block `si` (rebinding only its parameters) keeps the value of every term whose
 site is in a strict dominator of `si`. -/
-theorem TV_enterT (H : HypT f g fi gi cert norm) {fr fr1 : Frame} {si : Nat} {b2 : Block}
+theorem TV_enterD (H : HypD f g fi gi cert norm) {fr fr1 : Frame} {si : Nat} {b2 : Block}
     (hg : fr1.func = fr.func) (hs : fr1.slots = fr.slots) (hj : f.blocks[si]? = some b2)
     (hr : ∀ v, v ∉ b2.params.map (·.1) → fr1.regs v = fr.regs v) {t : Nat}
     (hne : ((ccOf fi gi cert norm).siteOf t).1 ≠ si)
@@ -628,6 +646,16 @@ theorem TV_enterT (H : HypT f g fi gi cert norm) {fr fr1 : Frame} {si : Nat} {b2
   rcases hva with ⟨h1, -⟩ | ⟨-, h2⟩
   · exact hne h1.symm
   · exact hne (Anc.antisymm H.rankF ha h2)
+
+/-- Entering block `si` (rebinding only its parameters) keeps the value of every term whose
+site is in a strict dominator of `si`. -/
+theorem TV_enterT (H : HypT f g fi gi cert norm) {fr fr1 : Frame} {si : Nat} {b2 : Block}
+    (hg : fr1.func = fr.func) (hs : fr1.slots = fr.slots) (hj : f.blocks[si]? = some b2)
+    (hr : ∀ v, v ∉ b2.params.map (·.1) → fr1.regs v = fr.regs v) {t : Nat}
+    (hne : ((ccOf fi gi cert norm).siteOf t).1 ≠ si)
+    (ha : Anc fi.cfg.idom ((ccOf fi gi cert norm).siteOf t).1 si) :
+    TV f cert syms fr1 t = TV f cert syms fr t := by
+  exact TV_enterD H.toD hg hs hj hr hne ha
 
 /-- Entering block `si` (rebinding only its parameters) keeps the value of every term whose
 site is in a strict dominator of `si`. -/
@@ -710,13 +738,20 @@ theorem MR.inB {fr fr' : Frame} {m : Mem} (h : MR f g fi gi cert norm syms fr fr
 /-! ## The end of a block -/
 
 /-- The terminators' operands read equal values. -/
-theorem AtEnd.opsT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+theorem AtEnd.opsD (H : HypD f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
     {fr fr' : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr' m) :
     ∀ x ∈ termOperands fb.term, ∀ y ∈ termOperands gb.term,
       (ccOf fi gi cert norm).ef x = (ccOf fi gi cert norm).eg y → fr'.regs y = fr.regs x := by
   intro x hx y hy hxy
   rw [← hE.agreeG y (H.wfg.termUses bi gb hE.hgb y hy),
     ← hE.agreeF x (H.wff.termUses bi fb hE.hfb x hx), hxy]
+
+/-- The terminators' operands read equal values. -/
+theorem AtEnd.opsT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+    {fr fr' : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr' m) :
+    ∀ x ∈ termOperands fb.term, ∀ y ∈ termOperands gb.term,
+      (ccOf fi gi cert norm).ef x = (ccOf fi gi cert norm).eg y → fr'.regs y = fr.regs x := by
+  exact AtEnd.opsD H.toD hE
 
 /-- The terminators' operands read equal values. -/
 theorem AtEnd.ops (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
@@ -726,7 +761,7 @@ theorem AtEnd.ops (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
   exact AtEnd.opsT H.toT hE
 
 /-- Registers from the fresh values on are not read. -/
-theorem AtEnd.regs_congrT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block}
+theorem AtEnd.regs_congrD (H : HypD f g fi gi cert norm) {bi : Nat} {fb gb : Block}
     {S : List Fact} {fr fr' : Frame} {m : Mem}
     (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr' m) {r r' : Regs}
     (hr : ∀ v < f.freshValue, r v = fr.regs v) (hr' : ∀ v < g.freshValue, r' v = fr'.regs v) :
@@ -746,9 +781,17 @@ theorem AtEnd.regs_congrT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Blo
       (fun v hv => hr v (H.wff.avail_lt hv)) (hE.sitesG y hy), hE.agreeG y hy]
     exact (hr' y (H.wfg.avail_lt hy)).symm
   sitesG := hE.sitesG
-  facts F hF := FactHolds.stableT H (fr1 := fr) (fr2 := { fr with regs := r }) rfl rfl rfl
+  facts F hF := FactHolds.stableD H (fr1 := fr) (fr2 := { fr with regs := r }) rfl rfl rfl
     (fun v hv => hr v (H.wff.avail_lt hv)) (hE.factSites F hF) (fun _ => rfl) (hE.facts F hF)
   factSites := hE.factSites
+
+/-- Registers from the fresh values on are not read. -/
+theorem AtEnd.regs_congrT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block}
+    {S : List Fact} {fr fr' : Frame} {m : Mem}
+    (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr' m) {r r' : Regs}
+    (hr : ∀ v < f.freshValue, r v = fr.regs v) (hr' : ∀ v < g.freshValue, r' v = fr'.regs v) :
+    AtEnd f g fi gi cert norm syms bi fb gb S { fr with regs := r } { fr' with regs := r' } m :=
+  AtEnd.regs_congrD H.toD hE hr hr'
 
 /-- Registers from the fresh values on are not read. -/
 theorem AtEnd.regs_congr (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block}
@@ -776,7 +819,7 @@ theorem AtEnd.regs_congr (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block
   factSites := hE.factSites
 
 /-- From the relation with `f` at the end of its body, `g` runs its pure tail. -/
-theorem AtEnd.of_relT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
+theorem AtEnd.of_relD (H : HypD f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
     {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hm : m.symbols = syms)
     (hb : fr.body = []) :
@@ -812,6 +855,14 @@ theorem AtEnd.of_relT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi c
     hR.agreeF, hag2, hsite2, hR.facts, hR.factSites⟩⟩
 
 /-- From the relation with `f` at the end of its body, `g` runs its pure tail. -/
+theorem AtEnd.of_relT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
+    {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hm : m.symbols = syms)
+    (hb : fr.body = []) :
+    ∃ fb gb fr2, LStar fr' m fr2 m ∧ AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m := by
+  exact AtEnd.of_relD H.toD hrun hR hm hb
+
+/-- From the relation with `f` at the end of its body, `g` runs its pure tail. -/
 theorem AtEnd.of_rel (H : Hyp f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
     {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hm : m.symbols = syms)
@@ -825,7 +876,7 @@ theorem AtEnd.of_rel (H : Hyp f g fi gi cert norm) (hrun : GPreRun f g fi gi cer
 with the same argument values: the frames are related at the start of the successor `si` with
 its entry facts, at every memory `m'` agreeing with `m` where the edge keeps memory facts (a
 branch: `m' = m`; after a `try_call`: any memory). -/
-theorem rel_enterT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+theorem rel_enterD (H : HypD f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
     {fr fr' : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr' m)
     {bc bc' : BlockCall} {fr1 : Frame} (hbc : bc.block ∈ termSuccs fb.term)
     (hblk : bc'.block = bc.block)
@@ -860,7 +911,7 @@ theorem rel_enterT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S 
   have hlt : si < g.blocks.length := by
     rw [H.ok.len]; exact (List.getElem?_eq_some_iff.1 hj).1
   obtain ⟨gb2, hj'⟩ : ∃ gb2, g.blocks[si]? = some gb2 := ⟨_, List.getElem?_eq_getElem hlt⟩
-  have hgb2 : g.block? bc.block = some gb2 := block?_gT H hb2 hj hj'
+  have hgb2 : g.block? bc.block = some gb2 := block?_gD H hb2 hj hj'
   obtain ⟨hentry, hbok⟩ := H.ok.blocks si b2 gb2 hj hj'
   have bok := blockOk_spec hbok
   have hgaG := hga args hgaF
@@ -906,7 +957,7 @@ theorem rel_enterT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S 
       rw [setMany_param hset hpi (params_uniq (env := (ccOf fi gi cert norm).ef) bok.paramsF hpi),
         setMany_param hset' hi (params_uniq (env := (ccOf fi gi cert norm).eg) bok.paramsG hi)]
     · have hgsucc : gb2.id ∈ termSuccs gb.term := by
-        rw [id_eqT H hj hj', hid, ← hTS]; exact hbc
+        rw [id_eqD H hj hj', hid, ← hTS]; exact hbc
       have hya := H.wfg.avail_pred hE.hgb hj' hgsucc hy hdy
       obtain ⟨d, t, hd, hva⟩ := hy
       rcases hva with ⟨hds, ht0⟩ | ⟨hne, ha⟩
@@ -916,9 +967,9 @@ theorem rel_enterT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S 
         exact hdy (by rw [← hqy]; exact H.wfg.site_param hj' hq)
       have ha2 : Anc fi.cfg.idom d si := by rw [← H.idomG]; exact ha
       have hanc := ancB_sound (H.ok.sitesG y d t (H.wfg.sitesRev y (d, t) hd))
-      obtain ⟨hne', ha'⟩ := strict_of_ancT H hanc hne ha2
+      obtain ⟨hne', ha'⟩ := strict_of_ancD H hanc hne ha2
       refine ⟨?_, LeP.of_anc hne' ha' 0⟩
-      rw [TV_enterT H (fr := fr) (fr1 := fr1) hfr1f hfr1s hj hr1 hne' ha']
+      rw [TV_enterD H (fr := fr) (fr1 := fr1) hfr1f hfr1s hj hr1 hne' ha']
       show _ = regs' y
       rw [((setMany_spec hset').2 y).1 hnp]
       exact hE.agreeG y hya
@@ -942,8 +993,8 @@ theorem rel_enterT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S 
         obtain ⟨p, hp, hpx⟩ := List.mem_map.1 hm
         exact hdx (by rw [← hpx]; exact H.wff.site_param hj hp)
       have hle := H.le_sound (H.ok.sitesF x (d, t) (H.wff.sitesRev x (d, t) hd))
-      obtain ⟨hne', ha'⟩ := strict_of_leT H hle hne ha
-      rw [TV_enterT H (fr := fr) (fr1 := fr1) hfr1f hfr1s hj hr1 hne' ha', hr1 x hnp]
+      obtain ⟨hne', ha'⟩ := strict_of_leD H hle hne ha
+      rw [TV_enterD H (fr := fr) (fr1 := fr1) hfr1f hfr1s hj hr1 hne' ha', hr1 x hnp]
       exact hE.agreeF x hxa
   · intro F hF
     have hFS := hS F hF
@@ -954,13 +1005,29 @@ theorem rel_enterT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S 
     refine factHolds_of_TV (fr1 := fr) (fr2 := fr1) (by rw [hfr1f]) (by rw [hfr1f]) hfr1s
       (fun t ht => ?_) (fun hmem => hm' F hFS hmem) (hE.facts F hFS')
     rcases entryOk_spec hentry F hF t ht with ⟨hne, ha⟩ | ⟨-, -, hcl⟩
-    · exact TV_enterT H hfr1f hfr1s hj hr1 hne (ancB_sound ha)
+    · exact TV_enterD H hfr1f hfr1s hj hr1 hne (ancB_sound ha)
     · exact TV_closed hfr1f hfr1s hcl
   · intro F hF t ht
     rcases entryOk_spec hentry F hF t ht with ⟨hne, ha⟩ | ⟨hsi, hs, -⟩
     · exact LeP.of_anc hne (ancB_sound ha) 0
     · rw [hs, hsi]
       exact LeP.refl _ _
+
+/-- **Block entry.** Both frames at the end of block `bi` (`AtEnd`) enter the same successor
+with the same argument values: the frames are related at the start of the successor `si` with
+its entry facts, at every memory `m'` agreeing with `m` where the edge keeps memory facts (a
+branch: `m' = m`; after a `try_call`: any memory). -/
+theorem rel_enterT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+    {fr fr' : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr' m)
+    {bc bc' : BlockCall} {fr1 : Frame} (hbc : bc.block ∈ termSuccs fb.term)
+    (hblk : bc'.block = bc.block)
+    (hga : ∀ vs, fr.getMany bc.args = .ok vs → fr'.getMany bc'.args = .ok vs)
+    (he : enterBlock fr bc = .ok fr1) :
+    ∃ si fr1', (ccOf fi gi cert norm).index bc.block = some si ∧
+      enterBlock fr' bc' = .ok fr1' ∧
+      ∀ m' : Mem, (∀ F ∈ (if fb.term.isTry then kill S else S), F.isMem = true → m' = m) →
+        Rel f g fi gi cert norm syms si 0 0 ((ccOf fi gi cert norm).factsAt si) fr1 fr1' m' := by
+  exact rel_enterD H.toD hE hbc hblk hga he
 
 /-- **Block entry.** Both frames at the end of block `bi` (`AtEnd`) enter the same successor
 with the same argument values: the frames are related at the start of the successor `si` with
@@ -981,7 +1048,7 @@ theorem rel_enter (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
 /-! ## Terminators -/
 
 /-- The local steps of both frames at the end of a block agree. -/
-theorem end_stepT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+theorem end_stepD (H : HypD f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
     {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m) :
     (∀ fr1 m1, lstep fr m = .next fr1 m1 →
       ∃ fr1', lstep fr2 m = .next fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1) ∧
@@ -991,10 +1058,20 @@ theorem end_stepT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S :
   obtain ⟨hb, hft⟩ := inv_end hE.invf hE.hfb
   obtain ⟨hb2, hgt⟩ := inv_end hE.invg hE.hgb
   refine term_step (Q := fun a b m1 => MR f g fi gi cert norm syms a b m1) hb hb2 hft hgt
-    hE.endOk.1 (AtEnd.opsT H hE) (by rw [hE.invg.func, hE.invf.func, H.ok.externs])
+    hE.endOk.1 (AtEnd.opsD H hE) (by rw [hE.invg.func, hE.invf.func, H.ok.externs])
     (by rw [hE.invg.func, hE.invf.func, H.ok.sig]) fun bc bc' fr1 hs hblk hga he => ?_
-  obtain ⟨si, fr1', -, he', hrel⟩ := rel_enterT H hE hs hblk hga he
+  obtain ⟨si, fr1', -, he', hrel⟩ := rel_enterD H hE hs hblk hga he
   exact ⟨fr1', he', si, 0, 0, _, hrel m fun _ _ _ => rfl⟩
+
+/-- The local steps of both frames at the end of a block agree. -/
+theorem end_stepT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+    {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 →
+      ∃ fr1', lstep fr2 m = .next fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1) ∧
+    (∀ vals, lstep fr m = .ret vals → lstep fr2 m = .ret vals) ∧
+    (∀ ext vals, lstep fr m = .tail ext vals → lstep fr2 m = .tail ext vals) ∧
+    (∀ c, lstep fr m = .trap c → lstep fr2 m = .trap c) := by
+  exact end_stepD H.toD hE
 
 /-- The local steps of both frames at the end of a block agree. -/
 theorem end_step (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
@@ -1007,6 +1084,24 @@ theorem end_step (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : L
   exact end_stepT H.toT hE
 
 /-- **The terminators.** -/
+theorem rel_termD (H : HypD f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
+    {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
+    (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hm : m.symbols = syms)
+    (hb : fr.body = []) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 →
+      ∃ fr1', LStar fr' m fr1' m1 ∧ MR f g fi gi cert norm syms fr1 fr1' m1) ∧
+    (∀ vals, lstep fr m = .ret vals → ∃ fr2, LStar fr' m fr2 m ∧ lstep fr2 m = .ret vals) ∧
+    (∀ ext vals, lstep fr m = .tail ext vals →
+      ∃ fr2, LStar fr' m fr2 m ∧ lstep fr2 m = .tail ext vals) ∧
+    (∀ c', lstep fr m = .trap c' → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c') := by
+  obtain ⟨fb, gb, fr2, hst, hE⟩ := AtEnd.of_relD H hrun hR hm hb
+  obtain ⟨h1, h2, h3, h4⟩ := end_stepD H hE
+  refine ⟨fun fr1 m1 hl => ?_, fun vals hl => ⟨fr2, hst, h2 vals hl⟩,
+    fun ext vals hl => ⟨fr2, hst, h3 ext vals hl⟩, fun c hl => ⟨fr2, m, hst, h4 c hl⟩⟩
+  obtain ⟨fr1', hl', hq⟩ := h1 fr1 m1 hl
+  exact ⟨fr1', hst.trans (.step hl' (.refl _ _)), hq⟩
+
+/-- **The terminators.** -/
 theorem rel_termT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
     {bi k k' : Nat} {S : List Fact} {fr fr' : Frame} {m : Mem}
     (hR : Rel f g fi gi cert norm syms bi k k' S fr fr' m) (hm : m.symbols = syms)
@@ -1017,12 +1112,7 @@ theorem rel_termT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert 
     (∀ ext vals, lstep fr m = .tail ext vals →
       ∃ fr2, LStar fr' m fr2 m ∧ lstep fr2 m = .tail ext vals) ∧
     (∀ c', lstep fr m = .trap c' → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c') := by
-  obtain ⟨fb, gb, fr2, hst, hE⟩ := AtEnd.of_relT H hrun hR hm hb
-  obtain ⟨h1, h2, h3, h4⟩ := end_stepT H hE
-  refine ⟨fun fr1 m1 hl => ?_, fun vals hl => ⟨fr2, hst, h2 vals hl⟩,
-    fun ext vals hl => ⟨fr2, hst, h3 ext vals hl⟩, fun c hl => ⟨fr2, m, hst, h4 c hl⟩⟩
-  obtain ⟨fr1', hl', hq⟩ := h1 fr1 m1 hl
-  exact ⟨fr1', hst.trans (.step hl' (.refl _ _)), hq⟩
+  exact rel_termD H.toD hrun hR hm hb
 
 /-- **The terminators.** -/
 theorem rel_term (H : Hyp f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm)
@@ -1041,7 +1131,7 @@ theorem rel_term (H : Hyp f g fi gi cert norm) (hrun : GPreRun f g fi gi cert no
 
 /-- The successor arguments of a `try_call` read alike once both frames bind the same values
 at their fresh values. -/
-theorem pair_regsT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+theorem pair_regsD (H : HypD f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
     {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m)
     (hw : Win fr fr2) {n : Nat} {vs : List Val} {r r' : Regs}
     (h : fr.regs.setMany (tryRets n fr.func.freshValue) vs = some r)
@@ -1056,12 +1146,25 @@ theorem pair_regsT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S 
     show r' w = r v
     rw [set_lo hE.invg.func h' w (H.wfg.avail_lt (H.wfg.termUses bi gb hE.hgb w hw')),
       set_lo hE.invf.func h v (H.wff.avail_lt (H.wff.termUses bi fb hE.hfb v hv))]
-    exact AtEnd.opsT H hE v hv w hw' hvw
+    exact AtEnd.opsD H hE v hv w hw' hvw
   · show r' (fr2.func.freshValue + i) = r (fr.func.freshValue + i)
     rw [setMany_tryRets h' i, setMany_tryRets h i]
     split
     · rfl
     · exact (hw i).symm
+
+/-- The successor arguments of a `try_call` read alike once both frames bind the same values
+at their fresh values. -/
+theorem pair_regsT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+    {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m)
+    (hw : Win fr fr2) {n : Nat} {vs : List Val} {r r' : Regs}
+    (h : fr.regs.setMany (tryRets n fr.func.freshValue) vs = some r)
+    (h' : fr2.regs.setMany (tryRets n fr2.func.freshValue) vs = some r') :
+    ∀ x y, ((∃ v w, v ∈ termOperands fb.term ∧ w ∈ termOperands gb.term ∧ x = v ∧ y = w ∧
+        (ccOf fi gi cert norm).ef v = (ccOf fi gi cert norm).eg w) ∨
+        ∃ i, x = fr.func.freshValue + i ∧ y = fr2.func.freshValue + i) →
+      ({ fr2 with regs := r' } : Frame).regs y = ({ fr with regs := r } : Frame).regs x := by
+  exact pair_regsD H.toD hE hw h h'
 
 /-- The successor arguments of a `try_call` read alike once both frames bind the same values
 at their fresh values. -/
@@ -1077,7 +1180,7 @@ theorem pair_regs (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : 
   exact pair_regsT H.toT hE hw h h'
 
 /-- The normal-return edge of a `try_call`. -/
-theorem tcontT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+theorem tcontD (H : HypD f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
     {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m)
     (hw : Win fr fr2) (hTry : fb.term.isTry = true) {n : Nat} {bc bc2 : BlockCall}
     (hsucc : bc.block ∈ termSuccs fb.term) (hblk : bc2.block = bc.block)
@@ -1091,10 +1194,23 @@ theorem tcontT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : Li
   obtain ⟨regs', hset'⟩ := setMany_len (r := fr2.regs) (xs := tryRets n fr2.func.freshValue)
     (vs := vs) (by have := (setMany_spec hset).1; simpa [tryRets] using this)
   refine ⟨regs', hset', fun fr1 he => ?_⟩
-  have hE' := AtEnd.regs_congrT H hE (set_lo hE.invf.func hset) (set_lo hE.invg.func hset')
-  obtain ⟨si, fr1', -, he', hrel⟩ := rel_enterT H hE' hsucc hblk
-    (fun vs' hv => getMany_pw2 (hpw.imp (pair_regsT H hE hw hset hset')) hv) he
+  have hE' := AtEnd.regs_congrD H hE (set_lo hE.invf.func hset) (set_lo hE.invg.func hset')
+  obtain ⟨si, fr1', -, he', hrel⟩ := rel_enterD H hE' hsucc hblk
+    (fun vs' hv => getMany_pw2 (hpw.imp (pair_regsD H hE hw hset hset')) hv) he
   exact ⟨fr1', he', ⟨si, 0, 0, _, hrel m1 (nomem hTry)⟩, win_enter he he' (win_set hw hset hset')⟩
+
+/-- The normal-return edge of a `try_call`. -/
+theorem tcontT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+    {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m)
+    (hw : Win fr fr2) (hTry : fb.term.isTry = true) {n : Nat} {bc bc2 : BlockCall}
+    (hsucc : bc.block ∈ termSuccs fb.term) (hblk : bc2.block = bc.block)
+    (hpw : Pw2 (fun x y => (∃ v w, v ∈ termOperands fb.term ∧ w ∈ termOperands gb.term ∧
+        x = v ∧ y = w ∧ (ccOf fi gi cert norm).ef v = (ccOf fi gi cert norm).eg w) ∨
+        ∃ i, x = fr.func.freshValue + i ∧ y = fr2.func.freshValue + i) bc.args bc2.args)
+    (rtys : List Ty) :
+    TContM syms (MRW f g fi gi cert norm syms) fr (tryRets n fr.func.freshValue) bc fr2
+      (tryRets n fr2.func.freshValue) bc2 rtys := by
+  exact tcontD H.toD hE hw hTry hsucc hblk hpw rtys
 
 /-- The normal-return edge of a `try_call`. -/
 theorem tcont (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
@@ -1110,7 +1226,7 @@ theorem tcont (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List
   exact tcontT H.toT hE hw hTry hsucc hblk hpw rtys
 
 /-- The handler edges of a `try_call`. -/
-theorem hcontT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+theorem hcontD (H : HypD f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
     {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m)
     (hw : Win fr fr2) (hTry : fb.term.isTry = true) {et et' : ExnTable}
     (het : et.mapVals (ccOf fi gi cert norm).ef = et'.mapVals (ccOf fi gi cert norm).eg)
@@ -1147,20 +1263,31 @@ theorem hcontT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : Li
           some regs := hset
       have hset0' : fr2.regs.setMany (tryRets e.payload.length fr2.func.freshValue) e.payload =
           some regs' := hset'
-      have hE' := AtEnd.regs_congrT H hE (set_lo hE.invf.func hset0) (set_lo hE.invg.func hset0')
+      have hE' := AtEnd.regs_congrD H hE (set_lo hE.invf.func hset0) (set_lo hE.invg.func hset0')
       have hpw' : Pw2 (fun x y => ({ fr2 with regs := regs' } : Frame).regs y =
           ({ fr with regs := regs } : Frame).regs x) bc.args bc2.args :=
-        hpw.imp fun x y hq => pair_regsT H hE hw hset0 hset0' x y (by
+        hpw.imp fun x y hq => pair_regsD H hE hw hset0 hset0' x y (by
           rcases hq with ⟨v, w, hv, hw', h1, h2, h3⟩ | hq
           · exact .inl ⟨v, w, hvf d (catch?_mem hd) v hv, hvg d' (catch?_mem hd') w hw', h1, h2, h3⟩
           · exact .inr hq)
       have hsb : bc.block ∈ termSuccs fb.term := by
         rw [tryHandler_block hbc]; exact hsucc d (catch?_mem hd)
       obtain ⟨si, fr1', -, he', hrel⟩ :=
-        rel_enterT H hE' hsb hblk (fun vs hv => getMany_pw2 hpw' hv) he1'
+        rel_enterD H hE' hsb hblk (fun vs hv => getMany_pw2 hpw' hv) he1'
       exact ⟨fr1', (enterBlock_bt { fr2 with regs := regs' } [] (.jump bc2) bc2).trans he',
         fun m1 _ => ⟨⟨si, 0, 0, _, hrel m1 (nomem hTry)⟩,
           win_enter he1' he' (win_set hw hset0 hset0')⟩⟩
+
+/-- The handler edges of a `try_call`. -/
+theorem hcontT (H : HypT f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
+    {fr fr2 : Frame} {m : Mem} (hE : AtEnd f g fi gi cert norm syms bi fb gb S fr fr2 m)
+    (hw : Win fr fr2) (hTry : fb.term.isTry = true) {et et' : ExnTable}
+    (het : et.mapVals (ccOf fi gi cert norm).ef = et'.mapVals (ccOf fi gi cert norm).eg)
+    (hsucc : ∀ d ∈ et.handlers, d.block ∈ termSuccs fb.term)
+    (hvf : ∀ d ∈ et.handlers, ∀ v ∈ d.vals, v ∈ termOperands fb.term)
+    (hvg : ∀ d ∈ et'.handlers, ∀ w ∈ d.vals, w ∈ termOperands gb.term) :
+    HContM syms (MRW f g fi gi cert norm syms) fr et fr2 et' := by
+  exact hcontD H.toD hE hw hTry het hsucc hvf hvg
 
 /-- The handler edges of a `try_call`. -/
 theorem hcont (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List Fact}
@@ -1174,12 +1301,12 @@ theorem hcont (H : Hyp f g fi gi cert norm) {bi : Nat} {fb gb : Block} {S : List
   exact hcontT H.toT hE hw hTry het hsucc hvf hvg
 
 /-- **`try_call` and `try_call_indirect`** (with equal windows, `MRW`). -/
-theorem rel_tryT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm) :
+theorem rel_tryD (H : HypD f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm) :
     TryOkMU syms (MRW f g fi gi cert norm syms) where
   call := by
     intro fr fr' m fn args et n base bc ext vals hR hm hb ht htc hca
     obtain ⟨⟨bi, k, k', S, hR⟩, hw⟩ := hR
-    obtain ⟨fb, gb, fr2, hst, hE⟩ := AtEnd.of_relT H hrun hR hm hb
+    obtain ⟨fb, gb, fr2, hst, hE⟩ := AtEnd.of_relD H hrun hR hm hb
     obtain ⟨-, hft⟩ := inv_end hE.invf hE.hfb
     obtain ⟨hb2, hgt⟩ := inv_end hE.invg hE.hgb
     have hfb : fb.term = .tryCall fn args et := hft.symm.trans ht
@@ -1197,7 +1324,7 @@ theorem rel_tryT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert n
       intro i
       rw [hf2, hw2 i]
       exact hw i
-    have hops := AtEnd.opsT H hE
+    have hops := AtEnd.opsD H hE
     rw [hfb, hgb] at hops
     have hf : fr.func = f := hE.invf.func
     have hg2 : fr2.func = g := hE.invg.func
@@ -1230,14 +1357,14 @@ theorem rel_tryT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert n
         · exact .inr hq
     have hTry : fb.term.isTry = true := by simp only [hfb, Terminator.isTry]
     refine ⟨fr2, fn, args', et', fr2.func.freshValue, bc2, hst, hb2, hgt.trans hgb, htc2, hca2,
-      tcontT H hE hw2 hTry (by rw [hfb]; exact normal_succ hbc) hblk hpw' _, ?_⟩
-    exact hcontT H hE hw2 hTry het (fun d hd => by rw [hfb]; exact handler_succ hd)
+      tcontD H hE hw2 hTry (by rw [hfb]; exact normal_succ hbc) hblk hpw' _, ?_⟩
+    exact hcontD H hE hw2 hTry het (fun d hd => by rw [hfb]; exact handler_succ hd)
       (fun d hd v hv => by rw [hfb]; simp [termOperands, handler_vals hd hv])
       (fun d hd w hw' => by rw [hgb]; simp [termOperands, handler_vals hd hw'])
   ind := by
     intro fr fr' m callee args et n base bc dsig a vals hR hm hb ht htc hca
     obtain ⟨⟨bi, k, k', S, hR⟩, hw⟩ := hR
-    obtain ⟨fb, gb, fr2, hst, hE⟩ := AtEnd.of_relT H hrun hR hm hb
+    obtain ⟨fb, gb, fr2, hst, hE⟩ := AtEnd.of_relD H hrun hR hm hb
     obtain ⟨-, hft⟩ := inv_end hE.invf hE.hfb
     obtain ⟨hb2, hgt⟩ := inv_end hE.invg hE.hgb
     have hfb : fb.term = .tryCallIndirect callee args et := hft.symm.trans ht
@@ -1257,7 +1384,7 @@ theorem rel_tryT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert n
       intro i
       rw [hf2, hw2 i]
       exact hw i
-    have hops := AtEnd.opsT H hE
+    have hops := AtEnd.opsD H hE
     rw [hfb, hgb] at hops
     have hf : fr.func = f := hE.invf.func
     have hg2 : fr2.func = g := hE.invg.func
@@ -1288,10 +1415,16 @@ theorem rel_tryT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert n
         · exact .inr hq
     have hTry : fb.term.isTry = true := by simp only [hfb, Terminator.isTry]
     refine ⟨fr2, callee', args', et', fr2.func.freshValue, bc2, hst, hb2, hgt.trans hgb, htc2, hca2,
-      tcontT H hE hw2 hTry (by rw [hfb]; exact normal_succ hbc) hblk hpw' _, ?_⟩
-    exact hcontT H hE hw2 hTry het (fun d hd => by rw [hfb]; exact handler_succ hd)
+      tcontD H hE hw2 hTry (by rw [hfb]; exact normal_succ hbc) hblk hpw' _, ?_⟩
+    exact hcontD H hE hw2 hTry het (fun d hd => by rw [hfb]; exact handler_succ hd)
       (fun d hd v hv => by rw [hfb]; simp [termOperands, handler_vals hd hv])
       (fun d hd w hw' => by rw [hgb]; simp [termOperands, handler_vals hd hw'])
+
+/-- **`try_call` and `try_call_indirect`** (with equal windows, `MRW`). -/
+theorem rel_tryT (H : HypT f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm) :
+    TryOkMU syms (MRW f g fi gi cert norm syms) where
+  call := (rel_tryD H.toD hrun).call
+  ind := (rel_tryD H.toD hrun).ind
 
 /-- **`try_call` and `try_call_indirect`** (with equal windows, `MRW`). -/
 theorem rel_try (H : Hyp f g fi gi cert norm) (hrun : GPreRun f g fi gi cert norm) :

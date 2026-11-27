@@ -15,7 +15,8 @@ g hints)`, or `check_sound`: `FunSimMU (foldPre f bs) (condPrep g hints)`) with 
 the compiled function is `g` itself.
 
 * **`check_soundC_norm`**, **`check_soundC_normT`** (a normaliser sound under typing),
-  **`check_soundC`** (default normaliser `Norm.stdT f`), **`check_soundSymsC`**
+  **`check_soundC_normD`** (a normaliser sound where the operands have values),
+  **`check_soundC`** (default normaliser `Norm.stdD f`), **`check_soundSymsC`**
   (hoisting mode, at a symbol table where `f`'s global values resolve);
 * **`checkedC_simMU`**: through constant-phi removal, as `checked_simMU`;
 * `ValidatedC`, `ValidatedSymsC`: `Validated`/`ValidatedSyms` with `checkCertC`/`checkCertSymsC`
@@ -58,10 +59,24 @@ theorem check_soundC_normT {f g : Function} {cert : Cert} {hints : List (BlockId
       · exact (foldPre_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
       · exact (foldPreK_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
 
+theorem check_soundC_normD {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
+    {norm : Norm} (h : checkCertC f g cert hints norm = true) (hN : NormSoundD f norm) :
+    FunSimMU f g := by
+  unfold checkCertC at h
+  split at h
+  · exact check_sound_normD h hN
+  · split at h
+    · simp only [Bool.and_eq_true] at h
+      exact (check_sound_normD h.2 hN).trans (condPrep_simU h.1).toMU
+    · simp only [Bool.and_eq_true, Bool.or_eq_true] at h
+      rcases h.2 with h2 | h2
+      · exact (foldPre_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
+      · exact (foldPreK_simU f _).toMU.trans ((check_sound h2).trans (condPrep_simU h.1).toMU)
+
 /-- **Soundness of the re-check with branch-condition hints** (default normaliser). -/
 theorem check_soundC {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
     (h : checkCertC f g cert hints = true) : FunSimMU f g :=
-  check_soundC_normT h normSoundT_stdT
+  check_soundC_normD h normSoundD_stdD
 
 /-- **Soundness of the hoisting mode with branch-condition hints.** -/
 theorem check_soundSymsC {f g : Function} {cert : Cert} {hints : List (BlockId × List Wrap)}
