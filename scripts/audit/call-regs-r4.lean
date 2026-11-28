@@ -4,6 +4,7 @@ import FV.Link.TypedCompileSourceCp
 import FV.E2E.MidValExecProvenR
 import FV.E2E.StaticShareR
 import FVTest.Link.CallRegsR4Witness
+import FVTest.Link.CallRegsR4RealWitness
 
 -- #753 stage R4: the typed Stock route with the register-guarded calls. Stage R3' (the per-state
 -- facts keep the guarded call premise), stage R2X' (the X world chain with them), the checks
@@ -116,3 +117,9 @@ import FVTest.Link.CallRegsR4Witness
 #print axioms E2E.CallRegsR4Witness.mismatch_abiMatch -- witness: native_decide
 #print axioms E2E.CallRegsR4Witness.checksBad_true -- witness: native_decide
 #print axioms E2E.CallRegsR4Witness.mismatch_left_out -- witness: native_decide
+
+-- A real vtable-site function (serde_json's `compiletest`, crate `toml`): left out before R4,
+-- `attemptT_correct` applies to it since.
+#print axioms E2E.CallRegsR4RealWitness.checks_true -- witness: native_decide
+#print axioms E2E.CallRegsR4RealWitness.parts -- witness: native_decide
+#print axioms E2E.CallRegsR4RealWitness.correct_applies -- witness: native_decide
