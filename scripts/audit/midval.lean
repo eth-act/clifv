@@ -38,6 +38,8 @@ import FV.Opt.Proof.MidValNormFam8
 import FVTest.Opt.MidValFam8Witness
 import FV.Opt.Proof.MidValNormFam9
 import FVTest.Opt.MidValFam9Witness
+import FV.Opt.Proof.MidValNormFam10
+import FVTest.Opt.MidValFam10Witness
 
 -- #1119 (c) stage 1: the memory facts of the mid-end validator `Opt.MidVal.check`
 #print axioms Clif.Mem.readFold_spec
@@ -851,8 +853,8 @@ import FVTest.Opt.MidValFam9Witness
 #print axioms Opt.MidVal.ruleSoundD_subAdds
 #print axioms Opt.MidVal.ruleSoundD_fam8Step
 -- #1119 family 9, masks, narrowed shifts, complements, extensions, comparisons of extensions and
--- of <=>, select as min/max, multiply-high (FV/Opt/Proof/MidValNormFam9.lean; normSoundD_stdD
--- moved here; or_and_not, borMask_spec, borMask_val in FV/Opt/Proof/MidValNormFam4.lean)
+-- of <=>, select as min/max, multiply-high (FV/Opt/Proof/MidValNormFam9.lean; or_and_not,
+-- borMask_spec, borMask_val in FV/Opt/Proof/MidValNormFam4.lean)
 #print axioms Opt.MidVal.or_and_not
 #print axioms Opt.MidVal.borMask_spec
 #print axioms Opt.MidVal.borMask_val
@@ -905,6 +907,18 @@ import FVTest.Opt.MidValFam9Witness
 #print axioms Opt.MidVal.mulHiPlan_spec
 #print axioms Opt.MidVal.ruleSoundD_mulHi
 #print axioms Opt.MidVal.ruleSoundD_fam9Step
+-- #1119 family 10, pairs of constants, doubled sums, zero offsets
+-- (FV/Opt/Proof/MidValNormFam10.lean; normSoundD_stdD moved here)
+#print axioms Opt.MidVal.swap_mid
+#print axioms Opt.MidVal.pairOp_spec
+#print axioms Opt.MidVal.pairPlan_spec
+#print axioms Opt.MidVal.pairRe_val
+#print axioms Opt.MidVal.dblOf_spec
+#print axioms Opt.MidVal.val_of_ty
+#print axioms Opt.MidVal.idNode_val
+#print axioms Opt.MidVal.affPlan_reach
+#print axioms Opt.MidVal.ruleSoundD_affZero
+#print axioms Opt.MidVal.ruleSoundD_fam10Step
 #print axioms Opt.MidVal.normSoundD_stdD
 -- #1119 family A, store-to-load forwarding before the folds (FV/Opt/Proof/MidValFwd.lean)
 #print axioms Opt.MidVal.fwdOk_simMU
@@ -1676,3 +1690,30 @@ import FVTest.Opt.MidValFam9Witness
 #print axioms Opt.MidVal.Fam9Witness.real_extext_prev_rejects -- witness: native_decide
 #print axioms Opt.MidVal.Fam9Witness.real_extext_checked -- witness: native_decide
 #print axioms Opt.MidVal.Fam9Witness.real_extext_sim -- witness: native_decide
+-- witnesses of family 10 (FVTest/Opt/MidValFam10Witness.lean)
+#print axioms Opt.MidVal.Fam10Witness.pos_band -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_band_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.neg_band -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_add -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_add_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.neg_add -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_addZero -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_addZero_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_dbl -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_dbl_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.neg_dbl -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_aff -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.pos_aff_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.neg_aff -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_pair_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_pair_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_pair_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_dbl_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_dbl_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_dbl_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_aff_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_aff_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_aff_sim -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_sym_prev_rejects -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_sym_checked -- witness: native_decide
+#print axioms Opt.MidVal.Fam10Witness.real_sym_sim -- witness: native_decide

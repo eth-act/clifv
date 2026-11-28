@@ -1699,14 +1699,110 @@ def fam9Aux (aty : Tm → Option Ty) (tms : Array Tm) : Inst → List Tm
     | _ => []
   | _ => []
 
+/-! ### Family 10: pairs of constants, doubled sums, zero offsets
+
+The largest shapes of the `rewrite:operand` tail after family 9 (#1119, agent MidendNext12),
+after Cranelift 0.136's `opts/cprop.isle` (`((a op B) op (c op D)) ==> ((a op c) op (B op D))`)
+and `opts/arithmetic.isle` (`x + 0`). Each result has the node's value wherever its operands have
+values and the atoms below it are typed (`FV/Opt/Proof/MidValNormFam10.lean`). Family 10 comes
+after family 9 in `Norm.stdD`: a node is normalised once, so `imul (x + k) 2`, which `mulTwo`
+makes `(x + k) + (x + k)`, and `(y + k) - k`, which `affStep` makes `y + 0`, would stop there.
+
+* `pairRe`: `op ty (op ty x k1) (op ty y k2)` with `op` one of `iadd`, `imul`, `band`, `bor`,
+  `bxor` and `k1`, `k2` constants of type `ty` is `op ty (op ty x y) (k1 op k2)`, and the term
+  `op ty x y` itself when `k1 op k2` is neutral (`rNeutral`); not for an `imul` by a power of two
+  (`Norm.alg` writes those as shifts). The term `op ty x y` is looked up;
+* `dblRe`: `imul ty a 2`, `imul ty 2 a` and `ishl ty a 1` are `iadd ty a a` (`mulTwo`, `shlOne`),
+  then `pairRe`: `(x + k) + (x + k)` is `(x + x) + 2k`;
+* `idNode`: `op ty a k` with `k` a neutral constant of `op` and `a` a node whose result type is
+  `ty` (a `symbol_value`, which has no static type for `idStep`) is `a`;
+* `affZero` (typed): a node whose affine form (`affPlan`) is `y + 0` with `y` of static type `ty`
+  is `y`.
+
+The terms `pairRe` looks up (`op ty x y`, the constant) are interned first (`fam10Aux`). -/
+
+/-- The constant `k1 op k2` for `iadd` and for `reOp`'s `band`, `bor`, `bxor`, `imul`. -/
+def pairOp {w : Nat} (op : BinaryOp) (k1 k2 : BitVec w) : Option (BitVec w) :=
+  if op == .iadd then some (k1 + k2) else reOp op k1 k2
+
+/-- `pairRe`'s `(x, y, k1 op k2)` for `op ty a b` (module doc above). -/
+def pairPlan (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) :
+    Option (Nat × Nat × BitVec ty.width) :=
+  match nodeAt tms a, nodeAt tms b with
+  | some (.binary op1 t1 x k1), some (.binary op2 t2 y k2) =>
+    if op1 == op && op2 == op && t1 == ty && t2 == ty then
+      match constAt tms ty k1, constAt tms ty k2 with
+      | some v1, some v2 => (pairOp op v1 v2).map fun K => (x, y, K)
+      | _, _ => none
+    else none
+  | _, _ => none
+
+/-- **Pairs of constants** (module doc above): `op ty m K` for the term `m` of `op ty x y`, or
+`m` itself when `K` is neutral. -/
+def pairRe (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) : Option Tm :=
+  (pairPlan tms op ty a b).bind fun (x, y, K) =>
+    (findTm tms (.node (.binary op ty x y))).bind fun m =>
+      if rNeutral op K then tms[m]?
+      else if op == .imul && (pow2Log K.toNat).isSome then none
+      else (findTm tms (.node (.iconst ty K))).map fun kc => .node (.binary op ty m kc)
+
+/-- The term `d` with `op ty a b = iadd ty d d`: `imul` by the constant `2` (either side), `ishl`
+by an amount that is `1` modulo the width. -/
+def dblOf (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) : Option Nat :=
+  match op with
+  | .imul =>
+    if constAt tms ty b == some 2 then some a
+    else if constAt tms ty a == some 2 then some b
+    else none
+  | .ishl =>
+    match constOf tms b with
+    | some K => if K.bits.toNat % ty.width == 1 then some a else none
+    | none => none
+  | _ => none
+
+/-- **Doubled sums** (module doc above): `pairRe` on `iadd ty d d` for `dblOf`'s `d`. -/
+def dblRe (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) : Option Tm :=
+  (dblOf tms op ty a b).bind fun d => pairRe tms .iadd ty d d
+
+/-- **Neutral constants of typed nodes** (module doc above). -/
+def idNode (tms : Array Tm) (op : BinaryOp) (ty : Ty) (a b : Nat) : Option Tm :=
+  match nodeAt tms a, constAt tms ty b with
+  | some j, some kv =>
+    if rNeutral op kv && j.resultTypes (fun _ => none) (fun _ => none) == some [ty] then
+      tms[a]?
+    else none
+  | _, _ => none
+
+/-- **Zero offsets** (typed; module doc above). -/
+def affZero (aty : Tm → Option Ty) (tms : Array Tm) (i : Inst) : Option Tm :=
+  (affPlan tms i).bind fun (y, K) =>
+    if K.bits == 0 && tyAt aty tms y == some K.ty then tms[y]? else none
+
+/-- **Family 10** (module doc above; typed through `affZero`). -/
+def fam10Step (aty : Tm → Option Ty) (tms : Array Tm) : Inst → Option Tm
+  | .binary op ty a b =>
+    (pairRe tms op ty a b).orElse fun _ => (dblRe tms op ty a b).orElse fun _ =>
+      (idNode tms op ty a b).orElse fun _ => affZero aty tms (.binary op ty a b)
+  | _ => none
+
+/-- The terms family 10 looks up (`pairRe`'s, for the node and for `dblOf`'s `iadd ty d d`). -/
+def fam10Aux (tms : Array Tm) : Inst → List Tm
+  | .binary op ty a b =>
+    ((pairPlan tms op ty a b).toList.flatMap fun (x, y, K) =>
+      [.node (.binary op ty x y), .node (.iconst ty K)]) ++
+    (((dblOf tms op ty a b).bind fun d => pairPlan tms .iadd ty d d).toList.flatMap
+      fun (x, y, K) => [.node (.binary .iadd ty x y), .node (.iconst ty K)])
+  | _ => []
+
 /-- **The validator's default normaliser** for `f` (the default `norm` of `check`, `emit`,
-`checkCert`, `checkCertSyms`): families 8 and 9, then the typed normaliser `Norm.stdT f`, then
-family 7's operand-dropping rules; proved sound where the node's operands have values
+`checkCert`, `checkCertSyms`): families 8, 9 and 10, then the typed normaliser `Norm.stdT f`,
+then family 7's operand-dropping rules; proved sound where the node's operands have values
 (`normSoundD_stdD`). -/
 def Norm.stdD (f : Function) : Norm :=
   Norm.orElse (Norm.guard fam8Step)
     (Norm.orElse (Norm.guard (fam9Step (atomTy f)))
-      (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f)))))
+      (Norm.orElse (Norm.guard (fam10Step (atomTy f)))
+        (Norm.orElse (Norm.stdT f) (Norm.guard (dropStep (atomTy f))))))
 
 /-- Intern a term (normalised, if a node), without auxiliary terms. -/
 def intern1 (t : Tm) : M Nat := do
@@ -1749,8 +1845,8 @@ def narrowNode (n : Norm) (tms : Array Tm) : Inst → Option Inst
   | _ => none
 
 /-- Intern a term; for a node, first the terms a rule may look up (`auxTms`, `internSelAux`,
-`affAux`, `fam5Aux`, `fam6Aux`, `fam8Aux`, `fam9Aux`; `narrowAux` interned the same way, `d`
-levels deep, then the constant `affStep` looks up for the narrowed node). -/
+`affAux`, `fam5Aux`, `fam6Aux`, `fam8Aux`, `fam9Aux`, `fam10Aux`; `narrowAux` interned the same
+way, `d` levels deep, then the constant `affStep` looks up for the narrowed node). -/
 def internD : Nat → Tm → M Nat
   | 0, t => do
     if let .node i := t then
@@ -1760,6 +1856,7 @@ def internD : Nat → Tm → M Nat
       for a in fam6Aux (← get).tms i do discard (intern1 a)
       for a in fam8Aux (← get).tms i do discard (intern1 a)
       for a in fam9Aux (← get).aty (← get).tms i do discard (intern1 a)
+      for a in fam10Aux (← get).tms i do discard (intern1 a)
     intern1 t
   | d + 1, t => do
     if let .node i := t then
@@ -1770,6 +1867,7 @@ def internD : Nat → Tm → M Nat
       for a in fam6Aux (← get).tms i do discard (intern1 a)
       for a in fam8Aux (← get).tms i do discard (intern1 a)
       for a in fam9Aux (← get).aty (← get).tms i do discard (intern1 a)
+      for a in fam10Aux (← get).tms i do discard (intern1 a)
       for a in narrowAux (← get).tms i do discard (internD d a)
       let s ← get
       if let some j := narrowNode s.norm s.tms i then

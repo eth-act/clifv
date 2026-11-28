@@ -872,6 +872,18 @@ both ways; validated 118,826 → 119,140 (97.6 % → 97.8 %; 1,153 → 1,272 of 
 up on 8 crates); byte-identical to stock 96,742 → 96,882 of 121,767 (79.4 % → 79.6 %); `cargo fv
 test` wall summed 2,187 → 2,196 s (plain) and 2,563 → 2,549 s (both partly beside other builds).
 
+Family 10, pairs of constants, doubled sums and zero offsets (docs/contracts/midval.md):
+Cranelift's `(a & 1) & (b & 1)` as `(a & b) & 1` and `(x + k1) + (y + k2)` as `(x + y) + (k1 +
+k2)` (for `+`, `*`, `&`, `|`, `^`), `(x + k) * 2` as `(x + x) + 2k`, `(y + k) - k` as `y` and
+`symbol_value + 0` as the `symbol_value` are now read the same way by the validator's
+normaliser. Pairs of the shared corpus accepted: 121,229 → 121,441 of 121,879 (measured
+2026-11-27 on clifv-remote, 0 lost). The same 9 crates and commands (main bdf5e92b3's code against
+this one's, plain mode and `--lean-link --verified`): binary check 48 of 48 both ways, 121,767
+verified both ways, left out 0 → 0 (plain) and 1 → 1, test outcomes the same as stock's on all 9
+both ways; validated 119,140 → 119,339 (97.8 % → 98.0 %; up on 7 crates); byte-identical to stock
+96,882 → 97,008 of 121,767 (79.6 % → 79.7 %); `cargo fv test` wall summed 2,196 → 3,488 s
+(plain) and 2,549 → 4,128 s (beside two full gates and another agent's crate runs).
+
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by one of

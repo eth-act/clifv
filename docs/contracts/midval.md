@@ -203,6 +203,7 @@ unchanged (`check_sound_normT h normSoundT_stdT`).
 | A: branch folds through store-to-load forwarding (`checkCertC`, prep requests; `fwdOk`), and `icmp x x` (family 7) | `selfCmp` in `dropStep` (typed); `fwdPre f` before `foldPre`/`foldPreK` | `fwdOk_simMU` (from `check_sound`), `fwdFoldPre_simMU`, `fwdFoldPreK_simMU`, `ruleSoundD_selfCmp`, `check_soundC` | 120,258 (98.7 %) | not measured on the pairs | 9 crates: 78.9 % → 79.2 % (96,120 → 96,402 of 121,767) |
 | 8: comparisons with an offset, saturating differences, products of constants, differences of sums (`Norm.stdD f`: `fam8Step` first) | `cmpOff`, `cmpSub`, `mulMul`, `subAdds`; `condChain` takes `icmp ne x, -k` against a branch on `x + k` | `ruleSoundD_cmpOff`, `ruleSoundD_cmpSub`, `ruleSoundD_mulMul`, `ruleSoundD_subAdds`, `ruleSoundD_fam8Step`, `normSoundD_stdD` | 120,867 (99.2 %) | not measured on the pairs | 9 crates: 79.2 % → 79.4 % (96,432 → 96,742 of 121,767) |
 | 9: masks, narrowed shifts, complements, extensions, comparisons of extensions and of `<=>`, `select` as min/max, multiply-high (`Norm.stdD f`: `fam9Step` second) | `borMask` (also in `narrowStep`), `borMaskRe`, `notDec`, `redShl`, `redUn`, `extExt`, `extCmp`, `shipCmp`, `selMinMax`, `mulHi` (typed: `redShl`, `redUn`, `extCmp`, `mulHi`) | `borMask_val`, `ruleSoundD_notDec`, `ruleSoundD_redShl`, `ruleSoundD_redUn`, `ruleSoundD_extExt`, `ruleSoundD_extCmp`, `ruleSoundD_shipCmp`, `ruleSoundD_selMinMax`, `ruleSoundD_borMaskRe`, `ruleSoundD_mulHi`, `ruleSoundD_fam9Step`, `normSoundD_stdD` | 121,229 (99.5 %) | not measured on the pairs | 9 crates: 79.4 % → 79.6 % (96,742 → 96,882 of 121,767) |
+| 10: pairs of constants, doubled sums, zero offsets (`Norm.stdD f`: `fam10Step` third) | `pairRe`, `dblRe`, `idNode`, `affZero` (typed) | `pairRe_val`, `dblOf_spec`, `idNode_val`, `ruleSoundD_affZero`, `ruleSoundD_fam10Step`, `normSoundD_stdD` | 121,441 (99.6 %) | not measured on the pairs | 9 crates: 79.6 % → 79.7 % (96,882 → 97,008 of 121,767) |
 
 (Projected release parity: functions byte-identical to stock if every accepted function is
 compiled from `g` and every rejected one from `f`, over the 121,750 functions of the
@@ -1176,3 +1177,55 @@ counterfactual.)
     byte-identical to stock 96,742 → 96,882 (79.4 → 79.6 %, the same in both modes); `cargo fv
     test` wall summed 2,187 → 2,196 s (plain) and 2,563 → 2,549 s (`--lean-link --verified`; most
     of this branch's runs beside a full gate or another agent's crate build).
+* **Family 10: pairs of constants, doubled sums, zero offsets** (agent MidendNext12). On main
+  bdf5e92b3, 650 pairs were rejected. By first blocking reason (an explain build of main's
+  checker, the same verdicts on all 121,879 pairs; `fam8.py`, whole divergence terms grouped by
+  `eshape.py`): constant against value 162 (80 of them chains `(a & 1) & (b & 1)` against `((a &
+  b) & …) & 1`, 40 sums `(x + k1) + (y + k2)` against `(x + y) + (k1 + k2)`, 24 of those `(x + k) *
+  2`), the operand tail with no shape above 10 pairs 159, `x + 0` 73 (52 the `y + 0` that
+  `affStep` leaves for `(y + k) - k`, 21 `symbol_value + 0`), folds left after `fwdPre` 38, alias
+  ordering 29, shifts 27, skeleton changes 25, extensions 23, and smaller ones. This family takes
+  the sums and the zero offsets, after Cranelift 0.136's `opts/cprop.isle` (`((a op B) op (c op
+  D)) ==> ((a op c) op (B op D))`) and `arithmetic.isle` (`x + 0`):
+  - Compiler side (`FV/Opt/MidVal.lean`): `fam10Step (atomTy f)`, the third step of `Norm.stdD f
+    = Norm.orElse (Norm.guard fam8Step) (Norm.orElse (Norm.guard (fam9Step (atomTy f)))
+    (Norm.orElse (Norm.guard (fam10Step (atomTy f))) (Norm.orElse (Norm.stdT f) (Norm.guard
+    (dropStep (atomTy f))))))`. `pairRe`: `op ty (op ty x k1) (op ty y k2)` with `op` one of
+    `iadd`, `imul`, `band`, `bor`, `bxor` and constants `k1`, `k2` of type `ty` is `op ty m (k1 op
+    k2)` for the term `m` of `op ty x y`, and `m` itself when `k1 op k2` is neutral; not for an
+    `imul` by a power of two. `dblRe`: `imul ty a 2`, `imul ty 2 a` and `ishl ty a 1` are `iadd ty
+    a a`, then `pairRe` (`(x + k) + (x + k)` is `(x + x) + 2k`). `idNode`: `op ty a k` with `k`
+    neutral and `a` a node whose result type is `ty` (a `symbol_value`, which has no static type
+    for `idStep`) is `a`. `affZero` (typed): a node whose affine form is `y + 0` with `y` of static
+    type `ty` is `y`. The term `op ty x y` and the constant are interned first (`fam10Aux` in
+    `internD`).
+  - Proof (`FV/Opt/Proof/MidValNormFam10.lean`): one `RuleSoundD` lemma per rule. `pairRe_val`
+    from `pairOp_spec` (`(x op k1) op (y op k2) = (x op y) op (k1 op k2)`, `swap_mid` with
+    `BitVec`'s associativity and commutativity) and `rNeutral_spec`; `dblOf_spec` (`a * 2 = a + a`,
+    `a << 1 = a + a`: `add_self_eq_mul_two`, `shl_one`); `idNode_val` (the node's value has its
+    result type: `Opt.evalInst_types`); `ruleSoundD_affZero` (`affPlan_spec`, and `tyAt_val` for
+    `y`, which `affPlan_reach` reaches from the node). `ruleSoundD_fam10Step`; `normSoundD_stdD`
+    moved here from `MidValNormFam9.lean` with its statement unchanged (byte-identical) and the
+    new composition as its proof. No theorem statement changes.
+  - Witnesses (`FVTest/Opt/MidValFam10Witness.lean`): `(x & 1) & (y & 1)` against `(x & y) & 1`,
+    `(x + 16) + (y + 16)` against `(x + y) + 32`, `(x + 5) + (y + -5)` against `x + y`, `2 * (x +
+    16)` against `(x + x) + 32`, `(x + 8) - 8` against `x`, each accepted and rejected with main's
+    normaliser (`*_prev_rejects`); look-alikes rejected: the mask `3`, the sum `31`, `(x + x) + 16`,
+    `(x + 8) - 7`; four real pairs of the corpus (crypto-bigint's test build: clap_builder,
+    regex_syntax, proptest, crypto_bigint), each rejected by main's `checkC` with main's
+    normaliser (`checkCPrev`), `checkCertC` decided, and the simulation. Audit:
+    `scripts/audit/midval.lean` (1,589 theorems, standard axioms, `native_decide` only in the
+    marked witnesses).
+  - Measured (2026-11-27, the shared corpus, main bdf5e92b3's checker against this one's,
+    `midval-check --cert --cond --hoist`): 121,229 → 121,441 (+212, 99.5 % → 99.6 %), 0 lost,
+    every accepted pair re-checks `ok`; by main's first blocking family: constant against value
+    117, `x + 0` 69, `select` as min/max 16 (sums under a `umax`), operand tail 10.
+    `cargo fv test --release` on the 9 crates (2026-11-27/28, clifv-remote, main bdf5e92b3's code
+    (MidendNext11's runs of aaa093ca5, the same code) against this one's 9c9c8666d), in plain mode
+    and with `--lean-link --verified`: binary check 48/48 → 48/48 both ways, verified 121,767 →
+    121,767, left out of the region 0 → 0 (plain) and 1 → 1 (`--lean-link --verified`), tests the
+    same as stock's on all 9 both ways, validated 119,140 → 119,339 (97.8 → 98.0 %; up on 7
+    crates, num-traits and sha3 unchanged), byte-identical to stock 96,882 → 97,008 (79.6 →
+    79.7 %, the same in both modes); `cargo fv test` wall summed 2,196 → 3,488 s (plain) and
+    2,549 → 4,128 s (`--lean-link --verified`; this branch's runs beside two full gates and
+    another agent's crate runs).
