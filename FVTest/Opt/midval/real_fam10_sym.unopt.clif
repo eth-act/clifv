@@ -1,0 +1,136 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC13crypto_bigint12H4bFv6PVKeWU
+function u0:1495(i64 sret, i64, i64) system_v {
+; symbol _RNxC13crypto_bigint12H4bFv6PVKeWU
+; instance Instance { def: Item(DefId(0:182 ~ crypto_bigint[7523]::modular::const_monty_form::mul::{impl#4}::mul)), args: [modular::const_monty_form::invert::tests::Modulus, 4_usize] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4>, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes), Size(32 bytes)], in_memory_order: [0, 1] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 10053048207575085830 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, ArgAbi { layout: TyAndLayout { ty: modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4>, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes), Size(32 bytes)], in_memory_order: [0, 1] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 10053048207575085830 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }], ret: ArgAbi { layout: TyAndLayout { ty: modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4>, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes), Size(32 bytes)], in_memory_order: [0, 1] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 10053048207575085830 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 2, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ret   _0      = v0       Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4_usize>
+; arg   _1      = v1       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4_usize>
+; arg   _2      = v2       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4_usize>
+
+; kind  local ty                              size align (abi)
+; reuse _1    modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4_usize>   32b 8                storage=v1
+; reuse _2    modular::const_monty_form::ConstMontyForm<modular::const_monty_form::invert::tests::Modulus, 4_usize>   32b 8                storage=v2
+; stack _3    uint::Uint<4_usize>              32b 8                storage=ss0
+; ssa   _4    &'{erased} uint::Uint<4_usize>    8b 8                var=1
+; ssa   _5    &'{erased} uint::Uint<4_usize>    8b 8                var=2
+; ssa   _6    &'{erased} odd::Odd<uint::Uint<4_usize>>    8b 8                var=3
+; stack _7    limb::Limb                        8b 8                storage=ss1
+; ssa   _8    &'{erased} modular::monty_params::MontyParams<uint::Uint<4_usize>>    8b 8                var=4
+; stack _9    &'{erased} modular::monty_params::MontyParams<uint::Uint<4_usize>>    8b 8                storage=ss2
+; ssa   _10   u64                               8b 8                var=5
+; ssa   _11   u64                               8b 8                var=6
+
+    ss0 = explicit_slot 32, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 8, align = 8
+    gv0 = symbol colocated userextname0 ; alloc33071
+    gv1 = symbol colocated userextname1 ; alloc33073
+    sig0 = (i64 sret, i64, i64, i64, i64) system_v
+    fn0 = colocated u0:2747 sig0 ; Instance { def: Item(DefId(0:1379 ~ crypto_bigint[7523]::modular::mul::mul_montgomery_form)), args: [4_usize] }
+
+block0(v0: i64, v1: i64, v2: i64):
+    nop 
+    jump block1
+
+block1:
+    nop 
+; _4 = &(_1.0: uint::Uint<LIMBS>)
+; write_cvalue: Var(_4, var1): &'{erased} uint::Uint<4_usize> <- ByVal(v1): &'{erased} uint::Uint<4_usize>
+; _5 = &(_2.0: uint::Uint<LIMBS>)
+; write_cvalue: Var(_5, var2): &'{erased} uint::Uint<4_usize> <- ByVal(v2): &'{erased} uint::Uint<4_usize>
+; _9 = const modular::const_monty_form::mul::<impl modular::const_monty_form::ConstMontyForm<MOD, LIMBS>>::mul::promoted[1]
+    v3 = symbol_value.i64 gv0
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): &'{erased} modular::monty_params::MontyParams<uint::Uint<4_usize>> <- ByVal(v3): &'{erased} modular::monty_params::MontyParams<uint::Uint<4_usize>>
+    v4 = stack_addr.i64 ss2
+    store notrap v3, v4
+; _6 = &((*_9).0: odd::Odd<uint::Uint<LIMBS>>)
+    v5 = stack_addr.i64 ss2
+    v6 = load.i64 notrap v5
+; write_cvalue: Var(_6, var3): &'{erased} odd::Odd<uint::Uint<4_usize>> <- ByVal(v6): &'{erased} odd::Odd<uint::Uint<4_usize>>
+; _8 = const modular::const_monty_form::mul::<impl modular::const_monty_form::ConstMontyForm<MOD, LIMBS>>::mul::promoted[0]
+    v7 = symbol_value.i64 gv1
+; write_cvalue: Var(_8, var4): &'{erased} modular::monty_params::MontyParams<uint::Uint<4_usize>> <- ByVal(v7): &'{erased} modular::monty_params::MontyParams<uint::Uint<4_usize>>
+; _11 = copy ((((*_8).3: uint::Uint<1>).0: [limb::Limb; 1])[0 of 1].0: u64)
+    v8 = iconst.i64 0
+    v9 = iconst.i64 8
+    v10 = imul v8, v9  ; v8 = 0, v9 = 8
+    v11 = iadd v7, v10
+; write_cvalue: Var(_11, var6): u64 <- ByRef(Pointer { base: Addr(v11), offset: Offset32(96) }, None): u64
+    v12 = load.i64 notrap v11+96
+; _10 = Sub(const 0_u64, copy _11)
+    v13 = iconst.i64 0
+    v14 = isub v13, v12  ; v13 = 0
+; write_cvalue: Var(_10, var5): u64 <- ByVal(v14): u64
+; _7 = limb::Limb(move _10)
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): u64 <- ByVal(v14): u64
+    v15 = stack_addr.i64 ss1
+    store notrap v14, v15
+; 
+; _3 = modular::mul::mul_montgomery_form::<LIMBS>(move _4, move _5, move _6, move _7)
+    v16 = stack_addr.i64 ss0
+    v17 = stack_addr.i64 ss1
+    v18 = load.i64 notrap v17
+    nop 
+; abi: FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: &uint::Uint<4>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &uint::Uint<4>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: &odd::Odd<uint::Uint<4>>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(pointer is 1..=18446744073709551615), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: pointer, valid_range: 1..=18446744073709551615 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 281492156579847 } }, mode: Direct(ArgAttributes { regular: CapturesReadOnly | NoAlias | NonNull | ReadOnly | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }) }, ArgAbi { layout: TyAndLayout { ty: limb::Limb, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Scalar(u64 is ..), fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 14793551795106266118 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: None, pointee_size: Size(0 bytes), pointee_align: None }) }], ret: ArgAbi { layout: TyAndLayout { ty: uint::Uint<4>, layout: Layout { size: Size(32 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: Memory { sized: true }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(8 bytes), randomization_seed: 10896843801053236494 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesNone | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(32 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }, c_variadic: false, fixed_count: 4, conv: Rust, can_unwind: true }
+    call fn0(v16, v1, v2, v6, v18)
+    jump block2
+
+block2:
+    nop 
+; _0 = modular::const_monty_form::ConstMontyForm::<MOD, LIMBS> { montgomery_form: move _3, phantom: const ZeroSized: core::marker::PhantomData<MOD> }
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(0) }, None): uint::Uint<4_usize> <- ByRef(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): uint::Uint<4_usize>
+    v19 = stack_addr.i64 ss0
+    v20 = load.i64 notrap aligned v19
+    v21 = load.i64 notrap aligned v19+8
+    v22 = load.i64 notrap aligned v19+16
+    v23 = load.i64 notrap aligned v19+24
+    store notrap aligned v20, v0
+    store notrap aligned v21, v0+8
+    store notrap aligned v22, v0+16
+    store notrap aligned v23, v0+24
+; write_cvalue: Addr(Pointer { base: Addr(v0), offset: Offset32(32) }, None): core::marker::PhantomData<modular::const_monty_form::invert::tests::Modulus> <- ByRef(Pointer { base: Dangling(Align(1 bytes)), offset: Offset32(0) }, None): core::marker::PhantomData<modular::const_monty_form::invert::tests::Modulus>
+; 
+; return
+    return
+}
+
+; clifv-extnames 1
+; userextname0 = u1:3801
+; userextname1 = u1:3802
+; userextname2 = u0:2747
+; decl u0:1495 func local "_RNxC13crypto_bigint12H4bFv6PVKeWU"
+; decl u0:2747 func local "_RNxC13crypto_bigint12H8hL3A9pFFjs"
+; decl u1:3801 data local ro notls ".Ldataed9"
+; decl u1:3802 data local ro notls ".Ldataeda"
+; end clifv-extnames

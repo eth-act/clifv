@@ -1,0 +1,387 @@
+set regalloc_algorithm=backtracking
+set opt_level=speed_and_size
+set tls_model=elf_gd
+set stack_switch_model=none
+set libcall_call_conv=isa_default
+set probestack_size_log2=12
+set probestack_strategy=inline
+set bb_padding_log2_minus_one=0
+set log2_min_function_alignment=0
+set regalloc_checker=0
+set regalloc_verbose_logs=0
+set enable_alias_analysis=1
+set enable_verifier=0
+set is_pic=1
+set use_colocated_libcalls=0
+set enable_nan_canonicalization=0
+set enable_pinned_reg=0
+set enable_llvm_abi_extensions=1
+set enable_multi_ret_implicit_sret=0
+set unwind_info=1
+set preserve_frame_pointers=1
+set machine_code_cfg_info=0
+set enable_probestack=1
+set enable_heap_access_spectre_mitigation=1
+set enable_table_access_spectre_mitigation=1
+set enable_incremental_compilation_cache_checks=0
+set enable_compact_unwind_abi=0
+target aarch64 has_lse=0 has_pauth=0 has_fp16=0 has_dotprod=0 has_i8mm=0 sign_return_address_all=0 sign_return_address=0 sign_return_address_with_bkey=0 use_bti=0 use_csdb=0
+
+; symbol _RNxC12clap_builder12HcZ8SGvwWGJa
+function u0:1832(i64) -> i8 uext system_v {
+; symbol _RNxC12clap_builder12HcZ8SGvwWGJa
+; instance Instance { def: Item(DefId(2:72979 ~ core[7b1c]::core_simd::masks::{impl#29}::valid)), args: [8_usize] }
+; abi FnAbi { args: [ArgAbi { layout: TyAndLayout { ty: std::simd::Simd<i8, 8>, layout: Layout { size: Size(8 bytes), align: AbiAlign { abi: Align(8 bytes) }, backend_repr: SimdVector { element: i8 is .., count: BackendLaneCount(8) }, fields: Arbitrary { offsets: [Size(0 bytes)], in_memory_order: [0] }, largest_niche: None, uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 71776123356184585 } }, mode: Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } }], ret: ArgAbi { layout: TyAndLayout { ty: bool, layout: Layout { size: Size(1 bytes), align: AbiAlign { abi: Align(1 bytes) }, backend_repr: Scalar(u8 is 0..=1), fields: Primitive, largest_niche: Some(Niche { offset: Size(0 bytes), value: u8, valid_range: 0..=1 }), uninhabited: false, variants: Single { index: 0 }, max_repr_align: None, unadjusted_abi_align: Align(1 bytes), randomization_seed: 281483566645249 } }, mode: Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) }, c_variadic: false, fixed_count: 1, conv: Rust, can_unwind: true }
+
+; kind  loc.idx   param    pass mode                            ty
+; ssa   _0    bool                              1b 1                var=1
+; ret   _0      -          Direct(ArgAttributes { regular: NoUndef, arg_ext: Zext, pointee_size: Size(0 bytes), pointee_align: None }) bool
+; arg   _1      = v0       Indirect { attrs: ArgAttributes { regular: CapturesAddress | NoAlias | NonNull | NoUndef | NoFree, arg_ext: None, pointee_size: Size(8 bytes), pointee_align: Some(Align(8 bytes)) }, meta_attrs: None, address_space: None, mode: Pointer } std::simd::Simd<i8, 8_usize>
+
+; kind  local ty                              size align (abi)
+; reuse _1    std::simd::Simd<i8, 8_usize>      8b 8                storage=v0
+; stack _2    std::simd::Simd<i8, 8_usize>      8b 8                storage=ss0
+; stack _3    std::simd::Simd<i8, 8_usize>      8b 8                storage=ss1
+; stack _4    std::simd::Simd<i8, 8_usize>      8b 8                storage=ss2
+; stack _5    std::simd::Simd<i8, 8_usize>      8b 8                storage=ss3
+; stack _6    std::simd::Simd<i8, 8_usize>      8b 8                storage=ss4
+
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    ss2 = explicit_slot 8, align = 8
+    ss3 = explicit_slot 8, align = 8
+    ss4 = explicit_slot 8, align = 8
+
+block0(v0: i64):
+    nop 
+    jump block1
+
+block1:
+    nop 
+; 
+; _3 = std::intrinsics::simd::simd_splat::<std::simd::Simd<i8, N>, i8>(const 0_i8)
+    v1 = iconst.i8 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(0) }, None): i8 <- ByVal(v1): i8
+    v2 = stack_addr.i64 ss1
+    store notrap v1, v2  ; v1 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(1) }, None): i8 <- ByVal(v1): i8
+    v3 = stack_addr.i64 ss1+1
+    store notrap v1, v3  ; v1 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(2) }, None): i8 <- ByVal(v1): i8
+    v4 = stack_addr.i64 ss1+2
+    store notrap v1, v4  ; v1 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(3) }, None): i8 <- ByVal(v1): i8
+    v5 = stack_addr.i64 ss1+3
+    store notrap v1, v5  ; v1 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(4) }, None): i8 <- ByVal(v1): i8
+    v6 = stack_addr.i64 ss1+4
+    store notrap v1, v6  ; v1 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(5) }, None): i8 <- ByVal(v1): i8
+    v7 = stack_addr.i64 ss1+5
+    store notrap v1, v7  ; v1 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(6) }, None): i8 <- ByVal(v1): i8
+    v8 = stack_addr.i64 ss1+6
+    store notrap v1, v8  ; v1 = 0
+; write_cvalue: Addr(Pointer { base: Stack(ss1), offset: Offset32(7) }, None): i8 <- ByVal(v1): i8
+    v9 = stack_addr.i64 ss1+7
+    store notrap v1, v9  ; v1 = 0
+    jump block6
+
+block2:
+    nop 
+; 
+; _5 = std::intrinsics::simd::simd_splat::<std::simd::Simd<i8, N>, i8>(const -1_i8)
+    v10 = iconst.i8 -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(0) }, None): i8 <- ByVal(v10): i8
+    v11 = stack_addr.i64 ss3
+    store notrap v10, v11  ; v10 = -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(1) }, None): i8 <- ByVal(v10): i8
+    v12 = stack_addr.i64 ss3+1
+    store notrap v10, v12  ; v10 = -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(2) }, None): i8 <- ByVal(v10): i8
+    v13 = stack_addr.i64 ss3+2
+    store notrap v10, v13  ; v10 = -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(3) }, None): i8 <- ByVal(v10): i8
+    v14 = stack_addr.i64 ss3+3
+    store notrap v10, v14  ; v10 = -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(4) }, None): i8 <- ByVal(v10): i8
+    v15 = stack_addr.i64 ss3+4
+    store notrap v10, v15  ; v10 = -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(5) }, None): i8 <- ByVal(v10): i8
+    v16 = stack_addr.i64 ss3+5
+    store notrap v10, v16  ; v10 = -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(6) }, None): i8 <- ByVal(v10): i8
+    v17 = stack_addr.i64 ss3+6
+    store notrap v10, v17  ; v10 = -1
+; write_cvalue: Addr(Pointer { base: Stack(ss3), offset: Offset32(7) }, None): i8 <- ByVal(v10): i8
+    v18 = stack_addr.i64 ss3+7
+    store notrap v10, v18  ; v10 = -1
+    jump block7
+
+block3:
+    nop 
+; 
+; _6 = std::intrinsics::simd::simd_or::<std::simd::Simd<i8, N>>(move _2, move _4)
+    v19 = stack_addr.i64 ss0
+    v20 = load.i8 notrap v19
+    v21 = stack_addr.i64 ss2
+    v22 = load.i8 notrap v21
+    v23 = bor v20, v22
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(0) }, None): i8 <- ByVal(v23): i8
+    v24 = stack_addr.i64 ss4
+    store notrap v23, v24
+    v25 = stack_addr.i64 ss0+1
+    v26 = load.i8 notrap v25
+    v27 = stack_addr.i64 ss2+1
+    v28 = load.i8 notrap v27
+    v29 = bor v26, v28
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(1) }, None): i8 <- ByVal(v29): i8
+    v30 = stack_addr.i64 ss4+1
+    store notrap v29, v30
+    v31 = stack_addr.i64 ss0+2
+    v32 = load.i8 notrap v31
+    v33 = stack_addr.i64 ss2+2
+    v34 = load.i8 notrap v33
+    v35 = bor v32, v34
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(2) }, None): i8 <- ByVal(v35): i8
+    v36 = stack_addr.i64 ss4+2
+    store notrap v35, v36
+    v37 = stack_addr.i64 ss0+3
+    v38 = load.i8 notrap v37
+    v39 = stack_addr.i64 ss2+3
+    v40 = load.i8 notrap v39
+    v41 = bor v38, v40
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(3) }, None): i8 <- ByVal(v41): i8
+    v42 = stack_addr.i64 ss4+3
+    store notrap v41, v42
+    v43 = stack_addr.i64 ss0+4
+    v44 = load.i8 notrap v43
+    v45 = stack_addr.i64 ss2+4
+    v46 = load.i8 notrap v45
+    v47 = bor v44, v46
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(4) }, None): i8 <- ByVal(v47): i8
+    v48 = stack_addr.i64 ss4+4
+    store notrap v47, v48
+    v49 = stack_addr.i64 ss0+5
+    v50 = load.i8 notrap v49
+    v51 = stack_addr.i64 ss2+5
+    v52 = load.i8 notrap v51
+    v53 = bor v50, v52
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(5) }, None): i8 <- ByVal(v53): i8
+    v54 = stack_addr.i64 ss4+5
+    store notrap v53, v54
+    v55 = stack_addr.i64 ss0+6
+    v56 = load.i8 notrap v55
+    v57 = stack_addr.i64 ss2+6
+    v58 = load.i8 notrap v57
+    v59 = bor v56, v58
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(6) }, None): i8 <- ByVal(v59): i8
+    v60 = stack_addr.i64 ss4+6
+    store notrap v59, v60
+    v61 = stack_addr.i64 ss0+7
+    v62 = load.i8 notrap v61
+    v63 = stack_addr.i64 ss2+7
+    v64 = load.i8 notrap v63
+    v65 = bor v62, v64
+; write_cvalue: Addr(Pointer { base: Stack(ss4), offset: Offset32(7) }, None): i8 <- ByVal(v65): i8
+    v66 = stack_addr.i64 ss4+7
+    store notrap v65, v66
+    jump block4
+
+block4:
+    nop 
+; 
+; _0 = std::intrinsics::simd::simd_reduce_all::<std::simd::Simd<i8, N>>(move _6)
+    v67 = stack_addr.i64 ss4
+    v68 = load.i8 notrap v67
+    v69 = iconst.i8 1
+    v70 = band v68, v69  ; v69 = 1
+    v71 = stack_addr.i64 ss4+1
+    v72 = load.i8 notrap v71
+    v73 = iconst.i8 1
+    v74 = band v72, v73  ; v73 = 1
+    v75 = band v70, v74
+    v76 = stack_addr.i64 ss4+2
+    v77 = load.i8 notrap v76
+    v78 = iconst.i8 1
+    v79 = band v77, v78  ; v78 = 1
+    v80 = band v75, v79
+    v81 = stack_addr.i64 ss4+3
+    v82 = load.i8 notrap v81
+    v83 = iconst.i8 1
+    v84 = band v82, v83  ; v83 = 1
+    v85 = band v80, v84
+    v86 = stack_addr.i64 ss4+4
+    v87 = load.i8 notrap v86
+    v88 = iconst.i8 1
+    v89 = band v87, v88  ; v88 = 1
+    v90 = band v85, v89
+    v91 = stack_addr.i64 ss4+5
+    v92 = load.i8 notrap v91
+    v93 = iconst.i8 1
+    v94 = band v92, v93  ; v93 = 1
+    v95 = band v90, v94
+    v96 = stack_addr.i64 ss4+6
+    v97 = load.i8 notrap v96
+    v98 = iconst.i8 1
+    v99 = band v97, v98  ; v98 = 1
+    v100 = band v95, v99
+    v101 = stack_addr.i64 ss4+7
+    v102 = load.i8 notrap v101
+    v103 = iconst.i8 1
+    v104 = band v102, v103  ; v103 = 1
+    v105 = band v100, v104
+    v106 -> v105
+; write_cvalue: Var(_0, var1): bool <- ByVal(v105): bool
+    jump block5
+
+block5:
+    nop 
+; 
+; return
+    return v106
+
+block6:
+    nop 
+; 
+; _2 = std::intrinsics::simd::simd_eq::<std::simd::Simd<i8, N>, std::simd::Simd<i8, N>>(copy _1, move _3)
+    v107 = load.i8 notrap v0
+    v108 = stack_addr.i64 ss1
+    v109 = load.i8 notrap v108
+    v110 = icmp eq v107, v109
+    v111 = bmask.i8 v110
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(0) }, None): i8 <- ByVal(v111): i8
+    v112 = stack_addr.i64 ss0
+    store notrap v111, v112
+    v113 = load.i8 notrap v0+1
+    v114 = stack_addr.i64 ss1+1
+    v115 = load.i8 notrap v114
+    v116 = icmp eq v113, v115
+    v117 = bmask.i8 v116
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(1) }, None): i8 <- ByVal(v117): i8
+    v118 = stack_addr.i64 ss0+1
+    store notrap v117, v118
+    v119 = load.i8 notrap v0+2
+    v120 = stack_addr.i64 ss1+2
+    v121 = load.i8 notrap v120
+    v122 = icmp eq v119, v121
+    v123 = bmask.i8 v122
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(2) }, None): i8 <- ByVal(v123): i8
+    v124 = stack_addr.i64 ss0+2
+    store notrap v123, v124
+    v125 = load.i8 notrap v0+3
+    v126 = stack_addr.i64 ss1+3
+    v127 = load.i8 notrap v126
+    v128 = icmp eq v125, v127
+    v129 = bmask.i8 v128
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(3) }, None): i8 <- ByVal(v129): i8
+    v130 = stack_addr.i64 ss0+3
+    store notrap v129, v130
+    v131 = load.i8 notrap v0+4
+    v132 = stack_addr.i64 ss1+4
+    v133 = load.i8 notrap v132
+    v134 = icmp eq v131, v133
+    v135 = bmask.i8 v134
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(4) }, None): i8 <- ByVal(v135): i8
+    v136 = stack_addr.i64 ss0+4
+    store notrap v135, v136
+    v137 = load.i8 notrap v0+5
+    v138 = stack_addr.i64 ss1+5
+    v139 = load.i8 notrap v138
+    v140 = icmp eq v137, v139
+    v141 = bmask.i8 v140
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(5) }, None): i8 <- ByVal(v141): i8
+    v142 = stack_addr.i64 ss0+5
+    store notrap v141, v142
+    v143 = load.i8 notrap v0+6
+    v144 = stack_addr.i64 ss1+6
+    v145 = load.i8 notrap v144
+    v146 = icmp eq v143, v145
+    v147 = bmask.i8 v146
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(6) }, None): i8 <- ByVal(v147): i8
+    v148 = stack_addr.i64 ss0+6
+    store notrap v147, v148
+    v149 = load.i8 notrap v0+7
+    v150 = stack_addr.i64 ss1+7
+    v151 = load.i8 notrap v150
+    v152 = icmp eq v149, v151
+    v153 = bmask.i8 v152
+; write_cvalue: Addr(Pointer { base: Stack(ss0), offset: Offset32(7) }, None): i8 <- ByVal(v153): i8
+    v154 = stack_addr.i64 ss0+7
+    store notrap v153, v154
+    jump block2
+
+block7:
+    nop 
+; 
+; _4 = std::intrinsics::simd::simd_eq::<std::simd::Simd<i8, N>, std::simd::Simd<i8, N>>(move _1, move _5)
+    v155 = load.i8 notrap v0
+    v156 = stack_addr.i64 ss3
+    v157 = load.i8 notrap v156
+    v158 = icmp eq v155, v157
+    v159 = bmask.i8 v158
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(0) }, None): i8 <- ByVal(v159): i8
+    v160 = stack_addr.i64 ss2
+    store notrap v159, v160
+    v161 = load.i8 notrap v0+1
+    v162 = stack_addr.i64 ss3+1
+    v163 = load.i8 notrap v162
+    v164 = icmp eq v161, v163
+    v165 = bmask.i8 v164
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(1) }, None): i8 <- ByVal(v165): i8
+    v166 = stack_addr.i64 ss2+1
+    store notrap v165, v166
+    v167 = load.i8 notrap v0+2
+    v168 = stack_addr.i64 ss3+2
+    v169 = load.i8 notrap v168
+    v170 = icmp eq v167, v169
+    v171 = bmask.i8 v170
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(2) }, None): i8 <- ByVal(v171): i8
+    v172 = stack_addr.i64 ss2+2
+    store notrap v171, v172
+    v173 = load.i8 notrap v0+3
+    v174 = stack_addr.i64 ss3+3
+    v175 = load.i8 notrap v174
+    v176 = icmp eq v173, v175
+    v177 = bmask.i8 v176
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(3) }, None): i8 <- ByVal(v177): i8
+    v178 = stack_addr.i64 ss2+3
+    store notrap v177, v178
+    v179 = load.i8 notrap v0+4
+    v180 = stack_addr.i64 ss3+4
+    v181 = load.i8 notrap v180
+    v182 = icmp eq v179, v181
+    v183 = bmask.i8 v182
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(4) }, None): i8 <- ByVal(v183): i8
+    v184 = stack_addr.i64 ss2+4
+    store notrap v183, v184
+    v185 = load.i8 notrap v0+5
+    v186 = stack_addr.i64 ss3+5
+    v187 = load.i8 notrap v186
+    v188 = icmp eq v185, v187
+    v189 = bmask.i8 v188
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(5) }, None): i8 <- ByVal(v189): i8
+    v190 = stack_addr.i64 ss2+5
+    store notrap v189, v190
+    v191 = load.i8 notrap v0+6
+    v192 = stack_addr.i64 ss3+6
+    v193 = load.i8 notrap v192
+    v194 = icmp eq v191, v193
+    v195 = bmask.i8 v194
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(6) }, None): i8 <- ByVal(v195): i8
+    v196 = stack_addr.i64 ss2+6
+    store notrap v195, v196
+    v197 = load.i8 notrap v0+7
+    v198 = stack_addr.i64 ss3+7
+    v199 = load.i8 notrap v198
+    v200 = icmp eq v197, v199
+    v201 = bmask.i8 v200
+; write_cvalue: Addr(Pointer { base: Stack(ss2), offset: Offset32(7) }, None): i8 <- ByVal(v201): i8
+    v202 = stack_addr.i64 ss2+7
+    store notrap v201, v202
+    jump block3
+}
+
+; clifv-extnames 1
+; decl u0:1832 func local "_RNxC12clap_builder12HcZ8SGvwWGJa"
+; end clifv-extnames
