@@ -45,6 +45,7 @@ deps     deps-demo/deps_demo  0
 deps     deps-demo/deps_demo  0
 # `--build-std` (the weekly std line, #1040; --rise-ok: no PR runs it, so a drop is green and
 # printed `drop (record it)`, a rise is red): #753's 10 functions per test executable
-# (`callRegs/blrRegs`; measured on #1051's head, 2026-11-15)
-fv-demo+std  fv-demo/fv_demo  10
-fv-demo+std  fv-demo/fv_demo  10
+# (`callRegs/blrRegs`; measured on #1051's head, 2026-11-15) dropped to 0 with #1192 (#753 stage
+# R4; std line on a351b0597, 2026-11-28: 56,859 of 56,859 region functions covered, SAME 21)
+fv-demo+std  fv-demo/fv_demo  0
+fv-demo+std  fv-demo/fv_demo  0

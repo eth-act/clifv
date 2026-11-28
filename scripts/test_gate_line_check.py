@@ -635,8 +635,8 @@ class LeftOut(unittest.TestCase):
         text = (HERE / "gate-expected-leftout.txt").read_text()
         self.assertEqual(gc.read_leftout(text, "deps")[1], [])
         self.assertIsNotNone(gc.read_leftout(text, "deps")[0])
-        # the weekly std line (#1042): #753's 10 functions per test executable
-        self.assertEqual(gc.read_leftout(text, "fv-demo+std")[0], {"fv-demo/fv_demo": [10, 10]})
+        # the weekly std line (#1042): #753's 10 functions per test executable, 0 since #1192
+        self.assertEqual(gc.read_leftout(text, "fv-demo+std")[0], {"fv-demo/fv_demo": [0, 0]})
 
 class CommandLine(unittest.TestCase):
     def run_script(self, *a):
