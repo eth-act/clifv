@@ -4934,6 +4934,22 @@ The witness uses std's A1 shape: a vtable `call_indirect` without `sret` next to
 
 Audit: `scripts/audit/call-regs-r4.lean`. Generated code is unchanged.
 
+Measured on clifv-remote, main 6008b8110 → #1192. Functions left out of a region with
+`--lean-link --verified`:
+* fv-demo `--build-std`: 10 → 0 (56,839 → 56,859 functions in regions, binary check 2/2);
+* serde_json 1.0.154: debug 2 → 0; release 1 → 1;
+* hex 0.4.3: debug 2 → 0; release 1 → 0;
+* p3-baby-bear: debug 26 → 26; release 6 → 6.
+
+Binary check, plain runs (link-check's typed Stock checker now accepts the `blr` sites):
+* serde_json debug: 7/8 → 8/8;
+* hex: debug 1/3 → 3/3; release 2/3 → 3/3;
+* p3-baby-bear: debug and release 0/1 → 1/1.
+
+No row is worse than main, and the `test result` lines are identical in every run. The
+hex rows depend on link-check's typed Stock candidate rule (link-check section above): without
+it, hex debug `--lean-link` went 3/3 → 2/3.
+
 **Plain `call`s with float signatures (S11g, #1015).** `Compile.functionETCF` no longer requires
 integer callee signatures for `call` statements (`callsE` dropped) and does not count a `call`'s
 arguments as integer positions (`intOperandsFC`); `lowerCheckTCF`'s context check accepts float
