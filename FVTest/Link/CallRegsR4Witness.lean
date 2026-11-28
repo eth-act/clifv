@@ -197,13 +197,10 @@ theorem correct_applies : ∃ file g,
     ExecBytes.ExecRefinesT (art input g).fb (art input g).base (xreg 30 r) (step input B file) r
       (RelocAtWithResults input input.results) (Clif.runLoop B.env (prog input) (M + 1) cs) := by
   obtain ⟨-, -, -, -, ⟨file, hf⟩, -⟩ := parts
-  cases eg : (prog input).func? "g" with
-  | none =>
-    have : ((prog input).func? "g").isSome = true := by native_decide -- witness: native_decide
-    rw [eg] at this; cases this
-  | some g =>
-    exact ⟨file, g, hf, eg, fun B hB hH hc M r args cs hX ho hr htr =>
-      SemanticCompilerWith.attemptT_correct hf B hB hH eg hc M hX ho hr htr⟩
+  have hs : ((prog input).func? "g").isSome = true := by native_decide -- witness: native_decide
+  obtain ⟨g, eg⟩ := Option.isSome_iff_exists.mp hs
+  exact ⟨file, g, hf, eg, fun B hB hH hc M r args cs hX ho hr htr =>
+    SemanticCompilerWith.attemptT_correct hf B hB hH eg hc M hX ho hr htr⟩
 
 /-! ## Negative witnesses: the sret/x8 mismatch -/
 
