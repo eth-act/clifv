@@ -48,6 +48,41 @@ theorem trapsExplicit_of_runDTS {L : LinkSys} (hL : L.OkT) {f : Clif.Function}
   rw [hrun] at hm
   exact trapsExplicit_of_returned hm
 
+/-- `trapsExplicit_of_run` under the typed contract with the register-guarded calls `OkTR`. -/
+theorem trapsExplicit_of_runTSR {L : LinkSys} (hL : L.OkTR) {f : Clif.Function}
+    (hf : f ∈ L.P.funcs)
+    {M : Nat} {args : List Clif.Val} {cs : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
+    (hcs : ClifEntry f args cs) (hsym : cs.mem.symbols = L.syms)
+    (hrun : Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) :
+    TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs := by
+  have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
+  obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
+    (hL.indScope f hf)
+    (E := Clif.linkEnvN L.P L.base M) rfl rfl (fun _ _ => rfl) (fun _ _ _ => rfl)
+    (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
+    (fun _ => hsym) (by rw [hrun]; exact fun _ h => nomatch h)
+    (by rw [hrun]; exact fun h => nomatch h)
+  rw [hrun] at hm
+  exact trapsExplicit_of_returned hm
+
+/-- `trapsExplicit_of_runD` under the typed contract with the register-guarded calls `OkTR`. -/
+theorem trapsExplicit_of_runDTSR {L : LinkSys} (hL : L.OkTR) {f : Clif.Function}
+    (hf : f ∈ L.P.funcs)
+    {F d : Nat} {args : List Clif.Val} {cs : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
+    (hcs : ClifEntry f args cs) (hsym : cs.mem.symbols = L.syms)
+    (hd : Clif.DepthLe L.base L.P d cs)
+    (hrun : Clif.runLoop L.base L.P (F + 1) cs = .returned vals cm) :
+    TrapsExplicit (Clif.linkEnvD L.P L.base F d) L.P.bare cs := by
+  have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
+  obtain ⟨m, hm⟩ := Clif.runLoop_linkD (base := L.base) (syms := L.syms) F d hL.names hf hL.free
+    (hL.indScope f hf)
+    (E := Clif.linkEnvD L.P L.base F d) rfl rfl (fun _ _ => rfl) (fun _ _ _ => rfl)
+    (F + 1) cs (Nat.le_refl _) hd (runInv_entry hf hcs) hIf
+    (fun _ => hsym) (by rw [hrun]; exact fun _ h => nomatch h)
+    (by rw [hrun]; exact fun h => nomatch h)
+  rw [hrun] at hm
+  exact trapsExplicit_of_returned hm
+
 end E2E.SemanticBinary
 
 namespace Link.SemanticCompilerWith
@@ -92,8 +127,8 @@ theorem attemptT_correct_source {S : LinkSpec} {file0 file : ByteArray}
         (step (input lower S true) B file) r
         (RelocAtWithResults (input lower S true) (input lower S true).results) (.trapped c)) := by
   obtain ⟨hin, hl⟩ := attemptT_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := prog_eq_legal (input lower S true)
   have hpe' : (input lower S true).toLinkInput.prog = prog (input lower S true) := by
     rw [hpe, LinkInput.prog_eq]
@@ -147,7 +182,7 @@ theorem attemptT_correct_source {S : LinkSpec} {file0 file : ByteArray}
     obtain ⟨rv', hrel, k, hk⟩ := (legalProg_refines hC hfP hE hG M).1 vals cm hrun
     rw [hst'] at hk
     exact ⟨rv', hrel, hexe _ ⟨k, hk⟩ (fun h => by cases h) fun K hK =>
-      trapsExplicit_of_runTS hL hfP' hcs' ho.symbols hK⟩
+      trapsExplicit_of_runTSR hL hfP' hcs' ho.symbols hK⟩
   · have hG : GoodFrom B.env (input lower S true).toLinkInput.srcProg
         (SomeInd (legalProg (input lower S true).toLinkInput.srcProg))
         (fun n => (input lower S true).syms.lookup n) ⟨cs.frame, [], cs.mem⟩ := by
@@ -197,8 +232,8 @@ theorem attemptT_correct_source_peak {S : LinkSpec} {file0 file : ByteArray}
         (step (input lower S true) B file) r
         (RelocAtWithResults (input lower S true) (input lower S true).results) (.trapped c)) := by
   obtain ⟨hin, hl⟩ := attemptT_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := prog_eq_legal (input lower S true)
   have hpe' : (input lower S true).toLinkInput.prog = prog (input lower S true) := by
     rw [hpe, LinkInput.prog_eq]
@@ -255,7 +290,7 @@ theorem attemptT_correct_source_peak {S : LinkSpec} {file0 file : ByteArray}
     rw [hst'] at hk hdT
     rw [← hpe] at hdT
     exact ⟨rv', hrel, hexe _ ⟨k, hk⟩ (fun h => by cases h) hdT fun F hF =>
-      trapsExplicit_of_runDTS hL hfP' hcs' ho.symbols hdT hF⟩
+      trapsExplicit_of_runDTSR hL hfP' hcs' ho.symbols hdT hF⟩
   · have hG : GoodFrom B.env (input lower S true).toLinkInput.srcProg
         (SomeInd (legalProg (input lower S true).toLinkInput.srcProg))
         (fun n => (input lower S true).syms.lookup n) ⟨cs.frame, [], cs.mem⟩ := by

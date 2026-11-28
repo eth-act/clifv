@@ -65,8 +65,8 @@ theorem attemptT_correct_sourceCp {S : LinkSpec} {file0 file : ByteArray}
         (RelocAtWithResults (input lower S true) (input lower S true).results)
         (.trapped c)) := by
   obtain ⟨hin, -⟩ := attemptT_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := prog_eq_legal (input lower S true)
   have hpe' : (input lower S true).toLinkInput.prog = prog (input lower S true) := by
     rw [hpe, LinkInput.prog_eq]
@@ -102,7 +102,7 @@ theorem attemptT_correct_sourceCp {S : LinkSpec} {file0 file : ByteArray}
   · obtain ⟨rv', hrel, m, hm⟩ := hret vals cm hrun
     rw [hpe'] at hm
     exact ⟨rv', hrel, hexe _ ⟨m, hm⟩ (fun h => by cases h) fun K hK =>
-      trapsExplicit_of_runTS hL hfP' hcs' ho.symbols hK⟩
+      trapsExplicit_of_runTSR hL hfP' hcs' ho.symbols hK⟩
   · obtain ⟨m, hm⟩ := htrap hnmt c hrun
     rw [hpe'] at hm
     exact hexe _ ⟨m, hm⟩ (fun h => by cases h) fun K _ => htr K
@@ -151,8 +151,8 @@ theorem attemptT_correct_source_peakCp {S : LinkSpec} {file0 file : ByteArray}
         (RelocAtWithResults (input lower S true) (input lower S true).results)
         (.trapped c)) := by
   obtain ⟨hin, -⟩ := attemptT_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S true) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := prog_eq_legal (input lower S true)
   have hpe' : (input lower S true).toLinkInput.prog = prog (input lower S true) := by
     rw [hpe, LinkInput.prog_eq]
@@ -188,7 +188,7 @@ theorem attemptT_correct_source_peakCp {S : LinkSpec} {file0 file : ByteArray}
   · obtain ⟨rv', hrel, ⟨m, hm⟩, hdT⟩ := hret vals cm hrun
     rw [hpe'] at hm hdT
     exact ⟨rv', hrel, hexe _ ⟨m, hm⟩ (fun h => by cases h) hdT fun F hF =>
-      trapsExplicit_of_runDTS hL hfP' hcs' ho.symbols hdT hF⟩
+      trapsExplicit_of_runDTSR hL hfP' hcs' ho.symbols hdT hF⟩
   · obtain ⟨⟨m, hm⟩, hdT⟩ := htrap hnmt c hrun
     rw [hpe'] at hm hdT
     exact hexe _ ⟨m, hm⟩ (fun h => by cases h) hdT fun F _ => htr F

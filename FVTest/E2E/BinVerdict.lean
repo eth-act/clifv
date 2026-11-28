@@ -6,7 +6,7 @@ executable-word theorem about the program's results in the checker it selected:
 | checker | premises decided by `link-check` | theorem |
 |---|---|---|
 | `integer` (the return-pin production checks) | `ReturnPinStackBound.okB` (`okB:`), `BinOkWithResults` (`binary:`), `codeMapB` (`code map:`), `SemanticExecBytes.GotOk` (`GOT:`, `gotTabB_sound`) | `E2E.ReturnPinExecBytes.binary_correct_exec_proven` |
-| `typed Stock (okRWithTS)` | `SemanticStackBound.okBTS`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk` | `E2E.SemanticExecBytes.binary_correct_exec_provenTS` |
+| `typed Stock (okRWithTSR)` | `SemanticStackBound.okBTSR`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk` | `E2E.SemanticExecBytes.binary_correct_exec_provenTSR` (#753: the typed checks with the register-guarded calls; it was `okRWithTS`/`okBTS`, `…_provenTS`) |
 | `typed (okBCleanupT)` | `okBCleanupT`, `DeadCleanupBinCheck.BinOk`, `codeMapB`, `DeadCleanupExecBytes.GotOk` | `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT` |
 
 The acyclic theorem's `¬ CycleFrom` is the stack bound (`stack:`); for a function whose calls
@@ -25,15 +25,15 @@ inductive Checker where
 /-- The checker's name as `link-check` prints it (`checker:`). -/
 def Checker.label : Checker → String
   | .integer => "integer"
-  | .typedStock => "typed Stock (okRWithTS)"
+  | .typedStock => "typed Stock (okRWithTSR)"
   | .typed => "typed (okBCleanupT)"
 
 /-- The acyclic theorem and its `_peak_` sibling. -/
 def theorems : Checker → String × String
   | .integer => ("E2E.ReturnPinExecBytes.binary_correct_exec_proven",
       "E2E.ReturnPinExecBytes.binary_correct_exec_peak_proven")
-  | .typedStock => ("E2E.SemanticExecBytes.binary_correct_exec_provenTS",
-      "E2E.SemanticExecBytes.binary_correct_exec_peak_provenTS")
+  | .typedStock => ("E2E.SemanticExecBytes.binary_correct_exec_provenTSR",
+      "E2E.SemanticExecBytes.binary_correct_exec_peak_provenTSR")
   | .typed => ("E2E.DeadCleanupExecBytes.binary_correct_exec_provenT",
       "E2E.DeadCleanupExecBytes.binary_correct_exec_peak_provenT")
 

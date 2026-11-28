@@ -6,6 +6,7 @@ import FV.E2E.DeadCleanupExecPeakT
 import FV.E2E.GotTab
 import FV.E2E.MidValExecProven
 import FV.E2E.MidValExecProvenSyms
+import FV.E2E.MidValExecProvenR
 
 /-! # Tests of `link-check`'s verdict (#1092, #1093)
 
@@ -30,7 +31,7 @@ run_cmd do
 #guard binVerdict .integer false true true true true =
   "theorem: E2E.ReturnPinExecBytes.binary_correct_exec_proven"
 #guard binVerdict .typedStock true true true true true =
-  "theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS (E2E.SemanticExecBytes.binary_correct_exec_peak_provenTS for the functions whose calls reach a call cycle: their stack stays a premise)"
+  "theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTSR (E2E.SemanticExecBytes.binary_correct_exec_peak_provenTSR for the functions whose calls reach a call cycle: their stack stays a premise)"
 #guard binVerdict .typed false true true true true =
   "theorem: E2E.DeadCleanupExecBytes.binary_correct_exec_provenT"
 -- a wrong code map or a bad GOT slot: no theorem
@@ -67,7 +68,7 @@ run_cmd do
       | some _ => throwError "{n} is not a theorem"
       | none => throwError "{n} does not exist"
 #guard binVerdictMidS .typedStock false true true true true true =
-  "theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTS_midS (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation; the hoisting mode decided at the image's symbol table)"
+  "theorem: E2E.SemanticExecBytes.binary_correct_exec_provenTSR_midS (about the program of the unoptimised dumps after constant-phi removal and the i128 legalisation; the hoisting mode decided at the image's symbol table)"
 #guard binVerdictMidS .integer false true true true true false =
   "theorem: none (Link.midValidatedSymsB fails at the image's symbol table)"
 

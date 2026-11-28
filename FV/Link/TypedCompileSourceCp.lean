@@ -61,8 +61,8 @@ theorem attempt_correct_sourceCp {S : LinkSpec} {cleanup : Bool} {file0 file : B
         (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results)
         (.trapped c)) := by
   obtain ⟨hin, -⟩ := attempt_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := SemanticCompilerWith.prog_eq_legal (input lower S cleanup)
   have hpe' : (input lower S cleanup).toLinkInput.prog = prog (input lower S cleanup) := by
     rw [hpe, LinkInput.prog_eq]
@@ -98,7 +98,7 @@ theorem attempt_correct_sourceCp {S : LinkSpec} {cleanup : Bool} {file0 file : B
   · obtain ⟨rv', hrel, m, hm⟩ := hret vals cm hrun
     rw [hpe'] at hm
     exact ⟨rv', hrel, hexe _ ⟨m, hm⟩ (fun h => by cases h) fun K hK =>
-      trapsExplicit_of_runTS hL hfP' hcs' ho.symbols hK⟩
+      trapsExplicit_of_runTSR hL hfP' hcs' ho.symbols hK⟩
   · obtain ⟨m, hm⟩ := htrap hnmt c hrun
     rw [hpe'] at hm
     exact hexe _ ⟨m, hm⟩ (fun h => by cases h) fun K _ => htr K
@@ -149,8 +149,8 @@ theorem attempt_correct_source_peakCp {S : LinkSpec} {cleanup : Bool} {file0 fil
         (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results)
         (.trapped c)) := by
   obtain ⟨hin, -⟩ := attempt_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := SemanticCompilerWith.prog_eq_legal (input lower S cleanup)
   have hpe' : (input lower S cleanup).toLinkInput.prog = prog (input lower S cleanup) := by
     rw [hpe, LinkInput.prog_eq]
@@ -186,7 +186,7 @@ theorem attempt_correct_source_peakCp {S : LinkSpec} {cleanup : Bool} {file0 fil
   · obtain ⟨rv', hrel, ⟨m, hm⟩, hdT⟩ := hret vals cm hrun
     rw [hpe'] at hm hdT
     exact ⟨rv', hrel, hexe _ ⟨m, hm⟩ (fun h => by cases h) hdT fun F hF =>
-      trapsExplicit_of_runDTS hL hfP' hcs' ho.symbols hdT hF⟩
+      trapsExplicit_of_runDTSR hL hfP' hcs' ho.symbols hdT hF⟩
   · obtain ⟨⟨m, hm⟩, hdT⟩ := htrap hnmt c hrun
     rw [hpe'] at hm hdT
     exact hexe _ ⟨m, hm⟩ (fun h => by cases h) hdT fun F _ => htr F

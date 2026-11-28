@@ -272,7 +272,7 @@ theorem stockRes_eq (lower : ProductionLowering) (S : LinkSpec) :
 /-- **`attemptT` from the Stock route's results `R`** (`attemptTFrom_eq`): `attemptTFast` with
 `R` for the pipeline's. -/
 def attemptTFrom (SP : LinkSpec) (file0 : ByteArray) (R : Res) : Except String ByteArray :=
-  if okRWithTS (productionStage true) (SP.input0.withDepth R) R then
+  if okRWithTSR (productionStage true) (SP.input0.withDepth R) R then
     leanLinkWithResults SP file0 (fun _ => R)
   else .error SemanticCompilerWith.outOkTSMsg
 
@@ -291,11 +291,10 @@ theorem failNames_isEmpty (l : List (String × Bool)) : (failNames l).isEmpty = 
   apply Bool.eq_iff_iff.2
   simp [failNames, List.filter_eq_nil_iff]
 
-/-- **The failing checks of `attemptTFrom`** (#1108): the failing global checks of `okRWithTS`
-(`okRWithTSFast`'s form) as `<global>`, then each function failing one of its per-function checks
-with those checks. `stockFails_isEmpty`: empty exactly when the typed checks hold, so `lean-link`
-decides `attemptTFrom` and reports its failures from one evaluation of the checks
-(`attemptTFrom_stockFails`). -/
+/-- **The failing checks of `okRWithTS`** (#1108; `attemptTFrom`'s checks until #753, now
+`stockFailsR`'s): the failing global checks of `okRWithTS` (`okRWithTSFast`'s form) as
+`<global>`, then each function failing one of its per-function checks with those checks.
+`stockFails_isEmpty`: empty exactly when `okRWithTS` holds. -/
 def stockFails (SP : LinkSpec) (R : Res) : List (String × List String) :=
   let I := SP.input0.withDepth R
   let P := progOf R
@@ -331,10 +330,35 @@ theorem stockFails_isEmpty (SP : LinkSpec) (R : Res) :
     globalChksWith_of, parMap_eq, isEmpty_append', isEmpty_ite_singleton, failsFilter_isEmpty,
     failNames_isEmpty]
 
-/-- **`attemptTFrom` from its failing checks** (`stockFails_isEmpty`). -/
+/-- **The failing checks of `attemptTFrom` with the register-guarded calls** (#753): `stockFails`
+with the checks of `okRWithTSR` (`okRWithTSRFast`'s form: `staticChksWithTSR`,
+`linkChksWithTSXR`). `stockFailsR_isEmpty`: empty exactly when they hold, so `lean-link`
+decides `attemptTFrom` and reports its failures from one evaluation of the checks
+(`attemptTFrom_stockFails`). -/
+def stockFailsR (SP : LinkSpec) (R : Res) : List (String × List String) :=
+  let I := SP.input0.withDepth R
+  let P := progOf R
+  let T := tabOf R
+  let C := LinkCtx.of I P T
+  let X := LinkIdx.of P C.ents
+  let SI := sigIdx P C.S
+  let gl := failNames (globalChksWith C I P T)
+  let rs := parMap (fun e => (e.1.name, failNames (staticChksWithTSR (productionStage true) I e.1 e.2 ++
+      linkChksWithTSXR C X SI e.1 e.2))) R
+  (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
+
+theorem stockFailsR_isEmpty (SP : LinkSpec) (R : Res) :
+    (stockFailsR SP R).isEmpty = okRWithTSR (productionStage true) (SP.input0.withDepth R) R := by
+  simp only [stockFailsR, okRWithTSR, chksWithTSR, linkChksWithTSXR_of,
+    globalChksWith_of, parMap_eq, isEmpty_append', isEmpty_ite_singleton, failsFilter_isEmpty,
+    failNames_isEmpty]
+
+/-- **`attemptTFrom` from its failing checks** (`stockFailsR_isEmpty`; #753: it was `stockFails`,
+the failures of `okRWithTS`, whose emptiness is no longer `attemptTFrom`'s test:
+`FVTest/Link/CallRegsR4Witness.lean`). -/
 theorem attemptTFrom_stockFails (SP : LinkSpec) (file0 : ByteArray) (R : Res) :
-    attemptTFrom SP file0 R = if (stockFails SP R).isEmpty then leanLinkWithResults SP file0 (fun _ => R)
+    attemptTFrom SP file0 R = if (stockFailsR SP R).isEmpty then leanLinkWithResults SP file0 (fun _ => R)
       else .error SemanticCompilerWith.outOkTSMsg := by
-  rw [attemptTFrom, stockFails_isEmpty]
+  rw [attemptTFrom, stockFailsR_isEmpty]
 
 end Link.TypedStockShared

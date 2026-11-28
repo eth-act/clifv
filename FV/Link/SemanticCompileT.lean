@@ -1,16 +1,21 @@
 import FV.Link.SemanticExeWith
 import FV.E2E.SemanticExecTS
+import FV.E2E.SemanticExecTSR
 
 /-! # The typed executable compiler on a Stock route (#722)
 
 `Link.SemanticCompilerWith.attemptT lower S file0`: the Stock route's pipeline and link
 (`leanLinkProductionWith lower S file0 true`: per function the Stock lowering `lower`, falling
 back to `lowerFunction` where it fails, then the dead cleanup; Cranelift's code where the Stock
-lowerings are proven), accepted when the typed checks `okRWithTS` hold on its results: per
-function the Stock validator `SemanticNI.check` on an integer function without `sret` parameter,
-or the typed validators (`lowerCheckT`/`lowerCheckTCF`) on `lowerFunction`'s output, which admit
-the proven float operations. So float functions are verified inside the same region as the
-Stock-lowered integer functions, with the code the Stock route emits (no generated-code change).
+lowerings are proven), accepted when the typed checks `okRWithTSR` hold on its results: per
+function the Stock validator `SemanticNI.check` on an integer function without `sret` parameter
+and without call sites, the retained production check `lowerCheck`, or the typed validators
+(`lowerCheckT`/`lowerCheckTCF`) on `lowerFunction`'s output, which admit the proven float
+operations; a `blr` call site is checked for its shape, its registers being the entered
+function's by the register guard of the world theorems (#753, `okRWithTSR`; it was `okRWithTS`,
+which checked them per function it may enter). So float functions are verified inside the same
+region as the Stock-lowered integer functions, with the code the Stock route emits (no
+generated-code change).
 
 Correctness: `attemptT_correct` (no call cycle reachable), `attemptT_correct_depth` (any
 program, the stack of the depth-`M` budget), `attemptT_correct_peak` (the stack of the run's
@@ -24,15 +29,15 @@ variable {lower : ProductionLowering}
 
 /-- The error of `attemptT` when its typed checks fail. -/
 def outOkTSMsg : String :=
-  "the typed checks on the Stock route's results fail (okRWithTS)"
+  "the typed checks on the Stock route's results fail (okRWithTSR)"
 
 /-- **The typed executable compiler on the Stock route `lower`** (#722): the dead-cleanup Stock
-pipeline's results, accepted when the typed checks `okRWithTS` hold, linked by
+pipeline's results, accepted when the typed checks `okRWithTSR` hold, linked by
 `leanLinkProductionWith`. -/
 def attemptT (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) :
     Except String ByteArray :=
   let I := S.inputProductionWith lower true
-  if okRWithTS (productionStage true) I (I.resultsProductionWith lower true) then
+  if okRWithTSR (productionStage true) I (I.resultsProductionWith lower true) then
     leanLinkProductionWith lower S file0 true
   else .error outOkTSMsg
 
@@ -42,7 +47,7 @@ depth does not change them), so the pipeline is not run again for the depth and 
 def attemptTFast (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) :
     Except String ByteArray :=
   let R := S.input0.resultsProductionWith lower true
-  if okRWithTS (productionStage true) (S.input0.withDepth R) R then
+  if okRWithTSR (productionStage true) (S.input0.withDepth R) R then
     leanLinkWithResults S file0 (fun _ => R)
   else .error outOkTSMsg
 
@@ -55,9 +60,12 @@ def attemptTFast (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray)
       lower true = S.input0.resultsProductionWith lower true := rfl
   simp only [attemptT, attemptTFast, LinkSpec.inputProductionWith, hl, hr]
 
+/-- `attemptT`'s output passed the typed checks with the register-guarded calls (`okBTSR`; #753:
+it was `okBTS`, false of `attemptT`'s output where a vtable `blr` sits next to a GOT-declared
+callee with other registers, `FVTest/Link/CallRegsR4Witness.lean`). -/
 theorem attemptT_spec {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) :
-    SemanticStackBound.okBTS (input lower S true) = true ∧
+    SemanticStackBound.okBTSR (input lower S true) = true ∧
     leanLinkProductionWith lower S file0 true = .ok file := by
   simp only [attemptT] at h
   split at h
@@ -87,7 +95,7 @@ theorem attemptT_correct {S : LinkSpec} {file0 file : ByteArray}
       (RelocAtWithResults (input lower S true) (input lower S true).results)
       (Clif.runLoop B.env (prog (input lower S true)) (M + 1) cs) := by
   obtain ⟨hin, hl⟩ := attemptT_spec h
-  exact binary_correct_exec_provenTS hin
+  exact binary_correct_exec_provenTSR hin
     (codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (gotOk_leanLink hl) B hB hH hf hc
     M hX ho (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
 
@@ -113,7 +121,7 @@ theorem attemptT_correct_depth {S : LinkSpec} {file0 file : ByteArray}
       (RelocAtWithResults (input lower S true) (input lower S true).results)
       (Clif.runLoop B.env (prog (input lower S true)) (M + 1) cs) := by
   obtain ⟨hin, hl⟩ := attemptT_spec h
-  exact binary_correct_exec_depth_provenTS hin
+  exact binary_correct_exec_depth_provenTSR hin
     (codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (gotOk_leanLink hl) B hB hH hf M hX
     ho (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
 
@@ -140,7 +148,7 @@ theorem attemptT_correct_peak {S : LinkSpec} {file0 file : ByteArray}
       (RelocAtWithResults (input lower S true) (input lower S true).results)
       (Clif.runLoop B.env (prog (input lower S true)) (F + 1) cs) := by
   obtain ⟨hin, hl⟩ := attemptT_spec h
-  exact binary_correct_exec_peak_provenTS hin
+  exact binary_correct_exec_peak_provenTSR hin
     (codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (gotOk_leanLink hl) B hB hH hf F d
     hX ho (outsideAvoids_leanLink hl _ _ _ _ _) hr hd htr
 

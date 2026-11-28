@@ -109,8 +109,9 @@ lowers every function with `lowerFunction`, while the units hold the Stock route
 (Cranelift's) where `lean-backend` took them; when some function differs (`stockDiffersB`, #691),
 the typed compiler on the Stock route (#722) `Link.SemanticCompilerWith.attemptT` (the Stock
 route's pipeline and link `leanLinkProductionWith` on its placement `placedProductionWith`, i.e.
-the units' code, accepted by the typed checks `okRWithTS`: the Stock validator on an integer
-function, the typed validators on `lowerFunction`'s output) is tried instead; coverage
+the units' code, accepted by the typed checks `okRWithTSR`: the Stock validator on an integer
+function, the typed validators on `lowerFunction`'s output; a `blr` site checked for its shape,
+#753) is tried instead; coverage
 `attemptT_correct`, `attemptT_correct_depth`, `attemptT_correct_peak` (returned values by
 class), and for a bundle in `SrcScopeB` `attemptT_correct_sourceCp`, `attemptT_correct_source_peakCp`
 (#1100; `hcp` by `TypedStockShared.stockSteps_placed` and `rfl`). When it fails, the smallest of: the functions failing its typed checks, the functions
@@ -333,7 +334,7 @@ code (outside code, as a fallback's) and runs `lean-link` on it: leaving a funct
 program only drops conjuncts of the other functions' per-function conditions (each quantifies
 over the program's functions), and every condition is decided again on the relinked
 executable. `only`: just `extra` (with the program-wide conditions): the typed Stock route's
-failures (`TypedStockShared.stockFails`), whose theorem `attemptT_correct` has none of the per-function
+failures (`TypedStockShared.stockFailsR`), whose theorem `attemptT_correct` has none of the per-function
 conditions above as premises (#754). `S` is the bundle's spec `S0`: the source-domain conditions
 are `SrcScopeB`'s on the bundle's program, which is what `--verified` and the `…_sourceCp`
 theorems require (#1089); on `S0.cp` a function constant-phi removal changed is printed after
@@ -347,8 +348,10 @@ the typed scope — `typed`, and a function left in fails `fnScopeInB` (it meets
 `fnScopeInTB`/`fnScopeInTCB`) — only the functions failing a per-function condition are left
 out, and of those failing `scopeFails` only the ones failing a call-site condition
 (`callScopeB:*`): the typed Stock route checks those call sites again on the compiled code
-(`callRegs/blrRegs`, `TypedStockShared.stockFails`), so leaving them in usually costs one more link (k256:
-all 56 functions failing `callScopeB:blrRegs` failed it there; crypto-bigint: 0 of 5).
+(`callRegs/blrShape`, `TypedStockShared.stockFailsR`; since #753 a `blr` site for its shape only,
+its registers being the entered function's by the register guard of the world theorems), so
+leaving them in usually costs one more link where they fail there (before #753, k256: all 56
+functions failing `callScopeB:blrRegs` failed `callRegs/blrRegs` there; crypto-bigint: 0 of 5).
 Otherwise, as before, every function failing `scopeFails` (one link fewer).
 
 `srcT` (#1076): the source-domain conditions are `SrcScopeTB`'s (the executable linked again may
@@ -962,7 +965,7 @@ def main (args0 : List String) : IO UInt32 := do
       -- once, with their failures (#1108, `TypedStockShared.attemptTFrom_stockFails`)
       let SP := TypedStockShared.placedStock SC0 steps
       let RS := TypedStockShared.stockRes SP steps
-      let bad := TypedStockShared.stockFails SP RS
+      let bad := TypedStockShared.stockFailsR SP RS
       let att := if bad.isEmpty then leanLinkWithResults SP file0 (fun _ => RS)
         else .error SemanticCompilerWith.outOkTSMsg
       -- #1119: a bundle only in `SrcScopeTB` with functions compiled from optimised dumps: the
@@ -1018,7 +1021,7 @@ def main (args0 : List String) : IO UInt32 := do
         -- with `SC0 = S0.cp` on this route, then `rfl`)
         let srcCp := (Route.stockT.source srcOk).pick fun n =>
           s!"; the bundle's program (before the i128 legalisation and constant-phi removal), in SrcScopeB: {n}"
-        IO.println <| midCov (some fun n => SP.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {Route.stockT.claim.names} (returned values by class; per function the typed checks okRWithTS); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
+        IO.println <| midCov (some fun n => SP.input0.syms.lookup n) s!"lean-link: {exe}: coverage: {Route.stockT.claim.names} (returned values by class; per function the typed checks okRWithTSR); about the legalised program{srcCp}; admission (--verified): every function meets fnScopeInTB (InScopeInT) or the admission predicate fnScopeInTCB; totality: no theorem for attemptT (the totality theorems are about compileExe/compileExeT/compileExeT3 on InScopeIn); {tcbN} function(s) admitted only through fnScopeInTCB{progTot}{srcTB}"
         return 0
       if let .error e := att then
         let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
