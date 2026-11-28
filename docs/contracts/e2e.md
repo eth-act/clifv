@@ -3863,7 +3863,12 @@ machine state `r` itself:
     `fv-demo` (`crate-proofs/Crates/FvDemoExec.lean`): `codeMap_ok`, `gotB_ok` by `native_decide`
     (`codeMapB` in `fvcheck`), and `Crates.FvDemo.binary_correct_exec`: the theorem for every
     file agreeing with the excerpts, only the base environment's and the outside caller's
-    premises left. `link-check` prints the code map check (`code map: ok`).
+    premises left. `link-check` prints the code map check (`code map: ok`). Since #753 R4
+    `Crates.FvDemo` is generated with the typed Stock checker (`okRWithTSR`): the statement of
+    `binary_correct_exec` is unchanged, proved by `SemanticExecBytes.binary_correct_exec_provenTSR_int`
+    (`FV/E2E/SemanticExecTSRInt.lean`: `ExecRefinesT` gives `ExecRefines` when every function returns
+    integers only, `returns_int` by `native_decide`); `binary_correct_execT` states the typed
+    conclusion `ExecRefinesT`.
 
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)

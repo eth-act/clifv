@@ -1,9 +1,9 @@
 import Crates.FvDemo
-import FV.E2E.ReturnPinExecProven
+import FV.E2E.SemanticExecTSRInt
 
 /-! # `fv-demo`: the theorem about the executable's own words
 
-`E2E.ReturnPinExecBytes.binary_correct_exec_proven` (L3) for the `fv-demo` executable of `Crates.FvDemo`:
+`E2E.SemanticExecBytes.binary_correct_exec_provenTSR` (L3) for the `fv-demo` executable of `Crates.FvDemo`:
 besides that file's checks (`okB_input`, `bin_ok`), the two per-program checks of the executable
 machine, by `native_decide` on the same input and excerpts:
 
@@ -17,7 +17,12 @@ machine, by `native_decide` on the same input and excerpts:
   instruction byte.
 
 `binary_correct_exec` is `binary_correct_exec_proven` for every file agreeing with the excerpts
-`exAll`: the premises left are those about the base environment and the outside caller.
+`exAll`: the premises left are those about the base environment and the outside caller. Since
+#753 R4 `Crates.FvDemo` is generated with the typed Stock checker (`okB_input` is `okRWithTSR`),
+so `binary_correct_exec` (same statement) is proved by
+`SemanticExecBytes.binary_correct_exec_provenTSR_int` (`returns_int`: every function returns
+integers only), and `binary_correct_execT` is `binary_correct_exec_provenTSR` itself
+(`ExecRefinesT`).
 -/
 
 namespace Crates.FvDemo
@@ -29,6 +34,11 @@ theorem codeMap_ok : codeMapB input (tabOf actualResults) = true := by native_de
 
 /-- The GOT check of the executable's program on the proof's excerpts (`gotB`). -/
 theorem gotB_ok : gotB compilerInput exAll = true := by native_decide
+
+/-- Every function of the program returns integers only. -/
+theorem returns_int :
+    (prog compilerInput).funcs.all (fun g => g.sig.returns.all (·.ty.isInt)) = true := by
+  native_decide
 
 /-- **`binary_correct_exec_proven` for `fv-demo`**: for every file agreeing with the excerpts,
 under the base environment's premises (`BaseOk`, `HooksSim`) and those of the outside call, the
@@ -46,7 +56,24 @@ theorem binary_correct_exec (file : ByteArray) (hfile : Elf.Agrees file exAll) (
     (htr : TrapsExplicit (Clif.linkEnvN (prog compilerInput) B.env M) (prog compilerInput).bare cs) :
     ExecRefines (art compilerInput f).fb (art compilerInput f).base (xreg 30 r) (step compilerInput B file) r
       (BinCheck.RelocAtWithResults compilerInput actualResults) (Clif.runLoop B.env (prog compilerInput) (M + 1) cs) :=
-  ReturnPinExecBytes.binary_correct_exec_proven okB_input codeMap_ok (bin_ok file hfile) (gotB_sound gotB_ok hfile) B
+  SemanticExecBytes.binary_correct_exec_provenTSR_int okB_input codeMap_ok returns_int
+    (bin_ok file hfile) (gotB_sound gotB_ok hfile) B hB hH hf hc M hX ho hav hr htr
+
+/-- **`binary_correct_exec_provenTSR` for `fv-demo`**: `binary_correct_exec` with the typed
+conclusion `ExecRefinesT` (each returned value in the ABI return register of its class). -/
+theorem binary_correct_execT (file : ByteArray) (hfile : Elf.Agrees file exAll) (B : BaseEnv)
+    (hB : BaseOk (sys compilerInput B)) (hH : HooksSim compilerInput B) {n : String} {f : Clif.Function}
+    (hf : (prog compilerInput).func? n = some f)
+    (hc : ¬ SemanticStackBound.CycleFrom (SemanticStackBound.Calls compilerInput compilerInput.results) f) (M : Nat)
+    {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
+    (ho : OutsideCall compilerInput (BinCheck.roByte compilerInput dataObjs) f (SemanticStackBound.stackFn compilerInput f) r args
+      cs.mem)
+    (hav : OutsideAvoids (GotSlot compilerInput file) f (SemanticStackBound.stackFn compilerInput f) r args cs.mem)
+    (hr : ClifRun compilerInput B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog compilerInput) B.env M) (prog compilerInput).bare cs) :
+    ExecBytes.ExecRefinesT (art compilerInput f).fb (art compilerInput f).base (xreg 30 r) (step compilerInput B file) r
+      (BinCheck.RelocAtWithResults compilerInput actualResults) (Clif.runLoop B.env (prog compilerInput) (M + 1) cs) :=
+  binary_correct_exec_provenTSR okB_input codeMap_ok (bin_ok file hfile) (gotB_sound gotB_ok hfile) B
     hB hH hf hc M hX ho hav hr htr
 
 end Crates.FvDemo

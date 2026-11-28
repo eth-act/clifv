@@ -4,6 +4,7 @@ import FV.Link.TypedCompileSourceCp
 import FV.E2E.MidValExecProvenR
 import FV.E2E.StaticShareR
 import FV.E2E.TypedProductionChecksR
+import FV.E2E.SemanticExecTSRInt
 import FVTest.Link.CallRegsR4Witness
 import FVTest.Link.CallRegsR4RealWitness
 
@@ -73,6 +74,11 @@ import FVTest.Link.CallRegsR4RealWitness
 #print axioms E2E.TypedProductionChecks.okRProductionR_of_checks
 #print axioms E2E.TypedProductionChecks.crate_correct_productionR
 #print axioms E2E.TypedProductionChecks.crate_correct_stackR
+
+-- `binary_correct_exec_provenTSR` with `ExecRefines` for programs with integer returns
+-- (`Crates.FvDemo.binary_correct_exec`).
+#print axioms E2E.SemanticExecBytes.execRefines_of_execRefinesT
+#print axioms E2E.SemanticExecBytes.binary_correct_exec_provenTSR_int
 
 -- The compilers on `okRWithTSR`: the theorems with their texts, re-proved.
 #print axioms Link.SemanticCompilerWith.attemptT_eq_fast
