@@ -3105,7 +3105,7 @@ the file, and prints the theorem (`theorem:`, `FVTest/E2E/BinVerdict.lean`) only
 | `checker:` | decided premises (output line) | theorem (`_peak_` sibling for functions reaching a call cycle) |
 |---|---|---|
 | `integer` | `ReturnPinStackBound.okB` (`okB:`), `BinOkWithResults` (`binary:`), `codeMapB` (`code map:`), `SemanticExecBytes.GotOk` (`GOT:`), the stack bound (`stack:`) | `E2E.ReturnPinExecBytes.binary_correct_exec_proven` (`…_peak_proven`) |
-| `typed Stock (okRWithTS)` | `SemanticStackBound.okBTS`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk`, stack | `E2E.SemanticExecBytes.binary_correct_exec_provenTS` (`…_peak_provenTS`) |
+| `typed Stock (okRWithTSR)` | `SemanticStackBound.okBTSR`, `BinOkWithResults`, `codeMapB`, `SemanticExecBytes.GotOk`, stack | `E2E.SemanticExecBytes.binary_correct_exec_provenTSR` (`…_peak_provenTSR`; #753 R4, before: `okRWithTS`, `okBTS`, `…_provenTS`) |
 | `typed (okBCleanupT)` | `okBCleanupT`, `DeadCleanupBinCheck.BinOk`, `codeMapB`, `DeadCleanupExecBytes.GotOk`, stack | `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT` (`…_peak_provenT`) |
 
 `GotOk` is decided by `E2E.GotTab.gotTabB` on the whole file (`SemanticExecBytes.gotTabB_sound`,
@@ -3302,6 +3302,18 @@ route list chosen, and the checks run on its results). Witness on the captured `
 return-pin checker accepts the Stock one and `okRWithTS` rejects it on the lowering check alone,
 `typedRoute?` picks route 0 and `okRWithTS` accepts its results. fv-demo `--build-std`: 1 of 2
 executables before (`black_box::<enums::Shape>` and its 25 callers dropped), 2 of 2 after.
+
+**The typed Stock checker with the register-guarded calls** (#753 stage R4). The typed Stock
+checker now decides the checks of the compiler's typed route, `okRWithTSR`
+(`FV/E2E/SemanticPipelineCheckTR.lean`):
+- the static checks are `staticChksWithTSR`, evaluated from the integer evaluation by
+  `withTSROfNI` (`withTSROfNI_eq`);
+- the link checks are `linkChksWithTSXR` (`linkChksWithTSXR_of`);
+- `typedRoute?` asks `lowerOkTSRB`.
+
+It prints `checker: typed Stock (okRWithTSR)`. The theorem is
+`binary_correct_exec_provenTSR` (`…_peak_provenTSR`, `_mid`/`_midS` in
+`FV/E2E/MidValExecProvenR.lean`), with premise `okBTSR`.
 
 **Checker choice** (#1164). One binary theorem is about one checker's results, so `link-check`
 checks the whole (pruned) program with one checker; when integer validators reject functions it
@@ -4865,6 +4877,55 @@ theorems under them for `CtxInv`, `CtxT` and `CallCtxT` contexts (`IselCtlCallPR
 `IselCtlCallTPR`, `IselCtlCallTFPR`: `call_got_lowerInstOkPR` … and the families
 `callRulesCorrectPR` …, each giving its family without registers, `…_of_PR`). Nothing uses them
 yet; generated code and coverage are unchanged. Witnesses: `IselContractPRWitness`.
+
+**The typed Stock route with the register-guarded calls (#753, stages R2–R4).** Stages R2 and R3
+(#1189, #1191) define the register-guarded VCode semantics `csemVR P` (`regG`,
+`RegLevelDriverSemR.lean`), in which a call through a register is defined only when every
+function `P` places at the target has the site's registers (`RegGuard`, `SiteRegsR`). They also
+prove the world theorems at that semantics.
+
+*R3'* (`RegLevelGoodXRG`, `RegLevelCallRG`, `RegLevelCorrectRG`, `DeadCleanupRegLevelRG`) makes
+the per-state facts keep the guarded call premise (`RL.CallPreR`, `RL.GoodXR`, `actGoodXR`):
+* Call steps are realised at `R` from the guarded step (`realizes_callRG`, `realizes_tryCallRG`).
+* Every other step is realised at `R.noCall` and lifted back (`MStep.guardLift`, `RL.noCall_le`).
+  `R.noCall` is the activation whose external semantics makes no calls. Its machine step is
+  `R`'s, and off the calls its VCode step is `R`'s (`RL.noCall_sem`). So the states of a non-call
+  step are at no call line, and every guarded VCode step, calls included, is still realised.
+
+*R2X'* (11 `…RG` modules) carries these facts to `backend_correct_world{X,_niX}_pipelineAnyTSRG`.
+
+*R4:*
+* `LinkSys.OkTR` (`LinkArmTR`) replaces `OkT.blrRegs` (a `blr` site's registers checked against
+  every function it may enter) with `blrShape` (the site's shape) and `retCls` (the declared
+  returns have their type's register class).
+* The world theorems' register premises come from the link:
+  * `regCompatGotR`: a GOT callee's definition has its declaration's signature (`declSig`,
+    `symInj`);
+  * `regCompatIndR`: a function an indirect call may enter `abiMatch`es the call's signature
+    (CLIF's `call_indirect` is `stuck` otherwise), hence has its registers (`regLocs_of_abiMatch`,
+    `retCls`).
+* The R chain ends in `binary_correct_exec{,_depth,_peak}_provenTSR` (premise `okBTSR`).
+* The compiler's checks are `okRWithTSR` (`SemanticPipelineCheckTR`, `LinkSiteTCR`):
+  * a `blr` site is checked for its shape;
+  * a Stock-category artifact is admitted only without call sites, or with the retained
+    production check (`lowerOkTSRB`).
+* `attemptT`, `attemptTFast`, `attemptTFrom` and `TypedCompilerWith.attempt{,Fast}` use
+  `okRWithTSR`. Their `…_correct*` theorems keep their texts.
+* Three texts change, each with a witness that its old text is false
+  (`FVTest/Link/CallRegsR4Witness.lean`):
+  * `attemptT_spec` and `attempt_spec` (`okBTS` → `okBTSR`);
+  * `attemptTFrom_stockFails` (`stockFails` → `stockFailsR`).
+
+The witness uses std's A1 shape: a vtable `call_indirect` without `sret` next to GOT calls of
+`%h` (the site's registers) and of `%s(i64 sret, i64)` (x8, x0).
+* `okBTS` fails (`callRegs/blrRegs`).
+* `attemptT` succeeds, and `attemptT_correct` applies to the caller (`correct_applies`).
+* At the vtable site with `%s`'s address as the target, the guard fails and the guarded step is
+  undefined (`mismatch_guard_false`). CLIF does not enter `%s` there either (`mismatch_abiMatch`).
+* A GOT declaration with other registers than its definition fails `declSig`, and the caller is
+  left out (`mismatch_left_out`).
+
+Audit: `scripts/audit/call-regs-r4.lean`. Generated code is unchanged.
 
 **Plain `call`s with float signatures (S11g, #1015).** `Compile.functionETCF` no longer requires
 integer callee signatures for `call` statements (`callsE` dropped) and does not count a `call`'s
