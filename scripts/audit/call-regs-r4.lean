@@ -3,6 +3,7 @@ import FV.Link.MidSourceTBSyms
 import FV.Link.TypedCompileSourceCp
 import FV.E2E.MidValExecProvenR
 import FV.E2E.StaticShareR
+import FV.E2E.TypedProductionChecksR
 import FVTest.Link.CallRegsR4Witness
 import FVTest.Link.CallRegsR4RealWitness
 
@@ -67,6 +68,12 @@ import FVTest.Link.CallRegsR4RealWitness
 #print axioms E2E.SemanticBinary.trapsExplicit_of_runTSR
 #print axioms E2E.SemanticBinary.trapsExplicit_of_runDTSR
 
+-- The typed Stock checker's crate proofs (`link-check --lean`) under `okRWithTSR`.
+#print axioms E2E.TypedProductionChecks.fnsBProductionR_append
+#print axioms E2E.TypedProductionChecks.okRProductionR_of_checks
+#print axioms E2E.TypedProductionChecks.crate_correct_productionR
+#print axioms E2E.TypedProductionChecks.crate_correct_stackR
+
 -- The compilers on `okRWithTSR`: the theorems with their texts, re-proved.
 #print axioms Link.SemanticCompilerWith.attemptT_eq_fast
 #print axioms Link.SemanticCompilerWith.attemptT_correct
@@ -123,3 +130,4 @@ import FVTest.Link.CallRegsR4RealWitness
 #print axioms E2E.CallRegsR4RealWitness.checks_true -- witness: native_decide
 #print axioms E2E.CallRegsR4RealWitness.parts -- witness: native_decide
 #print axioms E2E.CallRegsR4RealWitness.correct_applies -- witness: native_decide
+#print axioms E2E.CallRegsR4Witness.crate_correctR_applies -- witness: native_decide

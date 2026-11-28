@@ -3,6 +3,7 @@ import FV.Link.TypedCompileModes
 import FV.E2E.StockProductionFixtures
 import FV.Backend.Lowering.StockArithmeticNI
 import FVTest.Link.DeadCleanupWitness
+import FV.E2E.TypedProductionChecksR
 
 /-! # Witnesses of #753 stage R4 (the typed Stock route with the register-guarded calls)
 
@@ -267,5 +268,14 @@ theorem mismatch_left_out : (∃ m, SemanticCompilerWith.attemptT lower specBad 
   cases r : SemanticCompilerWith.attemptT lower specBad fileBad with
   | error m => exact ⟨m, rfl⟩
   | ok f => rw [r] at ha; cases ha
+
+/-- **The typed Stock checker's crate statement under `okRWithTSR`** (`crate_correct_productionR`,
+the theorem of `link-check --lean`'s typed Stock proof files since #753 R4) holds of `%g` of the
+fixture, whose results `okRWithTS` rejects (`parts`: `okBTS input = false`), so
+`crate_correct_production`'s premise fails there. -/
+theorem crate_correctR_applies :
+    TypedProductionChecks.CrateStmtProduction input.lower input.toLinkInput input.cleanup "g" :=
+  TypedProductionChecks.crate_correct_productionR (lower := input.lower) input.toLinkInput
+    input.cleanup parts.2.2.1 _
 
 end E2E.CallRegsR4Witness

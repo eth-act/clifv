@@ -702,9 +702,10 @@ def main (args : List String) : IO UInt32 := do
     let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
+    -- typed Stock: the checker is `okRWithTSR` (#753 R4), so its proofs are the `R` ones (`tsr`)
     let proofFiles := if typed then
         FVTest.E2E.TypedLinkProofWith.leanFilesTypedWith
-          (if typedS then lowerNameS else "Backend.lowerFunction") I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockVoidCallNI")
+          (if typedS then lowerNameS else "Backend.lowerFunction") I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockVoidCallNI") (tsr := typedS)
       else FVTest.E2E.ReturnPinLinkProofWith.leanFilesReturnPinWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockVoidCallNI")
     for (p, t) in proofFiles do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd

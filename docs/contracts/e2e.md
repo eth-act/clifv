@@ -3319,7 +3319,15 @@ checker now decides the checks of the compiler's typed route, `okRWithTSR`
 
 It prints `checker: typed Stock (okRWithTSR)`. The theorem is
 `binary_correct_exec_provenTSR` (`…_peak_provenTSR`, `_mid`/`_midS` in
-`FV/E2E/MidValExecProvenR.lean`), with premise `okBTSR`.
+`FV/E2E/MidValExecProvenR.lean`), with premise `okBTSR`. Its crate proofs (`--lean`,
+`FVTest/E2E/TypedLinkProofWith.lean` with `tsr`) decide `okRWithTSR` too: the per-slice checks
+`TypedProductionChecks.fnsBProductionR` (`chksWithTSR`), `okRProductionR_of_checks`, `link_ok` at
+`LinkSys.OkTR` (`okBTS_soundR`), and the statements `CrateStmtProduction` and `StackStmtTS` (the
+texts of the `okRWithTS` proofs) by `crate_correct_productionR` (`okRWithTSR_soundTR`,
+`backend_correct_program_budgetTR`) and `crate_correct_stackR`/`crate_correct_stackNTSR`
+(`FV/E2E/TypedProductionChecksR.lean`; witness `CallRegsR4Witness.crate_correctR_applies`, a
+function whose results `okRWithTS` rejects). The typed (`lowerFunction`) checker's proofs stay at
+`okRWithTS`.
 
 **Checker choice** (#1164). One binary theorem is about one checker's results, so `link-check`
 checks the whole (pruned) program with one checker; when integer validators reject functions (or,
