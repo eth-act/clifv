@@ -10,13 +10,14 @@ variable {lower : ProductionLowering}
 
 /-- The error of `attempt` when its typed checks fail. -/
 def outOkTSMsg : String :=
-  "the typed checks on the Stock route's results fail (okRWithTS)"
+  "the typed checks on the Stock route's results fail (okRWithTSR)"
 
-/-- Keep either the raw or cleanup production stage under the class-aware typed checks. -/
+/-- Keep either the raw or cleanup production stage under the class-aware typed checks with the
+register-guarded calls (`okRWithTSR`, #753). -/
 def attempt (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cleanup : Bool) :
     Except String ByteArray :=
   let I := S.inputProductionWith lower cleanup
-  if okRWithTS (productionStage cleanup) I (I.resultsProductionWith lower cleanup) then
+  if okRWithTSR (productionStage cleanup) I (I.resultsProductionWith lower cleanup) then
     leanLinkProductionWith lower S file0 cleanup
   else .error outOkTSMsg
 
@@ -25,7 +26,7 @@ def attempt (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cle
 def attemptFast (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cleanup : Bool) :
     Except String ByteArray :=
   let R := S.input0.resultsProductionWith lower cleanup
-  if okRWithTS (productionStage cleanup) (S.input0.withDepth R) R then
+  if okRWithTSR (productionStage cleanup) (S.input0.withDepth R) R then
     leanLinkWithResults S file0 (fun _ => R)
   else .error outOkTSMsg
 
@@ -38,9 +39,12 @@ def attemptFast (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) 
       lower cleanup = S.input0.resultsProductionWith lower cleanup := rfl
   simp only [attempt, attemptFast, LinkSpec.inputProductionWith, hl, hr]
 
+/-- `attempt`'s output passed the typed checks with the register-guarded calls (`okBTSR`; #753:
+it was `okBTS`, false of `attempt … true`'s output where a vtable `blr` sits next to a
+GOT-declared callee with other registers, `FVTest/Link/CallRegsR4Witness.lean`). -/
 theorem attempt_spec {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) :
-    SemanticStackBound.okBTS (input lower S cleanup) = true ∧
+    SemanticStackBound.okBTSR (input lower S cleanup) = true ∧
     leanLinkProductionWith lower S file0 cleanup = .ok file := by
   simp only [attempt] at h
   split at h
@@ -70,7 +74,7 @@ theorem attempt_correct {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
       (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results)
       (Clif.runLoop B.env (prog (input lower S cleanup)) (M + 1) cs) := by
   obtain ⟨hin, hl⟩ := attempt_spec h
-  exact binary_correct_exec_provenTS hin
+  exact binary_correct_exec_provenTSR hin
     (SemanticCompilerWith.codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (SemanticCompilerWith.gotOk_leanLink hl) B hB hH hf hc
     M hX ho (SemanticCompilerWith.outsideAvoids_leanLink hl _ _ _ _ _) hr htr
 
@@ -96,7 +100,7 @@ theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : Byte
       (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results)
       (Clif.runLoop B.env (prog (input lower S cleanup)) (M + 1) cs) := by
   obtain ⟨hin, hl⟩ := attempt_spec h
-  exact binary_correct_exec_depth_provenTS hin
+  exact binary_correct_exec_depth_provenTSR hin
     (SemanticCompilerWith.codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (SemanticCompilerWith.gotOk_leanLink hl) B hB hH hf M hX
     ho (SemanticCompilerWith.outsideAvoids_leanLink hl _ _ _ _ _) hr htr
 
@@ -123,7 +127,7 @@ theorem attempt_correct_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteA
       (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results)
       (Clif.runLoop B.env (prog (input lower S cleanup)) (F + 1) cs) := by
   obtain ⟨hin, hl⟩ := attempt_spec h
-  exact binary_correct_exec_peak_provenTS hin
+  exact binary_correct_exec_peak_provenTSR hin
     (SemanticCompilerWith.codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (SemanticCompilerWith.gotOk_leanLink hl) B hB hH hf F d
     hX ho (SemanticCompilerWith.outsideAvoids_leanLink hl _ _ _ _ _) hr hd htr
 

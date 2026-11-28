@@ -1,6 +1,7 @@
 import FV.E2E.ProductionPipelineWith
 import FV.Backend.Lowering.StockVoidCallNI
 import FV.E2E.SemanticPipelineCheckT
+import FV.E2E.SemanticPipelineCheckTR
 
 /-! # The typed Stock checker's route for one function (#1040)
 
@@ -15,16 +16,18 @@ the Stock artifact only without `sret` parameter), although the compiler's typed
 
 `typedRoute?` is the route `link-check` uses for such a function when it takes the typed Stock
 checker: the first route of `Stock.VoidCall.NI.lowerRoutes`, in the compiler's order, whose
-artifact passes the allocation checker, `prepCheck`, `lowerOkTSB` and `same` (in `link-check`:
-the executable's bytes, `artB`). Untrusted route selection: the theorem the proof files state is
-about the results of the route list chosen, whatever it is. -/
+artifact passes the allocation checker, `prepCheck`, the typed Stock checker's lowering check
+(`lowerOkTSRB` since #753: the Stock artifact also only without call sites or with the retained
+production check; it was `lowerOkTSB`) and `same` (in `link-check`: the executable's bytes,
+`artB`). Untrusted route selection: the theorem the proof files state is about the results of
+the route list chosen, whatever it is. -/
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof.Driver
 
 /-- **The typed Stock checker's route for `fi`** (#1040): the index in
 `Stock.VoidCall.NI.lowerRoutes` of the first route whose artifact passes `checkAlloc`,
-`prepCheck`, `lowerOkTSB` and `same`. -/
+`prepCheck`, `lowerOkTSRB` and `same`. -/
 def typedRoute? (I : LinkInput) (cleanup : Bool) (same : Art → Bool) (fi : FnInput) :
     Option Nat :=
   (Stock.VoidCall.NI.lowerRoutes.zipIdx.find? fun (lower, _) =>
@@ -32,6 +35,6 @@ def typedRoute? (I : LinkInput) (cleanup : Bool) (same : Art → Bool) (fi : FnI
     | .error _ => false
     | .ok a => (checkAlloc a.vcp a.rf).toBool &&
         prepCheck (productionStage cleanup fi.func a.vc) a.vcp &&
-        lowerOkTSB fi.func a.vc && same a).map (·.2)
+        lowerOkTSRB fi.func a.vc a.vcp && same a).map (·.2)
 
 end E2E.LinkCheck

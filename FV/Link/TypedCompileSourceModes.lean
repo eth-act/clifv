@@ -46,8 +46,8 @@ theorem attempt_correct_source {S : LinkSpec} {cleanup : Bool} {file0 file : Byt
         (step (input lower S cleanup) B file) r
         (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (.trapped c)) := by
   obtain ⟨hin, hl⟩ := attempt_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := SemanticCompilerWith.prog_eq_legal (input lower S cleanup)
   have hpe' : (input lower S cleanup).toLinkInput.prog = prog (input lower S cleanup) := by
     rw [hpe, LinkInput.prog_eq]
@@ -101,7 +101,7 @@ theorem attempt_correct_source {S : LinkSpec} {cleanup : Bool} {file0 file : Byt
     obtain ⟨rv', hrel, k, hk⟩ := (legalProg_refines hC hfP hE hG M).1 vals cm hrun
     rw [hst'] at hk
     exact ⟨rv', hrel, hexe _ ⟨k, hk⟩ (fun h => by cases h) fun K hK =>
-      trapsExplicit_of_runTS hL hfP' hcs' ho.symbols hK⟩
+      trapsExplicit_of_runTSR hL hfP' hcs' ho.symbols hK⟩
   · have hG : GoodFrom B.env (input lower S cleanup).toLinkInput.srcProg
         (SomeInd (legalProg (input lower S cleanup).toLinkInput.srcProg))
         (fun n => (input lower S cleanup).syms.lookup n) ⟨cs.frame, [], cs.mem⟩ := by
@@ -150,8 +150,8 @@ theorem attempt_correct_source_peak {S : LinkSpec} {cleanup : Bool} {file0 file 
         (step (input lower S cleanup) B file) r
         (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (.trapped c)) := by
   obtain ⟨hin, hl⟩ := attempt_spec h
-  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkT :=
-    SemanticStackBound.okBTS_sound hin (baseOk_F hB) fun _ _ => trivial
+  have hL : (SemanticStackBound.ofInput (input lower S cleanup) B fun _ => True).OkTR :=
+    SemanticStackBound.okBTS_soundR hin (baseOk_F hB) fun _ _ => trivial
   have hpe := SemanticCompilerWith.prog_eq_legal (input lower S cleanup)
   have hpe' : (input lower S cleanup).toLinkInput.prog = prog (input lower S cleanup) := by
     rw [hpe, LinkInput.prog_eq]
@@ -208,7 +208,7 @@ theorem attempt_correct_source_peak {S : LinkSpec} {cleanup : Bool} {file0 file 
     rw [hst'] at hk hdT
     rw [← hpe] at hdT
     exact ⟨rv', hrel, hexe _ ⟨k, hk⟩ (fun h => by cases h) hdT fun F hF =>
-      trapsExplicit_of_runDTS hL hfP' hcs' ho.symbols hdT hF⟩
+      trapsExplicit_of_runDTSR hL hfP' hcs' ho.symbols hdT hF⟩
   · have hG : GoodFrom B.env (input lower S cleanup).toLinkInput.srcProg
         (SomeInd (legalProg (input lower S cleanup).toLinkInput.srcProg))
         (fun n => (input lower S cleanup).syms.lookup n) ⟨cs.frame, [], cs.mem⟩ := by
