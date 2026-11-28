@@ -171,7 +171,7 @@ theorem factsRWithTSR (stage : Clif.Function → VCode → VCode) {I : LinkInput
     (hg : g ∈ (progOf R).funcs) : FactsWithTSR stage I R g (artOf R g) := by
   have hn := okRWithTSR_names stage h
   obtain ⟨e, he, rfl, hart⟩ := artOf_spec hn hg
-  have hall : ∀ c ∈ chksWithTS stage I (progOf R) (tabOf R) e.1 e.2, c.2 = true := by
+  have hall : ∀ c ∈ chksWithTSR stage I (progOf R) (tabOf R) e.1 e.2, c.2 = true := by
     simp only [okRWithTSR, chksWithTSR, Bool.and_eq_true, List.all_eq_true] at h
     exact h.2 e he
   rw [hart]
@@ -383,7 +383,7 @@ theorem okRWithTSR_soundTR (stage : Clif.Function → VCode → VCode) {I : Link
           exact raOk_self (hcomp g hg).1.toTS.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
         · exact raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hhg
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
-      indSig := fun g hg hnf h hh hmay hm => indFactsRWithTS stage hR hI hg hnf h hh (mayB_of hmay) hm
+      indSig := fun g hg hnf h hh hmay hm => indFactsRWithTSR stage hR hI hg hnf h hh (mayB_of hmay) hm
       addrSlots := fun hN ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf
