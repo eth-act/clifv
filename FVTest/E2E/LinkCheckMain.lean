@@ -278,13 +278,28 @@ def main (args : List String) : IO UInt32 := do
   let statNI := Link.parMap (fun e => staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2) R0I
   let statI := (R0I.zip statNI).map fun (e, ni) => (e.1.name, semanticForOfNI returnPinCallsExtra e.1 e.2 ni)
   let failI := statI.filterMap fun e => if (bad e.2).isEmpty then none else some e.1
+  -- #1119: the mid-end validator's pair is one more check of each function
+  let midChk := "Link.midPairB or Link.hoistCopy (the compiled function validated against the unoptimised one; the hoisting mode's copy checked at the image's symbol table below)"
+  let withMid := fun (c : Cand) => if src0.isNone then c else
+    { c with stat := c.stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)]) }
+  let cI : Cand := withMid ⟨.integer, R0I, statI, lowerName⟩
+  -- #753 R4: where the integer validators accept every function, the integer checker is decided
+  -- first (`pruneRun`, reused below); when one of its checks fails (a link check such as
+  -- `callRegs/blrRegs`: since #753 the compiler's typed checks `okRWithTSR` check a `blr` site for
+  -- its shape only, so `Link.TypedCompilerWith.attempt` may write an executable the integer checker
+  -- rejects), the typed Stock checker below is a candidate too. This only chooses among checkers
+  -- that each decide their theorem's premises (#1164).
+  let runI : Option PruneRun ← if failI.isEmpty then some <$> pruneRun I0 dataSyms cI o.prune hoistM
+    else pure none
+  let failLinkI := (runI.map (·.d1)).getD []
   -- the typed checks on the Stock route's results (#722, `Link.SemanticCompilerWith.attemptT`'s
   -- output, typed `--verified` when the units hold Stock code): the results `R0I` with
   -- `staticChksWithTSR` (the checker `okRWithTSR`, #753: the Stock validator on an integer function
   -- without call sites or the retained production check, the typed validators on
   -- `lowerFunction`'s output; a `blr` site checked for its shape); a candidate checker (#1164,
-  -- below) when integer validators reject functions and the executable holds `R0I`'s code
-  -- wherever it is not `lowerFunction`'s; theorem `E2E.SemanticExecBytes.binary_correct_exec_provenTSR`.
+  -- below) when integer validators reject functions or, #753, the integer checker fails otherwise
+  -- (`failLinkI`), and the executable holds `R0I`'s code wherever it is not `lowerFunction`'s;
+  -- theorem `E2E.SemanticExecBytes.binary_correct_exec_provenTSR`.
   -- #1040: the route recovery above takes the ABI-aware Stock routes first, so where one of them
   -- gives the same bytes as the route the compiler's typed route `attemptT` took (an `sret` copy:
   -- the Stock sret-copy route and `lowerFunction` emit the same code), the recovered artifact is
@@ -292,7 +307,7 @@ def main (args : List String) : IO UInt32 := do
   -- first route in the compiler's order with the same bytes that passes `lowerOkTSRB`
   -- (`typedRoute?`); the proof files then name that route list.
   let stockTS : Option (Res × String × List (String × List (String × Bool)) × Nat × Nat × Bool) :=
-    if !failI.isEmpty then
+    if !failI.isEmpty || !failLinkI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let statS0 := Link.parMap (fun (p : (Clif.Function × Except String Art) × List (String × Bool)) =>
         (p.1.1.name, withTSROfNI p.1.1 p.1.2 p.2)) (R0I.zip statNI)
@@ -338,10 +353,6 @@ def main (args : List String) : IO UInt32 := do
     let r := I0.pipeCleanupOf fi
     (bad (staticChksWithT cleanupStage { I0 with D := max D0 (frameDrop (getOk r).af) }
       fi.func r)).isEmpty
-  -- #1119: the mid-end validator's pair is one more check of each function
-  let midChk := "Link.midPairB or Link.hoistCopy (the compiled function validated against the unoptimised one; the hoisting mode's copy checked at the image's symbol table below)"
-  let withMid := fun (c : Cand) => if src0.isNone then c else
-    { c with stat := c.stat.map fun (n, cs) => (n, cs ++ [(midChk, midStat.getD n false)]) }
   -- the candidate's results are computed only when it is run; its bound: the functions left when
   -- the integer-rejected ones it rejects too and their callers are dropped
   let (lazyT, noteT) : Option (Nat × Thunk Cand) × String :=
@@ -362,7 +373,7 @@ def main (args : List String) : IO UInt32 := do
   let (candS, noteS) : Option Cand × String := match stockTS with
     | some (R0S, nameS, statS, nRe, fixedS, bytesS) =>
       (if bytesS then some (withMid ⟨.typedStock, R0S, statS, nameS⟩) else none,
-        s!"  typed checks: {fixedS} of the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's){if nRe == 0 then "" else s!", {nRe} function(s) on the typed route with the same bytes (#1040)"}{if bytesS then "" else "; the executable does not hold those results' code (artB), so this checker is not a candidate"}")
+        s!"  typed checks: {if failI.isEmpty then s!"the integer checker fails for {failLinkI.length} function(s) or the program (#753); the typed Stock checker on the Stock route's results (okRWithTSR's) is a candidate" else s!"{fixedS} of the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTSR's)"}{if nRe == 0 then "" else s!", {nRe} function(s) on the typed route with the same bytes (#1040)"}{if bytesS then "" else "; the executable does not hold those results' code (artB), so this checker is not a candidate"}")
     | none => (none, "")
   if src0.isSome then
     IO.println s!"  mid-end validator: {nSrc} function(s) compiled from Cranelift's optimised dumps (src_dump: the unoptimised one); the pair fails for {(midStat.toList.filter (!·.2)).length} (Link.midPairB and the hoisting mode's Link.hoistCopy reject it); Link.hoistCopy accepts {hoistM.size} that Link.midPairB rejects (their copy's global values checked at the image's symbol table)"
@@ -373,14 +384,15 @@ def main (args : List String) : IO UInt32 := do
   -- one checker's results, so the program is checked by one checker; this only chooses which.
   -- A candidate whose validators alone leave fewer functions (`staticBound`, or the typed probe's
   -- bound) than the best found cannot win and is not run.
-  let cI : Cand := withMid ⟨.integer, R0I, statI, lowerName⟩
   let entries : List (FVTest.E2E.BinVerdict.Checker × Option Nat × Thunk Cand) :=
     (candS.map fun c => (c.checker, none, Thunk.pure c)).toList ++
       (lazyT.map fun (b, t) => (.typed, some b, t)).toList ++ [(.integer, none, Thunk.pure cI)]
   let nF := I0.funcs.length
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
   let (cand, run) ← match entries with
-    | [(_, _, t)] => do pure (t.get, ← pruneRun I0 dataSyms t.get o.prune hoistM)
+    | [(_, _, t)] => do pure (t.get, ← match runI with
+        | some r => pure r
+        | none => pruneRun I0 dataSyms t.get o.prune hoistM)
     | _ => do
       IO.println s!"  checker candidates (#1164: the one whose --prune program is the largest; ties: typed Stock, typed, integer):"
       let ranked := (entries.zipIdx.map fun ((ch, b, t), i) =>
@@ -403,7 +415,10 @@ def main (args : List String) : IO UInt32 := do
         if skip' then
           IO.println s!"    {ch.label}: not run (its validators leave at most {b'} of {nF} functions)"
           continue
-        let run ← pruneRun I0 dataSyms c true hoistM
+        -- the integer checker's run above (`runI`) when it was the `--prune` one
+        let run ← match ch, runI with
+          | .integer, some r => if o.prune then pure r else pruneRun I0 dataSyms c true hoistM
+          | _, _ => pruneRun I0 dataSyms c true hoistM
         IO.println s!"    {ch.label}: {run.keep.length} of {nF} functions pass ({(c.stat.filter fun e => !(bad e.2).isEmpty).length} fail the validators)"
         let better := match best with
           | some (k, j, _, _) => run.keep.length > k || (run.keep.length == k && i < j)

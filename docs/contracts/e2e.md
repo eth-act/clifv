@@ -3309,14 +3309,21 @@ checker now decides the checks of the compiler's typed route, `okRWithTSR`
 - the static checks are `staticChksWithTSR`, evaluated from the integer evaluation by
   `withTSROfNI` (`withTSROfNI_eq`);
 - the link checks are `linkChksWithTSXR` (`linkChksWithTSXR_of`);
-- `typedRoute?` asks `lowerOkTSRB`.
+- `typedRoute?` asks `lowerOkTSRB`;
+- it is also a candidate when the integer validators accept every function but the integer
+  checker fails otherwise (a link check, e.g. `callRegs/blrRegs`; `failLinkI`). The compiler's
+  `Link.TypedCompilerWith.attempt` checks `okRWithTSR` on the same results `R0I`, so since R4 it
+  writes executables whose `blr` sites the integer checker rejects. The integer checker is
+  decided first (its `--prune` run is reused in the choice). This only chooses among checkers
+  that each decide their theorem's premises; no statement changes.
 
 It prints `checker: typed Stock (okRWithTSR)`. The theorem is
 `binary_correct_exec_provenTSR` (`…_peak_provenTSR`, `_mid`/`_midS` in
 `FV/E2E/MidValExecProvenR.lean`), with premise `okBTSR`.
 
 **Checker choice** (#1164). One binary theorem is about one checker's results, so `link-check`
-checks the whole (pruned) program with one checker; when integer validators reject functions it
+checks the whole (pruned) program with one checker; when integer validators reject functions (or,
+#753, the integer checker fails otherwise and the typed Stock checker is a candidate) it
 decides each candidate completely (the typed Stock checker, the typed checker, the integer
 checker: static checks, link checks, global checks, `--prune` with callers) and takes the one
 whose `--prune` program is the largest (ties in that order), printing each candidate's count
